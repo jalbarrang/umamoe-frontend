@@ -79,17 +79,25 @@
   .page-content { width: min(100%, var(--page-content-current)); min-width: 0; grid-area: content; justify-self: center; }
   .page-content > nav { margin-bottom: var(--space-3); }
   .page-content > header { margin-bottom: var(--space-5); }
-  .content-top-ad { margin: 0 0 var(--space-5); }
+  .content-top-ad { padding-block: var(--page-gutter-current); }
   .page-body { min-width: 0; }
-  .ad-rail { display: none; align-self: start; position: sticky; top: calc(var(--utility-height) + var(--space-4)); }
+  .ad-rail {
+    display: none;
+    align-self: start;
+    position: sticky;
+    top: max(
+      calc(var(--page-viewport-top, 0px) + var(--utility-height) + var(--space-4)),
+      calc(var(--page-viewport-top, 0px) + var(--utility-height) + (var(--page-viewport-height, 100dvh) - var(--utility-height) - var(--ad-rail-height)) / 2)
+    );
+  }
   .ad-rail--left { grid-area: left-ad; }
   .ad-rail--right { grid-area: right-ad; }
 
-  @media (min-width: 768px) {
+  @container lab-preview (min-width: 768px) {
     .page-grid { --page-gutter-current: var(--page-gutter-compact); }
   }
 
-  @media (min-width: 1440px) {
+  @container lab-preview (min-width: 1440px) {
     .page-grid { --page-gutter-current: var(--page-gutter-expanded); }
   }
 

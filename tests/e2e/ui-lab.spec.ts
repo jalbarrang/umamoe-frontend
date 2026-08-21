@@ -171,6 +171,36 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   await expect(rail.getByText('Foundation', { exact: true })).toBeVisible();
 });
 
+test('Analytics viewport toggles resize the entire UI Lab website', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/ui-lab');
+  const viewport = page.locator('.lab-viewport');
+  const rail = viewport.locator('[data-shell-rail]');
+  const bottom = viewport.locator('[data-shell-bottom]');
+  const topAd = viewport.locator('[data-ad-kind="leaderboard"]');
+
+  await page.getByRole('button', { name: '360×800', exact: true }).click();
+  await expect(viewport).toHaveAttribute('data-preview-width', '360');
+  expect((await viewport.boundingBox())!.width).toBe(360);
+  await expect(rail).toBeHidden();
+  await expect(bottom).toBeVisible();
+  expect((await topAd.boundingBox())!.height).toBe(50);
+
+  await page.getByRole('button', { name: '1366×768', exact: true }).click();
+  expect((await viewport.boundingBox())!.width).toBe(1366);
+  expect((await rail.boundingBox())!.width).toBe(64);
+  await expect(bottom).toBeHidden();
+
+  await page.getByRole('button', { name: '1536×864', exact: true }).click();
+  expect((await viewport.boundingBox())!.width).toBe(1536);
+  expect((await rail.boundingBox())!.width).toBe(240);
+  expect((await topAd.boundingBox())!.height).toBe(90);
+
+  await page.getByRole('button', { name: 'Fluid', exact: true }).click();
+  await expect(viewport).toHaveAttribute('data-preview-width', 'fluid');
+  expect((await viewport.boundingBox())!.width).toBe(1920);
+});
+
 test('medium and wide page contracts change the live UI lab content maximum', async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1440 });
   await page.goto('/ui-lab');
@@ -195,8 +225,10 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
 
   const mobileGeometry = await frame.evaluate((element) => {
     const frameBox = element.getBoundingClientRect();
+    const pageGridBox = element.querySelector<HTMLElement>('[data-route-id="ui-lab"]')!.getBoundingClientRect();
     const contentBox = element.querySelector<HTMLElement>('[data-page-content]')!.getBoundingClientRect();
     const topAdBox = element.querySelector<HTMLElement>('[data-ad-kind="leaderboard"]')!.getBoundingClientRect();
+    const introBox = element.querySelector<HTMLElement>('.lab-intro')!.getBoundingClientRect();
     const inlineAdBox = element.querySelector<HTMLElement>('[data-ad-kind="inline"]')!.getBoundingClientRect();
     const visibleRails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
       .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0);
@@ -204,17 +236,20 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
       contentInset: contentBox.left - frameBox.left,
       topAdInset: topAdBox.left - frameBox.left,
       topAdRightInset: frameBox.right - topAdBox.right,
+      topAdPadding: topAdBox.top - pageGridBox.top,
+      topAdBottomPadding: introBox.top - topAdBox.bottom,
       inlineHeight: inlineAdBox.height,
       visibleRails: visibleRails.length
     };
   });
-  expect(mobileGeometry).toEqual({ contentInset: 16, topAdInset: 2, topAdRightInset: 2, inlineHeight: 100, visibleRails: 0 });
+  expect(mobileGeometry).toEqual({ contentInset: 16, topAdInset: 2, topAdRightInset: 2, topAdPadding: 16, topAdBottomPadding: 16, inlineHeight: 100, visibleRails: 0 });
 
   await page.setViewportSize({ width: 1920, height: 1080 });
   const expandedGeometry = await frame.evaluate((element) => {
     const pageGrid = element.querySelector<HTMLElement>('[data-route-id="ui-lab"]')!;
     const frameBox = pageGrid.getBoundingClientRect();
     const content = element.querySelector<HTMLElement>('[data-page-content]')!;
+    const utility = document.querySelector<HTMLElement>('[data-shell-utility]')!.getBoundingClientRect();
     const leftRail = element.querySelector<HTMLElement>('[data-ad-position="left-rail"]')!;
     const rails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
       .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0)
@@ -225,12 +260,15 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
       railWidths: rails.map((rail) => rail.width),
       leftInset: rails[0]!.left - frameBox.left,
       rightInset: frameBox.right - rails[1]!.right,
+      railTopGap: rails[0]!.top - utility.bottom,
+      railBottomGap: window.innerHeight - rails[0]!.bottom,
       contentComesFirst: Boolean(content.compareDocumentPosition(leftRail) & Node.DOCUMENT_POSITION_FOLLOWING)
     };
   });
   expect(expandedGeometry.scrollWidth).toBe(expandedGeometry.clientWidth);
   expect(expandedGeometry.railWidths).toEqual([160, 160]);
   expect(expandedGeometry.leftInset).toBe(expandedGeometry.rightInset);
+  expect(expandedGeometry.railTopGap).toBe(expandedGeometry.railBottomGap);
   expect(expandedGeometry.contentComesFirst).toBe(true);
   await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-feature-id', 'ui-system');
   await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-page-width', 'wide');

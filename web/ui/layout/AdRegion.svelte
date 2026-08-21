@@ -44,7 +44,7 @@
   .preview strong { color: var(--color-text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
   .preview small { max-width: 100%; overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
-  @media (min-width: 768px) {
+  @container lab-preview (min-width: 768px) {
     .ad-region--leaderboard,
     .ad-region--inline { width: 100%; min-height: var(--ad-leaderboard-height); margin-inline: auto; }
   }

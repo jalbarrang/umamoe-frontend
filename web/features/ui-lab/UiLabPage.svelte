@@ -45,7 +45,7 @@
   import WorkspaceSwitcher from '../../ui/WorkspaceSwitcher.svelte';
   import AdRegion from '../../ui/layout/AdRegion.svelte';
   import PageFrame from '../../ui/layout/PageFrame.svelte';
-  import { ANALYTICS_REVIEW_VIEWPORTS, formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS, type PageWidth } from '../../ui/layout/breakpoints';
+  import { ANALYTICS_REVIEW_VIEWPORTS, ANALYTICS_VIEWPORTS, formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS, type PageWidth } from '../../ui/layout/breakpoints';
   import { componentCount, uiRegistry } from '../../ui/registry';
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
@@ -79,11 +79,15 @@
   let labNavigationOpen = $state(false);
   let page = $state(3);
   let pageWidth = $state<PageWidth>('wide');
+  let previewWidth = $state<number | 'fluid'>('fluid');
   let veteran = $state('v-1');
   let toasts = $state<Toast[]>([]);
 
   const viewports = REVIEW_VIEWPORTS;
   const analyticsViewports = ANALYTICS_REVIEW_VIEWPORTS;
+  const previewViewports = ANALYTICS_VIEWPORTS;
+  const selectedPreview = $derived(previewViewports.find((viewport) => viewport.width === previewWidth));
+  const previewStyle = $derived(`--lab-preview-width:${selectedPreview ? `${selectedPreview.width}px` : '100%'};--lab-preview-height:${selectedPreview ? `${selectedPreview.height}px` : 'calc(100dvh - 50px)'};--page-viewport-height:${selectedPreview ? `${selectedPreview.height}px` : 'calc(100dvh - 50px)'};--page-viewport-top:50px`);
   const sectionIcons: Record<string, IconName> = {
     tokens: 'home', actions: 'activity', inputs: 'filter', navigation: 'menu',
     feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans'
@@ -137,6 +141,17 @@
 
 <svelte:head><title>UI Lab · uma.moe beta</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
 
+<div class="viewport-switcher" data-viewport-switcher>
+  <div><strong>Website viewport</strong><span>Analytics resolution presets</span></div>
+  <div class="viewport-options" role="group" aria-label="Website viewport">
+    <button class:active={previewWidth === 'fluid'} aria-pressed={previewWidth === 'fluid'} onclick={() => previewWidth = 'fluid'}>Fluid</button>
+    {#each previewViewports as viewport}
+      <button class:active={previewWidth === viewport.width} aria-pressed={previewWidth === viewport.width} onclick={() => previewWidth = viewport.width}>{viewport.width}×{viewport.height}</button>
+    {/each}
+  </div>
+</div>
+
+<div class="lab-viewport" style={previewStyle} data-preview-width={previewWidth}>
 <div class="lab-shell" data-ui-lab-shell>
   <header class="lab-bar" data-shell-utility>
     <a class="lab-brand" href="/ui-lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
@@ -293,12 +308,19 @@
 </Dialog>
 
 <ToastRegion {toasts} ondismiss={(id) => toasts = toasts.filter(toast => toast.id !== id)}/>
+</div>
 
 <style>
   :global(html[data-motion='reduced']) { --duration-fast: 0ms; --duration-normal: 0ms; }
   :global(html[data-density='compact']) { --touch-target: 36px; }
-  .lab-shell { min-height: 100dvh; padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); }
-  .lab-bar { position: sticky; top: 0; z-index: var(--z-header); min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
+  .viewport-switcher { position: sticky; top: 0; z-index: calc(var(--z-header) + 2); min-width: 0; height: 50px; display: flex; align-items: center; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
+  .viewport-switcher > div:first-child { flex: 0 0 auto; display: grid; line-height: 1.15; } .viewport-switcher strong { font-size: var(--font-xs); } .viewport-switcher span { color: var(--color-text-subtle); font-size: 9px; }
+  .viewport-options { min-width: 0; display: flex; gap: 4px; overflow-x: auto; padding: 2px; scrollbar-width: thin; }
+  .viewport-options button { min-height: 32px; flex: 0 0 auto; padding: 0 9px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-2); color: var(--color-text-muted); cursor: pointer; font-size: 10px; font-variant-numeric: tabular-nums; }
+  .viewport-options button.active { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent); }
+  .lab-viewport { width: var(--lab-preview-width); min-width: 0; margin-inline: auto; container: lab-preview / inline-size; }
+  .lab-shell { min-height: var(--lab-preview-height); padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); }
+  .lab-bar { position: sticky; top: var(--page-viewport-top, 0px); z-index: var(--z-header); min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-brand { display: flex; align-items: center; gap: 9px; color: var(--color-text); text-decoration: none; }
   .lab-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .lab-brand strong { background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-lg); } .lab-brand small { color: var(--color-text-subtle); font-size: 10px; text-transform: uppercase; }
   .lab-context, .lab-controls { display: none; }
@@ -307,9 +329,9 @@
   .lab-controls :global(.switch) { grid-template-columns: auto auto; } .lab-controls :global(.copy small) { display: none; }
   .lab-index { display: none; }
   .rail-brand { display: none; }
-  .lab-page { min-width: 0; padding-top: var(--space-4); }
+  .lab-page { min-width: 0; }
   .lab-main { width: 100%; min-width: 0; display: grid; gap: var(--space-10); padding-bottom: var(--space-12); }
-  .lab-bottom { position: fixed; z-index: var(--z-header); inset: auto 0 0; height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); }
+  .lab-bottom { position: fixed; z-index: var(--z-header); right: auto; bottom: 0; left: 50%; width: min(100vw, var(--lab-preview-width)); height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); transform: translateX(-50%); }
   .lab-bottom a, .lab-bottom button { min-width: 0; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0 2px; border: 0; background: transparent; color: var(--color-text-subtle); cursor: pointer; font: inherit; font-size: 9px; text-decoration: none; }
   .lab-bottom a:hover, .lab-bottom button:hover { color: var(--color-text); }
   .lab-intro { display: grid; gap: var(--space-6); padding: var(--space-5); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: radial-gradient(circle at 12% 0%, rgb(100 181 246 / .08), transparent 38%), radial-gradient(circle at 95% 100%, rgb(129 199 132 / .07), transparent 34%), var(--surface-2); }
@@ -346,21 +368,21 @@
   .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
-  @media (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  @media (min-width: 768px) {
+  @container lab-preview (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @container lab-preview (min-width: 768px) {
     .lab-shell { display: grid; grid-template-columns: var(--rail-compact) minmax(0, 1fr); grid-template-rows: var(--utility-height) minmax(calc(100dvh - var(--utility-height)), auto); padding-bottom: 0; }
     .lab-bar { grid-column: 2; grid-row: 1; min-width: 0; padding-inline: var(--page-gutter-compact); }
     .lab-brand, .mobile-controls, .index-head, .lab-index > p { display: none; }
     .lab-context, .lab-controls { display: flex; }
     .lab-controls { align-items: center; justify-content: flex-end; gap: var(--space-3); }
-    .lab-index { position: sticky; z-index: var(--z-rail); top: 0; height: 100dvh; grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; padding: 0 8px 12px; border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
+    .lab-index { position: sticky; z-index: var(--z-rail); top: var(--page-viewport-top, 0px); height: min(var(--lab-preview-height), calc(100dvh - var(--page-viewport-top, 0px))); grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; padding: 0 8px 12px; border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
     .rail-brand { height: var(--utility-height); display: grid; flex: 0 0 auto; place-items: center; border-bottom: 1px solid var(--border-primary); color: var(--color-text); text-decoration: none; } .rail-brand > span { display: none; }
     .lab-index nav { display: grid; gap: 3px; padding-top: 8px; }
     .lab-index nav a { min-height: 44px; display: grid; place-items: center; border-radius: var(--radius-sm); color: var(--color-text-subtle); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav a > span, .lab-index nav a > small { display: none; }
-    .lab-page { grid-column: 2; grid-row: 2; padding-top: var(--space-6); }
+    .lab-page { grid-column: 2; grid-row: 2; }
     .lab-bottom { display: none; }
   }
-  @media (min-width: 1440px) {
+  @container lab-preview (min-width: 1440px) {
     .lab-shell { grid-template-columns: var(--rail-expanded) minmax(0, 1fr); }
     .lab-bar { padding-inline: var(--page-gutter-expanded); }
     .lab-index { padding-inline: var(--space-3); }

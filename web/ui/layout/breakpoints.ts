@@ -21,7 +21,17 @@ export const SCREEN_BREAKPOINTS = {
 } as const;
 
 export const REVIEW_VIEWPORTS = [320, 390, 768, 1024, 1440] as const;
-export const ANALYTICS_REVIEW_VIEWPORTS = [360, 384, 390, 412, 1366, 1536, 1920, 2560] as const;
+export const ANALYTICS_VIEWPORTS = [
+  { width: 360, height: 800 },
+  { width: 384, height: 832 },
+  { width: 390, height: 844 },
+  { width: 412, height: 915 },
+  { width: 1366, height: 768 },
+  { width: 1536, height: 864 },
+  { width: 1920, height: 1080 },
+  { width: 2560, height: 1440 }
+] as const;
+export const ANALYTICS_REVIEW_VIEWPORTS = ANALYTICS_VIEWPORTS.map((viewport) => viewport.width);
 
 export const PAGE_LAYOUT = {
   contentMax: 1080,
