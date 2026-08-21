@@ -37,13 +37,14 @@
   .ad-target { width: 100%; height: 100%; display: grid; place-items: center; }
   .ad-region--leaderboard,
   .ad-region--inline { width: calc(100% + var(--page-gutter-current, 16px) + var(--page-gutter-current, 16px) - 4px); max-width: 1200px; min-height: var(--ad-mobile-height); margin-inline: calc(0px - var(--page-gutter-current, 16px) + 2px); }
+  .ad-region--inline { min-height: var(--ad-inline-mobile-height); }
   .ad-region--rail { width: var(--ad-rail-width); min-height: var(--ad-rail-height); }
   .preview { border: 1px dashed var(--color-border-strong); background: var(--color-surface-1); color: var(--color-text-subtle); }
   .preview span { display: grid; place-items: center; gap: 2px; padding: var(--space-2); text-align: center; }
   .preview strong { color: var(--color-text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
   .preview small { max-width: 100%; overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
-  @container page-frame (min-width: 768px) {
+  @media (min-width: 768px) {
     .ad-region--leaderboard,
     .ad-region--inline { width: 100%; min-height: var(--ad-leaderboard-height); margin-inline: auto; }
   }

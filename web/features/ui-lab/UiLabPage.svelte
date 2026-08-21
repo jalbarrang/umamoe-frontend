@@ -43,12 +43,12 @@
   import VeteranSelector from '../../ui/VeteranSelector.svelte';
   import VirtualList from '../../ui/VirtualList.svelte';
   import WorkspaceSwitcher from '../../ui/WorkspaceSwitcher.svelte';
-  import { formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS, type PageWidth } from '../../ui/layout/breakpoints';
+  import AdRegion from '../../ui/layout/AdRegion.svelte';
+  import PageFrame from '../../ui/layout/PageFrame.svelte';
+  import { ANALYTICS_REVIEW_VIEWPORTS, formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS, type PageWidth } from '../../ui/layout/breakpoints';
   import { componentCount, uiRegistry } from '../../ui/registry';
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
-  import LayoutFixture from './LayoutFixture.svelte';
-  import PageFrameFixture from './PageFrameFixture.svelte';
   import oguriCapImage from './fixtures/oguri-cap.webp';
   import mejiroMcQueenImage from './fixtures/mejiro-mcqueen.webp';
   import kitasanBlackImage from './fixtures/kitasan-black.webp';
@@ -78,12 +78,12 @@
   let sheetOpen = $state(false);
   let labNavigationOpen = $state(false);
   let page = $state(3);
-  let viewport = $state(390);
   let pageWidth = $state<PageWidth>('wide');
   let veteran = $state('v-1');
   let toasts = $state<Toast[]>([]);
 
   const viewports = REVIEW_VIEWPORTS;
+  const analyticsViewports = ANALYTICS_REVIEW_VIEWPORTS;
   const sectionIcons: Record<string, IconName> = {
     tokens: 'home', actions: 'activity', inputs: 'filter', navigation: 'menu',
     feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans'
@@ -162,9 +162,14 @@
     <p>Beta/dev only. This module is removed from production builds.</p>
   </aside>
 
-  <main class="lab-main page-width--{pageWidth}" data-page-width={pageWidth}>
+  <div class="lab-page" data-live-page-layout>
+  <PageFrame routeId="ui-lab" featureId="ui-system" pageTitle="UI lab" width={pageWidth} labelledby="ui-lab-title">
+    {#snippet contentTopAd()}<AdRegion placement="ui_lab_content_top" kind="leaderboard" sizes={['1200x90', '970x90', '728x90', '468x90', '320x50', '300x50']} active preview/>{/snippet}
+    {#snippet leftAd()}<AdRegion placement="ui_lab_sticky_vrec_left" kind="rail" sizes={['160x600', '120x600']} active preview/>{/snippet}
+    {#snippet rightAd()}<AdRegion placement="ui_lab_sticky_vrec_right" kind="rail" sizes={['160x600', '120x600']} active preview/>{/snippet}
+  <main class="lab-main" data-page-width={pageWidth}>
     <section class="lab-intro">
-      <div><Badge tone="accent">Svelte port · review</Badge><h1>uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
+      <div><Badge tone="accent">Svelte port · review</Badge><h1 id="ui-lab-title">uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
       <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
     </section>
 
@@ -177,6 +182,7 @@
       <DemoBlock title="Screen breakpoint contract" note="Screen width changes the shell; components use their own container width">
         <div class="breakpoint-contract">{#each SCREEN_LAYOUTS as layout}<article data-mode={layout.id}><strong>{layout.label}</strong><span>{formatScreenRange(layout)}</span><small>{layout.navigation}</small></article>{/each}</div>
         <p class="review-widths">Release fixtures: {viewports.join(' · ')}px</p>
+        <p class="review-widths">Analytics-derived checks: {analyticsViewports.join(' · ')}px</p>
       </DemoBlock>
     </LabSection>
 
@@ -215,22 +221,16 @@
         </div>
         <div class="width-contracts">
           <article><strong>Medium</strong><span>1080px content maximum</span><small>Forms, profiles, Veterans, settings, and reading pages</small></article>
-          <article><strong>Wide</strong><span>1440px content maximum</span><small>Database results, Race Lab, planners, tables, and comparison views</small></article>
+          <article><strong>Wide</strong><span>1760px content maximum</span><small>Database results, Race Lab, planners, tables, and comparison views</small></article>
         </div>
-      </DemoBlock>
-      <DemoBlock title="Responsive page layouts" note="Stack, filter sidebar, and fluid results grid use the same reviewed widths">
-        <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
-        <LayoutFixture width={viewport}/>
-      </DemoBlock>
-      <DemoBlock title="Page gutters and ad regions" note="Primary content stays first; Publift side rails render as a balanced pair or not at all">
-        <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
-        <PageFrameFixture width={viewport}/>
       </DemoBlock>
       <div class="demo-grid">
         <DemoBlock title="Local navigation"><div class="state-stack"><Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Race Lab', href: '/race-lab' }, { label: 'Analysis' }]}/><Tabs label="Race Lab" items={[{ id: 'overview', label: 'Overview' }, { id: 'logs', label: 'UmaLogs', badge: '12' }, { id: 'analysis', label: 'Analysis' }, { id: 'setup', label: 'Setup' }]} bind:value={selectedTab}/></div></DemoBlock>
         <DemoBlock title="Pagination"><Pagination pages={12} bind:page/></DemoBlock>
       </div>
     </LabSection>
+
+    <AdRegion placement="ui_lab_interscroller_1" kind="inline" sizes={['970x90', '728x90', '468x90', '468x60', '320x100', '300x100', '320x50', '300x50']} active preview/>
 
     <LabSection id="feedback" title="Feedback" description="Feedback is direct and descriptive. Connection and sync states always include text and never pulse.">
       <DemoBlock title="Banners"><div class="state-stack"><Banner title="Dataset updated" tone="success"><p>Global data is current as of 18:42 UTC.</p></Banner><Banner title="Offline changes pending" tone="warning" dismissible><p>Three Veterans will sync when the connection returns.</p></Banner><Banner title="Import failed" tone="danger"><p>Nothing was changed. Fix the invalid records and try again.</p></Banner></div></DemoBlock>
@@ -277,6 +277,8 @@
 
     <footer class="lab-footer"><strong>UI contract v0</strong><span>Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.</span></footer>
   </main>
+  </PageFrame>
+  </div>
 
   <nav class="lab-bottom" aria-label="UI lab mobile sections" data-shell-bottom>
     {#each mobileSections as section}<a href="#{section.id}"><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span></a>{/each}
@@ -305,8 +307,8 @@
   .lab-controls :global(.switch) { grid-template-columns: auto auto; } .lab-controls :global(.copy small) { display: none; }
   .lab-index { display: none; }
   .rail-brand { display: none; }
-  .lab-main { --lab-page-content: var(--page-content-wide); --lab-page-gutter: var(--page-gutter-mobile); width: min(100%, calc(var(--lab-page-content) + var(--lab-page-gutter) * 2)); display: grid; gap: var(--space-10); margin: 0 auto; padding: var(--space-6) var(--lab-page-gutter) var(--space-12); }
-  .lab-main.page-width--medium { --lab-page-content: var(--page-content-medium); }
+  .lab-page { min-width: 0; padding-top: var(--space-4); }
+  .lab-main { width: 100%; min-width: 0; display: grid; gap: var(--space-10); padding-bottom: var(--space-12); }
   .lab-bottom { position: fixed; z-index: var(--z-header); inset: auto 0 0; height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-bottom a, .lab-bottom button { min-width: 0; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0 2px; border: 0; background: transparent; color: var(--color-text-subtle); cursor: pointer; font: inherit; font-size: 9px; text-decoration: none; }
   .lab-bottom a:hover, .lab-bottom button:hover { color: var(--color-text); }
@@ -330,10 +332,6 @@
   .breakpoint-contract span { color: var(--color-text-muted); font-size: var(--font-xs); font-variant-numeric: tabular-nums; }
   .breakpoint-contract small { grid-column: 1 / -1; color: var(--color-text-subtle); }
   .review-widths { margin: var(--space-3) 0 0; color: var(--color-text-subtle); font-size: var(--font-xs); font-variant-numeric: tabular-nums; }
-  .fixture-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: var(--space-3); }
-  .fixture-controls span { margin-right: var(--space-2); color: var(--color-text-muted); font-size: var(--font-xs); font-weight: 700; }
-  .fixture-controls button { min-height: 34px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-2); color: var(--color-text-muted); cursor: pointer; font-size: var(--font-xs); }
-  .fixture-controls button.active { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent); }
   .page-width-control { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); }
   .page-width-control > div { min-width: min(100%, 260px); display: grid; gap: 3px; } .page-width-control > div span { color: var(--color-text-muted); font-size: var(--font-xs); }
   .width-contracts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
@@ -359,10 +357,10 @@
     .rail-brand { height: var(--utility-height); display: grid; flex: 0 0 auto; place-items: center; border-bottom: 1px solid var(--border-primary); color: var(--color-text); text-decoration: none; } .rail-brand > span { display: none; }
     .lab-index nav { display: grid; gap: 3px; padding-top: 8px; }
     .lab-index nav a { min-height: 44px; display: grid; place-items: center; border-radius: var(--radius-sm); color: var(--color-text-subtle); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav a > span, .lab-index nav a > small { display: none; }
-    .lab-main { --lab-page-gutter: var(--page-gutter-compact); grid-column: 2; grid-row: 2; padding-top: var(--space-8); }
+    .lab-page { grid-column: 2; grid-row: 2; padding-top: var(--space-6); }
     .lab-bottom { display: none; }
   }
-  @media (min-width: 1280px) {
+  @media (min-width: 1440px) {
     .lab-shell { grid-template-columns: var(--rail-expanded) minmax(0, 1fr); }
     .lab-bar { padding-inline: var(--page-gutter-expanded); }
     .lab-index { padding-inline: var(--space-3); }
@@ -371,6 +369,5 @@
     .lab-index nav { padding-top: 0; }
     .lab-index nav a { grid-template-columns: 24px minmax(0, 1fr) auto; justify-items: start; gap: 9px; padding: 0 var(--space-2); font-size: var(--font-sm); } .lab-index nav a > span, .lab-index nav a > small { display: inline; } .lab-index nav a > small { color: var(--color-text-subtle); }
     .lab-index > p { display: block; margin: auto 0 0; padding: var(--space-3) var(--space-2); border-top: 1px solid var(--color-border); font-size: 10px; }
-    .lab-main { --lab-page-gutter: var(--page-gutter-expanded); }
   }
 </style>

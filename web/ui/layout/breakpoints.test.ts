@@ -14,7 +14,8 @@ describe('screen layout contract', () => {
     expect(shellLayoutForWidth(767)).toBe('mobile');
     expect(shellLayoutForWidth(768)).toBe('compact');
     expect(shellLayoutForWidth(1279)).toBe('compact');
-    expect(shellLayoutForWidth(1280)).toBe('expanded');
+    expect(shellLayoutForWidth(1280)).toBe('compact');
+    expect(shellLayoutForWidth(1439)).toBe('compact');
     expect(shellLayoutForWidth(1440)).toBe('expanded');
   });
 
@@ -41,6 +42,7 @@ describe('screen layout contract', () => {
     expect(tokenSource).toContain(`--ad-rail-gap: ${PAGE_LAYOUT.ads.railGap}px`);
     expect(tokenSource).toContain(`--ad-leaderboard-height: ${PAGE_LAYOUT.ads.leaderboardHeight}px`);
     expect(tokenSource).toContain(`--ad-mobile-height: ${PAGE_LAYOUT.ads.mobileHeight}px`);
+    expect(tokenSource).toContain('--ad-inline-mobile-height: 100px');
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.balancedRailsMin}px`);
     expect(pageFrameSource).toContain('has-balanced-rails');
     expect(pageFrameSource).not.toContain('singleRailMin');

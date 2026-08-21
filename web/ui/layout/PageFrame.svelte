@@ -85,11 +85,11 @@
   .ad-rail--left { grid-area: left-ad; }
   .ad-rail--right { grid-area: right-ad; }
 
-  @container page-frame (min-width: 768px) {
+  @media (min-width: 768px) {
     .page-grid { --page-gutter-current: var(--page-gutter-compact); }
   }
 
-  @container page-frame (min-width: 1280px) {
+  @media (min-width: 1440px) {
     .page-grid { --page-gutter-current: var(--page-gutter-expanded); }
   }
 

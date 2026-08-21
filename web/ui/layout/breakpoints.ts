@@ -11,23 +11,24 @@ export interface ScreenLayoutContract {
 
 export const SCREEN_LAYOUTS: readonly ScreenLayoutContract[] = [
   { id: 'mobile', label: 'Mobile', min: 0, max: 767, navigation: 'Utility header + bottom navigation' },
-  { id: 'compact', label: 'Compact', min: 768, max: 1279, navigation: '64px navigation rail' },
-  { id: 'expanded', label: 'Expanded', min: 1280, navigation: '240px navigation rail' }
+  { id: 'compact', label: 'Compact', min: 768, max: 1439, navigation: '64px navigation rail' },
+  { id: 'expanded', label: 'Expanded', min: 1440, navigation: '240px navigation rail' }
 ] as const;
 
 export const SCREEN_BREAKPOINTS = {
   compact: 768,
-  expanded: 1280
+  expanded: 1440
 } as const;
 
 export const REVIEW_VIEWPORTS = [320, 390, 768, 1024, 1440] as const;
+export const ANALYTICS_REVIEW_VIEWPORTS = [360, 384, 390, 412, 1366, 1536, 1920, 2560] as const;
 
 export const PAGE_LAYOUT = {
   contentMax: 1080,
   frameMax: 1536,
   widths: {
     medium: { contentMax: 1080, frameMax: 1536 },
-    wide: { contentMax: 1440, frameMax: 1840 }
+    wide: { contentMax: 1760, frameMax: 2184 }
   },
   gutters: { mobile: 16, compact: 24, expanded: 32 },
   ads: {

@@ -117,11 +117,11 @@
   --page-max: 1500px;
   /* Canonical shell thresholds. CSS media/container queries are guarded against these values in tests. */
   --screen-compact-min: 768px;
-  --screen-expanded-min: 1280px;
+  --screen-expanded-min: 1440px;
   --page-content-medium: 1080px;
-  --page-content-wide: 1440px;
+  --page-content-wide: 1760px;
   --page-frame-medium: 1536px;
-  --page-frame-wide: 1840px;
+  --page-frame-wide: 2184px;
   /* Backwards-compatible defaults resolve to the focused, medium page. */
   --page-content-max: var(--page-content-medium);
   --page-frame-max: var(--page-frame-medium);
@@ -133,6 +133,7 @@
   --ad-rail-height: 600px;
   --ad-leaderboard-height: 90px;
   --ad-mobile-height: 50px;
+  --ad-inline-mobile-height: 100px;
   --rail-expanded: 240px;
   --rail-compact: 64px;
   --utility-height: 60px;
