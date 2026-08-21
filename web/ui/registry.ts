@@ -29,6 +29,7 @@ export const uiRegistry: UiRegistrySection[] = [
     { id: 'text-field', name: 'Text field', purpose: 'Text, search, email, and password entry.', states: [...commonStates, 'error'], accessibility: 'Real label, described-by help and error association.', status: 'review' },
     { id: 'select', name: 'Select and combobox', purpose: 'Choose or search a known option set.', states: [...commonStates, 'open', 'selected', 'empty'], accessibility: 'Combobox/listbox semantics, keyboard traversal, and labeled controls.', status: 'review' },
     { id: 'choice', name: 'Choice controls', purpose: 'Checkbox, radio, and switch preferences.', states: [...commonStates, 'selected', 'indeterminate'], accessibility: 'Native form controls retain keyboard and form behavior.', status: 'review' },
+    { id: 'slider', name: 'Slider', purpose: 'Single-threshold and two-thumb interval filters with optional ticks and labels.', states: [...commonStates, 'single', 'range'], accessibility: 'Native range inputs retain keyboard, touch, and numeric value semantics.', status: 'review' },
     { id: 'file', name: 'File drop', purpose: 'Import structured user data.', states: [...commonStates, 'dragging', 'error'], accessibility: 'Always backed by a labeled native file input.', status: 'review' }
   ]},
   { id: 'navigation', title: 'Navigation', description: 'Adaptive site shell, local tabs, breadcrumbs, pagination, and launcher.', entries: [
@@ -51,8 +52,8 @@ export const uiRegistry: UiRegistrySection[] = [
     { id: 'filters', name: 'Filters and sort', purpose: 'Expose query state directly and reversibly.', states: [...commonStates, 'selected'], accessibility: 'Pressed state and visible result counts.', status: 'review' }
   ]},
   { id: 'domain', title: 'Domain patterns', description: 'Reusable uma.moe vocabulary shared by every feature.', entries: [
-    { id: 'artwork', name: 'Artwork, game icons, and chips', purpose: 'Character/card identity, skills, factors, items, and status.', states: ['image', 'fallback', 'selected'], accessibility: 'Useful alt text with non-image fallback; decorative icons use empty alt text.', status: 'review' },
-    { id: 'veteran-selector', name: 'Veteran selector', purpose: 'Select reusable Veterans anywhere on the site.', states: [...commonStates, 'empty'], accessibility: 'Native selection with visible identity context.', status: 'review' },
+    { id: 'artwork', name: 'Artwork, skills, and sparks', purpose: 'Character/card identity, raw skill icons, inheritance sparks, items, and status.', states: ['image', 'fallback', 'rarity', 'factor-type'], accessibility: 'Useful alt text with non-image fallback; decorative skill icons use empty alt text.', status: 'review' },
+    { id: 'veteran-selector', name: 'Veteran selector', purpose: 'Search and select reusable Veterans from the active workspace anywhere on the site.', states: [...commonStates, 'open', 'searching', 'empty'], accessibility: 'Labeled combobox and listbox expose identity, rank, source, selection, and keyboard traversal.', status: 'review' },
     { id: 'connection', name: 'Workspace and connection', purpose: 'Make active data ownership and live client state explicit.', states: ['local', 'account', 'offline', 'connected', 'syncing', 'error'], accessibility: 'Text state never relies only on color.', status: 'review' }
   ]}
 ];

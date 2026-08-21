@@ -12,7 +12,6 @@
   import Combobox from '../../ui/Combobox.svelte';
   import DataTable from '../../ui/DataTable.svelte';
   import Dialog from '../../ui/Dialog.svelte';
-  import DomainChip from '../../ui/DomainChip.svelte';
   import EmptyState from '../../ui/EmptyState.svelte';
   import FileDrop from '../../ui/FileDrop.svelte';
   import FilterChip from '../../ui/FilterChip.svelte';
@@ -24,6 +23,9 @@
   import Progress from '../../ui/Progress.svelte';
   import RadioGroup from '../../ui/RadioGroup.svelte';
   import RangeField from '../../ui/RangeField.svelte';
+  import SkillChip from '../../ui/SkillChip.svelte';
+  import Slider from '../../ui/Slider.svelte';
+  import SparkRow from '../../ui/SparkRow.svelte';
   import SegmentedControl from '../../ui/SegmentedControl.svelte';
   import SelectField from '../../ui/SelectField.svelte';
   import Skeleton from '../../ui/Skeleton.svelte';
@@ -63,6 +65,9 @@
   let switchValue = $state(true);
   let radioValue = $state('local');
   let rangeValue = $state(72);
+  let factorMinimum = $state(2);
+  let factorMaximum = $state(7);
+  let parentFactorMinimum = $state(2);
   let selectedFilter = $state(true);
   let selectedTab = $state('overview');
   let dialogOpen = $state(false);
@@ -94,10 +99,17 @@
     return { id: index + 1, name: `${character.name} · ${String(index + 1).padStart(4, '0')}`, image: character.image, rank: ['UG', 'UF', 'UE'][index % 3] };
   });
   const veteranOptions = [
-    { id: 'v-1', name: 'Mejiro McQueen', rank: 'UE1', detail: 'Long · Leader', image: mejiroMcQueenImage },
-    { id: 'v-2', name: 'Oguri Cap', rank: 'UF4', detail: 'Mile · Betweener', image: oguriCapImage },
-    { id: 'v-3', name: 'Kitasan Black', rank: 'UF8', detail: 'Medium · Runner', image: kitasanBlackImage }
+    { id: 'v-1', name: 'Mejiro McQueen', rank: 'UE1', detail: 'Long · Leader', workspace: 'Local', updated: '4 min ago', image: mejiroMcQueenImage },
+    { id: 'v-2', name: 'Oguri Cap', rank: 'UF4', detail: 'Mile · Betweener', workspace: 'Local', updated: 'Yesterday', image: oguriCapImage },
+    { id: 'v-3', name: 'Kitasan Black', rank: 'UF8', detail: 'Medium · Runner', workspace: 'Linked account', updated: '2 days ago', image: kitasanBlackImage }
   ];
+  const blueSparks = [
+    { id: 'speed', name: 'Speed', level: 3, chance: '10%', source: 'main' as const },
+    { id: 'stamina', name: 'Stamina', level: 2, chance: '5%', source: 'parent' as const }
+  ];
+  const pinkSparks = [{ id: 'long', name: 'Long', level: 3, chance: '10%', source: 'main' as const }];
+  const greenSparks = [{ id: 'unique', name: 'The View from the Lead Is Mine!', level: 2, source: 'parent' as const }];
+  const whiteSparks = [{ id: 'maestro', name: 'Swinging Maestro', level: 2, chance: '5%', source: 'legacy' as const }];
 
   $effect(() => {
     document.documentElement.dataset.density = density;
@@ -170,6 +182,12 @@
         <DemoBlock title="Choice controls"><div class="state-stack"><Checkbox id="include-inheritance" label="Include inheritance factors" description="Adds parent and grandparent factors." bind:checked={checkboxValue}/><Checkbox id="partial-choice" label="Select visible results" indeterminate/><Checkbox id="disabled-choice" label="Unavailable option" disabled/><RadioGroup id="storage" legend="Default storage" bind:value={radioValue} options={[{ value: 'local', label: 'Local device', description: 'No login required.' }, { value: 'account', label: 'Linked account', description: 'Sync between devices.' }]}/><Switch id="auto-save" label="Automatic Veteran saves" description="Completed imports are persisted automatically." bind:checked={switchValue}/></div></DemoBlock>
         <DemoBlock title="Range and file input"><div class="state-stack"><RangeField id="replay-speed" label="Replay speed" min={25} max={200} step={25} unit="%" bind:value={rangeValue}/><FileDrop id="veteran-import" accept=".json,application/json" onfiles={() => showToast('success')}/></div></DemoBlock>
       </div>
+      <DemoBlock title="Database filter sliders" note="Single threshold and two-thumb interval · tick marks · keyboard and touch input">
+        <div class="slider-examples">
+          <Slider id="factor-range" label="Blue factor stars" range min={1} max={9} step={1} tone="blue" showTicks showTickLabels tickLabels={['1★','2★','3★','4★','5★','6★','7★','8★','9★']} bind:value={factorMinimum} bind:endValue={factorMaximum}/>
+          <Slider id="factor-minimum" label="Minimum main-parent stars" min={1} max={3} step={1} tone="green" selection="after" showTicks showTickLabels tickLabels={['1★','2★','3★']} bind:value={parentFactorMinimum}/>
+        </div>
+      </DemoBlock>
     </LabSection>
 
     <LabSection id="navigation" title="Navigation" description="The same information architecture changes presentation at shell breakpoints; feature navigation stays inside the feature.">
@@ -216,8 +234,12 @@
 
     <LabSection id="domain" title="Domain patterns" description="These shared patterns keep game vocabulary consistent while allowing every feature to own its data and behavior.">
       <div class="demo-grid">
-        <DemoBlock title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><DomainChip icon={skillRecoveryIcon} label="Swinging Maestro" value="Rare"/><DomainChip icon={skillSpeedIcon} label="Long Distance" value="★3" tone="factor"/><DomainChip label="Selected" tone="status" selected/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
-        <DemoBlock title="Veteran selector"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
+        <DemoBlock title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
+        <DemoBlock title="Skills"><div class="skill-examples"><SkillChip icon={skillRecoveryIcon} name="Swinging Maestro" level="Lv.1" rarity="gold"/><SkillChip icon={skillSpeedIcon} name="Long-Distance Corner ○" level="Lv.3"/><SkillChip icon={skillSpeedIcon} name="The View from the Lead Is Mine!" level="Lv.2" rarity="unique-main"/></div></DemoBlock>
+      </div>
+      <div class="demo-grid">
+        <DemoBlock title="Inheritance sparks"><div class="spark-examples"><SparkRow tone="blue" items={blueSparks}/><SparkRow tone="pink" items={pinkSparks}/><SparkRow tone="green" items={greenSparks}/><SparkRow tone="white" items={whiteSparks}/></div></DemoBlock>
+        <DemoBlock title="Veteran selector" note="Searchable active-workspace listbox"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
       </div>
       <DemoBlock title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
     </LabSection>
@@ -262,6 +284,8 @@
   .virtual-row { height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 7px var(--space-3); border-bottom: 1px solid var(--color-border); }
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   .item-example { display: inline-flex; align-items: center; gap: 8px; padding: 4px 9px 4px 4px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-2); } .item-example > span { display: flex; flex-direction: column; } .item-example strong { font-size: var(--font-sm); } .item-example small { color: var(--color-text-subtle); font-size: var(--font-xs); }
+  .slider-examples { display: grid; gap: var(--space-6); }
+  .skill-examples, .spark-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
   @media (max-width: 820px) { .lab-controls { display: none; } }
   @media (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

@@ -57,3 +57,52 @@ test('custom select and autocomplete retain keyboard behavior', async ({ page })
   await character.press('Enter');
   await expect(character).toHaveValue('Mejiro McQueen');
 });
+
+test('Veteran selector supports search, keyboard selection, and workspace context', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const selector = page.getByRole('combobox', { name: 'Parent Veteran' });
+  await selector.click();
+  const listbox = page.getByRole('listbox', { name: 'Parent Veteran' });
+  await expect(listbox).toBeVisible();
+  await page.getByPlaceholder('Search Veterans…').fill('Oguri');
+  await expect(listbox.getByRole('option')).toHaveCount(1);
+  await page.getByPlaceholder('Search Veterans…').press('Enter');
+  await expect(selector).toContainText('Oguri Cap');
+  await expect(selector).toContainText('Local · Yesterday');
+});
+
+test('Veteran selector becomes a bounded sheet on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ui-lab');
+  await page.getByRole('combobox', { name: 'Parent Veteran' }).click();
+
+  const listbox = page.getByRole('listbox', { name: 'Parent Veteran' });
+  await expect(listbox).toBeVisible();
+  const bounds = await listbox.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(390);
+  expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(844);
+  await page.getByRole('button', { name: 'Close Veteran selector' }).click();
+  await expect(listbox).not.toBeVisible();
+});
+
+test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const minimum = page.getByRole('slider', { name: 'Blue factor stars minimum' });
+  const maximum = page.getByRole('slider', { name: 'Blue factor stars maximum' });
+  await expect(minimum).toHaveValue('2');
+  await expect(maximum).toHaveValue('7');
+  await minimum.focus();
+  await minimum.press('ArrowRight');
+  await expect(minimum).toHaveValue('3');
+  await maximum.focus();
+  await maximum.press('ArrowLeft');
+  await expect(maximum).toHaveValue('6');
+
+  const threshold = page.getByRole('slider', { name: 'Minimum main-parent stars' });
+  await threshold.focus();
+  await threshold.press('ArrowRight');
+  await expect(threshold).toHaveValue('3');
+});

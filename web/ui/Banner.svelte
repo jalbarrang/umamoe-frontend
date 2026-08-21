@@ -15,7 +15,7 @@
 {/if}
 
 <style>
-  .banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: var(--radius-md); background: var(--color-accent-soft); color: var(--color-accent); }
+  .banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: var(--radius-md); background: var(--color-accent-soft); color: var(--color-accent); }
   .banner--success { background: var(--color-secondary-soft); color: var(--color-secondary); }
   .banner--warning { background: var(--color-warning-soft); color: var(--color-warning); }
   .banner--danger { background: var(--color-danger-soft); color: var(--color-danger); }
