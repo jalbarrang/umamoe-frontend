@@ -18,7 +18,8 @@ const commonStates = ['default', 'hover', 'focus', 'active', 'disabled'];
 
 export const uiRegistry: UiRegistrySection[] = [
   { id: 'tokens', title: 'Foundation', description: 'Colors, typography, spacing, radius, elevation, motion, breakpoints, layers, and density.', entries: [
-    { id: 'tokens', name: 'Design tokens', purpose: 'Shared visual decisions represented as CSS custom properties.', states: ['dark', 'light', 'compact', 'comfortable', 'reduced-motion'], accessibility: 'System colors preserve readable contrast and user motion preferences.', status: 'review' }
+    { id: 'tokens', name: 'Design tokens', purpose: 'Shared visual decisions represented as CSS custom properties.', states: ['dark', 'light', 'compact', 'comfortable', 'reduced-motion'], accessibility: 'System colors preserve readable contrast and user motion preferences.', status: 'review' },
+    { id: 'layouts', name: 'Responsive layouts', purpose: 'Canonical shell modes, container-driven content layouts, fixed page gutters, and balanced ad-aware content wells.', states: ['320', '390', '768', '1024', '1280', '1440', 'no-side-rails', 'balanced-side-rails'], accessibility: 'Primary content stays first in DOM order; navigation and sponsored regions remain labeled landmarks.', status: 'review' }
   ]},
   { id: 'actions', title: 'Actions', description: 'Clear, fast controls with predictable hierarchy and 44px touch targets.', entries: [
     { id: 'button', name: 'Button', purpose: 'Primary, secondary, ghost, and destructive actions.', states: [...commonStates, 'loading'], accessibility: 'Native button, visible focus, busy and disabled states.', status: 'review' },

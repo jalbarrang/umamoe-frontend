@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "main",
+      "title": "Main",
+      "items": [
+        {
+          "id": "home",
+          "title": "Home",
+          "description": "Task-oriented start page and recent activity.",
+          "path": "/",
+          "adSurface": "home"
+        },
+        {
+          "id": "database",
+          "title": "Database",
+          "description": "Search characters, support cards, skills, factors, and inheritance data.",
+          "path": "/database",
+          "adSurface": "database"
+        },
+        {
+          "id": "veterans",
+          "title": "Veterans",
+          "description": "Import, persist, filter, and reuse Veteran rosters across tools.",
+          "path": "/veterans",
+          "adSurface": "veterans"
+        },
+        {
+          "id": "race-lab",
+          "title": "Race Lab",
+          "description": "UmaLogs, single-race replay, and multi-race analysis.",
+          "path": "/race-lab",
+          "adSurface": "race_lab"
+        },
+        {
+          "id": "timeline",
+          "title": "Timeline",
+          "description": "Estimated global release schedule.",
+          "path": "/timeline",
+          "adSurface": "timeline"
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "title": "Community",
+      "items": [
+        {
+          "id": "clubs",
+          "title": "Clubs",
+          "description": "Club database and fan progression.",
+          "path": "/circles",
+          "adSurface": "leaderboard"
+        },
+        {
+          "id": "rankings",
+          "title": "Rankings",
+          "description": "Global trainer fan rankings.",
+          "path": "/rankings",
+          "adSurface": "rankings"
+        },
+        {
+          "id": "activity",
+          "title": "Activity",
+          "description": "Trainer and community activity analytics.",
+          "path": "/activity",
+          "adSurface": "activity"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Tools",
+      "items": [
+        {
+          "id": "tools",
+          "title": "Tools",
+          "description": "Planning, statistics, and analysis utilities.",
+          "path": "/tools",
+          "adSurface": "tools"
+        },
+        {
+          "id": "statistics",
+          "title": "Statistics",
+          "description": "Global game and player statistics.",
+          "path": "/tools/statistics",
+          "adSurface": "statistics"
+        },
+        {
+          "id": "lineage-planner",
+          "title": "Lineage Planner",
+          "description": "Plan inheritance trees with reusable Veterans.",
+          "path": "/tools/lineage-planner",
+          "adSurface": "lineage_planner"
+        },
+        {
+          "id": "tierlist",
+          "title": "Tierlist",
+          "description": "Support card tierlists.",
+          "path": "/tierlist",
+          "adSurface": "tierlist"
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": "System",
+      "items": [
+        {
+          "id": "connect",
+          "title": "Connect client",
+          "description": "Pair the future desktop client for ephemeral live data and optional cloud saves.",
+          "path": "/connect",
+          "adSurface": null
+        }
+      ]
+    }
+  ]
+}

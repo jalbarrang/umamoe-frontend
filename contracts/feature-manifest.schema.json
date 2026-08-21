@@ -11,7 +11,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "description", "path", "group", "icon", "status", "dataOwnership"],
+        "required": ["id", "title", "description", "path", "group", "icon", "status", "dataOwnership", "indexable", "adSurface"],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "title": { "type": "string" },
@@ -20,7 +20,14 @@
           "group": { "enum": ["main", "community", "tools", "system"] },
           "icon": { "type": "string" },
           "status": { "enum": ["available", "foundation", "migration", "planned"] },
-          "dataOwnership": { "enum": ["public", "local", "private", "mixed"] }
+          "dataOwnership": { "enum": ["public", "local", "private", "mixed"] },
+          "indexable": { "type": "boolean" },
+          "adSurface": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              { "type": "null" }
+            ]
+          }
         }
       }
     }

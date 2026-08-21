@@ -2,18 +2,38 @@
 
 > Mobile-first Umamusume database, Veteran workspace, race analysis, timeline, community data, and planning tools for the global version.
 
-## Public features
+## Site navigation
+
+### Main
 
 - [Home](https://uma.moe/): Task-oriented start page and recent activity.
 - [Database](https://uma.moe/database): Search characters, support cards, skills, factors, and inheritance data.
+- [Veterans](https://uma.moe/veterans): Import, persist, filter, and reuse Veteran rosters across tools.
 - [Race Lab](https://uma.moe/race-lab): UmaLogs, single-race replay, and multi-race analysis.
 - [Timeline](https://uma.moe/timeline): Estimated global release schedule.
+
+### Community
+
 - [Clubs](https://uma.moe/circles): Club database and fan progression.
 - [Rankings](https://uma.moe/rankings): Global trainer fan rankings.
 - [Activity](https://uma.moe/activity): Trainer and community activity analytics.
+
+### Tools
+
 - [Tools](https://uma.moe/tools): Planning, statistics, and analysis utilities.
 - [Statistics](https://uma.moe/tools/statistics): Global game and player statistics.
+- [Lineage Planner](https://uma.moe/tools/lineage-planner): Plan inheritance trees with reusable Veterans.
 - [Tierlist](https://uma.moe/tierlist): Support card tierlists.
+
+### System
+
+- [Connect client](https://uma.moe/connect): Pair the future desktop client for ephemeral live data and optional cloud saves.
+
+## Machine-readable navigation
+
+- [Feature metadata](https://uma.moe/meta/features.json)
+- [Route navigation graph](https://uma.moe/meta/navigation.json)
+- [Schema.org navigation](https://uma.moe/meta/navigation.jsonld)
 
 ## Data and privacy
 

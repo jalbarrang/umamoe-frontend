@@ -101,6 +101,109 @@ test('inheritance spark labels remain complete in the mobile layout', async ({ p
   expect(clipping).toEqual({ overflow: 'visible', textOverflow: 'clip' });
 });
 
+test('main-parent and P2 sparks preserve the Angular source accents', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const main = page.getByLabel(/3 star Speed.*Main parent/);
+  const p2 = page.getByLabel(/2 star Swinging Maestro.*P2 legacy/);
+  await expect(main).toHaveAttribute('data-source', 'main');
+  await expect(p2).toHaveAttribute('data-source', 'p2');
+  await expect(main.locator('.source-marker')).toBeVisible();
+  await expect(p2.locator('.source-marker')).toBeVisible();
+
+  const colors = await page.evaluate(() => {
+    const resolvedToken = (token: string) => {
+      const sample = document.createElement('span');
+      sample.style.color = `var(${token})`;
+      document.body.append(sample);
+      const color = getComputedStyle(sample).color;
+      sample.remove();
+      return color;
+    };
+    return {
+      main: getComputedStyle(document.querySelector<HTMLElement>('[data-source="main"] .level')!).color,
+      p2: getComputedStyle(document.querySelector<HTMLElement>('[data-source="p2"] .level')!).color,
+      warning: resolvedToken('--accent-warning'),
+      purple: resolvedToken('--accent-purple')
+    };
+  });
+  expect(colors.main).toBe(colors.warning);
+  expect(colors.p2).toBe(colors.purple);
+});
+
+test('shell and page fixtures switch at the canonical screen breakpoints', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const shell = page.locator('article.demo').filter({ hasText: 'Responsive shell fixture' });
+  const layouts = page.locator('article.demo').filter({ hasText: 'Responsive page layouts' });
+
+  await shell.getByRole('button', { name: '320', exact: true }).click();
+  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'mobile');
+  await shell.getByRole('button', { name: '768', exact: true }).click();
+  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'compact');
+  await shell.getByRole('button', { name: '1440', exact: true }).click();
+  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'expanded');
+
+  await layouts.getByRole('button', { name: '320', exact: true }).click();
+  const mobileAside = await layouts.locator('aside[aria-label="Filters"]').boundingBox();
+  const mobileContent = await layouts.locator('section[aria-label="Results"]').boundingBox();
+  expect(mobileContent!.y).toBeGreaterThan(mobileAside!.y);
+
+  await layouts.getByRole('button', { name: '768', exact: true }).click();
+  await expect(layouts.locator('[data-layout-mode]')).toHaveAttribute('data-layout-mode', 'compact');
+  const compactAside = await layouts.locator('aside[aria-label="Filters"]').boundingBox();
+  const compactContent = await layouts.locator('section[aria-label="Results"]').boundingBox();
+  expect(compactContent!.x).toBeGreaterThan(compactAside!.x);
+});
+
+test('page frame keeps content gutters and Publift rails balanced', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const demo = page.locator('article.demo').filter({ hasText: 'Page gutters and ad regions' });
+  const frame = demo.locator('.frame');
+  await demo.getByRole('button', { name: '320', exact: true }).click();
+
+  const mobileGeometry = await frame.evaluate((element) => {
+    const frameBox = element.getBoundingClientRect();
+    const contentBox = element.querySelector<HTMLElement>('[data-page-content]')!.getBoundingClientRect();
+    const topAdBox = element.querySelector<HTMLElement>('[data-ad-kind="leaderboard"]')!.getBoundingClientRect();
+    const visibleRails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
+      .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0);
+    return {
+      contentInset: contentBox.left - frameBox.left,
+      topAdInset: topAdBox.left - frameBox.left,
+      topAdRightInset: frameBox.right - topAdBox.right,
+      visibleRails: visibleRails.length
+    };
+  });
+  expect(mobileGeometry).toEqual({ contentInset: 16, topAdInset: 2, topAdRightInset: 2, visibleRails: 0 });
+
+  await demo.getByRole('button', { name: '1440', exact: true }).click();
+  const expandedGeometry = await frame.evaluate((element) => {
+    const frameBox = element.getBoundingClientRect();
+    const content = element.querySelector<HTMLElement>('[data-page-content]')!;
+    const leftRail = element.querySelector<HTMLElement>('[data-ad-position="left-rail"]')!;
+    const rails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
+      .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0)
+      .map((rail) => rail.getBoundingClientRect());
+    return {
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+      railWidths: rails.map((rail) => rail.width),
+      leftInset: rails[0]!.left - frameBox.left,
+      rightInset: frameBox.right - rails[1]!.right,
+      contentComesFirst: Boolean(content.compareDocumentPosition(leftRail) & Node.DOCUMENT_POSITION_FOLLOWING)
+    };
+  });
+  expect(expandedGeometry.scrollWidth).toBe(expandedGeometry.clientWidth);
+  expect(expandedGeometry.railWidths).toEqual([160, 160]);
+  expect(expandedGeometry.leftInset).toBe(expandedGeometry.rightInset);
+  expect(expandedGeometry.contentComesFirst).toBe(true);
+  await expect(frame.locator('[data-route-id="database"]')).toHaveAttribute('data-feature-id', 'catalog');
+  await expect(frame.locator('[data-ad-position="left-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
+  await expect(frame.locator('[data-ad-position="right-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
+});
+
 test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
   await page.goto('/ui-lab');
 

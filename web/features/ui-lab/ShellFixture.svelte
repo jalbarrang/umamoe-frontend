@@ -1,8 +1,10 @@
 <script lang="ts">
   import Icon from '../../ui/Icon.svelte';
   import LogoMark from '../../ui/LogoMark.svelte';
+  import { shellLayoutForWidth } from '../../ui/layout/breakpoints';
   interface Props { width: number; }
   let { width }: Props = $props();
+  const mode = $derived(shellLayoutForWidth(width));
   const destinations = [
     { label: 'Home', icon: 'home' as const }, { label: 'Database', icon: 'database' as const },
     { label: 'Veterans', icon: 'veterans' as const }, { label: 'Race Lab', icon: 'race' as const },
@@ -10,7 +12,7 @@
   ];
 </script>
 
-<div class="stage"><div class="frame" style:width="{width}px">
+<div class="stage"><div class="frame" style:width="{width}px" data-shell-mode={mode}>
   <div class="shell">
     <header class="mobile-head"><LogoMark size={28}/><strong>uma.moe</strong><button aria-label="Open launcher"><Icon name="search" size={18}/></button></header>
     <aside class="rail">
@@ -25,7 +27,7 @@
 
 <style>
   .stage { max-width: 100%; overflow-x: auto; padding-bottom: var(--space-2); }
-  .frame { height: 390px; overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-canvas); container-type: inline-size; }
+  .frame { height: 390px; overflow: hidden; border-radius: var(--radius-md); background: var(--color-canvas); box-shadow: inset 0 0 0 1px var(--color-border-strong); container-type: inline-size; }
   .shell { position: relative; min-width: 100%; height: 100%; padding: 48px 0 58px; }
   .mobile-head { position: absolute; inset: 0 0 auto; height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-1); }
   .mobile-head strong { font-size: 13px; } .mobile-head button { width: 36px; height: 36px; display: grid; place-items: center; margin-left: auto; padding: 0; border: 0; border-radius: var(--radius-sm); background: var(--color-surface-2); color: var(--color-text-muted); }

@@ -115,6 +115,19 @@
   --control-height: 38px;
   --touch-target: 44px;
   --page-max: 1500px;
+  /* Canonical shell thresholds. CSS media/container queries are guarded against these values in tests. */
+  --screen-compact-min: 768px;
+  --screen-expanded-min: 1280px;
+  --page-content-max: 1080px;
+  --page-frame-max: 1536px;
+  --page-gutter-mobile: 16px;
+  --page-gutter-compact: 24px;
+  --page-gutter-expanded: 32px;
+  --ad-rail-width: 160px;
+  --ad-rail-gap: 20px;
+  --ad-rail-height: 600px;
+  --ad-leaderboard-height: 90px;
+  --ad-mobile-height: 50px;
   --rail-expanded: 240px;
   --rail-compact: 64px;
   --utility-height: 60px;

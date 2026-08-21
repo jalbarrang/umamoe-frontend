@@ -10,7 +10,9 @@
       "group": "main",
       "icon": "home",
       "status": "available",
-      "dataOwnership": "local"
+      "dataOwnership": "local",
+      "indexable": true,
+      "adSurface": "home"
     },
     {
       "id": "database",
@@ -20,7 +22,21 @@
       "group": "main",
       "icon": "database",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "database"
+    },
+    {
+      "id": "veterans",
+      "title": "Veterans",
+      "description": "Import, persist, filter, and reuse Veteran rosters across tools.",
+      "path": "/veterans",
+      "group": "main",
+      "icon": "veterans",
+      "status": "foundation",
+      "dataOwnership": "private",
+      "indexable": true,
+      "adSurface": "veterans"
     },
     {
       "id": "race-lab",
@@ -30,7 +46,9 @@
       "group": "main",
       "icon": "race",
       "status": "migration",
-      "dataOwnership": "mixed"
+      "dataOwnership": "mixed",
+      "indexable": true,
+      "adSurface": "race_lab"
     },
     {
       "id": "timeline",
@@ -40,7 +58,9 @@
       "group": "main",
       "icon": "timeline",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "timeline"
     },
     {
       "id": "clubs",
@@ -50,7 +70,9 @@
       "group": "community",
       "icon": "community",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "leaderboard"
     },
     {
       "id": "rankings",
@@ -60,7 +82,9 @@
       "group": "community",
       "icon": "rankings",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "rankings"
     },
     {
       "id": "activity",
@@ -70,7 +94,9 @@
       "group": "community",
       "icon": "activity",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "activity"
     },
     {
       "id": "tools",
@@ -80,7 +106,9 @@
       "group": "tools",
       "icon": "tools",
       "status": "migration",
-      "dataOwnership": "mixed"
+      "dataOwnership": "mixed",
+      "indexable": true,
+      "adSurface": "tools"
     },
     {
       "id": "statistics",
@@ -90,7 +118,21 @@
       "group": "tools",
       "icon": "chart",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "statistics"
+    },
+    {
+      "id": "lineage-planner",
+      "title": "Lineage Planner",
+      "description": "Plan inheritance trees with reusable Veterans.",
+      "path": "/tools/lineage-planner",
+      "group": "tools",
+      "icon": "lineage",
+      "status": "migration",
+      "dataOwnership": "private",
+      "indexable": true,
+      "adSurface": "lineage_planner"
     },
     {
       "id": "tierlist",
@@ -100,7 +142,21 @@
       "group": "tools",
       "icon": "tierlist",
       "status": "migration",
-      "dataOwnership": "public"
+      "dataOwnership": "public",
+      "indexable": true,
+      "adSurface": "tierlist"
+    },
+    {
+      "id": "connect",
+      "title": "Connect client",
+      "description": "Pair the future desktop client for ephemeral live data and optional cloud saves.",
+      "path": "/connect",
+      "group": "system",
+      "icon": "connect",
+      "status": "foundation",
+      "dataOwnership": "private",
+      "indexable": true,
+      "adSurface": null
     }
   ]
 }

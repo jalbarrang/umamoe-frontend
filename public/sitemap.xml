@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://uma.moe/</loc></url>
   <url><loc>https://uma.moe/database</loc></url>
+  <url><loc>https://uma.moe/veterans</loc></url>
   <url><loc>https://uma.moe/race-lab</loc></url>
   <url><loc>https://uma.moe/timeline</loc></url>
   <url><loc>https://uma.moe/circles</loc></url>
@@ -9,5 +10,7 @@
   <url><loc>https://uma.moe/activity</loc></url>
   <url><loc>https://uma.moe/tools</loc></url>
   <url><loc>https://uma.moe/tools/statistics</loc></url>
+  <url><loc>https://uma.moe/tools/lineage-planner</loc></url>
   <url><loc>https://uma.moe/tierlist</loc></url>
+  <url><loc>https://uma.moe/connect</loc></url>
 </urlset>

@@ -41,9 +41,12 @@
   import VeteranSelector from '../../ui/VeteranSelector.svelte';
   import VirtualList from '../../ui/VirtualList.svelte';
   import WorkspaceSwitcher from '../../ui/WorkspaceSwitcher.svelte';
+  import { formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS } from '../../ui/layout/breakpoints';
   import { componentCount, uiRegistry } from '../../ui/registry';
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
+  import LayoutFixture from './LayoutFixture.svelte';
+  import PageFrameFixture from './PageFrameFixture.svelte';
   import ShellFixture from './ShellFixture.svelte';
   import oguriCapImage from './fixtures/oguri-cap.webp';
   import mejiroMcQueenImage from './fixtures/mejiro-mcqueen.webp';
@@ -77,7 +80,7 @@
   let veteran = $state('v-1');
   let toasts = $state<Toast[]>([]);
 
-  const viewports = [320, 390, 768, 1024, 1440];
+  const viewports = REVIEW_VIEWPORTS;
   const colors = [
     ['Page', 'var(--bg-primary)'], ['Navbar', 'var(--bg-secondary)'], ['Panel', 'var(--bg-tertiary)'],
     ['Border', 'var(--border-primary)'], ['Text', 'var(--text-primary)'], ['Muted', 'var(--text-secondary)'],
@@ -109,7 +112,7 @@
   ];
   const pinkSparks = [{ id: 'long', name: 'Long', level: 3, chance: '10%', source: 'main' as const }];
   const greenSparks = [{ id: 'unique', name: 'The View from the Lead Is Mine!', level: 2, source: 'parent' as const }];
-  const whiteSparks = [{ id: 'maestro', name: 'Swinging Maestro', level: 2, chance: '5%', source: 'legacy' as const }];
+  const whiteSparks = [{ id: 'maestro', name: 'Swinging Maestro', level: 2, chance: '5%', source: 'p2' as const }];
 
   $effect(() => {
     document.documentElement.dataset.density = density;
@@ -161,6 +164,10 @@
         <DemoBlock title="Type scale"><div class="type-scale"><span style="font-size:var(--font-display)">Display</span><span style="font-size:var(--font-xl)">Page title</span><span style="font-size:var(--font-lg)">Section title</span><span>Body text stays readable</span><small>Supporting information</small><code>structured_data: true</code></div></DemoBlock>
         <DemoBlock title="Spacing, radius, elevation"><div class="token-shapes"><span class="space-s">4</span><span class="space-m">12</span><span class="space-l">24</span><div class="radius-s">Small</div><div class="radius-l">Large</div><div class="elevation">One practical elevation</div></div></DemoBlock>
       </div>
+      <DemoBlock title="Screen breakpoint contract" note="Screen width changes the shell; components use their own container width">
+        <div class="breakpoint-contract">{#each SCREEN_LAYOUTS as layout}<article data-mode={layout.id}><strong>{layout.label}</strong><span>{formatScreenRange(layout)}</span><small>{layout.navigation}</small></article>{/each}</div>
+        <p class="review-widths">Release fixtures: {viewports.join(' · ')}px</p>
+      </DemoBlock>
     </LabSection>
 
     <LabSection id="actions" title="Actions" description="One visual primary per decision area. Secondary and ghost actions stay discoverable without competing for attention.">
@@ -194,6 +201,14 @@
       <DemoBlock title="Responsive shell fixture" note="Actual container-query transition">
         <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
         <ShellFixture width={viewport}/>
+      </DemoBlock>
+      <DemoBlock title="Responsive page layouts" note="Stack, filter sidebar, and fluid results grid use the same reviewed widths">
+        <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
+        <LayoutFixture width={viewport}/>
+      </DemoBlock>
+      <DemoBlock title="Page gutters and ad regions" note="Primary content stays first; Publift side rails render as a balanced pair or not at all">
+        <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
+        <PageFrameFixture width={viewport}/>
       </DemoBlock>
       <div class="demo-grid">
         <DemoBlock title="Local navigation"><div class="state-stack"><Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Race Lab', href: '/race-lab' }, { label: 'Analysis' }]}/><Tabs label="Race Lab" items={[{ id: 'overview', label: 'Overview' }, { id: 'logs', label: 'UmaLogs', badge: '12' }, { id: 'analysis', label: 'Analysis' }, { id: 'setup', label: 'Setup' }]} bind:value={selectedTab}/></div></DemoBlock>
@@ -275,6 +290,13 @@
   .token-shapes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
   .token-shapes > span { display: inline-grid; place-items: center; background: var(--color-accent-soft); color: var(--color-accent); font-size: 10px; } .space-s { width: 16px; height: 16px; } .space-m { width: 32px; height: 32px; } .space-l { width: 52px; height: 52px; }
   .token-shapes > div { padding: var(--space-3); border: 1px solid var(--color-border); background: var(--color-surface-2); font-size: var(--font-xs); } .radius-s { border-radius: var(--radius-sm); } .radius-l { border-radius: var(--radius-lg); } .elevation { box-shadow: var(--shadow-md); }
+  .breakpoint-contract { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: var(--space-3); }
+  .breakpoint-contract article { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px var(--space-3); padding: var(--space-3); border-left: 3px solid var(--color-accent); background: var(--color-surface-1); }
+  .breakpoint-contract article[data-mode='compact'] { border-left-color: var(--accent-warning); }
+  .breakpoint-contract article[data-mode='expanded'] { border-left-color: var(--accent-secondary); }
+  .breakpoint-contract span { color: var(--color-text-muted); font-size: var(--font-xs); font-variant-numeric: tabular-nums; }
+  .breakpoint-contract small { grid-column: 1 / -1; color: var(--color-text-subtle); }
+  .review-widths { margin: var(--space-3) 0 0; color: var(--color-text-subtle); font-size: var(--font-xs); font-variant-numeric: tabular-nums; }
   .fixture-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: var(--space-3); }
   .fixture-controls span { margin-right: var(--space-2); color: var(--color-text-muted); font-size: var(--font-xs); font-weight: 700; }
   .fixture-controls button { min-height: 34px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-2); color: var(--color-text-muted); cursor: pointer; font-size: var(--font-xs); }

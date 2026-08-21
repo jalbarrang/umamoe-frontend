@@ -1,13 +1,17 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
+
   export type SparkTone = 'blue' | 'pink' | 'green' | 'white';
-  interface Props { name: string; level: number; tone?: SparkTone; chance?: string; source?: 'main' | 'parent' | 'legacy'; compact?: boolean; }
+  export type SparkSource = 'main' | 'parent' | 'p2';
+  interface Props { name: string; level: number; tone?: SparkTone; chance?: string; source?: SparkSource; compact?: boolean; }
   let { name, level, tone = 'white', chance, source, compact = false }: Props = $props();
-  const sourceLabel = $derived(source === 'main' ? 'Main parent' : source === 'parent' ? 'Parent' : source === 'legacy' ? 'Legacy parent' : undefined);
+  const sourceLabel = $derived(source === 'main' ? 'Main parent' : source === 'parent' ? 'Parent' : source === 'p2' ? 'P2 legacy' : undefined);
 </script>
 
 <span class="spark spark--{tone}" class:compact title={sourceLabel ? `${name} · ${sourceLabel}` : name} data-source={source} aria-label={`${level} star ${name}${chance ? `, ${chance}` : ''}${sourceLabel ? `, ${sourceLabel}` : ''}`}>
   <span class="level"><strong>{level}</strong><span class="star" aria-hidden="true">★</span></span><span class="name">{name}</span>
   {#if chance}<span class="chance">{chance}</span>{/if}
+  {#if source === 'main' || source === 'p2'}<span class="source-marker" aria-hidden="true"><Icon name="user" size={12}/></span>{/if}
 </span>
 
 <style>
@@ -20,6 +24,11 @@
   .star { color: var(--spark-color); font-size: 12px; line-height: 1; }
   .name { min-width: 0; color: var(--color-text); overflow-wrap: anywhere; }
   .chance { flex: 0 0 auto; margin-left: 1px; padding-left: 5px; border-left: 1px solid rgb(var(--spark-rgb) / .28); color: var(--color-text-muted); font-size: .63rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .source-marker { display: inline-flex; flex: 0 0 auto; margin-left: 1px; }
+  .spark[data-source='main'] .level,
+  .spark[data-source='main'] .source-marker { color: var(--accent-warning); filter: drop-shadow(0 0 4px rgb(255 183 77 / .35)); }
+  .spark[data-source='p2'] .level,
+  .spark[data-source='p2'] .source-marker { color: var(--accent-purple); filter: drop-shadow(0 0 4px rgb(206 147 216 / .35)); }
   .compact { min-height: 23px; gap: 4px; padding: 2px 6px; border-radius: var(--radius-xs); font-size: .68rem; }
   :global([data-theme='light']) .spark { background: rgb(var(--spark-rgb) / .055); box-shadow: inset 0 1px 0 rgb(255 255 255 / .7); }
 </style>
