@@ -87,6 +87,20 @@ test('Veteran selector becomes a bounded sheet on mobile', async ({ page }) => {
   await expect(listbox).not.toBeVisible();
 });
 
+test('inheritance spark labels remain complete in the mobile layout', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/ui-lab');
+
+  const spark = page.getByLabel('2 star The View from the Lead Is Mine!');
+  await expect(spark).toBeVisible();
+  await expect(spark.locator('.name')).toHaveText('The View from the Lead Is Mine!');
+  const clipping = await spark.locator('.name').evaluate((element) => ({
+    overflow: getComputedStyle(element).overflow,
+    textOverflow: getComputedStyle(element).textOverflow
+  }));
+  expect(clipping).toEqual({ overflow: 'visible', textOverflow: 'clip' });
+});
+
 test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
   await page.goto('/ui-lab');
 

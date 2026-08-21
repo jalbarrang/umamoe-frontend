@@ -285,7 +285,8 @@
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   .item-example { display: inline-flex; align-items: center; gap: 8px; padding: 4px 9px 4px 4px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-2); } .item-example > span { display: flex; flex-direction: column; } .item-example strong { font-size: var(--font-sm); } .item-example small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   .slider-examples { display: grid; gap: var(--space-6); }
-  .skill-examples, .spark-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+  .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+  .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
   @media (max-width: 820px) { .lab-controls { display: none; } }
   @media (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
