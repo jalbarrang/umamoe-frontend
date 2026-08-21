@@ -101,6 +101,24 @@ test('database slider exposes independent range thumbs and threshold semantics',
   await maximum.press('ArrowLeft');
   await expect(maximum).toHaveValue('6');
 
+  const sliderWrap = minimum.locator('..');
+  await expect(sliderWrap.locator('.visual-thumb--start')).toHaveAttribute('style', /--thumb-position:\s*25%;/);
+  await expect(sliderWrap.locator('.visual-thumb--end')).toHaveAttribute('style', /--thumb-position:\s*62\.5%;/);
+  const transitionSeconds = await sliderWrap.locator('.visual-thumb--start').evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration));
+  expect(transitionSeconds).toBeGreaterThan(0);
+
+  const track = page.getByRole('button', { name: 'Adjust Blue factor stars on track' });
+  await track.scrollIntoViewIfNeeded();
+  const trackBounds = await track.boundingBox();
+  expect(trackBounds).not.toBeNull();
+  await page.mouse.click((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.5, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5);
+  await expect(maximum).toHaveValue('5');
+  await page.mouse.move((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.5, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5);
+  await page.mouse.down();
+  await page.mouse.move((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.875, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5, { steps: 5 });
+  await page.mouse.up();
+  await expect(maximum).toHaveValue('8');
+
   const threshold = page.getByRole('slider', { name: 'Minimum main-parent stars' });
   await threshold.focus();
   await threshold.press('ArrowRight');
