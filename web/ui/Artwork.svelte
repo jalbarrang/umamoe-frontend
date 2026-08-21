@@ -11,10 +11,10 @@
 </figure>
 
 <style>
-  .art { position: relative; width: 56px; height: 56px; flex: 0 0 auto; margin: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-2); }
+  .art { position: relative; width: 56px; height: 56px; flex: 0 0 auto; margin: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--surface-2); }
   .art--sm { width: 40px; height: 40px; border-radius: var(--radius-sm); } .art--lg { width: 84px; height: 84px; }
-  .art--card { aspect-ratio: 3 / 4; height: auto; }
-  img { width: 100%; height: 100%; object-fit: cover; }
+  .art--card { aspect-ratio: 1; height: auto; }
+  img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
   .art > span { width: 100%; height: 100%; display: grid; place-items: center; color: var(--color-text-subtle); }
   figcaption { position: absolute; right: 3px; bottom: 3px; padding: 1px 4px; border-radius: var(--radius-xs); background: rgb(0 0 0 / .76); color: white; font-size: 9px; font-weight: 800; }
 </style>

@@ -12,11 +12,12 @@
 
 <style>
   .field { display: flex; flex-direction: column; gap: 6px; }
-  span { font-size: var(--font-sm); font-weight: 700; }
-  textarea { width: 100%; min-height: 104px; resize: vertical; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-1); color: var(--color-text); line-height: 1.5; }
-  textarea:hover:not(:disabled) { border-color: var(--color-border-strong); }
-  textarea:focus { border-color: var(--color-accent); outline: 0; box-shadow: var(--focus-ring); }
-  textarea[aria-invalid='true'] { border-color: var(--color-danger); }
+  span { font-size: var(--font-sm); font-weight: 600; }
+  textarea { width: 100%; min-height: 104px; resize: vertical; padding: 9px 10px; border: 1px solid var(--factor-field-border); border-radius: 8px; background: var(--factor-field-bg); color: var(--factor-field-text); font-size: var(--font-md); line-height: 1.5; transition: border-color var(--duration-fast), background-color var(--duration-fast); }
+  textarea::placeholder { color: var(--factor-field-placeholder); }
+  textarea:hover:not(:disabled) { border-color: var(--border-secondary); }
+  textarea:focus { border-color: var(--factor-field-focus-border); outline: 0; background: var(--factor-field-focus-bg); box-shadow: var(--focus-ring); }
+  textarea[aria-invalid='true'] { border-color: var(--color-danger); background: var(--color-danger-soft); }
   textarea:disabled { cursor: not-allowed; opacity: .55; }
   small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   small.error { color: var(--color-danger); }

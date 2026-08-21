@@ -25,9 +25,9 @@ export const uiRegistry: UiRegistrySection[] = [
     { id: 'icon-button', name: 'Icon button', purpose: 'Compact labeled utility action.', states: [...commonStates, 'selected'], accessibility: 'Required accessible label and pressed state.', status: 'review' },
     { id: 'segments', name: 'Segmented control', purpose: 'Choose one of a small set of modes.', states: [...commonStates, 'selected'], accessibility: 'Radiogroup and radio semantics.', status: 'review' }
   ]},
-  { id: 'inputs', title: 'Inputs', description: 'Native-first fields with stable labels, validation, and mobile keyboards.', entries: [
+  { id: 'inputs', title: 'Inputs', description: 'Lightweight fields with stable labels, validation, keyboard behavior, and mobile sizing.', entries: [
     { id: 'text-field', name: 'Text field', purpose: 'Text, search, email, and password entry.', states: [...commonStates, 'error'], accessibility: 'Real label, described-by help and error association.', status: 'review' },
-    { id: 'select', name: 'Select and combobox', purpose: 'Choose or search a known option set.', states: commonStates, accessibility: 'Native select and datalist paths.', status: 'review' },
+    { id: 'select', name: 'Select and combobox', purpose: 'Choose or search a known option set.', states: [...commonStates, 'open', 'selected', 'empty'], accessibility: 'Combobox/listbox semantics, keyboard traversal, and labeled controls.', status: 'review' },
     { id: 'choice', name: 'Choice controls', purpose: 'Checkbox, radio, and switch preferences.', states: [...commonStates, 'selected', 'indeterminate'], accessibility: 'Native form controls retain keyboard and form behavior.', status: 'review' },
     { id: 'file', name: 'File drop', purpose: 'Import structured user data.', states: [...commonStates, 'dragging', 'error'], accessibility: 'Always backed by a labeled native file input.', status: 'review' }
   ]},
@@ -51,7 +51,7 @@ export const uiRegistry: UiRegistrySection[] = [
     { id: 'filters', name: 'Filters and sort', purpose: 'Expose query state directly and reversibly.', states: [...commonStates, 'selected'], accessibility: 'Pressed state and visible result counts.', status: 'review' }
   ]},
   { id: 'domain', title: 'Domain patterns', description: 'Reusable uma.moe vocabulary shared by every feature.', entries: [
-    { id: 'artwork', name: 'Artwork and chips', purpose: 'Character/card identity, skills, factors, and status.', states: ['image', 'fallback', 'selected'], accessibility: 'Useful alt text with non-image fallback.', status: 'review' },
+    { id: 'artwork', name: 'Artwork, game icons, and chips', purpose: 'Character/card identity, skills, factors, items, and status.', states: ['image', 'fallback', 'selected'], accessibility: 'Useful alt text with non-image fallback; decorative icons use empty alt text.', status: 'review' },
     { id: 'veteran-selector', name: 'Veteran selector', purpose: 'Select reusable Veterans anywhere on the site.', states: [...commonStates, 'empty'], accessibility: 'Native selection with visible identity context.', status: 'review' },
     { id: 'connection', name: 'Workspace and connection', purpose: 'Make active data ownership and live client state explicit.', states: ['local', 'account', 'offline', 'connected', 'syncing', 'error'], accessibility: 'Text state never relies only on color.', status: 'review' }
   ]}

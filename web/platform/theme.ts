@@ -7,7 +7,7 @@ function preferredTheme(): Theme {
   if (typeof window === 'undefined') return 'dark';
   const saved = window.localStorage.getItem(THEME_KEY);
   if (saved === 'dark' || saved === 'light') return saved;
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'dark';
 }
 
 export const theme = writable<Theme>('dark');

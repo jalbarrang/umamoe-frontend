@@ -16,6 +16,7 @@
   import EmptyState from '../../ui/EmptyState.svelte';
   import FileDrop from '../../ui/FileDrop.svelte';
   import FilterChip from '../../ui/FilterChip.svelte';
+  import GameIcon from '../../ui/GameIcon.svelte';
   import IconButton from '../../ui/IconButton.svelte';
   import LogoMark from '../../ui/LogoMark.svelte';
   import Menu from '../../ui/Menu.svelte';
@@ -42,6 +43,13 @@
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
   import ShellFixture from './ShellFixture.svelte';
+  import oguriCapImage from './fixtures/oguri-cap.webp';
+  import mejiroMcQueenImage from './fixtures/mejiro-mcqueen.webp';
+  import kitasanBlackImage from './fixtures/kitasan-black.webp';
+  import kitasanBlackSupportImage from './fixtures/kitasan-black-support.webp';
+  import skillSpeedIcon from './fixtures/skill-speed.webp';
+  import skillRecoveryIcon from './fixtures/skill-recovery.webp';
+  import caratIcon from './fixtures/item-carats.webp';
 
   let density = $state('comfortable');
   let reducedMotion = $state(false);
@@ -66,20 +74,29 @@
 
   const viewports = [320, 390, 768, 1024, 1440];
   const colors = [
-    ['Canvas', 'var(--color-canvas)'], ['Surface 1', 'var(--color-surface-1)'], ['Surface 2', 'var(--color-surface-2)'],
-    ['Border', 'var(--color-border)'], ['Text', 'var(--color-text)'], ['Muted', 'var(--color-text-muted)'],
-    ['Accent', 'var(--color-accent)'], ['Success', 'var(--color-success)'], ['Warning', 'var(--color-warning)'], ['Danger', 'var(--color-danger)']
+    ['Page', 'var(--bg-primary)'], ['Navbar', 'var(--bg-secondary)'], ['Panel', 'var(--bg-tertiary)'],
+    ['Border', 'var(--border-primary)'], ['Text', 'var(--text-primary)'], ['Muted', 'var(--text-secondary)'],
+    ['Blue', 'var(--accent-primary)'], ['Green', 'var(--accent-secondary)'], ['Orange', 'var(--accent-warning)'],
+    ['Red', 'var(--accent-error)'], ['Purple', 'var(--accent-purple)'], ['Pink', 'var(--accent-pink)']
   ];
   const tableRows = [
     { name: 'Oguri Cap', rank: 'UF4', speed: 1542, stamina: 1088, distance: 'Mile / Medium' },
     { name: 'Mejiro McQueen', rank: 'UE1', speed: 1470, stamina: 1312, distance: 'Long' },
     { name: 'Kitasan Black', rank: 'UF8', speed: 1588, stamina: 1194, distance: 'Medium / Long' }
   ];
-  const virtualItems = Array.from({ length: 2500 }, (_, index) => ({ id: index + 1, name: `Veteran ${String(index + 1).padStart(4, '0')}`, rank: ['UG', 'UF', 'UE'][index % 3] }));
+  const characterFixtures = [
+    { name: 'Oguri Cap', image: oguriCapImage },
+    { name: 'Mejiro McQueen', image: mejiroMcQueenImage },
+    { name: 'Kitasan Black', image: kitasanBlackImage }
+  ];
+  const virtualItems = Array.from({ length: 2500 }, (_, index) => {
+    const character = characterFixtures[index % characterFixtures.length]!;
+    return { id: index + 1, name: `${character.name} · ${String(index + 1).padStart(4, '0')}`, image: character.image, rank: ['UG', 'UF', 'UE'][index % 3] };
+  });
   const veteranOptions = [
-    { id: 'v-1', name: 'Mejiro McQueen', rank: 'UE1', detail: 'Long · Leader' },
-    { id: 'v-2', name: 'Oguri Cap', rank: 'UF4', detail: 'Mile · Betweener' },
-    { id: 'v-3', name: 'Kitasan Black', rank: 'UF8', detail: 'Medium · Runner' }
+    { id: 'v-1', name: 'Mejiro McQueen', rank: 'UE1', detail: 'Long · Leader', image: mejiroMcQueenImage },
+    { id: 'v-2', name: 'Oguri Cap', rank: 'UF4', detail: 'Mile · Betweener', image: oguriCapImage },
+    { id: 'v-3', name: 'Kitasan Black', rank: 'UF8', detail: 'Medium · Runner', image: kitasanBlackImage }
   ];
 
   $effect(() => {
@@ -92,10 +109,7 @@
     toasts = [...toasts, { id, title: 'Veteran saved', message: 'Stored in the Local workspace.', tone }];
   }
 
-  function previewClientState(event: Event) {
-    const state = (event.currentTarget as HTMLSelectElement).value as Parameters<typeof setMockClientState>[0];
-    setMockClientState(state);
-  }
+  function previewClientState(value: string) { setMockClientState(value as Parameters<typeof setMockClientState>[0]); }
 </script>
 
 <svelte:head><title>UI Lab · uma.moe beta</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
@@ -125,12 +139,12 @@
 
   <main class="lab-main">
     <section class="lab-intro">
-      <div><Badge tone="accent">Foundation gate</Badge><h1>Fast, quiet, useful UI.</h1><p>A native-first component system for dense Uma data and one-handed mobile use. No UI runtime, no glass blur, and no decorative animation.</p></div>
+      <div><Badge tone="accent">Svelte port · review</Badge><h1>uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
       <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
     </section>
 
-    <LabSection id="tokens" title="Foundation" description="Semantic tokens make themes and density cheap: components consume intent, never one-off colors or hardcoded breakpoints.">
-      <DemoBlock title="Color roles" note="Dark and light use the same contract"><div class="swatches">{#each colors as color}<div><span style:background={color[1]}></span><strong>{color[0]}</strong><code>{color[1]}</code></div>{/each}</div></DemoBlock>
+    <LabSection id="tokens" title="Foundation" description="The original Angular palette, type rhythm, radii, and elevations are the source of truth. Svelte components consume stable semantic aliases.">
+      <DemoBlock title="Original color roles" note="Ported from src/styles.scss"><div class="swatches">{#each colors as color}<div><span style:background={color[1]}></span><strong>{color[0]}</strong><code>{color[1]}</code></div>{/each}</div></DemoBlock>
       <div class="demo-grid">
         <DemoBlock title="Type scale"><div class="type-scale"><span style="font-size:var(--font-display)">Display</span><span style="font-size:var(--font-xl)">Page title</span><span style="font-size:var(--font-lg)">Section title</span><span>Body text stays readable</span><small>Supporting information</small><code>structured_data: true</code></div></DemoBlock>
         <DemoBlock title="Spacing, radius, elevation"><div class="token-shapes"><span class="space-s">4</span><span class="space-m">12</span><span class="space-l">24</span><div class="radius-s">Small</div><div class="radius-l">Large</div><div class="elevation">One practical elevation</div></div></DemoBlock>
@@ -147,10 +161,10 @@
       </div>
     </LabSection>
 
-    <LabSection id="inputs" title="Inputs" description="Fields retain native keyboard, autofill, validation, and form behavior. Enhancements remain optional and route-local.">
+    <LabSection id="inputs" title="Inputs" description="The Angular factor fields, selects, autocomplete panels, focus treatment, spacing, and option states are carried over without Material.">
       <div class="demo-grid">
         <DemoBlock title="Text and search"><div class="state-stack"><TextField id="name" label="Veteran name" bind:value={textValue} help="A private label stored in this workspace."/><TextField id="search" type="search" label="Search database" bind:value={searchValue} placeholder="Character, skill, factor…"/><TextField id="invalid" label="Share code" value="ABC" error="The share code must contain 12 characters."/><TextField id="disabled-field" label="Account ID" value="Not connected" disabled/></div></DemoBlock>
-        <DemoBlock title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap' }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen' }, { value: 'Kitasan Black', label: 'Kitasan Black' }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
+        <DemoBlock title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap', image: oguriCapImage }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen', image: mejiroMcQueenImage }, { value: 'Kitasan Black', label: 'Kitasan Black', image: kitasanBlackImage }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
       </div>
       <div class="demo-grid">
         <DemoBlock title="Choice controls"><div class="state-stack"><Checkbox id="include-inheritance" label="Include inheritance factors" description="Adds parent and grandparent factors." bind:checked={checkboxValue}/><Checkbox id="partial-choice" label="Select visible results" indeterminate/><Checkbox id="disabled-choice" label="Unavailable option" disabled/><RadioGroup id="storage" legend="Default storage" bind:value={radioValue} options={[{ value: 'local', label: 'Local device', description: 'No login required.' }, { value: 'account', label: 'Linked account', description: 'Sync between devices.' }]}/><Switch id="auto-save" label="Automatic Veteran saves" description="Completed imports are persisted automatically." bind:checked={switchValue}/></div></DemoBlock>
@@ -195,14 +209,14 @@
       <DemoBlock title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
       <DemoBlock title="Virtual list" note="2,500 records · roughly 20 live rows">
         <VirtualList items={virtualItems} rowHeight={54} height={320} label="Veterans">
-          {#snippet row(item, index)}<div class="virtual-row"><Artwork alt={item.name} size="sm"/><span><strong>{item.name}</strong><small>Local · record {index + 1}</small></span><Badge tone="accent">{item.rank}</Badge></div>{/snippet}
+          {#snippet row(item, index)}<div class="virtual-row"><Artwork src={item.image} alt={item.name} size="sm"/><span><strong>{item.name}</strong><small>Local · record {index + 1}</small></span><Badge tone="accent">{item.rank}</Badge></div>{/snippet}
         </VirtualList>
       </DemoBlock>
     </LabSection>
 
     <LabSection id="domain" title="Domain patterns" description="These shared patterns keep game vocabulary consistent while allowing every feature to own its data and behavior.">
       <div class="demo-grid">
-        <DemoBlock title="Artwork and chips"><div class="state-row"><Artwork alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><DomainChip label="Swinging Maestro" value="Rare"/><DomainChip label="Long Distance" value="★3" tone="factor"/><DomainChip label="Selected" tone="status" selected/></div></DemoBlock>
+        <DemoBlock title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><DomainChip icon={skillRecoveryIcon} label="Swinging Maestro" value="Rare"/><DomainChip icon={skillSpeedIcon} label="Long Distance" value="★3" tone="factor"/><DomainChip label="Selected" tone="status" selected/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
         <DemoBlock title="Veteran selector"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
       </div>
       <DemoBlock title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
@@ -218,19 +232,19 @@
   :global(html[data-motion='reduced']) { --duration-fast: 0ms; --duration-normal: 0ms; }
   :global(html[data-density='compact']) { --touch-target: 36px; }
   .lab-shell { min-height: 100dvh; }
-  .lab-bar { position: sticky; top: 0; z-index: var(--z-header); min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-surface-1); }
+  .lab-bar { position: sticky; top: 0; z-index: var(--z-header); min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-brand { display: flex; align-items: center; gap: 9px; color: var(--color-text); text-decoration: none; }
-  .lab-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .lab-brand strong { font-size: var(--font-sm); } .lab-brand small { color: var(--color-text-subtle); font-size: 10px; text-transform: uppercase; }
+  .lab-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .lab-brand strong { background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-lg); } .lab-brand small { color: var(--color-text-subtle); font-size: 10px; text-transform: uppercase; }
   .lab-controls { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
   .mobile-controls { display: flex; margin-left: auto; }
   .lab-controls :global(.switch) { grid-template-columns: auto auto; } .lab-controls :global(.copy small) { display: none; }
   .lab-index { display: none; }
-  .lab-main { width: min(100%, 1240px); display: grid; gap: var(--space-12); margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-12); }
-  .lab-intro { display: grid; gap: var(--space-6); padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-1); }
-  .lab-intro h1 { max-width: 800px; margin: var(--space-3) 0 var(--space-2); font-size: clamp(2rem, 8vw, 4.4rem); line-height: .98; letter-spacing: -.045em; }
+  .lab-main { width: min(100%, 1240px); display: grid; gap: var(--space-10); margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-12); }
+  .lab-intro { display: grid; gap: var(--space-6); padding: var(--space-5); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: radial-gradient(circle at 12% 0%, rgb(100 181 246 / .08), transparent 38%), radial-gradient(circle at 95% 100%, rgb(129 199 132 / .07), transparent 34%), var(--surface-2); }
+  .lab-intro h1 { max-width: 800px; margin: var(--space-3) 0 var(--space-2); background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-display); font-weight: 700; line-height: 1.05; letter-spacing: -.025em; }
   .lab-intro p { max-width: 68ch; margin: 0; }
   dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-border); }
-  dl div { min-width: 0; padding: var(--space-3); background: var(--color-surface-2); } dt { color: var(--color-text-subtle); font-size: 10px; font-weight: 800; text-transform: uppercase; } dd { margin: 3px 0 0; font-size: var(--font-sm); font-weight: 800; }
+  dl div { min-width: 0; padding: var(--space-3); background: var(--bg-tertiary); } dt { color: var(--color-text-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; } dd { margin: 3px 0 0; font-size: var(--font-sm); font-weight: 700; }
   .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(126px, 1fr)); gap: var(--space-3); }
   .swatches > div { min-width: 0; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 0 var(--space-2); }
   .swatches div > span { width: 34px; height: 34px; grid-row: span 2; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); }
@@ -247,15 +261,16 @@
   .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); container-type: inline-size; }
   .virtual-row { height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 7px var(--space-3); border-bottom: 1px solid var(--color-border); }
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
+  .item-example { display: inline-flex; align-items: center; gap: 8px; padding: 4px 9px 4px 4px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-2); } .item-example > span { display: flex; flex-direction: column; } .item-example strong { font-size: var(--font-sm); } .item-example small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
   @media (max-width: 820px) { .lab-controls { display: none; } }
   @media (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @media (min-width: 1024px) {
     .lab-shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: auto 1fr; }
     .lab-bar { grid-column: 1 / -1; }
-    .lab-index { position: sticky; top: 61px; height: calc(100dvh - 61px); display: flex; flex-direction: column; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--color-border); background: var(--color-surface-1); }
+    .lab-index { position: sticky; top: 61px; height: calc(100dvh - 61px); display: flex; flex-direction: column; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
     .index-head { display: flex; justify-content: space-between; gap: var(--space-2); padding: 0 var(--space-2) var(--space-3); font-size: var(--font-xs); } .index-head span { color: var(--color-text-subtle); }
-    .lab-index nav { display: grid; gap: 2px; } .lab-index nav a { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-text-muted); font-size: var(--font-sm); text-decoration: none; } .lab-index nav a:hover { background: var(--color-surface-2); color: var(--color-text); } .lab-index nav small { color: var(--color-text-subtle); }
+    .lab-index nav { display: grid; gap: 2px; } .lab-index nav a { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-text-muted); font-size: var(--font-sm); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav small { color: var(--color-text-subtle); }
     .lab-index > p { margin: auto 0 0; padding: var(--space-3) var(--space-2); border-top: 1px solid var(--color-border); font-size: 10px; }
     .lab-main { padding: var(--space-8); }
   }

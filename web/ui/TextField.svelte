@@ -10,12 +10,13 @@
 </label>
 <style>
   .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .field-label { color: var(--color-text); font-size: var(--font-sm); font-weight: 700; }
-  input { width: 100%; min-height: var(--touch-target); padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-1); color: var(--color-text); transition: border-color var(--duration-fast), background var(--duration-fast); }
-  input:hover:not(:disabled) { border-color: var(--color-border-strong); }
-  input:focus { border-color: var(--color-accent); outline: 0; box-shadow: var(--focus-ring); }
+  .field-label { color: var(--color-text); font-size: var(--font-sm); font-weight: 600; }
+  input { width: 100%; height: var(--control-height); padding: 0 10px; border: 1px solid var(--factor-field-border); border-radius: 8px; background: var(--factor-field-bg); color: var(--factor-field-text); font-size: var(--font-md); transition: border-color var(--duration-fast), background-color var(--duration-fast); }
+  input::placeholder { color: var(--factor-field-placeholder); }
+  input:hover:not(:disabled) { border-color: var(--border-secondary); }
+  input:focus { border-color: var(--factor-field-focus-border); outline: 0; background: var(--factor-field-focus-bg); box-shadow: var(--focus-ring); }
   input:disabled { opacity: .55; cursor: not-allowed; }
-  input[aria-invalid='true'] { border-color: var(--color-danger); }
+  input[aria-invalid='true'] { border-color: var(--color-danger); background: var(--color-danger-soft); }
   .field-message { min-height: 1rem; color: var(--color-text-subtle); font-size: var(--font-xs); }
   .field-error { color: var(--color-danger); }
 </style>

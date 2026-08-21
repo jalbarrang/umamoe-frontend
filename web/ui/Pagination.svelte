@@ -2,7 +2,7 @@
   import Icon from './Icon.svelte';
   interface Props { page?: number; pages: number; label?: string; onchange?: (page: number) => void; }
   let { page = $bindable(1), pages, label = 'Pagination', onchange }: Props = $props();
-  const visiblePages = $derived(Array.from(new Set([1, page - 1, page, page + 1, pages])).filter(value => value >= 1 && value <= pages).sort((a, b) => a - b));
+  const visiblePages = $derived(Array.from(new Set([1, page, pages])).filter(value => value >= 1 && value <= pages).sort((a, b) => a - b));
   function select(next: number) { page = Math.max(1, Math.min(pages, next)); onchange?.(page); }
 </script>
 
@@ -16,7 +16,7 @@
 </nav>
 
 <style>
-  nav { display: flex; align-items: center; gap: 4px; }
+  nav { max-width: 100%; display: flex; align-items: center; gap: 4px; }
   button { min-width: var(--touch-target); height: var(--touch-target); display: grid; place-items: center; padding: 0 var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: var(--color-text-muted); cursor: pointer; font-weight: 700; }
   button:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
   button.active { border-color: var(--color-border); background: var(--color-accent-soft); color: var(--color-accent); }

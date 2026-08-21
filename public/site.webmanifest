@@ -4,6 +4,9 @@
   "description": "Mobile-first Umamusume database and tools.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d1118",
-  "theme_color": "#0d1118"
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "/logo.webp", "sizes": "any", "type": "image/webp", "purpose": "any" }
+  ]
 }
