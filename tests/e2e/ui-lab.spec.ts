@@ -131,19 +131,53 @@ test('main-parent and P2 sparks preserve the Angular source accents', async ({ p
   expect(colors.p2).toBe(colors.purple);
 });
 
-test('shell and page fixtures switch at the canonical screen breakpoints', async ({ page }) => {
+test('the UI lab itself uses the canonical responsive shell and page gutters', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/ui-lab');
+  const shell = page.locator('[data-ui-lab-shell]');
+  const rail = shell.locator('[data-shell-rail]');
+  const bottom = shell.locator('[data-shell-bottom]');
+  const intro = shell.locator('.lab-intro');
 
-  const shell = page.locator('article.demo').filter({ hasText: 'Responsive shell fixture' });
+  await expect(rail).toBeHidden();
+  await expect(bottom).toBeVisible();
+  const mobileIntro = await intro.boundingBox();
+  expect(mobileIntro!.x).toBe(16);
+  expect(320 - mobileIntro!.x - mobileIntro!.width).toBe(16);
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await expect(bottom).toBeHidden();
+  await expect(rail).toBeVisible();
+  const compactRail = await rail.boundingBox();
+  const compactIntro = await intro.boundingBox();
+  expect(compactRail!.width).toBe(64);
+  expect(compactIntro!.x).toBe(64 + 24);
+  expect(768 - compactIntro!.x - compactIntro!.width).toBe(24);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const expandedRail = await rail.boundingBox();
+  expect(expandedRail!.width).toBe(240);
+  await expect(rail.getByText('Foundation', { exact: true })).toBeVisible();
+});
+
+test('medium and wide page contracts change the live UI lab content maximum', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  await page.goto('/ui-lab');
+  const main = page.locator('.lab-main');
+  const control = page.locator('article.demo').filter({ hasText: 'Live responsive shell and page width' });
+  await expect(main).toHaveAttribute('data-page-width', 'wide');
+  const wide = await main.boundingBox();
+  await control.getByRole('radio', { name: 'Medium', exact: true }).click();
+  await expect(main).toHaveAttribute('data-page-width', 'medium');
+  const medium = await main.boundingBox();
+  expect(wide!.width).toBe(1504);
+  expect(medium!.width).toBe(1144);
+  expect(medium!.x).toBeGreaterThan(wide!.x);
+});
+
+test('responsive content layout fixture switches at canonical component widths', async ({ page }) => {
+  await page.goto('/ui-lab');
   const layouts = page.locator('article.demo').filter({ hasText: 'Responsive page layouts' });
-
-  await shell.getByRole('button', { name: '320', exact: true }).click();
-  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'mobile');
-  await shell.getByRole('button', { name: '768', exact: true }).click();
-  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'compact');
-  await shell.getByRole('button', { name: '1440', exact: true }).click();
-  await expect(shell.locator('[data-shell-mode]')).toHaveAttribute('data-shell-mode', 'expanded');
-
   await layouts.getByRole('button', { name: '320', exact: true }).click();
   const mobileAside = await layouts.locator('aside[aria-label="Filters"]').boundingBox();
   const mobileContent = await layouts.locator('section[aria-label="Results"]').boundingBox();
@@ -200,6 +234,7 @@ test('page frame keeps content gutters and Publift rails balanced', async ({ pag
   expect(expandedGeometry.leftInset).toBe(expandedGeometry.rightInset);
   expect(expandedGeometry.contentComesFirst).toBe(true);
   await expect(frame.locator('[data-route-id="database"]')).toHaveAttribute('data-feature-id', 'catalog');
+  await expect(frame.locator('[data-route-id="database"]')).toHaveAttribute('data-page-width', 'wide');
   await expect(frame.locator('[data-ad-position="left-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
   await expect(frame.locator('[data-ad-position="right-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
 });

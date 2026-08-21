@@ -17,6 +17,8 @@
   import FilterChip from '../../ui/FilterChip.svelte';
   import GameIcon from '../../ui/GameIcon.svelte';
   import IconButton from '../../ui/IconButton.svelte';
+  import Icon from '../../ui/Icon.svelte';
+  import type { IconName } from '../../ui/icon-types';
   import LogoMark from '../../ui/LogoMark.svelte';
   import Menu from '../../ui/Menu.svelte';
   import Pagination from '../../ui/Pagination.svelte';
@@ -41,13 +43,12 @@
   import VeteranSelector from '../../ui/VeteranSelector.svelte';
   import VirtualList from '../../ui/VirtualList.svelte';
   import WorkspaceSwitcher from '../../ui/WorkspaceSwitcher.svelte';
-  import { formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS } from '../../ui/layout/breakpoints';
+  import { formatScreenRange, REVIEW_VIEWPORTS, SCREEN_LAYOUTS, type PageWidth } from '../../ui/layout/breakpoints';
   import { componentCount, uiRegistry } from '../../ui/registry';
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
   import LayoutFixture from './LayoutFixture.svelte';
   import PageFrameFixture from './PageFrameFixture.svelte';
-  import ShellFixture from './ShellFixture.svelte';
   import oguriCapImage from './fixtures/oguri-cap.webp';
   import mejiroMcQueenImage from './fixtures/mejiro-mcqueen.webp';
   import kitasanBlackImage from './fixtures/kitasan-black.webp';
@@ -75,12 +76,19 @@
   let selectedTab = $state('overview');
   let dialogOpen = $state(false);
   let sheetOpen = $state(false);
+  let labNavigationOpen = $state(false);
   let page = $state(3);
   let viewport = $state(390);
+  let pageWidth = $state<PageWidth>('wide');
   let veteran = $state('v-1');
   let toasts = $state<Toast[]>([]);
 
   const viewports = REVIEW_VIEWPORTS;
+  const sectionIcons: Record<string, IconName> = {
+    tokens: 'home', actions: 'activity', inputs: 'filter', navigation: 'menu',
+    feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans'
+  };
+  const mobileSections = uiRegistry.filter((section) => ['tokens', 'actions', 'inputs', 'data'].includes(section.id));
   const colors = [
     ['Page', 'var(--bg-primary)'], ['Navbar', 'var(--bg-secondary)'], ['Panel', 'var(--bg-tertiary)'],
     ['Border', 'var(--border-primary)'], ['Text', 'var(--text-primary)'], ['Muted', 'var(--text-secondary)'],
@@ -129,9 +137,10 @@
 
 <svelte:head><title>UI Lab · uma.moe beta</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
 
-<div class="lab-shell">
-  <header class="lab-bar">
+<div class="lab-shell" data-ui-lab-shell>
+  <header class="lab-bar" data-shell-utility>
     <a class="lab-brand" href="/ui-lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
+    <div class="lab-context"><strong>UI lab</strong><span>{componentCount} component contracts</span></div>
     <div class="lab-controls">
       <SegmentedControl label="Theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} value={$theme} onchange={(value) => setTheme(value as Theme)}/>
       <SegmentedControl label="Density" options={[{ value: 'comfortable', label: 'Touch' }, { value: 'compact', label: 'Compact' }]} bind:value={density}/>
@@ -144,15 +153,16 @@
     </div>
   </header>
 
-  <aside class="lab-index">
+  <aside class="lab-index" data-shell-rail>
+    <a class="rail-brand" href="/ui-lab" aria-label="uma.moe UI lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
     <div class="index-head"><strong>{componentCount} contracts</strong><span>v0 · review</span></div>
     <nav aria-label="UI lab sections">
-      {#each uiRegistry as section}<a href="#{section.id}"><span>{section.title}</span><small>{section.entries.length}</small></a>{/each}
+      {#each uiRegistry as section}<a href="#{section.id}" title={section.title}><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span><small>{section.entries.length}</small></a>{/each}
     </nav>
     <p>Beta/dev only. This module is removed from production builds.</p>
   </aside>
 
-  <main class="lab-main">
+  <main class="lab-main page-width--{pageWidth}" data-page-width={pageWidth}>
     <section class="lab-intro">
       <div><Badge tone="accent">Svelte port · review</Badge><h1>uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
       <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
@@ -198,9 +208,15 @@
     </LabSection>
 
     <LabSection id="navigation" title="Navigation" description="The same information architecture changes presentation at shell breakpoints; feature navigation stays inside the feature.">
-      <DemoBlock title="Responsive shell fixture" note="Actual container-query transition">
-        <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
-        <ShellFixture width={viewport}/>
+      <DemoBlock title="Live responsive shell and page width" note="Resize this page to review the real shell, gutters, and margins">
+        <div class="page-width-control">
+          <div><strong>UI lab content width</strong><span>Medium suits focused flows; wide suits databases, tables, and dense tools.</span></div>
+          <SegmentedControl label="UI lab content width" options={[{ value: 'medium', label: 'Medium' }, { value: 'wide', label: 'Wide' }]} bind:value={pageWidth}/>
+        </div>
+        <div class="width-contracts">
+          <article><strong>Medium</strong><span>1080px content maximum</span><small>Forms, profiles, Veterans, settings, and reading pages</small></article>
+          <article><strong>Wide</strong><span>1440px content maximum</span><small>Database results, Race Lab, planners, tables, and comparison views</small></article>
+        </div>
       </DemoBlock>
       <DemoBlock title="Responsive page layouts" note="Stack, filter sidebar, and fluid results grid use the same reviewed widths">
         <div class="fixture-controls"><span>Viewport</span>{#each viewports as width}<button class:active={viewport === width} onclick={() => viewport = width}>{width}</button>{/each}</div>
@@ -261,22 +277,39 @@
 
     <footer class="lab-footer"><strong>UI contract v0</strong><span>Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.</span></footer>
   </main>
+
+  <nav class="lab-bottom" aria-label="UI lab mobile sections" data-shell-bottom>
+    {#each mobileSections as section}<a href="#{section.id}"><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span></a>{/each}
+    <button aria-label="More UI lab sections" onclick={() => labNavigationOpen = true}><Icon name="more" size={19}/><span>More</span></button>
+  </nav>
 </div>
+
+<Dialog id="lab-navigation" title="UI lab sections" description="Jump to any component group." mobileSheet bind:open={labNavigationOpen}>
+  <nav class="sheet-links" aria-label="All UI lab sections">
+    {#each uiRegistry as section}<a href="#{section.id}" onclick={() => labNavigationOpen = false}><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span><small>{section.entries.length}</small></a>{/each}
+  </nav>
+</Dialog>
 
 <ToastRegion {toasts} ondismiss={(id) => toasts = toasts.filter(toast => toast.id !== id)}/>
 
 <style>
   :global(html[data-motion='reduced']) { --duration-fast: 0ms; --duration-normal: 0ms; }
   :global(html[data-density='compact']) { --touch-target: 36px; }
-  .lab-shell { min-height: 100dvh; }
+  .lab-shell { min-height: 100dvh; padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); }
   .lab-bar { position: sticky; top: 0; z-index: var(--z-header); min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 8px var(--space-4); border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-brand { display: flex; align-items: center; gap: 9px; color: var(--color-text); text-decoration: none; }
   .lab-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .lab-brand strong { background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-lg); } .lab-brand small { color: var(--color-text-subtle); font-size: 10px; text-transform: uppercase; }
-  .lab-controls { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+  .lab-context, .lab-controls { display: none; }
+  .lab-context { min-width: 0; flex-direction: column; line-height: 1.15; } .lab-context strong { font-size: var(--font-sm); } .lab-context span { color: var(--color-text-subtle); font-size: 10px; }
   .mobile-controls { display: flex; margin-left: auto; }
   .lab-controls :global(.switch) { grid-template-columns: auto auto; } .lab-controls :global(.copy small) { display: none; }
   .lab-index { display: none; }
-  .lab-main { width: min(100%, 1240px); display: grid; gap: var(--space-10); margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-12); }
+  .rail-brand { display: none; }
+  .lab-main { --lab-page-content: var(--page-content-wide); --lab-page-gutter: var(--page-gutter-mobile); width: min(100%, calc(var(--lab-page-content) + var(--lab-page-gutter) * 2)); display: grid; gap: var(--space-10); margin: 0 auto; padding: var(--space-6) var(--lab-page-gutter) var(--space-12); }
+  .lab-main.page-width--medium { --lab-page-content: var(--page-content-medium); }
+  .lab-bottom { position: fixed; z-index: var(--z-header); inset: auto 0 0; height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); }
+  .lab-bottom a, .lab-bottom button { min-width: 0; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0 2px; border: 0; background: transparent; color: var(--color-text-subtle); cursor: pointer; font: inherit; font-size: 9px; text-decoration: none; }
+  .lab-bottom a:hover, .lab-bottom button:hover { color: var(--color-text); }
   .lab-intro { display: grid; gap: var(--space-6); padding: var(--space-5); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: radial-gradient(circle at 12% 0%, rgb(100 181 246 / .08), transparent 38%), radial-gradient(circle at 95% 100%, rgb(129 199 132 / .07), transparent 34%), var(--surface-2); }
   .lab-intro h1 { max-width: 800px; margin: var(--space-3) 0 var(--space-2); background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-display); font-weight: 700; line-height: 1.05; letter-spacing: -.025em; }
   .lab-intro p { max-width: 68ch; margin: 0; }
@@ -301,7 +334,12 @@
   .fixture-controls span { margin-right: var(--space-2); color: var(--color-text-muted); font-size: var(--font-xs); font-weight: 700; }
   .fixture-controls button { min-height: 34px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-2); color: var(--color-text-muted); cursor: pointer; font-size: var(--font-xs); }
   .fixture-controls button.active { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent); }
-  .sheet-links { display: grid; gap: 4px; } .sheet-links a { min-height: var(--touch-target); display: flex; align-items: center; padding: 0 var(--space-3); border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; } .sheet-links a:hover { background: var(--color-surface-2); }
+  .page-width-control { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .page-width-control > div { min-width: min(100%, 260px); display: grid; gap: 3px; } .page-width-control > div span { color: var(--color-text-muted); font-size: var(--font-xs); }
+  .width-contracts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+  .width-contracts article { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px var(--space-3); padding: var(--space-3); border-left: 3px solid var(--color-accent); background: var(--color-surface-1); }
+  .width-contracts article + article { border-left-color: var(--accent-secondary); } .width-contracts span { color: var(--color-text-muted); font-size: var(--font-xs); } .width-contracts small { grid-column: 1 / -1; color: var(--color-text-subtle); }
+  .sheet-links { display: grid; gap: 4px; } .sheet-links a { min-height: var(--touch-target); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 0 var(--space-3); border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; } .sheet-links a:hover { background: var(--color-surface-2); } .sheet-links a small { color: var(--color-text-subtle); }
   .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); container-type: inline-size; }
   .virtual-row { height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 7px var(--space-3); border-bottom: 1px solid var(--color-border); }
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
@@ -310,16 +348,29 @@
   .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
-  @media (max-width: 820px) { .lab-controls { display: none; } }
   @media (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  @media (min-width: 1024px) {
-    .lab-shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: auto 1fr; }
-    .lab-bar { grid-column: 1 / -1; }
-    .lab-index { position: sticky; top: 61px; height: calc(100dvh - 61px); display: flex; flex-direction: column; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
-    .index-head { display: flex; justify-content: space-between; gap: var(--space-2); padding: 0 var(--space-2) var(--space-3); font-size: var(--font-xs); } .index-head span { color: var(--color-text-subtle); }
-    .lab-index nav { display: grid; gap: 2px; } .lab-index nav a { min-height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-text-muted); font-size: var(--font-sm); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav small { color: var(--color-text-subtle); }
-    .lab-index > p { margin: auto 0 0; padding: var(--space-3) var(--space-2); border-top: 1px solid var(--color-border); font-size: 10px; }
-    .lab-main { padding: var(--space-8); }
+  @media (min-width: 768px) {
+    .lab-shell { display: grid; grid-template-columns: var(--rail-compact) minmax(0, 1fr); grid-template-rows: var(--utility-height) minmax(calc(100dvh - var(--utility-height)), auto); padding-bottom: 0; }
+    .lab-bar { grid-column: 2; grid-row: 1; min-width: 0; padding-inline: var(--page-gutter-compact); }
+    .lab-brand, .mobile-controls, .index-head, .lab-index > p { display: none; }
+    .lab-context, .lab-controls { display: flex; }
+    .lab-controls { align-items: center; justify-content: flex-end; gap: var(--space-3); }
+    .lab-index { position: sticky; z-index: var(--z-rail); top: 0; height: 100dvh; grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; padding: 0 8px 12px; border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
+    .rail-brand { height: var(--utility-height); display: grid; flex: 0 0 auto; place-items: center; border-bottom: 1px solid var(--border-primary); color: var(--color-text); text-decoration: none; } .rail-brand > span { display: none; }
+    .lab-index nav { display: grid; gap: 3px; padding-top: 8px; }
+    .lab-index nav a { min-height: 44px; display: grid; place-items: center; border-radius: var(--radius-sm); color: var(--color-text-subtle); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav a > span, .lab-index nav a > small { display: none; }
+    .lab-main { --lab-page-gutter: var(--page-gutter-compact); grid-column: 2; grid-row: 2; padding-top: var(--space-8); }
+    .lab-bottom { display: none; }
   }
-  @media (min-width: 821px) { .mobile-controls { display: none; } }
+  @media (min-width: 1280px) {
+    .lab-shell { grid-template-columns: var(--rail-expanded) minmax(0, 1fr); }
+    .lab-bar { padding-inline: var(--page-gutter-expanded); }
+    .lab-index { padding-inline: var(--space-3); }
+    .rail-brand { display: flex; justify-content: flex-start; gap: 9px; padding: 0 var(--space-2); } .rail-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .rail-brand strong { font-size: var(--font-sm); } .rail-brand small { color: var(--color-text-subtle); font-size: 9px; text-transform: uppercase; }
+    .index-head { display: flex; justify-content: space-between; gap: var(--space-2); padding: var(--space-4) var(--space-2) var(--space-3); font-size: var(--font-xs); } .index-head span { color: var(--color-text-subtle); }
+    .lab-index nav { padding-top: 0; }
+    .lab-index nav a { grid-template-columns: 24px minmax(0, 1fr) auto; justify-items: start; gap: 9px; padding: 0 var(--space-2); font-size: var(--font-sm); } .lab-index nav a > span, .lab-index nav a > small { display: inline; } .lab-index nav a > small { color: var(--color-text-subtle); }
+    .lab-index > p { display: block; margin: auto 0 0; padding: var(--space-3) var(--space-2); border-top: 1px solid var(--color-border); font-size: 10px; }
+    .lab-main { --lab-page-gutter: var(--page-gutter-expanded); }
+  }
 </style>

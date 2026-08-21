@@ -33,8 +33,10 @@ describe('screen layout contract', () => {
     expect(tokenSource).toContain(`--page-gutter-mobile: ${PAGE_LAYOUT.gutters.mobile}px`);
     expect(tokenSource).toContain(`--page-gutter-compact: ${PAGE_LAYOUT.gutters.compact}px`);
     expect(tokenSource).toContain(`--page-gutter-expanded: ${PAGE_LAYOUT.gutters.expanded}px`);
-    expect(tokenSource).toContain(`--page-content-max: ${PAGE_LAYOUT.contentMax}px`);
-    expect(tokenSource).toContain(`--page-frame-max: ${PAGE_LAYOUT.frameMax}px`);
+    expect(tokenSource).toContain(`--page-content-medium: ${PAGE_LAYOUT.widths.medium.contentMax}px`);
+    expect(tokenSource).toContain(`--page-content-wide: ${PAGE_LAYOUT.widths.wide.contentMax}px`);
+    expect(tokenSource).toContain(`--page-frame-medium: ${PAGE_LAYOUT.widths.medium.frameMax}px`);
+    expect(tokenSource).toContain(`--page-frame-wide: ${PAGE_LAYOUT.widths.wide.frameMax}px`);
     expect(tokenSource).toContain(`--ad-rail-width: ${PAGE_LAYOUT.ads.railWidth}px`);
     expect(tokenSource).toContain(`--ad-rail-gap: ${PAGE_LAYOUT.ads.railGap}px`);
     expect(tokenSource).toContain(`--ad-leaderboard-height: ${PAGE_LAYOUT.ads.leaderboardHeight}px`);
@@ -42,7 +44,9 @@ describe('screen layout contract', () => {
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.balancedRailsMin}px`);
     expect(pageFrameSource).toContain('has-balanced-rails');
     expect(pageFrameSource).not.toContain('singleRailMin');
-    expect(pageFrameSource).toContain('var(--page-content-max)');
+    expect(pageFrameSource).toContain('var(--page-content-current)');
+    expect(pageFrameSource).toContain('page-grid--wide');
+    expect(pageFrameSource).toContain('data-page-width={width}');
     expect(pageFrameSource).toContain('var(--ad-rail-width)');
     expect(adRegionSource).toContain('var(--ad-mobile-height)');
     expect(adRegionSource).toContain('var(--ad-leaderboard-height)');

@@ -10,7 +10,7 @@
 
 <div class="stage">
   <div class="frame" style:width="{width}px" data-page-frame-mode={mode}>
-    <PageFrame routeId="database" featureId="catalog" pageTitle="Database" labelledby="fixture-page-title">
+    <PageFrame routeId="database" featureId="catalog" pageTitle="Database" width="wide" labelledby="fixture-page-title">
       {#snippet navigation()}<a href="#navigation">Home</a><span aria-hidden="true">/</span><a href="#data">Database</a>{/snippet}
       {#snippet header()}<p>Catalog</p><h3 id="fixture-page-title">Database</h3><small>Search characters, skills, factors, and Veterans.</small>{/snippet}
       {#snippet contentTopAd()}<AdRegion placement="database_content_top" kind="leaderboard" sizes={['1200x90', '970x90', '728x90', '320x50', '300x50']} active preview/>{/snippet}

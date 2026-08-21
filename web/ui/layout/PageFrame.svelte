@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import type { PageWidth } from './breakpoints';
 
   interface Props {
     children: Snippet;
     routeId: string;
     featureId?: string;
     pageTitle: string;
+    width?: PageWidth;
     labelledby?: string;
     contentId?: string;
     navigation?: Snippet;
@@ -20,6 +22,7 @@
     routeId,
     featureId = routeId,
     pageTitle,
+    width = 'medium',
     labelledby,
     contentId,
     navigation,
@@ -41,6 +44,8 @@
     data-route-id={routeId}
     data-feature-id={featureId}
     data-page-layout="ad-aware"
+    data-page-width={width}
+    class:page-grid--wide={width === 'wide'}
   >
     <section class="page-content" id={resolvedContentId} data-page-content>
       {#if navigation}<nav aria-label="{pageTitle} navigation" data-page-navigation>{@render navigation()}</nav>{/if}
@@ -59,7 +64,9 @@
   .page-boundary { width: 100%; min-width: 0; container: page-frame / inline-size; }
   .page-grid {
     --page-gutter-current: var(--page-gutter-mobile);
-    width: min(100%, var(--page-frame-max));
+    --page-content-current: var(--page-content-medium);
+    --page-frame-current: var(--page-frame-medium);
+    width: min(100%, var(--page-frame-current));
     min-width: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -68,7 +75,8 @@
     margin-inline: auto;
     padding-inline: var(--page-gutter-current);
   }
-  .page-content { width: min(100%, var(--page-content-max)); min-width: 0; grid-area: content; justify-self: center; }
+  .page-grid--wide { --page-content-current: var(--page-content-wide); --page-frame-current: var(--page-frame-wide); }
+  .page-content { width: min(100%, var(--page-content-current)); min-width: 0; grid-area: content; justify-self: center; }
   .page-content > nav { margin-bottom: var(--space-3); }
   .page-content > header { margin-bottom: var(--space-5); }
   .content-top-ad { margin: 0 0 var(--space-5); }
