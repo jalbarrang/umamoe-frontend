@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /ui-lab
+Disallow: /settings
+Disallow: /connect
+Sitemap: https://uma.moe/sitemap.xml

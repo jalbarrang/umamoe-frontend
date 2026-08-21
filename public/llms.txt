@@ -1,0 +1,20 @@
+# uma.moe
+
+> Mobile-first Umamusume database, Veteran workspace, race analysis, timeline, community data, and planning tools for the global version.
+
+## Public features
+
+- [Home](https://uma.moe/): Task-oriented start page and recent activity.
+- [Database](https://uma.moe/database): Search characters, support cards, skills, factors, and inheritance data.
+- [Race Lab](https://uma.moe/race-lab): UmaLogs, single-race replay, and multi-race analysis.
+- [Timeline](https://uma.moe/timeline): Estimated global release schedule.
+- [Clubs](https://uma.moe/circles): Club database and fan progression.
+- [Rankings](https://uma.moe/rankings): Global trainer fan rankings.
+- [Activity](https://uma.moe/activity): Trainer and community activity analytics.
+- [Tools](https://uma.moe/tools): Planning, statistics, and analysis utilities.
+- [Statistics](https://uma.moe/tools/statistics): Global game and player statistics.
+- [Tierlist](https://uma.moe/tierlist): Support card tierlists.
+
+## Data and privacy
+
+Public metadata never contains private account, Veteran, race, or standalone-client payloads. Authentication is required before account-owned data is requested.
