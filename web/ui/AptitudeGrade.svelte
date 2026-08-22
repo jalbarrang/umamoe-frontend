@@ -4,13 +4,11 @@
   let { grade, label, size = 'md' }: Props = $props();
 </script>
 
-<span class="aptitude aptitude--{size}" style:--grade-color={`var(--aptitude-${grade.toLowerCase()})`} aria-label={label ? `${label}: ${grade}` : `Aptitude ${grade}`}>
-  <b>{grade}</b>{#if label}<span>{label}</span>{/if}
-</span>
+<span class="aptitude aptitude--{size}" style:--grade-color={`var(--aptitude-${grade.toLowerCase()})`} aria-label={label ? `${label}: ${grade}` : `Aptitude ${grade}`} title={label ? `${label}: ${grade}` : `Aptitude ${grade}`}><b>{grade}</b></span>
 
 <style>
-  .aptitude { width: fit-content; min-width: 38px; height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--grade-color) 44%, transparent); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--grade-color) 10%, transparent); }
-  b { min-width: 13px; color: var(--grade-color); font-size: 14px; font-weight: 900; text-align: center; }
-  span span { color: var(--color-text-muted); font-size: 10px; white-space: nowrap; }
-  .aptitude--sm { min-width: 28px; height: 22px; padding-inline: 5px; } .aptitude--sm b { font-size: 11px; }
+  .aptitude { width: 30px; height: 28px; display: inline-grid; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--grade-color) 58%, var(--border-primary)); border-radius: 5px; background: color-mix(in srgb, var(--grade-color) 14%, var(--surface-1)); box-shadow: inset 0 -2px color-mix(in srgb, var(--grade-color) 25%, transparent); }
+  b { color: var(--grade-color); font-size: 14px; font-weight: 900; line-height: 1; text-align: center; }
+  .aptitude--sm { width: 24px; height: 22px; border-radius: 4px; }
+  .aptitude--sm b { font-size: 11px; }
 </style>

@@ -252,6 +252,38 @@ test('ported Angular UI contracts remain interactive and mobile-safe', async ({ 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
+test('Uma domain components adapt to their own container width', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/ui-lab');
+
+  const rank = page.getByLabel('Rank UE1').first();
+  await expect(rank.locator('img')).toHaveAttribute('src', /utx_txt_rank_39\.webp$/);
+
+  const lineage = page.locator('#lineage .lineage-container');
+  const lineageBranches = lineage.locator('.branch');
+  const wideBranchBoxes = await Promise.all([lineageBranches.nth(0).boundingBox(), lineageBranches.nth(1).boundingBox()]);
+  expect(Math.abs(wideBranchBoxes[0]!.y - wideBranchBoxes[1]!.y)).toBeLessThanOrEqual(2);
+  await lineage.evaluate((element) => element.style.width = '360px');
+  const narrowBranchBoxes = await Promise.all([lineageBranches.nth(0).boundingBox(), lineageBranches.nth(1).boundingBox()]);
+  expect(narrowBranchBoxes[1]!.y).toBeGreaterThan(narrowBranchBoxes[0]!.y + narrowBranchBoxes[0]!.height);
+
+  const veteran = page.locator('#veteran-summary .veteran-summary-container');
+  const parent = veteran.locator('.parent-row').first();
+  const wideParentParts = await Promise.all([parent.locator('.parent-id').boundingBox(), parent.locator('.parent-factors').boundingBox()]);
+  expect(Math.abs(wideParentParts[0]!.y - wideParentParts[1]!.y)).toBeLessThanOrEqual(3);
+  await veteran.evaluate((element) => element.style.width = '360px');
+  const narrowParentParts = await Promise.all([parent.locator('.parent-id').boundingBox(), parent.locator('.parent-factors').boundingBox()]);
+  expect(narrowParentParts[1]!.y).toBeGreaterThan(narrowParentParts[0]!.y);
+
+  const schedule = page.locator('#race-schedule .race-schedule-container');
+  const years = schedule.locator('.year');
+  const wideYearBoxes = await Promise.all([years.nth(0).boundingBox(), years.nth(1).boundingBox()]);
+  expect(Math.abs(wideYearBoxes[0]!.y - wideYearBoxes[1]!.y)).toBeLessThanOrEqual(2);
+  await schedule.evaluate((element) => element.style.width = '360px');
+  const narrowYearBoxes = await Promise.all([years.nth(0).boundingBox(), years.nth(1).boundingBox()]);
+  expect(narrowYearBoxes[1]!.y).toBeGreaterThan(narrowYearBoxes[0]!.y + narrowYearBoxes[0]!.height);
+});
+
 test('Analytics viewport toggles resize the entire UI Lab website', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/ui-lab');

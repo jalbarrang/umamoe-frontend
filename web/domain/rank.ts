@@ -1,5 +1,6 @@
 export interface RankInfo {
   label: string;
+  iconIndex: number;
   isUltra: boolean;
   tier: 'G' | 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S' | 'SS';
   subLevel: number | null;
@@ -27,12 +28,12 @@ export function getRankInfo(rarity: number): RankInfo {
   if (index < 18) {
     const tier = standardTiers[Math.floor(index / 2)] ?? 'G';
     const isPlus = index % 2 === 1;
-    return { label: `${tier}${isPlus ? '+' : ''}`, isUltra: false, tier, subLevel: null, isPlus, colorToken: token(tier) };
+    return { label: `${tier}${isPlus ? '+' : ''}`, iconIndex: index, isUltra: false, tier, subLevel: null, isPlus, colorToken: token(tier) };
   }
   const ultraIndex = index - 18;
   const tier = ultraTiers[Math.floor(ultraIndex / 10)] ?? 'G';
   const subLevel = ultraIndex % 10;
-  return { label: `U${tier}${subLevel}`, isUltra: true, tier, subLevel, isPlus: false, colorToken: token(tier) };
+  return { label: `U${tier}${subLevel}`, iconIndex: index, isUltra: true, tier, subLevel, isPlus: false, colorToken: token(tier) };
 }
 
 export function getRankInfoFromScore(score: number): RankInfo {
