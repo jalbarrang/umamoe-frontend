@@ -16,12 +16,14 @@ describe('screen layout contract', () => {
     expect(shellLayoutForWidth(1279)).toBe('compact');
     expect(shellLayoutForWidth(1280)).toBe('compact');
     expect(shellLayoutForWidth(1439)).toBe('compact');
-    expect(shellLayoutForWidth(1440)).toBe('expanded');
+    expect(shellLayoutForWidth(1536)).toBe('compact');
+    expect(shellLayoutForWidth(1799)).toBe('compact');
+    expect(shellLayoutForWidth(1800)).toBe('expanded');
   });
 
   it('keeps every release review viewport assigned to a mode', () => {
     expect(REVIEW_VIEWPORTS.map(shellLayoutForWidth)).toEqual([
-      'mobile', 'mobile', 'compact', 'compact', 'expanded'
+      'mobile', 'mobile', 'compact', 'compact', 'compact'
     ]);
   });
 
@@ -43,9 +45,11 @@ describe('screen layout contract', () => {
     expect(tokenSource).toContain(`--ad-leaderboard-height: ${PAGE_LAYOUT.ads.leaderboardHeight}px`);
     expect(tokenSource).toContain(`--ad-mobile-height: ${PAGE_LAYOUT.ads.mobileHeight}px`);
     expect(tokenSource).toContain('--ad-inline-mobile-height: 100px');
+    expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.railMin}px`);
+    expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.counterRailMin}px`);
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.balancedRailsMin}px`);
-    expect(pageFrameSource).toContain('has-balanced-rails');
-    expect(pageFrameSource).not.toContain('singleRailMin');
+    expect(pageFrameSource).toContain('has-ad-rails');
+    expect(pageFrameSource).toContain("grid-template-areas: 'content right-ad'");
     expect(pageFrameSource).toContain('var(--page-content-current)');
     expect(pageFrameSource).toContain('page-grid--wide');
     expect(pageFrameSource).toContain('data-page-width={width}');

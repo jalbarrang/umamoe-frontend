@@ -37,7 +37,7 @@
   }
 
   /* Mirrors SCREEN_BREAKPOINTS.expanded; guarded by breakpoints.test.ts. */
-  @container ui-layout (min-width: 1440px) {
+  @container ui-layout (min-width: 1800px) {
     .layout--sidebar { grid-template-columns: 280px minmax(0, 1fr); }
     .layout--split { grid-template-columns: minmax(0, 1.5fr) minmax(340px, .5fr); }
   }

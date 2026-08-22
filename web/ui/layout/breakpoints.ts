@@ -11,13 +11,13 @@ export interface ScreenLayoutContract {
 
 export const SCREEN_LAYOUTS: readonly ScreenLayoutContract[] = [
   { id: 'mobile', label: 'Mobile', min: 0, max: 767, navigation: 'Utility header + bottom navigation' },
-  { id: 'compact', label: 'Compact', min: 768, max: 1439, navigation: '64px navigation rail' },
-  { id: 'expanded', label: 'Expanded', min: 1440, navigation: '240px navigation rail' }
+  { id: 'compact', label: 'Compact', min: 768, max: 1799, navigation: '64px navigation rail; preserves the right ad rail from 1280px' },
+  { id: 'expanded', label: 'Expanded', min: 1800, navigation: '240px navigation rail' }
 ] as const;
 
 export const SCREEN_BREAKPOINTS = {
   compact: 768,
-  expanded: 1440
+  expanded: 1800
 } as const;
 
 export const REVIEW_VIEWPORTS = [320, 390, 768, 1024, 1440] as const;
@@ -40,11 +40,13 @@ export const PAGE_LAYOUT = {
     medium: { contentMax: 1080, frameMax: 1536 },
     wide: { contentMax: 1760, frameMax: 2184 }
   },
-  gutters: { mobile: 16, compact: 24, expanded: 32 },
+  gutters: { mobile: 4, compact: 24, expanded: 32 },
   ads: {
     railWidth: 160,
     railGap: 20,
-    balancedRailsMin: 1384,
+    railMin: 1280,
+    counterRailMin: 1800,
+    balancedRailsMin: 2200,
     leaderboardHeight: 90,
     mobileHeight: 50
   }

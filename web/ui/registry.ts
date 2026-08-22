@@ -19,7 +19,7 @@ const commonStates = ['default', 'hover', 'focus', 'active', 'disabled'];
 export const uiRegistry: UiRegistrySection[] = [
   { id: 'tokens', title: 'Foundation', description: 'Colors, typography, spacing, radius, elevation, motion, breakpoints, layers, and density.', entries: [
     { id: 'tokens', name: 'Design tokens', purpose: 'Shared visual decisions represented as CSS custom properties.', states: ['dark', 'light', 'compact', 'comfortable', 'reduced-motion'], accessibility: 'System colors preserve readable contrast and user motion preferences.', status: 'review' },
-    { id: 'layouts', name: 'Responsive layouts', purpose: 'Analytics-informed shell modes, medium and wide content wells, fixed page gutters, and balanced ad-aware layouts.', states: ['320', '360', '390', '412', '768', '1366', '1440', '1536', '1920', '2560', 'medium-page', 'wide-page', 'no-side-rails', 'balanced-side-rails'], accessibility: 'Primary content stays first in DOM order; navigation and sponsored regions remain labeled landmarks.', status: 'review' }
+    { id: 'layouts', name: 'Responsive layouts', purpose: 'Analytics-informed shell modes, medium and wide content wells, fixed page gutters, and ad-aware counter-balancing.', states: ['320', '360', '390', '412', '768', '1366', '1440', '1536', '1920', '2560', 'medium-page', 'wide-page', 'in-content-only', 'compact-right-rail', 'single-counter-rail', 'balanced-side-rails'], accessibility: 'Primary content stays first in DOM order; navigation and sponsored regions remain labeled landmarks.', status: 'review' }
   ]},
   { id: 'actions', title: 'Actions', description: 'Clear, fast controls with predictable hierarchy and 44px touch targets.', entries: [
     { id: 'button', name: 'Button', purpose: 'Primary, secondary, ghost, and destructive actions.', states: [...commonStates, 'loading'], accessibility: 'Native button, visible focus, busy and disabled states.', status: 'review' },
@@ -34,7 +34,7 @@ export const uiRegistry: UiRegistrySection[] = [
     { id: 'file', name: 'File drop', purpose: 'Import structured user data.', states: [...commonStates, 'dragging', 'error'], accessibility: 'Always backed by a labeled native file input.', status: 'review' }
   ]},
   { id: 'navigation', title: 'Navigation', description: 'Adaptive site shell, local tabs, breadcrumbs, pagination, and launcher.', entries: [
-    { id: 'shell', name: 'Adaptive shell', purpose: 'Expanded rail, compact rail, and mobile bottom bar.', states: ['320', '390', '768', '1024', '1440'], accessibility: 'Landmarks, current-page state, and labeled destinations.', status: 'review' },
+    { id: 'shell', name: 'Adaptive shell', purpose: 'Expanded rail, compact rail, and mobile bottom bar.', states: ['320', '390', '768', '1024', '1536', '1920'], accessibility: 'Landmarks, current-page state, and labeled destinations.', status: 'review' },
     { id: 'tabs', name: 'Tabs and breadcrumbs', purpose: 'Local route context and view switching.', states: [...commonStates, 'selected'], accessibility: 'Tablist and breadcrumb navigation semantics.', status: 'review' },
     { id: 'pagination', name: 'Pagination', purpose: 'Bounded page navigation for server data.', states: [...commonStates, 'current'], accessibility: 'Navigation label and current-page state.', status: 'review' }
   ]},

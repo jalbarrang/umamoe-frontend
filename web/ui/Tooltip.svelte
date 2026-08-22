@@ -7,7 +7,7 @@
   .tip--top { bottom: calc(100% + 8px); transform: translate(-50%, 4px); }
   .tip--bottom { top: calc(100% + 8px); transform: translate(-50%, -4px); }
   .tooltip:hover .tip, .tooltip:focus-within .tip { opacity: 1; transform: translate(-50%, 0); }
-  @container lab-preview (max-width: 479px) {
+  @container app-viewport (max-width: 479px) {
     .tip { right: 0; left: auto; max-width: min(240px, calc(100vw - 32px)); transform: translateY(4px); }
     .tip--top { transform: translateY(4px); }
     .tip--bottom { transform: translateY(-4px); }

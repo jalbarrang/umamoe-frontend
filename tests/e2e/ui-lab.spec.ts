@@ -142,14 +142,14 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   await page.goto('/ui-lab');
   const shell = page.locator('[data-ui-lab-shell]');
   const rail = shell.locator('[data-shell-rail]');
-  const bottom = shell.locator('[data-shell-bottom]');
+  const bottom = page.locator('[data-shell-bottom]');
   const intro = shell.locator('.lab-intro');
 
   await expect(rail).toBeHidden();
   await expect(bottom).toBeVisible();
   const mobileIntro = await intro.boundingBox();
-  expect(mobileIntro!.x).toBe(16);
-  expect(320 - mobileIntro!.x - mobileIntro!.width).toBe(16);
+  expect(mobileIntro!.x).toBe(4);
+  expect(320 - mobileIntro!.x - mobileIntro!.width).toBe(4);
 
   await page.setViewportSize({ width: 768, height: 900 });
   await expect(bottom).toBeHidden();
@@ -166,6 +166,14 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
 
   await page.setViewportSize({ width: 1440, height: 900 });
+  expect((await rail.boundingBox())!.width).toBe(64);
+  await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
+
+  await page.setViewportSize({ width: 1536, height: 864 });
+  expect((await rail.boundingBox())!.width).toBe(64);
+  await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
+
+  await page.setViewportSize({ width: 1920, height: 1080 });
   const expandedRail = await rail.boundingBox();
   expect(expandedRail!.width).toBe(240);
   await expect(rail.getByText('Foundation', { exact: true })).toBeVisible();
@@ -177,24 +185,27 @@ test('Analytics viewport toggles resize the entire UI Lab website', async ({ pag
   const viewport = page.locator('.lab-viewport');
   const rail = viewport.locator('[data-shell-rail]');
   const bottom = viewport.locator('[data-shell-bottom]');
-  const topAd = viewport.locator('[data-ad-kind="leaderboard"]');
+  const inlineAd = viewport.locator('[data-ad-kind="inline"]');
 
   await page.getByRole('button', { name: '360×800', exact: true }).click();
   await expect(viewport).toHaveAttribute('data-preview-width', '360');
   expect((await viewport.boundingBox())!.width).toBe(360);
   await expect(rail).toBeHidden();
   await expect(bottom).toBeVisible();
-  expect((await topAd.boundingBox())!.height).toBe(50);
+  await expect(inlineAd).toBeVisible();
+  expect((await inlineAd.boundingBox())!.height).toBe(100);
 
   await page.getByRole('button', { name: '1366×768', exact: true }).click();
   expect((await viewport.boundingBox())!.width).toBe(1366);
   expect((await rail.boundingBox())!.width).toBe(64);
   await expect(bottom).toBeHidden();
+  await expect(inlineAd).toBeHidden();
+  await expect(viewport.locator('[data-ad-position="right-rail"]')).toBeVisible();
 
   await page.getByRole('button', { name: '1536×864', exact: true }).click();
   expect((await viewport.boundingBox())!.width).toBe(1536);
-  expect((await rail.boundingBox())!.width).toBe(240);
-  expect((await topAd.boundingBox())!.height).toBe(90);
+  expect((await rail.boundingBox())!.width).toBe(64);
+  await expect(viewport.locator('[data-ad-position="right-rail"]')).toBeVisible();
 
   await page.getByRole('button', { name: 'Fluid', exact: true }).click();
   await expect(viewport).toHaveAttribute('data-preview-width', 'fluid');
@@ -216,7 +227,7 @@ test('medium and wide page contracts change the live UI lab content maximum', as
   expect(medium!.x).toBeGreaterThan(wide!.x);
 });
 
-test('the live UI page displays Publift locations and keeps side rails balanced', async ({ page }) => {
+test('the live UI page uses a 1080p counter-rail and a large-screen ad pair', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/ui-lab');
 
@@ -225,24 +236,39 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
 
   const mobileGeometry = await frame.evaluate((element) => {
     const frameBox = element.getBoundingClientRect();
-    const pageGridBox = element.querySelector<HTMLElement>('[data-route-id="ui-lab"]')!.getBoundingClientRect();
     const contentBox = element.querySelector<HTMLElement>('[data-page-content]')!.getBoundingClientRect();
-    const topAdBox = element.querySelector<HTMLElement>('[data-ad-kind="leaderboard"]')!.getBoundingClientRect();
-    const introBox = element.querySelector<HTMLElement>('.lab-intro')!.getBoundingClientRect();
     const inlineAdBox = element.querySelector<HTMLElement>('[data-ad-kind="inline"]')!.getBoundingClientRect();
     const visibleRails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
       .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0);
     return {
       contentInset: contentBox.left - frameBox.left,
-      topAdInset: topAdBox.left - frameBox.left,
-      topAdRightInset: frameBox.right - topAdBox.right,
-      topAdPadding: topAdBox.top - pageGridBox.top,
-      topAdBottomPadding: introBox.top - topAdBox.bottom,
       inlineHeight: inlineAdBox.height,
       visibleRails: visibleRails.length
     };
   });
-  expect(mobileGeometry).toEqual({ contentInset: 16, topAdInset: 2, topAdRightInset: 2, topAdPadding: 16, topAdBottomPadding: 16, inlineHeight: 100, visibleRails: 0 });
+  expect(mobileGeometry).toEqual({ contentInset: 4, inlineHeight: 100, visibleRails: 0 });
+
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await expect(frame.locator('[data-ad-position="left-rail"]')).toBeHidden();
+  await expect(frame.locator('[data-ad-position="right-rail"]')).toBeHidden();
+  await expect(frame.locator('[data-ad-kind="inline"]')).toBeVisible();
+
+  await page.setViewportSize({ width: 1536, height: 864 });
+  const compactAdGeometry = await page.evaluate(() => {
+    const navigation = document.querySelector<HTMLElement>('[data-shell-rail]')!.getBoundingClientRect();
+    const pageFrame = document.querySelector<HTMLElement>('[data-page-frame]')!.getBoundingClientRect();
+    const rightRail = document.querySelector<HTMLElement>('[data-ad-position="right-rail"]')!.getBoundingClientRect();
+    const visibleRails = [...document.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
+      .filter((rail) => rail.getBoundingClientRect().width > 0);
+    return {
+      navigationWidth: navigation.width,
+      visibleRails: visibleRails.length,
+      rightRailWidth: rightRail.width,
+      rightInset: pageFrame.right - rightRail.right
+    };
+  });
+  expect(compactAdGeometry).toEqual({ navigationWidth: 64, visibleRails: 1, rightRailWidth: 160, rightInset: 24 });
+  await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden();
 
   await page.setViewportSize({ width: 1920, height: 1080 });
   const expandedGeometry = await frame.evaluate((element) => {
@@ -250,7 +276,9 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
     const frameBox = pageGrid.getBoundingClientRect();
     const content = element.querySelector<HTMLElement>('[data-page-content]')!;
     const utility = document.querySelector<HTMLElement>('[data-shell-utility]')!.getBoundingClientRect();
-    const leftRail = element.querySelector<HTMLElement>('[data-ad-position="left-rail"]')!;
+    const navigationRail = document.querySelector<HTMLElement>('[data-shell-rail]')!.getBoundingClientRect();
+    const rightReserve = element.querySelector<HTMLElement>('[data-ad-position="right-rail"]')!;
+    const rightReserveBox = rightReserve.getBoundingClientRect();
     const rails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
       .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0)
       .map((rail) => rail.getBoundingClientRect());
@@ -258,24 +286,62 @@ test('the live UI page displays Publift locations and keeps side rails balanced'
       scrollWidth: element.scrollWidth,
       clientWidth: element.clientWidth,
       railWidths: rails.map((rail) => rail.width),
-      leftInset: rails[0]!.left - frameBox.left,
-      rightInset: frameBox.right - rails[1]!.right,
+      navigationReserveWidth: navigationRail.width,
+      rightReserveWidth: rightReserveBox.width,
+      contentLeftReserve: content.getBoundingClientRect().left,
+      contentRightReserve: window.innerWidth - content.getBoundingClientRect().right,
+      creativeLeftInset: rails[0]!.left - rightReserveBox.left,
+      creativeRightInset: rightReserveBox.right - rails[0]!.right,
       railTopGap: rails[0]!.top - utility.bottom,
       railBottomGap: window.innerHeight - rails[0]!.bottom,
-      contentComesFirst: Boolean(content.compareDocumentPosition(leftRail) & Node.DOCUMENT_POSITION_FOLLOWING)
+      contentComesFirst: Boolean(content.compareDocumentPosition(rightReserve) & Node.DOCUMENT_POSITION_FOLLOWING),
+      frameLeft: frameBox.left
     };
   });
   expect(expandedGeometry.scrollWidth).toBe(expandedGeometry.clientWidth);
-  expect(expandedGeometry.railWidths).toEqual([160, 160]);
-  expect(expandedGeometry.leftInset).toBe(expandedGeometry.rightInset);
+  expect(expandedGeometry.railWidths).toEqual([160]);
+  expect(expandedGeometry.navigationReserveWidth).toBe(240);
+  expect(expandedGeometry.rightReserveWidth).toBe(240);
+  expect(expandedGeometry.contentLeftReserve).toBe(expandedGeometry.contentRightReserve);
+  expect(expandedGeometry.creativeLeftInset).toBe(expandedGeometry.creativeRightInset);
   expect(expandedGeometry.railTopGap).toBe(expandedGeometry.railBottomGap);
   expect(expandedGeometry.contentComesFirst).toBe(true);
+  expect(expandedGeometry.frameLeft).toBe(240);
   await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-feature-id', 'ui-system');
   await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-page-width', 'wide');
-  await expect(frame.locator('[data-ad-kind="leaderboard"]')).toHaveAttribute('data-ad-sizes', '1200x90,970x90,728x90,468x90,320x50,300x50');
+  await expect(frame.locator('[data-ad-kind="leaderboard"]')).toHaveCount(0);
   await expect(frame.locator('[data-ad-kind="inline"]')).toHaveAttribute('data-ad-sizes', '970x90,728x90,468x90,468x60,320x100,300x100,320x50,300x50');
+  await expect(frame.locator('[data-ad-kind="inline"]')).toHaveAttribute('data-ad-behavior', 'rail-alternative');
   await expect(frame.locator('[data-ad-position="left-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
   await expect(frame.locator('[data-ad-position="right-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
+
+  await page.setViewportSize({ width: 2560, height: 1440 });
+  const largeScreenRails = await frame.locator('[data-ad-kind="rail"]').evaluateAll((rails) => rails
+    .filter((rail) => rail.getBoundingClientRect().width > 0)
+    .map((rail) => rail.getBoundingClientRect().width));
+  expect(largeScreenRails).toEqual([160, 160]);
+});
+
+test('side navigation and ad rails stay sticky for the full simulated viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/ui-lab');
+
+  const scrollport = page.locator('[data-preview-scrollport]');
+  const navigation = page.locator('[data-shell-rail]');
+  const rightRail = page.locator('[data-ad-position="right-rail"]');
+  const before = {
+    navigation: await navigation.boundingBox(),
+    rail: await rightRail.boundingBox(),
+    scrollport: await scrollport.boundingBox()
+  };
+  await scrollport.evaluate((element) => element.scrollTo({ top: 1200 }));
+  await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(1000);
+  const after = { navigation: await navigation.boundingBox(), rail: await rightRail.boundingBox() };
+
+  expect(before.navigation!.height).toBe(before.scrollport!.height);
+  expect(after.navigation!.y).toBe(before.navigation!.y);
+  expect(after.navigation!.height).toBe(before.navigation!.height);
+  expect(after.rail!.y).toBe(before.rail!.y);
 });
 
 test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
