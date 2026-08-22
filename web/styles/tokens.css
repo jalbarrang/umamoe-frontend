@@ -29,6 +29,17 @@
   --accent-blue-dark: #1976d2;
   --accent-green-strong: #4caf50;
 
+  /* Stable game semantics ported from the Angular vocabulary. */
+  --rank-g: #c6c7c6; --rank-f: #ad97fc; --rank-e: #d675ef; --rank-d: #63baf7;
+  --rank-c: #81d968; --rank-b: #ff7da5; --rank-a: #fa8836; --rank-s: #e7b618;
+  --rank-ss: #ef5350; --rank-ultra: #de0cf7;
+  --aptitude-s: #ffb74d; --aptitude-a: #f06292; --aptitude-b: #81c784;
+  --aptitude-c: #64b5f6; --aptitude-d: #ce93d8; --aptitude-e: #b0bec5; --aptitude-f: #90a4ae; --aptitude-g: #78909c;
+  --stat-speed: #64b5f6; --stat-stamina: #ef9a9a; --stat-power: #ffcc80; --stat-guts: #ce93d8; --stat-wit: #81c784;
+  --distance-sprint: #ff9800; --distance-mile: #e91e63; --distance-medium: #4caf50; --distance-long: #2196f3; --distance-dirt: #a1887f;
+  --race-g1: #7fb3ef; --race-g2: #ffb74d; --race-g3: #81c784;
+  --lineage-main: #ffb74d; --lineage-parent: #64b5f6; --lineage-grandparent: #ce93d8;
+
   --border-subtle: rgb(255 255 255 / 0.06);
   --border-primary: rgb(255 255 255 / 0.12);
   --border-secondary: rgb(255 255 255 / 0.20);
@@ -168,6 +179,15 @@
   --accent-purple: #6d28d9;
   --accent-pink: #be185d;
   --accent-green-strong: #15803d;
+  --rank-g: #5f6368; --rank-f: #7254d6; --rank-e: #a23dba; --rank-d: #1976c9;
+  --rank-c: #2e7d32; --rank-b: #c52f67; --rank-a: #c75b12; --rank-s: #9a7000;
+  --rank-ss: #c62828; --rank-ultra: #9c13ad;
+  --aptitude-s: #a65d00; --aptitude-a: #b42359; --aptitude-b: #287a31;
+  --aptitude-c: #1769aa; --aptitude-d: #7b2b88; --aptitude-e: #52606d; --aptitude-f: #5f6f78; --aptitude-g: #596970;
+  --stat-speed: #1769aa; --stat-stamina: #b42335; --stat-power: #a65d00; --stat-guts: #7b2b88; --stat-wit: #287a31;
+  --distance-sprint: #b85c00; --distance-mile: #b42359; --distance-medium: #287a31; --distance-long: #1769aa; --distance-dirt: #72594f;
+  --race-g1: #1769aa; --race-g2: #a65d00; --race-g3: #287a31;
+  --lineage-main: #a65d00; --lineage-parent: #1769aa; --lineage-grandparent: #7b2b88;
 
   --border-subtle: rgb(17 24 39 / 0.13);
   --border-primary: rgb(17 24 39 / 0.16);

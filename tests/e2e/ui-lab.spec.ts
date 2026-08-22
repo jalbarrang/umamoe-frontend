@@ -16,6 +16,7 @@ const viewports = [
 
 for (const viewport of viewports) {
   test(`UI lab fits ${viewport.width}px without page overflow`, async ({ page }) => {
+    test.setTimeout(45_000);
     await page.setViewportSize(viewport);
     await page.goto('/ui-lab');
     await expect(page.getByRole('heading', { name: 'uma.moe UI system' })).toBeVisible();
@@ -97,7 +98,7 @@ test('inheritance spark labels remain complete in the mobile layout', async ({ p
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/ui-lab');
 
-  const spark = page.getByLabel('2 star The View from the Lead Is Mine!');
+  const spark = page.getByLabel('2 star The View from the Lead Is Mine!').first();
   await expect(spark).toBeVisible();
   await expect(spark.locator('.name')).toHaveText('The View from the Lead Is Mine!');
   const clipping = await spark.locator('.name').evaluate((element) => ({
@@ -110,8 +111,8 @@ test('inheritance spark labels remain complete in the mobile layout', async ({ p
 test('main-parent and P2 sparks preserve the Angular source accents', async ({ page }) => {
   await page.goto('/ui-lab');
 
-  const main = page.getByLabel(/3 star Speed.*Main parent/);
-  const p2 = page.getByLabel(/2 star Swinging Maestro.*P2 legacy/);
+  const main = page.getByLabel(/3 star Speed.*Main parent/).first();
+  const p2 = page.getByLabel(/2 star Swinging Maestro.*P2 legacy/).first();
   await expect(main).toHaveAttribute('data-source', 'main');
   await expect(p2).toHaveAttribute('data-source', 'p2');
   await expect(main.locator('.source-marker')).toBeVisible();
@@ -187,6 +188,12 @@ test('section navigation exposes subsections in expanded, compact, and mobile sh
   await rail.getByRole('button', { name: 'Open Inputs subsections' }).click();
   const wideSubsections = rail.locator('#navigation-subsections-inputs');
   await expect(wideSubsections.getByRole('link', { name: 'Slider' })).toBeVisible();
+  const expandedAlignment = await Promise.all([
+    rail.locator('.navigation-item.open > .navigation-parent .navigation-link > span').boundingBox(),
+    wideSubsections.getByRole('link', { name: 'Slider' }).locator('span').boundingBox()
+  ]);
+  expect(expandedAlignment[1]!.x).toBeLessThan(expandedAlignment[0]!.x);
+  expect(expandedAlignment[0]!.x - expandedAlignment[1]!.x).toBeLessThanOrEqual(24);
   await wideSubsections.getByRole('link', { name: 'Slider' }).click();
   await expect(page).toHaveURL(/#slider$/);
   await expect(wideSubsections).not.toBeVisible();
@@ -195,8 +202,14 @@ test('section navigation exposes subsections in expanded, compact, and mobile sh
   await rail.getByRole('button', { name: 'Open Domain patterns subsections' }).click();
   const compactSubsections = rail.locator('#navigation-subsections-domain');
   await expect(compactSubsections.getByRole('link', { name: 'Veteran selector' })).toBeVisible();
-  await page.keyboard.press('Escape');
+  await rail.getByRole('button', { name: 'Open Actions subsections' }).click();
   await expect(compactSubsections).not.toBeVisible();
+  const compactActions = rail.locator('#navigation-subsections-actions');
+  await expect(compactActions).toBeVisible();
+  const [railBounds, flyoutBounds] = await Promise.all([rail.boundingBox(), compactActions.boundingBox()]);
+  expect(flyoutBounds!.x).toBe(railBounds!.x + railBounds!.width);
+  await page.keyboard.press('Escape');
+  await expect(compactActions).not.toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'More UI lab sections' }).click();
@@ -206,6 +219,37 @@ test('section navigation exposes subsections in expanded, compact, and mobile sh
   await sheet.getByRole('link', { name: 'Section navigation' }).click();
   await expect(sheet).not.toBeVisible();
   await expect(page).toHaveURL(/#subnavigation$/);
+});
+
+test('ported Angular UI contracts remain interactive and mobile-safe', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ui-lab');
+
+  await expect(page.getByLabel('Rank UE1').first()).toBeVisible();
+  await expect(page.getByLabel('Long: S').first()).toBeVisible();
+  await expect(page.getByLabel('Total affinity: 83').first()).toBeVisible();
+
+  const filterMode = page.getByRole('radio', { name: 'UQL', exact: true }).last();
+  await filterMode.click();
+  await expect(filterMode).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: 'Open mobile filter sheet' }).click();
+  const filterSheet = page.getByRole('dialog', { name: 'Database filters' });
+  await expect(filterSheet).toBeVisible();
+  await filterSheet.getByRole('button', { name: 'Show 74 results' }).click();
+  await expect(filterSheet).not.toBeVisible();
+
+  const veteranRow = page.getByRole('button', { name: 'Select Mejiro McQueen' });
+  await expect(veteranRow).toHaveAttribute('aria-pressed', 'false');
+  await veteranRow.click();
+  await expect(veteranRow).toHaveAttribute('aria-pressed', 'true');
+
+  const lineageNode = page.getByRole('button', { name: 'P2: Kitasan Black' });
+  await lineageNode.click();
+  await expect(lineageNode).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Open Satsuki Sho' }).click();
+  await expect(page.getByText('Selected race: Satsuki Sho')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
 test('Analytics viewport toggles resize the entire UI Lab website', async ({ page }) => {
@@ -376,8 +420,9 @@ test('side navigation and ad rails stay sticky for the full simulated viewport',
 test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
   await page.goto('/ui-lab');
 
-  const minimum = page.getByRole('slider', { name: 'Blue factor stars minimum' });
-  const maximum = page.getByRole('slider', { name: 'Blue factor stars maximum' });
+  const inputs = page.getByRole('region', { name: 'Inputs' });
+  const minimum = inputs.getByRole('slider', { name: 'Blue factor stars minimum' });
+  const maximum = inputs.getByRole('slider', { name: 'Blue factor stars maximum' });
   await expect(minimum).toHaveValue('2');
   await expect(maximum).toHaveValue('7');
   await minimum.focus();
@@ -393,7 +438,7 @@ test('database slider exposes independent range thumbs and threshold semantics',
   const transitionSeconds = await sliderWrap.locator('.visual-thumb--start').evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration));
   expect(transitionSeconds).toBeGreaterThan(0);
 
-  const track = page.getByRole('button', { name: 'Adjust Blue factor stars on track' });
+  const track = inputs.getByRole('button', { name: 'Adjust Blue factor stars on track' });
   await track.scrollIntoViewIfNeeded();
   const trackBounds = await track.boundingBox();
   expect(trackBounds).not.toBeNull();

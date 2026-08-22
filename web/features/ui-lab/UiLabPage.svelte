@@ -2,6 +2,8 @@
   import { theme, setTheme, toggleTheme, type Theme } from '../../platform/theme';
   import { setMockClientState } from '../../platform/client/client-state';
   import Artwork from '../../ui/Artwork.svelte';
+  import AffinityStat from '../../ui/AffinityStat.svelte';
+  import AptitudeGrid from '../../ui/AptitudeGrid.svelte';
   import Badge from '../../ui/Badge.svelte';
   import Banner from '../../ui/Banner.svelte';
   import Breadcrumbs from '../../ui/Breadcrumbs.svelte';
@@ -10,11 +12,16 @@
   import Checkbox from '../../ui/Checkbox.svelte';
   import ClientIndicator from '../../ui/ClientIndicator.svelte';
   import Combobox from '../../ui/Combobox.svelte';
+  import CountedOption from '../../ui/CountedOption.svelte';
   import DataTable from '../../ui/DataTable.svelte';
   import Dialog from '../../ui/Dialog.svelte';
   import EmptyState from '../../ui/EmptyState.svelte';
   import FileDrop from '../../ui/FileDrop.svelte';
   import FilterChip from '../../ui/FilterChip.svelte';
+  import FilterPresetMenu from '../../ui/FilterPresetMenu.svelte';
+  import FilterSection from '../../ui/FilterSection.svelte';
+  import FilterSheet from '../../ui/FilterSheet.svelte';
+  import FilterShell from '../../ui/FilterShell.svelte';
   import GameIcon from '../../ui/GameIcon.svelte';
   import IconButton from '../../ui/IconButton.svelte';
   import Icon from '../../ui/Icon.svelte';
@@ -25,16 +32,21 @@
   import type { NavigationItem } from '../../ui/navigation-types';
   import Pagination from '../../ui/Pagination.svelte';
   import Progress from '../../ui/Progress.svelte';
+  import RaceBadge from '../../ui/RaceBadge.svelte';
+  import RaceSchedule from '../../ui/RaceSchedule.svelte';
+  import RankBadge from '../../ui/RankBadge.svelte';
   import RadioGroup from '../../ui/RadioGroup.svelte';
   import RangeField from '../../ui/RangeField.svelte';
   import SkillChip from '../../ui/SkillChip.svelte';
   import Slider from '../../ui/Slider.svelte';
   import SparkRow from '../../ui/SparkRow.svelte';
   import SegmentedControl from '../../ui/SegmentedControl.svelte';
+  import SelectionChip from '../../ui/SelectionChip.svelte';
   import SelectField from '../../ui/SelectField.svelte';
   import Skeleton from '../../ui/Skeleton.svelte';
   import Spinner from '../../ui/Spinner.svelte';
   import StatTile from '../../ui/StatTile.svelte';
+  import StatStrip from '../../ui/StatStrip.svelte';
   import StatusPill from '../../ui/StatusPill.svelte';
   import Switch from '../../ui/Switch.svelte';
   import Tabs from '../../ui/Tabs.svelte';
@@ -43,6 +55,12 @@
   import ToastRegion, { type Toast } from '../../ui/ToastRegion.svelte';
   import Tooltip from '../../ui/Tooltip.svelte';
   import VeteranSelector from '../../ui/VeteranSelector.svelte';
+  import VeteranListItem from '../../ui/VeteranListItem.svelte';
+  import VeteranSummary from '../../ui/VeteranSummary.svelte';
+  import LineageTree from '../../ui/LineageTree.svelte';
+  import type { VeteranUiRecord } from '../../ui/veteran-ui-types';
+  import type { LineageBranch, LineageNodeData } from '../../ui/lineage-types';
+  import type { RaceScheduleYear } from '../../ui/race-types';
   import VirtualList from '../../ui/VirtualList.svelte';
   import WorkspaceSwitcher from '../../ui/WorkspaceSwitcher.svelte';
   import AdRegion from '../../ui/layout/AdRegion.svelte';
@@ -58,6 +76,9 @@
   import skillSpeedIcon from './fixtures/skill-speed.webp';
   import skillRecoveryIcon from './fixtures/skill-recovery.webp';
   import caratIcon from './fixtures/item-carats.webp';
+  import raceImageG1 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_1001_00.webp';
+  import raceImageG2 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_2001_00.webp';
+  import raceImageG3 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_3001_00.webp';
 
   let density = $state('comfortable');
   let reducedMotion = $state(false);
@@ -83,6 +104,13 @@
   let pageWidth = $state<PageWidth>('wide');
   let previewWidth = $state<number | 'fluid'>('fluid');
   let veteran = $state('v-1');
+  let filterMode = $state('advanced');
+  let filtersExpanded = $state(true);
+  let filterSheetOpen = $state(false);
+  let presetDraft = $state('Long parents');
+  let veteranRowSelected = $state(false);
+  let selectedLineageId = $state('lineage-main');
+  let selectedRace = $state('');
   let toasts = $state<Toast[]>([]);
 
   const viewports = REVIEW_VIEWPORTS;
@@ -135,6 +163,61 @@
   const pinkSparks = [{ id: 'long', name: 'Long', level: 3, chance: '10%', source: 'main' as const }];
   const greenSparks = [{ id: 'unique', name: 'The View from the Lead Is Mine!', level: 2, source: 'parent' as const }];
   const whiteSparks = [{ id: 'maestro', name: 'Swinging Maestro', level: 2, chance: '5%', source: 'p2' as const }];
+  const aptitudeFixtures = [
+    { id: 'turf', group: 'Surface', label: 'Turf', grade: 'A' as const },
+    { id: 'dirt', group: 'Surface', label: 'Dirt', grade: 'G' as const },
+    { id: 'medium', group: 'Distance', label: 'Medium', grade: 'A' as const },
+    { id: 'long', group: 'Distance', label: 'Long', grade: 'S' as const },
+    { id: 'leader', group: 'Style', label: 'Leader', grade: 'A' as const },
+    { id: 'runner', group: 'Style', label: 'Runner', grade: 'B' as const }
+  ];
+  const statFixtures = [
+    { id: 'speed', label: 'Speed', value: 1542, tone: 'speed' as const },
+    { id: 'stamina', label: 'Stamina', value: 1312, tone: 'stamina' as const },
+    { id: 'power', label: 'Power', value: 1184, tone: 'power' as const },
+    { id: 'guts', label: 'Guts', value: 702, tone: 'guts' as const },
+    { id: 'wit', label: 'Wit', value: 1138, tone: 'wit' as const }
+  ];
+  const veteranFixture: VeteranUiRecord = {
+    id: 'veteran-mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, rank: 'UE1', score: 29412,
+    scenario: 'Grand Masters', detail: 'Long · Leader', workspace: 'Local', updated: '4 min ago', affinity: 83, raceAffinity: 18,
+    stats: statFixtures, aptitudes: aptitudeFixtures, sparks: [
+      { tone: 'blue', items: blueSparks }, { tone: 'pink', items: pinkSparks }, { tone: 'green', items: greenSparks }, { tone: 'white', items: whiteSparks }
+    ],
+    parents: [
+      { id: 'parent-oguri', position: 'P1', name: 'Oguri Cap', image: oguriCapImage, affinity: 42, sparks: [{ tone: 'blue', items: blueSparks.slice(0, 1) }, { tone: 'green', items: greenSparks }] },
+      { id: 'parent-kitasan', position: 'P2', name: 'Kitasan Black', image: kitasanBlackImage, affinity: 38, sparks: [{ tone: 'pink', items: pinkSparks }, { tone: 'white', items: whiteSparks }] }
+    ]
+  };
+  const lineageRoot: LineageNodeData = { id: 'lineage-main', name: 'Mejiro McQueen', image: mejiroMcQueenImage, rank: 'UE1', role: 'main', roleLabel: 'Main', affinity: 83, raceAffinity: 18, sparks: [{ tone: 'blue', items: blueSparks.slice(0, 1) }] };
+  const lineageBranches: LineageBranch[] = [
+    { id: 'lineage-p1', parent: { id: 'lineage-oguri', name: 'Oguri Cap', image: oguriCapImage, rank: 'UF4', role: 'parent', roleLabel: 'P1', affinity: 42 }, grandparents: [
+      { id: 'lineage-oguri-gp1', name: 'Kitasan Black', image: kitasanBlackImage, rank: 'UF8', role: 'grandparent', roleLabel: 'P1 legacy 1', affinity: 24 },
+      { id: 'lineage-oguri-gp2', name: 'Mejiro McQueen', image: mejiroMcQueenImage, rank: 'UG8', role: 'grandparent', roleLabel: 'P1 legacy 2', affinity: 18 }
+    ]},
+    { id: 'lineage-p2', parent: { id: 'lineage-kitasan', name: 'Kitasan Black', image: kitasanBlackImage, rank: 'UF8', role: 'parent', roleLabel: 'P2', affinity: 38 }, grandparents: [
+      { id: 'lineage-kita-gp1', name: 'Mejiro McQueen', image: mejiroMcQueenImage, rank: 'UE0', role: 'grandparent', roleLabel: 'P2 legacy 1', affinity: 21 },
+      { id: 'lineage-kita-gp2', name: 'Oguri Cap', image: oguriCapImage, rank: 'UG9', role: 'grandparent', roleLabel: 'P2 legacy 2', affinity: 17 }
+    ]}
+  ];
+  const raceYears: RaceScheduleYear[] = [
+    { id: 'junior', label: 'Junior Year', slots: [
+      { id: 'junior-dec-late', label: 'Late Dec', races: [{ id: 'hopeful', name: 'Hopeful Stakes', shortName: 'Hopeful S.', grade: 'G1', image: raceImageG1, placement: 1, selected: true }] },
+      { id: 'junior-nov-late', label: 'Late Nov', races: [{ id: 'kyoto-junior', name: 'Kyoto Junior Stakes', shortName: 'Kyoto Junior', grade: 'G3', image: raceImageG3, placement: 2 }] }
+    ]},
+    { id: 'classic', label: 'Classic Year', slots: [
+      { id: 'classic-apr-early', label: 'Early Apr', races: [{ id: 'satsuki', name: 'Satsuki Sho', shortName: 'Satsuki Sho', grade: 'G1', image: raceImageG1, affinityGain: 3 }] },
+      { id: 'classic-sep-late', label: 'Late Sep', races: [{ id: 'kobe', name: 'Kobe Shimbun Hai', shortName: 'Kobe Shimbun', grade: 'G2', image: raceImageG2, affinityGain: 2 }] }
+    ]},
+    { id: 'senior', label: 'Senior Year', slots: [
+      { id: 'senior-apr-late', label: 'Late Apr', races: [{ id: 'tenno-spring', name: 'Tenno Sho Spring', shortName: 'Tenno Sho', grade: 'G1', image: raceImageG1, placement: 1 }] },
+      { id: 'senior-dec-late', label: 'Late Dec', races: [{ id: 'arima', name: 'Arima Kinen', shortName: 'Arima Kinen', grade: 'G1', image: raceImageG1, selected: true }] }
+    ]}
+  ];
+  const filterPresets = [
+    { id: 'long-parent', name: 'Long-distance parents', activeCount: 4, mode: 'Advanced' },
+    { id: 'white-sparks', name: 'White spark search', activeCount: 2, mode: 'UQL' }
+  ];
 
   $effect(() => {
     document.documentElement.dataset.density = density;
@@ -280,6 +363,25 @@
     <LabSection id="data" title="Data patterns" description="Small sets use semantic tables and cards; large sets use a fixed-row virtual window so DOM size stays constant.">
       <DemoBlock id="cards" title="Stat tiles"><div class="stats"><StatTile label="Veterans" value="2,481" detail="+18 this week" trend="up" tone="accent"/><StatTile label="Synced" value="98.7%" detail="32 pending" tone="success"/><StatTile label="Race logs" value="14,209" detail="Last 30 days"/><StatTile label="Conflicts" value="2" detail="Needs review" tone="warning"/></div></DemoBlock>
       <DemoBlock id="filters" title="Filters and sort"><div class="state-row"><FilterChip label="All" count={2481} selected/><FilterChip label="Long" count={412} bind:selected={selectedFilter}/><FilterChip label="Runner" count={188}/><FilterChip label="UE+" count={74}/><FilterChip label="Imported today" removable/><Button variant="ghost" size="sm" icon="sort">Evaluation</Button></div></DemoBlock>
+      <DemoBlock id="filter-composition" title="Database filter composition" note="Modes · presets · sections · counted options · mobile sheet">
+        <div class="state-stack">
+          <FilterShell activeCount={4} modes={['Basic', 'Advanced', 'UQL']} bind:mode={filterMode} bind:expanded={filtersExpanded} onclear={() => showToast('warning')}>
+            {#snippet tools()}<FilterPresetMenu presets={filterPresets} bind:draft={presetDraft} onsave={() => showToast()} onload={() => showToast()} ondelete={() => showToast('warning')}/>{/snippet}
+            <FilterSection title="Include / exclude Umas" description="Main parents and legacies" count={2}>
+              <div class="selection-row"><SelectionChip label="Mejiro McQueen" image={mejiroMcQueenImage} tone="include" removable/><SelectionChip label="Oguri Cap" image={oguriCapImage} tone="exclude" removable/></div>
+              <div class="filter-options"><CountedOption label="Mejiro McQueen" count={214} image={mejiroMcQueenImage} selected/><CountedOption label="Oguri Cap" count={188} image={oguriCapImage}/><CountedOption label="Kitasan Black" count={164} image={kitasanBlackImage} excluded/></div>
+            </FilterSection>
+            <FilterSection title="Inheritance factors" description="Star thresholds and factor types" count={2}>
+              <Slider id="composed-factor-range" label="Blue factor stars" range min={1} max={9} step={1} tone="blue" showTicks bind:value={factorMinimum} bind:endValue={factorMaximum}/>
+            </FilterSection>
+          </FilterShell>
+          <Button variant="secondary" size="sm" icon="filter" onclick={() => filterSheetOpen = true}>Open mobile filter sheet</Button>
+          <FilterSheet id="filter-sheet-contract" title="Database filters" description="The same filter contracts in a bounded mobile sheet." bind:open={filterSheetOpen}>
+            <div class="filter-options"><CountedOption label="Long distance" count={412} selected/><CountedOption label="Leader" count={188}/><CountedOption label="UE and above" count={74}/></div>
+            {#snippet actions()}<Button variant="ghost" onclick={() => filterSheetOpen = false}>Cancel</Button><Button onclick={() => { filterSheetOpen = false; showToast(); }}>Show 74 results</Button>{/snippet}
+          </FilterSheet>
+        </div>
+      </DemoBlock>
       <DemoBlock id="table" title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
       <DemoBlock title="Virtual list" note="2,500 records · roughly 20 live rows">
         <VirtualList items={virtualItems} rowHeight={54} height={320} label="Veterans">
@@ -293,10 +395,35 @@
         <DemoBlock id="artwork" title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
         <DemoBlock title="Skills"><div class="skill-examples"><SkillChip icon={skillRecoveryIcon} name="Swinging Maestro" level="Lv.1" rarity="gold"/><SkillChip icon={skillSpeedIcon} name="Long-Distance Corner ○" level="Lv.3"/><SkillChip icon={skillSpeedIcon} name="The View from the Lead Is Mine!" level="Lv.2" rarity="unique-main"/></div></DemoBlock>
       </div>
+      <DemoBlock id="identity" title="Rank, aptitude, stats, and affinity" note="Angular game semantics as small reusable contracts">
+        <div class="identity-contract">
+          <div class="rank-examples"><RankBadge label="A+"/><RankBadge label="SS+"/><RankBadge label="UG8"/><RankBadge label="UE1" size="lg"/><RankBadge score={74400}/><AffinityStat value={83} kind="total"/><AffinityStat value={18} kind="race"/></div>
+          <StatStrip items={statFixtures}/>
+          <AptitudeGrid items={aptitudeFixtures}/>
+        </div>
+      </DemoBlock>
       <div class="demo-grid">
         <DemoBlock title="Inheritance sparks"><div class="spark-examples"><SparkRow tone="blue" items={blueSparks}/><SparkRow tone="pink" items={pinkSparks}/><SparkRow tone="green" items={greenSparks}/><SparkRow tone="white" items={whiteSparks}/></div></DemoBlock>
         <DemoBlock id="veteran-selector" title="Veteran selector" note="Searchable active-workspace listbox"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
       </div>
+      <DemoBlock id="veteran-summary" title="Veteran summary and reusable result row" note="Identity · stats · sparks · parent context · independent row actions">
+        <div class="veteran-contracts">
+          <VeteranSummary veteran={veteranFixture}/>
+          <VeteranListItem veteran={veteranFixture} selected={veteranRowSelected} onclick={() => veteranRowSelected = !veteranRowSelected}>
+            {#snippet actions()}<IconButton icon="download" label="Export Veteran" size="sm"/><IconButton icon="trash" label="Delete Veteran" size="sm"/>{/snippet}
+          </VeteranListItem>
+        </div>
+      </DemoBlock>
+      <DemoBlock id="lineage" title="Lineage and affinity" note="Selectable semantic nodes · decorative connectors · mobile stack">
+        <LineageTree root={lineageRoot} branches={lineageBranches} selectedId={selectedLineageId} onselect={(node) => selectedLineageId = node.id}/>
+      </DemoBlock>
+      <DemoBlock id="race-schedule" title="Race badges, placement, and schedule" note="G1/G2/G3 semantics · optimal affinity · responsive year layout">
+        <div class="state-stack">
+          <div class="race-examples"><RaceBadge race={{ id: 'g1-demo', name: 'Arima Kinen', grade: 'G1', image: raceImageG1, placement: 1 }}/><RaceBadge race={{ id: 'g2-demo', name: 'Kobe Shimbun Hai', grade: 'G2', image: raceImageG2, affinityGain: 2 }}/><RaceBadge race={{ id: 'g3-demo', name: 'Kyoto Junior Stakes', grade: 'G3', image: raceImageG3, placement: 3 }}/></div>
+          <RaceSchedule years={raceYears} onselect={(race) => selectedRace = race.name}/>
+          {#if selectedRace}<span class="selected-race">Selected race: {selectedRace}</span>{/if}
+        </div>
+      </DemoBlock>
       <DemoBlock id="connection" title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
     </LabSection>
 
@@ -380,6 +507,10 @@
   .slider-examples { display: grid; gap: var(--space-6); }
   .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .identity-contract, .veteran-contracts { min-width: 0; display: grid; gap: var(--space-3); }
+  .rank-examples, .race-examples, .selection-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .filter-options { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 5px; margin-top: 7px; }
+  .selected-race { color: var(--color-text-muted); font-size: var(--font-xs); }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
   @container app-viewport (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @container app-viewport (min-width: 768px) {

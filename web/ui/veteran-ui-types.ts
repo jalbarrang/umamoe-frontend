@@ -1,0 +1,24 @@
+import type { SparkRecord } from './SparkRow.svelte';
+import type { SparkTone } from './SparkItem.svelte';
+import type { AptitudeItem } from './AptitudeGrid.svelte';
+import type { StatStripItem } from './StatStrip.svelte';
+
+export interface VeteranSparkGroup { tone: SparkTone; items: SparkRecord[]; }
+export interface VeteranParentSummary { id: string; position: 'P1' | 'P2'; name: string; image?: string; affinity: number; sparks: VeteranSparkGroup[]; }
+export interface VeteranUiRecord {
+  id: string;
+  name: string;
+  image?: string;
+  rank: string;
+  score?: number;
+  scenario?: string;
+  detail?: string;
+  workspace?: string;
+  updated?: string;
+  affinity: number;
+  raceAffinity?: number;
+  stats?: StatStripItem[];
+  aptitudes?: AptitudeItem[];
+  sparks: VeteranSparkGroup[];
+  parents?: VeteranParentSummary[];
+}

@@ -31,4 +31,8 @@ export type IconName =
   | 'sort'
   | 'external'
   | 'trash'
-  | 'add';
+  | 'add'
+  | 'heart'
+  | 'trophy'
+  | 'calendar'
+  | 'star';

@@ -8,7 +8,9 @@ This audit treats the Angular frontend as the visual and interaction reference, 
 - Buttons, fields, selects, comboboxes, choice controls, sliders, dialogs, sheets, menus, feedback, tables, virtualization, artwork, skill chips, sparks, Veteran selection, workspace state, and ad regions.
 - Adaptive shell navigation. `NavigationTree` now adds optional subsections through the same typed model in the expanded rail, compact rail flyout, and mobile More sheet.
 
-## Port before building product routes
+## Implemented foundation contracts
+
+These contracts are now implemented and exercised in the UI Lab. Product routes should compose them rather than recreate their presentation.
 
 | Contract | Angular reference | Svelte responsibility |
 | --- | --- | --- |
