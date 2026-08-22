@@ -166,10 +166,14 @@
   const aptitudeFixtures = [
     { id: 'turf', group: 'Surface', label: 'Turf', grade: 'A' as const },
     { id: 'dirt', group: 'Surface', label: 'Dirt', grade: 'G' as const },
+    { id: 'sprint', group: 'Distance', label: 'Sprint', grade: 'F' as const },
+    { id: 'mile', group: 'Distance', label: 'Mile', grade: 'F' as const },
     { id: 'medium', group: 'Distance', label: 'Medium', grade: 'A' as const },
     { id: 'long', group: 'Distance', label: 'Long', grade: 'S' as const },
+    { id: 'runner', group: 'Style', label: 'Runner', grade: 'B' as const },
     { id: 'leader', group: 'Style', label: 'Leader', grade: 'A' as const },
-    { id: 'runner', group: 'Style', label: 'Runner', grade: 'B' as const }
+    { id: 'betweener', group: 'Style', label: 'Betweener', grade: 'D' as const },
+    { id: 'chaser', group: 'Style', label: 'Chaser', grade: 'F' as const }
   ];
   const statFixtures = [
     { id: 'speed', label: 'Speed', value: 1542, tone: 'speed' as const, icon: '/assets/images/icon/stats/speed.webp' },

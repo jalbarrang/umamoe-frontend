@@ -16,7 +16,7 @@
 </span>
 
 <style>
-  .race { --race-color: var(--border-secondary); position: relative; width: 148px; max-width: 100%; aspect-ratio: 2 / 1; display: block; overflow: hidden; border: 2px solid var(--race-color); border-radius: 5px; background: var(--surface-2); color: var(--color-text); }
+  .race { --race-color: var(--border-secondary); position: relative; width: 156px; max-width: 100%; height: auto; aspect-ratio: 2 / 1; display: block; flex: 0 0 156px; overflow: hidden; border: 2px solid var(--race-color); border-radius: 5px; background: var(--surface-2); color: var(--color-text); }
   .race--g1 { --race-color: var(--race-g1); }
   .race--g2 { --race-color: var(--race-g2); }
   .race--g3 { --race-color: var(--race-g3); }
@@ -29,7 +29,7 @@
   .gain { position: absolute; top: 3px; right: 3px; padding: 2px 4px; border-radius: 4px; background: rgb(12 16 20 / .88); color: var(--accent-secondary); font-family: var(--font-mono); font-size: 9px; line-height: 1; }
   .race > :global(.placement) { position: absolute; top: 3px; left: 3px; }
   button { position: absolute; z-index: 2; top: 3px; right: 3px; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgb(12 16 20 / .84); color: white; cursor: pointer; }
-  .compact { width: 100%; min-width: 0; }
+  .compact { width: 100%; min-width: 0; flex-basis: auto; }
   .compact .race-name { padding: 7px 4px 2px; }
   .compact .race-name strong { font-size: 8px; }
 </style>
