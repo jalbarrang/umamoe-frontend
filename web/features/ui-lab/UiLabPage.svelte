@@ -21,6 +21,8 @@
   import type { IconName } from '../../ui/icon-types';
   import LogoMark from '../../ui/LogoMark.svelte';
   import Menu from '../../ui/Menu.svelte';
+  import NavigationTree from '../../ui/NavigationTree.svelte';
+  import type { NavigationItem } from '../../ui/navigation-types';
   import Pagination from '../../ui/Pagination.svelte';
   import Progress from '../../ui/Progress.svelte';
   import RadioGroup from '../../ui/RadioGroup.svelte';
@@ -93,6 +95,14 @@
     feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans'
   };
   const mobileSections = uiRegistry.filter((section) => ['tokens', 'actions', 'inputs', 'data'].includes(section.id));
+  const labNavigationItems: NavigationItem[] = uiRegistry.map((section) => ({
+    id: section.id,
+    label: section.title,
+    href: `#${section.id}`,
+    icon: sectionIcons[section.id] ?? 'more',
+    meta: String(section.entries.length),
+    children: section.entries.map((entry) => ({ id: entry.id, label: entry.name, href: `#${entry.id}` }))
+  }));
   const colors = [
     ['Page', 'var(--bg-primary)'], ['Navbar', 'var(--bg-secondary)'], ['Panel', 'var(--bg-tertiary)'],
     ['Border', 'var(--border-primary)'], ['Text', 'var(--text-primary)'], ['Muted', 'var(--text-secondary)'],
@@ -173,9 +183,7 @@
   <aside class="lab-index" data-shell-rail>
     <a class="rail-brand" href="/ui-lab" aria-label="uma.moe UI lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
     <div class="index-head"><strong>{componentCount} contracts</strong><span>v0 · review</span></div>
-    <nav aria-label="UI lab sections">
-      {#each uiRegistry as section}<a href="#{section.id}" title={section.title}><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span><small>{section.entries.length}</small></a>{/each}
-    </nav>
+    <div class="lab-navigation-scroll"><NavigationTree items={labNavigationItems} label="UI lab sections"/></div>
     <p>Beta/dev only. This module is removed from production builds.</p>
   </aside>
 
@@ -195,7 +203,7 @@
         <DemoBlock title="Type scale"><div class="type-scale"><span style="font-size:var(--font-display)">Display</span><span style="font-size:var(--font-xl)">Page title</span><span style="font-size:var(--font-lg)">Section title</span><span>Body text stays readable</span><small>Supporting information</small><code>structured_data: true</code></div></DemoBlock>
         <DemoBlock title="Spacing, radius, elevation"><div class="token-shapes"><span class="space-s">4</span><span class="space-m">12</span><span class="space-l">24</span><div class="radius-s">Small</div><div class="radius-l">Large</div><div class="elevation">One practical elevation</div></div></DemoBlock>
       </div>
-      <DemoBlock title="Screen breakpoint contract" note="Screen width changes the shell; components use their own container width">
+      <DemoBlock id="layouts" title="Screen breakpoint contract" note="Screen width changes the shell; components use their own container width">
         <div class="breakpoint-contract">{#each SCREEN_LAYOUTS as layout}<article data-mode={layout.id}><strong>{layout.label}</strong><span>{formatScreenRange(layout)}</span><small>{layout.navigation}</small></article>{/each}</div>
         <p class="review-widths">Release fixtures: {viewports.join(' · ')}px</p>
         <p class="review-widths">Analytics-derived checks: {analyticsViewports.join(' · ')}px</p>
@@ -203,25 +211,25 @@
     </LabSection>
 
     <LabSection id="actions" title="Actions" description="One visual primary per decision area. Secondary and ghost actions stay discoverable without competing for attention.">
-      <DemoBlock title="Buttons" note="Default · hover · focus · active · loading · disabled">
+      <DemoBlock id="button" title="Buttons" note="Default · hover · focus · active · loading · disabled">
         <div class="state-row"><Button>Save Veteran</Button><Button variant="secondary" icon="download">Export</Button><Button variant="ghost">Cancel</Button><Button variant="danger" icon="trash">Delete</Button><Button loading>Saving</Button><Button disabled>Unavailable</Button></div>
       </DemoBlock>
       <div class="demo-grid">
-        <DemoBlock title="Icon actions"><div class="state-row"><IconButton icon="search" label="Search"/><IconButton icon="filter" label="Filter" selected/><IconButton icon="refresh" label="Refresh"/><IconButton icon="trash" label="Delete" disabled/><Tooltip text="Opens the route and action launcher"><IconButton icon="menu" label="Open launcher"/></Tooltip></div></DemoBlock>
-        <DemoBlock title="Segmented control"><SegmentedControl label="Race Lab view" options={[{ value: 'overview', label: 'Overview' }, { value: 'analysis', label: 'Analysis' }, { value: 'setup', label: 'Setup', disabled: true }]} bind:value={segment}/></DemoBlock>
+        <DemoBlock id="icon-button" title="Icon actions"><div class="state-row"><IconButton icon="search" label="Search"/><IconButton icon="filter" label="Filter" selected/><IconButton icon="refresh" label="Refresh"/><IconButton icon="trash" label="Delete" disabled/><Tooltip text="Opens the route and action launcher"><IconButton icon="menu" label="Open launcher"/></Tooltip></div></DemoBlock>
+        <DemoBlock id="segments" title="Segmented control"><SegmentedControl label="Race Lab view" options={[{ value: 'overview', label: 'Overview' }, { value: 'analysis', label: 'Analysis' }, { value: 'setup', label: 'Setup', disabled: true }]} bind:value={segment}/></DemoBlock>
       </div>
     </LabSection>
 
     <LabSection id="inputs" title="Inputs" description="The Angular factor fields, selects, autocomplete panels, focus treatment, spacing, and option states are carried over without Material.">
       <div class="demo-grid">
-        <DemoBlock title="Text and search"><div class="state-stack"><TextField id="name" label="Veteran name" bind:value={textValue} help="A private label stored in this workspace."/><TextField id="search" type="search" label="Search database" bind:value={searchValue} placeholder="Character, skill, factor…"/><TextField id="invalid" label="Share code" value="ABC" error="The share code must contain 12 characters."/><TextField id="disabled-field" label="Account ID" value="Not connected" disabled/></div></DemoBlock>
-        <DemoBlock title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap', image: oguriCapImage }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen', image: mejiroMcQueenImage }, { value: 'Kitasan Black', label: 'Kitasan Black', image: kitasanBlackImage }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
+        <DemoBlock id="text-field" title="Text and search"><div class="state-stack"><TextField id="name" label="Veteran name" bind:value={textValue} help="A private label stored in this workspace."/><TextField id="search" type="search" label="Search database" bind:value={searchValue} placeholder="Character, skill, factor…"/><TextField id="invalid" label="Share code" value="ABC" error="The share code must contain 12 characters."/><TextField id="disabled-field" label="Account ID" value="Not connected" disabled/></div></DemoBlock>
+        <DemoBlock id="select" title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap', image: oguriCapImage }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen', image: mejiroMcQueenImage }, { value: 'Kitasan Black', label: 'Kitasan Black', image: kitasanBlackImage }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
       </div>
       <div class="demo-grid">
-        <DemoBlock title="Choice controls"><div class="state-stack"><Checkbox id="include-inheritance" label="Include inheritance factors" description="Adds parent and grandparent factors." bind:checked={checkboxValue}/><Checkbox id="partial-choice" label="Select visible results" indeterminate/><Checkbox id="disabled-choice" label="Unavailable option" disabled/><RadioGroup id="storage" legend="Default storage" bind:value={radioValue} options={[{ value: 'local', label: 'Local device', description: 'No login required.' }, { value: 'account', label: 'Linked account', description: 'Sync between devices.' }]}/><Switch id="auto-save" label="Automatic Veteran saves" description="Completed imports are persisted automatically." bind:checked={switchValue}/></div></DemoBlock>
-        <DemoBlock title="Range and file input"><div class="state-stack"><RangeField id="replay-speed" label="Replay speed" min={25} max={200} step={25} unit="%" bind:value={rangeValue}/><FileDrop id="veteran-import" accept=".json,application/json" onfiles={() => showToast('success')}/></div></DemoBlock>
+        <DemoBlock id="choice" title="Choice controls"><div class="state-stack"><Checkbox id="include-inheritance" label="Include inheritance factors" description="Adds parent and grandparent factors." bind:checked={checkboxValue}/><Checkbox id="partial-choice" label="Select visible results" indeterminate/><Checkbox id="disabled-choice" label="Unavailable option" disabled/><RadioGroup id="storage" legend="Default storage" bind:value={radioValue} options={[{ value: 'local', label: 'Local device', description: 'No login required.' }, { value: 'account', label: 'Linked account', description: 'Sync between devices.' }]}/><Switch id="auto-save" label="Automatic Veteran saves" description="Completed imports are persisted automatically." bind:checked={switchValue}/></div></DemoBlock>
+        <DemoBlock id="file" title="Range and file input"><div class="state-stack"><RangeField id="replay-speed" label="Replay speed" min={25} max={200} step={25} unit="%" bind:value={rangeValue}/><FileDrop id="veteran-import" accept=".json,application/json" onfiles={() => showToast('success')}/></div></DemoBlock>
       </div>
-      <DemoBlock title="Database filter sliders" note="Single threshold and two-thumb interval · tick marks · keyboard and touch input">
+      <DemoBlock id="slider" title="Database filter sliders" note="Single threshold and two-thumb interval · tick marks · keyboard and touch input">
         <div class="slider-examples">
           <Slider id="factor-range" label="Blue factor stars" range min={1} max={9} step={1} tone="blue" showTicks showTickLabels tickLabels={['1★','2★','3★','4★','5★','6★','7★','8★','9★']} bind:value={factorMinimum} bind:endValue={factorMaximum}/>
           <Slider id="factor-minimum" label="Minimum main-parent stars" min={1} max={3} step={1} tone="green" selection="after" showTicks showTickLabels tickLabels={['1★','2★','3★']} bind:value={parentFactorMinimum}/>
@@ -230,7 +238,8 @@
     </LabSection>
 
     <LabSection id="navigation" title="Navigation" description="The same information architecture changes presentation at shell breakpoints; feature navigation stays inside the feature.">
-      <DemoBlock title="Live responsive shell and page width" note="Resize this page to review the real shell, gutters, and margins">
+      <DemoBlock id="shell" title="Live responsive shell and page width" note="Resize this page to review the real shell, gutters, and margins">
+        <span id="subnavigation" class="anchor-target" aria-hidden="true"></span>
         <div class="page-width-control">
           <div><strong>UI lab content width</strong><span>Medium suits focused flows; wide suits databases, tables, and dense tools.</span></div>
           <SegmentedControl label="UI lab content width" options={[{ value: 'medium', label: 'Medium' }, { value: 'wide', label: 'Wide' }]} bind:value={pageWidth}/>
@@ -241,24 +250,24 @@
         </div>
       </DemoBlock>
       <div class="demo-grid">
-        <DemoBlock title="Local navigation"><div class="state-stack"><Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Race Lab', href: '/race-lab' }, { label: 'Analysis' }]}/><Tabs label="Race Lab" items={[{ id: 'overview', label: 'Overview' }, { id: 'logs', label: 'UmaLogs', badge: '12' }, { id: 'analysis', label: 'Analysis' }, { id: 'setup', label: 'Setup' }]} bind:value={selectedTab}/></div></DemoBlock>
-        <DemoBlock title="Pagination"><Pagination pages={12} bind:page/></DemoBlock>
+        <DemoBlock id="tabs" title="Local navigation"><div class="state-stack"><Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Race Lab', href: '/race-lab' }, { label: 'Analysis' }]}/><Tabs label="Race Lab" items={[{ id: 'overview', label: 'Overview' }, { id: 'logs', label: 'UmaLogs', badge: '12' }, { id: 'analysis', label: 'Analysis' }, { id: 'setup', label: 'Setup' }]} bind:value={selectedTab}/></div></DemoBlock>
+        <DemoBlock id="pagination" title="Pagination"><Pagination pages={12} bind:page/></DemoBlock>
       </div>
     </LabSection>
 
     <AdRegion placement="ui_lab_interscroller_1" kind="inline" sizes={['970x90', '728x90', '468x90', '468x60', '320x100', '300x100', '320x50', '300x50']} active preview railAlternative/>
 
     <LabSection id="feedback" title="Feedback" description="Feedback is direct and descriptive. Connection and sync states always include text and never pulse.">
-      <DemoBlock title="Banners"><div class="state-stack"><Banner title="Dataset updated" tone="success"><p>Global data is current as of 18:42 UTC.</p></Banner><Banner title="Offline changes pending" tone="warning" dismissible><p>Three Veterans will sync when the connection returns.</p></Banner><Banner title="Import failed" tone="danger"><p>Nothing was changed. Fix the invalid records and try again.</p></Banner></div></DemoBlock>
+      <DemoBlock id="banner" title="Banners"><div class="state-stack"><Banner title="Dataset updated" tone="success"><p>Global data is current as of 18:42 UTC.</p></Banner><Banner title="Offline changes pending" tone="warning" dismissible><p>Three Veterans will sync when the connection returns.</p></Banner><Banner title="Import failed" tone="danger"><p>Nothing was changed. Fix the invalid records and try again.</p></Banner></div></DemoBlock>
       <div class="demo-grid">
-        <DemoBlock title="Progress and loading"><div class="state-stack"><Progress label="Importing Veterans" value={67}/><Progress label="Preparing race replay" indeterminate/><div class="state-row"><Spinner/><span class="muted">Connecting…</span></div><Skeleton height="18px" width="72%"/><Skeleton height="64px"/></div></DemoBlock>
-        <DemoBlock title="Empty states"><EmptyState compact icon="veterans" title="No Veterans yet" description="Import a compatible JSON file or connect the desktop client.">{#snippet actions()}<Button size="sm" icon="upload">Import</Button>{/snippet}</EmptyState></DemoBlock>
+        <DemoBlock id="progress" title="Progress and loading"><div class="state-stack"><Progress label="Importing Veterans" value={67}/><Progress label="Preparing race replay" indeterminate/><div class="state-row"><Spinner/><span class="muted">Connecting…</span></div><Skeleton height="18px" width="72%"/><Skeleton height="64px"/></div></DemoBlock>
+        <DemoBlock id="empty" title="Empty states"><EmptyState compact icon="veterans" title="No Veterans yet" description="Import a compatible JSON file or connect the desktop client.">{#snippet actions()}<Button size="sm" icon="upload">Import</Button>{/snippet}</EmptyState></DemoBlock>
       </div>
       <DemoBlock title="Status and notifications"><div class="state-row"><StatusPill label="Connected" tone="success"/><StatusPill label="Sync pending" tone="warning"/><StatusPill label="Version incompatible" tone="danger"/><StatusPill label="Cloud fallback" tone="info"/><Button variant="secondary" onclick={() => showToast()}>Show toast</Button></div></DemoBlock>
     </LabSection>
 
     <LabSection id="overlays" title="Overlays" description="Native dialog behavior supplies the focus trap and Escape handling; menu and tooltip use disclosure and CSS instead of an overlay runtime.">
-      <DemoBlock title="Dialog, sheet, menu, tooltip"><div class="state-row"><Button onclick={() => dialogOpen = true}>Open dialog</Button><Button variant="secondary" onclick={() => sheetOpen = true}>Open mobile sheet</Button><Menu label="Actions" items={[{ id: 'edit', label: 'Edit Veteran', icon: 'user' }, { id: 'export', label: 'Export JSON', icon: 'download' }, { id: 'delete', label: 'Delete', icon: 'trash', danger: true }]}/><Tooltip text="Uses native browser focus behavior"><Button variant="ghost" icon="info">Why?</Button></Tooltip></div></DemoBlock>
+      <DemoBlock id="dialog" title="Dialog, sheet, menu, tooltip"><div id="menu" class="state-row"><Button onclick={() => dialogOpen = true}>Open dialog</Button><Button variant="secondary" onclick={() => sheetOpen = true}>Open mobile sheet</Button><Menu label="Actions" items={[{ id: 'edit', label: 'Edit Veteran', icon: 'user' }, { id: 'export', label: 'Export JSON', icon: 'download' }, { id: 'delete', label: 'Delete', icon: 'trash', danger: true }]}/><Tooltip text="Uses native browser focus behavior"><Button variant="ghost" icon="info">Why?</Button></Tooltip></div></DemoBlock>
       <Dialog id="confirm-demo" title="Replace Local workspace?" description="A recovery snapshot is created before replacement." bind:open={dialogOpen}>
         <Banner title="This affects 43 Veterans" tone="warning"><p>You can recover the current device state from Settings for 30 days.</p></Banner>
         {#snippet actions()}<Button variant="ghost" onclick={() => dialogOpen = false}>Cancel</Button><Button variant="danger" onclick={() => { dialogOpen = false; showToast('warning'); }}>Replace device</Button>{/snippet}
@@ -269,9 +278,9 @@
     </LabSection>
 
     <LabSection id="data" title="Data patterns" description="Small sets use semantic tables and cards; large sets use a fixed-row virtual window so DOM size stays constant.">
-      <DemoBlock title="Stat tiles"><div class="stats"><StatTile label="Veterans" value="2,481" detail="+18 this week" trend="up" tone="accent"/><StatTile label="Synced" value="98.7%" detail="32 pending" tone="success"/><StatTile label="Race logs" value="14,209" detail="Last 30 days"/><StatTile label="Conflicts" value="2" detail="Needs review" tone="warning"/></div></DemoBlock>
-      <DemoBlock title="Filters and sort"><div class="state-row"><FilterChip label="All" count={2481} selected/><FilterChip label="Long" count={412} bind:selected={selectedFilter}/><FilterChip label="Runner" count={188}/><FilterChip label="UE+" count={74}/><FilterChip label="Imported today" removable/><Button variant="ghost" size="sm" icon="sort">Evaluation</Button></div></DemoBlock>
-      <DemoBlock title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
+      <DemoBlock id="cards" title="Stat tiles"><div class="stats"><StatTile label="Veterans" value="2,481" detail="+18 this week" trend="up" tone="accent"/><StatTile label="Synced" value="98.7%" detail="32 pending" tone="success"/><StatTile label="Race logs" value="14,209" detail="Last 30 days"/><StatTile label="Conflicts" value="2" detail="Needs review" tone="warning"/></div></DemoBlock>
+      <DemoBlock id="filters" title="Filters and sort"><div class="state-row"><FilterChip label="All" count={2481} selected/><FilterChip label="Long" count={412} bind:selected={selectedFilter}/><FilterChip label="Runner" count={188}/><FilterChip label="UE+" count={74}/><FilterChip label="Imported today" removable/><Button variant="ghost" size="sm" icon="sort">Evaluation</Button></div></DemoBlock>
+      <DemoBlock id="table" title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
       <DemoBlock title="Virtual list" note="2,500 records · roughly 20 live rows">
         <VirtualList items={virtualItems} rowHeight={54} height={320} label="Veterans">
           {#snippet row(item, index)}<div class="virtual-row"><Artwork src={item.image} alt={item.name} size="sm"/><span><strong>{item.name}</strong><small>Local · record {index + 1}</small></span><Badge tone="accent">{item.rank}</Badge></div>{/snippet}
@@ -281,14 +290,14 @@
 
     <LabSection id="domain" title="Domain patterns" description="These shared patterns keep game vocabulary consistent while allowing every feature to own its data and behavior.">
       <div class="demo-grid">
-        <DemoBlock title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
+        <DemoBlock id="artwork" title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
         <DemoBlock title="Skills"><div class="skill-examples"><SkillChip icon={skillRecoveryIcon} name="Swinging Maestro" level="Lv.1" rarity="gold"/><SkillChip icon={skillSpeedIcon} name="Long-Distance Corner ○" level="Lv.3"/><SkillChip icon={skillSpeedIcon} name="The View from the Lead Is Mine!" level="Lv.2" rarity="unique-main"/></div></DemoBlock>
       </div>
       <div class="demo-grid">
         <DemoBlock title="Inheritance sparks"><div class="spark-examples"><SparkRow tone="blue" items={blueSparks}/><SparkRow tone="pink" items={pinkSparks}/><SparkRow tone="green" items={greenSparks}/><SparkRow tone="white" items={whiteSparks}/></div></DemoBlock>
-        <DemoBlock title="Veteran selector" note="Searchable active-workspace listbox"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
+        <DemoBlock id="veteran-selector" title="Veteran selector" note="Searchable active-workspace listbox"><VeteranSelector id="veteran-select" label="Parent Veteran" options={veteranOptions} bind:value={veteran}/></DemoBlock>
       </div>
-      <DemoBlock title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
+      <DemoBlock id="connection" title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
     </LabSection>
 
     <footer class="lab-footer"><strong>UI contract v0</strong><span>Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.</span></footer>
@@ -304,9 +313,7 @@
 </nav>
 
 <Dialog id="lab-navigation" title="UI lab sections" description="Jump to any component group." mobileSheet bind:open={labNavigationOpen}>
-  <nav class="sheet-links" aria-label="All UI lab sections">
-    {#each uiRegistry as section}<a href="#{section.id}" onclick={() => labNavigationOpen = false}><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span><small>{section.entries.length}</small></a>{/each}
-  </nav>
+  <NavigationTree items={labNavigationItems} label="All UI lab sections" variant="sheet" onnavigate={() => labNavigationOpen = false}/>
 </Dialog>
 
 <ToastRegion {toasts} ondismiss={(id) => toasts = toasts.filter(toast => toast.id !== id)}/>
@@ -364,7 +371,8 @@
   .width-contracts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
   .width-contracts article { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px var(--space-3); padding: var(--space-3); border-left: 3px solid var(--color-accent); background: var(--color-surface-1); }
   .width-contracts article + article { border-left-color: var(--accent-secondary); } .width-contracts span { color: var(--color-text-muted); font-size: var(--font-xs); } .width-contracts small { grid-column: 1 / -1; color: var(--color-text-subtle); }
-  .sheet-links { display: grid; gap: 4px; } .sheet-links a { min-height: var(--touch-target); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 0 var(--space-3); border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; } .sheet-links a:hover { background: var(--color-surface-2); } .sheet-links a small { color: var(--color-text-subtle); }
+  .anchor-target { display: block; height: 0; scroll-margin-top: calc(var(--utility-height) + var(--space-3)); }
+  .sheet-links { display: grid; gap: 4px; } .sheet-links a { min-height: var(--touch-target); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 0 var(--space-3); border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; } .sheet-links a:hover { background: var(--color-surface-2); }
   .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); container-type: inline-size; }
   .virtual-row { height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 7px var(--space-3); border-bottom: 1px solid var(--color-border); }
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
@@ -382,8 +390,7 @@
     .lab-controls { align-items: center; justify-content: flex-end; gap: var(--space-3); }
     .lab-index { position: sticky; z-index: var(--z-rail); top: 0; height: var(--page-viewport-height, 100dvh); grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; padding: 0 8px 12px; border-right: 1px solid var(--border-primary); background: var(--bg-secondary); }
     .rail-brand { height: var(--utility-height); display: grid; flex: 0 0 auto; place-items: center; border-bottom: 1px solid var(--border-primary); color: var(--color-text); text-decoration: none; } .rail-brand > span { display: none; }
-    .lab-index nav { display: grid; gap: 3px; padding-top: 8px; }
-    .lab-index nav a { min-height: 44px; display: grid; place-items: center; border-radius: var(--radius-sm); color: var(--color-text-subtle); text-decoration: none; } .lab-index nav a:hover { background: var(--surface-2); color: var(--color-text); } .lab-index nav a > span, .lab-index nav a > small { display: none; }
+    .lab-navigation-scroll { min-height: 0; flex: 1; padding-top: 8px; }
     .lab-page { grid-column: 2; grid-row: 2; }
     .lab-bottom { display: none; }
   }
@@ -393,8 +400,7 @@
     .lab-index { padding-inline: var(--space-3); }
     .rail-brand { display: flex; justify-content: flex-start; gap: 9px; padding: 0 var(--space-2); } .rail-brand > span { display: flex; flex-direction: column; line-height: 1.1; } .rail-brand strong { font-size: var(--font-sm); } .rail-brand small { color: var(--color-text-subtle); font-size: 9px; text-transform: uppercase; }
     .index-head { display: flex; justify-content: space-between; gap: var(--space-2); padding: var(--space-4) var(--space-2) var(--space-3); font-size: var(--font-xs); } .index-head span { color: var(--color-text-subtle); }
-    .lab-index nav { padding-top: 0; }
-    .lab-index nav a { grid-template-columns: 24px minmax(0, 1fr) auto; justify-items: start; gap: 9px; padding: 0 var(--space-2); font-size: var(--font-sm); } .lab-index nav a > span, .lab-index nav a > small { display: inline; } .lab-index nav a > small { color: var(--color-text-subtle); }
+    .lab-navigation-scroll { overflow-y: auto; padding-top: 0; scrollbar-width: thin; }
     .lab-index > p { display: block; margin: auto 0 0; padding: var(--space-3) var(--space-2); border-top: 1px solid var(--color-border); font-size: 10px; }
   }
 </style>

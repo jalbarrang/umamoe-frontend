@@ -179,6 +179,35 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   await expect(rail.getByText('Foundation', { exact: true })).toBeVisible();
 });
 
+test('section navigation exposes subsections in expanded, compact, and mobile shells', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/ui-lab');
+  const rail = page.locator('[data-shell-rail]');
+
+  await rail.getByRole('button', { name: 'Open Inputs subsections' }).click();
+  const wideSubsections = rail.locator('#navigation-subsections-inputs');
+  await expect(wideSubsections.getByRole('link', { name: 'Slider' })).toBeVisible();
+  await wideSubsections.getByRole('link', { name: 'Slider' }).click();
+  await expect(page).toHaveURL(/#slider$/);
+  await expect(wideSubsections).not.toBeVisible();
+
+  await page.setViewportSize({ width: 1536, height: 864 });
+  await rail.getByRole('button', { name: 'Open Domain patterns subsections' }).click();
+  const compactSubsections = rail.locator('#navigation-subsections-domain');
+  await expect(compactSubsections.getByRole('link', { name: 'Veteran selector' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(compactSubsections).not.toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'More UI lab sections' }).click();
+  const sheet = page.getByRole('dialog', { name: 'UI lab sections' });
+  await sheet.getByRole('button', { name: 'Open Navigation subsections' }).click();
+  await expect(sheet.getByRole('link', { name: 'Section navigation' })).toBeVisible();
+  await sheet.getByRole('link', { name: 'Section navigation' }).click();
+  await expect(sheet).not.toBeVisible();
+  await expect(page).toHaveURL(/#subnavigation$/);
+});
+
 test('Analytics viewport toggles resize the entire UI Lab website', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/ui-lab');

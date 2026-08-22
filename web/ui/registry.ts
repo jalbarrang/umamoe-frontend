@@ -35,6 +35,7 @@ export const uiRegistry: UiRegistrySection[] = [
   ]},
   { id: 'navigation', title: 'Navigation', description: 'Adaptive site shell, local tabs, breadcrumbs, pagination, and launcher.', entries: [
     { id: 'shell', name: 'Adaptive shell', purpose: 'Expanded rail, compact rail, and mobile bottom bar.', states: ['320', '390', '768', '1024', '1536', '1920'], accessibility: 'Landmarks, current-page state, and labeled destinations.', status: 'review' },
+    { id: 'subnavigation', name: 'Section navigation', purpose: 'Optional nested destinations in expanded, compact, and mobile navigation.', states: ['expanded', 'collapsed', 'compact-flyout', 'mobile-sheet'], accessibility: 'Disclosure state, current destination, and subsection relationships remain explicit.', status: 'review' },
     { id: 'tabs', name: 'Tabs and breadcrumbs', purpose: 'Local route context and view switching.', states: [...commonStates, 'selected'], accessibility: 'Tablist and breadcrumb navigation semantics.', status: 'review' },
     { id: 'pagination', name: 'Pagination', purpose: 'Bounded page navigation for server data.', states: [...commonStates, 'current'], accessibility: 'Navigation label and current-page state.', status: 'review' }
   ]},
