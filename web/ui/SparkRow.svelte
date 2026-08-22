@@ -14,11 +14,11 @@
 </div>
 
 <style>
-  .spark-row { min-width: 0; display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: start; gap: 6px; }
+  .spark-row { min-width: 0; display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: start; gap: 5px; }
   .no-kind { grid-template-columns: minmax(0, 1fr); }
-  .kind { min-height: 26px; display: flex; align-items: center; gap: 6px; color: var(--color-text-subtle); font-size: 9px; font-weight: 700; letter-spacing: .025em; text-transform: uppercase; white-space: nowrap; }
-  .type { width: 3px; height: 14px; flex: 0 0 auto; border-radius: 2px; background: #9e9e9e; }
+  .kind { min-height: 24px; display: flex; align-items: center; gap: 5px; color: var(--color-text-subtle); font-size: 8px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; white-space: nowrap; }
+  .type { width: 3px; height: 15px; flex: 0 0 auto; border-radius: 2px; background: #9e9e9e; }
   .type--blue { background: #2196f3; } .type--pink { background: #e91e63; } .type--green { background: #4caf50; }
-  .list { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-  @media (max-width: 420px) { .spark-row { grid-template-columns: 1fr; gap: 2px; } .kind { min-height: 16px; } }
+  .list { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  @media (max-width: 360px) { .spark-row { grid-template-columns: 68px minmax(0, 1fr); gap: 2px; } .kind { font-size: 7px; } }
 </style>

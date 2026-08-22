@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import Artwork from './Artwork.svelte';
   import Icon from './Icon.svelte';
+  import RankBadge from './RankBadge.svelte';
 
   export interface VeteranOption {
     id: string;
@@ -116,13 +117,14 @@
     onclick={() => open ? close() : void show()}
     onkeydown={controlKeydown}
   >
-    <Artwork src={selected?.image} alt={selected?.name ?? 'No Veteran selected'} size="sm"/>
+    <Artwork src={selected?.image} alt={selected?.name ?? 'No Veteran selected'} size="sm" shape="portrait" loading="eager"/>
     <span class="selected-copy">
-      <span class="selected-line"><strong>{selected?.name ?? placeholder}</strong>{#if selected}<span class="rank">{selected.rank}</span>{/if}</span>
+      <span class="selected-line"><strong>{selected?.name ?? placeholder}</strong></span>
       <small>{selected?.detail ?? 'Choose from the active workspace'}</small>
       {#if selected}<span class="provenance">{selected.workspace ?? 'Local'}{#if selected.updated}{' · '}{selected.updated}{/if}</span>{/if}
     </span>
-    <span class="arrow"><Icon name="chevron" size={18}/></span>
+    <span class="rank-slot">{#if selected}<RankBadge label={selected.rank} size="sm"/>{/if}</span>
+    <span class="arrow" aria-hidden="true"></span>
   </button>
 
   {#if open}
@@ -145,9 +147,9 @@
             onmouseenter={() => activeIndex = index}
             onclick={() => choose(index)}
           >
-            <Artwork src={option.image} alt="" size="sm"/>
+            <Artwork src={option.image} alt="" size="sm" shape="portrait" loading="eager"/>
             <span class="option-copy"><strong>{option.name}</strong><small>{option.detail}</small><span>{option.workspace ?? 'Local'}{#if option.updated}{' · '}{option.updated}{/if}</span></span>
-            <span class="option-rank">{option.rank}</span>
+            <RankBadge label={option.rank} size="sm"/>
             <span class="selected-check" aria-hidden="true"><Icon name="check" size={17}/></span>
           </button>
         {:else}
@@ -159,46 +161,53 @@
 </div>
 
 <style>
-  .selector { position: relative; min-width: 0; display: grid; gap: 6px; }
-  .label { color: var(--color-text); font-size: var(--font-sm); font-weight: 600; }
-  .control { width: 100%; min-height: 66px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 8px 10px 8px 8px; border: 1px solid var(--factor-field-border); border-radius: var(--radius-md); background: var(--factor-field-bg); color: var(--factor-field-text); cursor: pointer; text-align: left; transition: border-color var(--duration-fast), background-color var(--duration-fast); }
+  .selector { position: relative; min-width: 0; display: grid; gap: 5px; container-type: inline-size; }
+  .label { color: var(--color-text); font-size: var(--font-xs); font-weight: 650; }
+  .control { width: 100%; min-height: 58px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto 24px; align-items: center; gap: 8px; padding: 5px 7px; border: 1px solid var(--factor-field-border); border-radius: var(--radius-sm); background: var(--factor-field-bg); color: var(--factor-field-text); cursor: pointer; text-align: left; transition: border-color var(--duration-fast), background-color var(--duration-fast); }
   .control:hover:not(:disabled) { border-color: var(--border-secondary); }
   .control:focus, .control.open { border-color: var(--factor-field-focus-border); outline: 0; background: var(--factor-field-focus-bg); box-shadow: var(--focus-ring); }
   .control:disabled { cursor: not-allowed; opacity: .55; }
   .selected-copy, .option-copy { min-width: 0; display: flex; flex-direction: column; }
-  .selected-line { min-width: 0; display: flex; align-items: center; gap: var(--space-2); }
+  .selected-line { min-width: 0; display: flex; align-items: center; gap: 5px; }
   strong, small, .provenance, .option-copy > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  strong { font-size: var(--font-sm); }
-  small { color: var(--color-text-muted); font-size: var(--font-xs); }
-  .provenance, .option-copy > span { margin-top: 2px; color: var(--color-text-subtle); font-size: 10px; }
-  .rank, .option-rank { flex: 0 0 auto; padding: 2px 5px; border: 1px solid rgb(var(--accent-primary-rgb) / .28); border-radius: var(--radius-xs); background: var(--color-accent-soft); color: var(--color-accent); font-size: 10px; font-weight: 800; line-height: 1; }
-  .arrow { width: 32px; height: 32px; display: grid; place-items: center; color: var(--factor-field-arrow); }
-  .arrow :global(svg) { transition: transform var(--duration-fast); }
-  .control.open .arrow :global(svg) { transform: rotate(180deg); }
+  strong { font-size: 12px; }
+  small { color: var(--color-text-muted); font-size: 9px; }
+  .provenance, .option-copy > span { margin-top: 1px; color: var(--color-text-subtle); font-size: 8px; }
+  .arrow { width: 24px; height: 24px; display: grid; place-items: center; color: var(--factor-field-arrow); }
+  .arrow::before { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; content: ''; transform: translateY(-2px) rotate(45deg); transition: transform var(--duration-fast); }
+  .rank-slot { width: 28px; height: 28px; display: grid; place-items: center; }
+  .control.open .arrow::before { transform: translateY(2px) rotate(225deg); }
   .backdrop { display: none; }
-  .panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-overlay); width: 100%; min-width: 300px; overflow: hidden; border: 1px solid var(--factor-panel-border); border-radius: var(--radius-md); background: var(--factor-panel-bg); box-shadow: var(--shadow-dropdown); }
+  .panel { position: absolute; top: calc(100% + 5px); left: 0; z-index: var(--z-overlay); width: 100%; min-width: 300px; overflow: hidden; border: 1px solid var(--factor-panel-border); border-radius: var(--radius-sm); background: var(--factor-panel-bg); box-shadow: var(--shadow-dropdown); }
   .panel-head { display: grid; gap: 5px; padding: 8px; border-bottom: 1px solid var(--factor-option-separator); }
   .panel-head > span { padding-inline: 3px; color: var(--color-text-subtle); font-size: 10px; }
   .search-wrap { min-height: 38px; display: flex; align-items: center; gap: var(--space-2); padding: 0 9px; border: 1px solid var(--factor-field-border); border-radius: var(--radius-sm); background: var(--factor-field-bg); color: var(--factor-field-arrow); }
   .search-wrap:focus-within { border-color: var(--factor-field-focus-border); box-shadow: var(--focus-ring); }
   .search-wrap input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--factor-field-text); font-size: var(--font-sm); }
   .options { max-height: 286px; overflow-y: auto; overscroll-behavior: contain; }
-  .options > button { width: 100%; min-height: 60px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto 22px; align-items: center; gap: var(--space-2); padding: 7px 10px 7px 8px; border: 0; border-bottom: 1px solid var(--factor-option-separator); border-radius: 0; background: transparent; color: var(--factor-option-text); cursor: pointer; text-align: left; }
+  .options > button { width: 100%; min-height: 58px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto 22px; align-items: center; gap: 7px; padding: 5px 8px; border: 0; border-bottom: 1px solid var(--factor-option-separator); border-radius: 0; background: transparent; color: var(--factor-option-text); cursor: pointer; text-align: left; }
   .options > button:last-child { border-bottom: 0; }
   .options > button:hover:not(:disabled), .options > button.active { background: var(--factor-option-hover); }
   .options > button.selected { background: var(--factor-option-selected-bg); color: var(--factor-option-selected-text); }
   .options > button:disabled { cursor: not-allowed; opacity: .42; }
-  .option-rank { justify-self: end; }
   .selected-check { visibility: hidden; color: var(--color-accent); }
   button.selected .selected-check { visibility: visible; }
   .empty { min-height: 92px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: var(--space-4); color: var(--color-text); text-align: center; }
   .empty span { color: var(--color-text-muted); font-size: var(--font-xs); }
+  @container (max-width: 420px) {
+    .control { min-height: 50px; grid-template-columns: auto minmax(0, 1fr) auto 20px; gap: 5px; padding: 4px; }
+    .control :global(.art--portrait.art--sm) { width: 30px; height: 40px; }
+    .provenance { display: none; }
+    .rank-slot { width: 24px; height: 24px; }
+    .rank-slot :global(.rank--sm) { width: 24px; height: 24px; }
+    .arrow { width: 20px; }
+  }
   @media (max-width: 767px) {
     .backdrop { position: fixed; inset: 0; z-index: var(--z-overlay); display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: rgb(0 0 0 / .56); }
-    .panel { position: fixed; inset: auto 12px 12px; z-index: calc(var(--z-overlay) + 1); width: auto; min-width: 0; max-height: calc(100dvh - 24px); border-radius: var(--radius-lg); }
-    .panel-head { padding: 10px; }
+    .panel { position: fixed; inset: auto 4px 4px; z-index: calc(var(--z-overlay) + 1); width: auto; min-width: 0; max-height: calc(100dvh - 8px); border-radius: var(--radius-md); }
+    .panel-head { padding: 7px; }
     .search-wrap { min-height: var(--touch-target); }
     .options { max-height: min(56dvh, 420px); }
-    .options > button { min-height: 68px; }
+    .options > button { min-height: 58px; }
   }
 </style>

@@ -13,7 +13,7 @@
 <div class="veteran-summary-container">
   <article class="veteran-summary" class:compact aria-label={`${veteran.name} Veteran summary`}>
     <header class="summary-head">
-      <Artwork src={veteran.image} alt={veteran.name} size={compact ? 'sm' : 'md'} rarity="★5"/>
+      <Artwork src={veteran.image} alt={veteran.name} size={compact ? 'sm' : 'md'} shape="circle"/>
       <div class="identity">
         <div class="name-row"><h3>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
         {#if veteran.detail}<span class="detail">{veteran.detail}</span>{/if}
@@ -59,40 +59,49 @@
 
 <style>
   .veteran-summary-container { min-width: 0; container-type: inline-size; }
-  .veteran-summary { min-width: 0; display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-1); }
-  .summary-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
+  .veteran-summary { min-width: 0; display: grid; grid-template-columns: minmax(210px, .4fr) minmax(0, 1fr); gap: 8px 12px; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-1); }
+  .summary-head { min-width: 0; grid-row: 1 / 3; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; align-items: center; gap: 9px; padding-right: 12px; border-right: 1px solid var(--border-subtle); }
   .identity { min-width: 0; display: grid; gap: 4px; }
   .name-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
   h3 { min-width: 0; margin: 0; overflow: hidden; color: var(--color-text); font-size: var(--font-md); text-overflow: ellipsis; white-space: nowrap; }
-  .scenario { padding: 2px 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); background: var(--surface-2); color: var(--color-text-muted); font-size: 9px; font-weight: 650; }
+  .scenario { padding: 2px 6px; border: 0; border-radius: var(--radius-xs); background: rgb(var(--accent-secondary-rgb) / .1); color: var(--accent-secondary); font-size: 8px; font-weight: 650; }
   .detail { color: var(--color-text-subtle); font-size: 10px; }
   .identity-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-  .score { min-height: 24px; display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 6px; border-left: 1px solid var(--border-subtle); color: var(--accent-primary); }
+  .score { min-height: 21px; display: inline-flex; align-items: baseline; gap: 3px; padding-left: 5px; border-left: 1px solid var(--border-subtle); color: var(--accent-primary); }
   .score b { font-size: 12px; font-variant-numeric: tabular-nums; }
   .score small { color: var(--color-text-subtle); font-size: 8px; text-transform: uppercase; }
-  .factor-section { min-width: 0; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: start; gap: 8px; padding-top: 2px; }
-  .section-label { padding-top: 6px; color: var(--color-text-subtle); font-size: 9px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
-  .factor-list, .parent-factors { min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
-  .parent-rows { min-width: 0; display: grid; border-top: 1px solid var(--border-subtle); }
-  .parent-row { min-width: 0; display: grid; grid-template-columns: minmax(190px, auto) minmax(0, 1fr); align-items: center; gap: 8px; padding: 7px 0; }
+  .factor-section { min-width: 0; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 6px; }
+  .section-label { padding-top: 5px; color: var(--color-text-subtle); font-size: 8px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+  .factor-list, .parent-factors { min-width: 0; display: flex; flex-wrap: wrap; gap: 3px; }
+  .parent-rows { min-width: 0; grid-column: 1 / -1; display: grid; border-top: 1px solid var(--border-subtle); }
+  .parent-row { min-width: 0; display: grid; grid-template-columns: minmax(176px, auto) minmax(0, 1fr); align-items: start; gap: 7px; padding: 5px 0; }
   .parent-row + .parent-row { border-top: 1px solid var(--border-subtle); }
   .parent-id { min-width: 0; display: flex; align-items: center; gap: 5px; }
-  .parent-id strong { max-width: 110px; overflow: hidden; color: var(--color-text-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  .parent-id strong { max-width: 100px; overflow: hidden; color: var(--color-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .parent-position { flex: 0 0 auto; padding: 2px 5px; border-radius: var(--radius-xs); font-size: 9px; font-weight: 800; }
   .parent-position--p1 { background: rgb(100 181 246 / .12); color: #90caf9; }
   .parent-position--p2 { background: rgb(186 104 200 / .12); color: #ce93d8; }
-  .compact { gap: 7px; padding: 8px; }
+  .compact { grid-template-columns: 1fr; gap: 7px; padding: 7px; }
+  .compact .summary-head { grid-row: auto; padding-right: 0; border-right: 0; }
   .compact .factor-section { grid-template-columns: 1fr; gap: 3px; }
   .compact .section-label { padding: 0; }
 
-  @container (max-width: 620px) {
-    .veteran-summary { gap: 8px; padding: 7px; border-radius: var(--radius-md); }
+  @container (max-width: 760px) {
+    .veteran-summary { grid-template-columns: 1fr; gap: 7px; padding: 7px; }
+    .summary-head { grid-row: auto; padding-right: 0; padding-bottom: 6px; border-right: 0; border-bottom: 1px solid var(--border-subtle); }
     .summary-head { gap: 7px; }
     .identity-meta { gap: 3px; }
     .score { display: none; }
     .factor-section { grid-template-columns: 1fr; gap: 3px; }
     .section-label { padding: 0; }
-    .parent-row { grid-template-columns: 1fr; gap: 5px; }
+    .parent-rows { grid-column: auto; }
+    .parent-row { grid-template-columns: minmax(158px, auto) minmax(0, 1fr); gap: 5px; }
     .parent-id strong { max-width: min(140px, 42vw); }
+  }
+  @container (max-width: 430px) {
+    .veteran-summary { padding: 4px; border-inline: 0; border-radius: 0; }
+    .parent-row { grid-template-columns: 1fr; }
+    .factor-section { grid-template-columns: 1fr; gap: 2px; }
+    .section-label { padding-top: 0; }
   }
 </style>

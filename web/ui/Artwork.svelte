@@ -1,12 +1,12 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  interface Props { src?: string; alt: string; kind?: 'character' | 'card'; rarity?: string; size?: 'xs' | 'sm' | 'md' | 'lg'; shape?: 'square' | 'portrait' | 'circle'; }
-  let { src, alt, kind = 'character', rarity, size = 'md', shape = 'square' }: Props = $props();
+  interface Props { src?: string; alt: string; kind?: 'character' | 'card'; rarity?: string; size?: 'xs' | 'sm' | 'md' | 'lg'; shape?: 'square' | 'portrait' | 'circle'; loading?: 'lazy' | 'eager'; }
+  let { src, alt, kind = 'character', rarity, size = 'md', shape = 'square', loading = 'lazy' }: Props = $props();
   let failed = $state(false);
 </script>
 
 <figure class="art art--{kind} art--{size} art--{shape}">
-  {#if src && !failed}<img {src} {alt} loading="lazy" decoding="async" onerror={() => failed = true}/>{:else}<span role="img" aria-label={alt}><Icon name={kind === 'character' ? 'user' : 'database'} size={size === 'lg' ? 32 : 24}/></span>{/if}
+  {#if src && !failed}<img {src} {alt} {loading} decoding="async" onerror={() => failed = true}/>{:else}<span role="img" aria-label={alt}><Icon name={kind === 'character' ? 'user' : 'database'} size={size === 'lg' ? 32 : 24}/></span>{/if}
   {#if rarity}<figcaption>{rarity}</figcaption>{/if}
 </figure>
 

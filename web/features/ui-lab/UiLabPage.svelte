@@ -172,11 +172,11 @@
     { id: 'runner', group: 'Style', label: 'Runner', grade: 'B' as const }
   ];
   const statFixtures = [
-    { id: 'speed', label: 'Speed', value: 1542, tone: 'speed' as const },
-    { id: 'stamina', label: 'Stamina', value: 1312, tone: 'stamina' as const },
-    { id: 'power', label: 'Power', value: 1184, tone: 'power' as const },
-    { id: 'guts', label: 'Guts', value: 702, tone: 'guts' as const },
-    { id: 'wit', label: 'Wit', value: 1138, tone: 'wit' as const }
+    { id: 'speed', label: 'Speed', value: 1542, tone: 'speed' as const, icon: '/assets/images/icon/stats/speed.webp' },
+    { id: 'stamina', label: 'Stamina', value: 1312, tone: 'stamina' as const, icon: '/assets/images/icon/stats/stamina.webp' },
+    { id: 'power', label: 'Power', value: 1184, tone: 'power' as const, icon: '/assets/images/icon/stats/power.webp' },
+    { id: 'guts', label: 'Guts', value: 702, tone: 'guts' as const, icon: '/assets/images/icon/stats/guts.webp' },
+    { id: 'wit', label: 'Wit', value: 1138, tone: 'wit' as const, icon: '/assets/images/icon/stats/wit.webp' }
   ];
   const veteranFixture: VeteranUiRecord = {
     id: 'veteran-mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, rank: 'UE1', score: 29412,
@@ -397,9 +397,13 @@
       </div>
       <DemoBlock id="identity" title="Rank, aptitude, stats, and affinity" note="Angular game semantics as small reusable contracts">
         <div class="identity-contract">
-          <div class="rank-examples"><RankBadge label="A+"/><RankBadge label="SS+"/><RankBadge label="UG8"/><RankBadge label="UE1" size="lg"/><RankBadge score={74400}/><AffinityStat value={83} kind="total"/><AffinityStat value={18} kind="race"/></div>
-          <StatStrip items={statFixtures}/>
-          <AptitudeGrid items={aptitudeFixtures}/>
+          <div class="identity-head">
+            <Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="md" shape="circle"/>
+            <div class="identity-copy"><strong>Mejiro McQueen</strong><span>Long · Leader</span><div><AffinityStat value={83} kind="total" compact/><AffinityStat value={18} kind="race" compact/></div></div>
+            <div class="current-rank"><RankBadge label="UE1" size="lg"/><span>29,412</span></div>
+          </div>
+          <div class="identity-data"><StatStrip items={statFixtures}/><AptitudeGrid items={aptitudeFixtures}/></div>
+          <div class="rank-reference"><span>Rank sprite scale</span><div><RankBadge label="A+" size="sm"/><RankBadge label="SS+" size="sm"/><RankBadge label="UG8" size="sm"/><RankBadge score={74400} size="sm"/></div></div>
         </div>
       </DemoBlock>
       <div class="demo-grid">
@@ -408,10 +412,10 @@
       </div>
       <DemoBlock id="veteran-summary" title="Veteran summary and reusable result row" note="Identity · stats · sparks · parent context · independent row actions">
         <div class="veteran-contracts">
-          <VeteranSummary veteran={veteranFixture}/>
-          <VeteranListItem veteran={veteranFixture} selected={veteranRowSelected} onclick={() => veteranRowSelected = !veteranRowSelected}>
-            {#snippet actions()}<IconButton icon="download" label="Export Veteran" size="sm"/><IconButton icon="trash" label="Delete Veteran" size="sm"/>{/snippet}
-          </VeteranListItem>
+          <div class="contract-example"><span>Veteran detail header</span><VeteranSummary veteran={veteranFixture}/></div>
+          <div class="contract-example"><span>Selectable result row</span><VeteranListItem veteran={veteranFixture} selected={veteranRowSelected} onclick={() => veteranRowSelected = !veteranRowSelected}>
+              {#snippet actions()}<IconButton icon="download" label="Export Veteran" size="sm"/><IconButton icon="trash" label="Delete Veteran" size="sm"/>{/snippet}
+            </VeteranListItem></div>
         </div>
       </DemoBlock>
       <DemoBlock id="lineage" title="Lineage and affinity" note="Selectable semantic nodes · decorative connectors · mobile stack">
@@ -508,10 +512,26 @@
   .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .identity-contract, .veteran-contracts { min-width: 0; display: grid; gap: var(--space-3); }
-  .rank-examples, .race-examples, .selection-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .identity-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .identity-copy { min-width: 0; display: grid; gap: 3px; }
+  .identity-copy > strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+  .identity-copy > span { color: var(--color-text-muted); font-size: 10px; }
+  .identity-copy > div { display: flex; flex-wrap: wrap; gap: 4px; }
+  .current-rank { display: grid; justify-items: center; gap: 1px; }
+  .current-rank > span { color: var(--color-text-muted); font-family: var(--font-mono); font-size: 9px; }
+  .identity-data { min-width: 0; display: grid; grid-template-columns: 1fr; align-items: start; gap: 8px; }
+  .rank-reference { min-width: 0; display: flex; align-items: center; gap: 8px; padding-top: 6px; border-top: 1px solid var(--border-subtle); }
+  .rank-reference > span, .contract-example > span { color: var(--color-text-subtle); font-size: 8px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+  .rank-reference > div, .race-examples, .selection-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .contract-example { min-width: 0; display: grid; gap: 5px; }
   .filter-options { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 5px; margin-top: 7px; }
   .selected-race { color: var(--color-text-muted); font-size: var(--font-xs); }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
+  @container app-viewport (max-width: 620px) {
+    .identity-data { grid-template-columns: 1fr; }
+    .identity-head { gap: 6px; }
+    .rank-reference { align-items: flex-start; flex-direction: column; gap: 3px; }
+  }
   @container app-viewport (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @container app-viewport (min-width: 768px) {
     .lab-shell { display: grid; grid-template-columns: var(--rail-compact) minmax(0, 1fr); grid-template-rows: var(--utility-height) minmax(calc(100% - var(--utility-height)), auto); }
