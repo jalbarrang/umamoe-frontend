@@ -18,18 +18,22 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--font-md);
-  line-height: 1.5;
+  line-height: var(--line-height-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
 button, input, select, textarea { font: inherit; }
+button { line-height: var(--line-height-control); }
+input, select { line-height: var(--line-height-input); }
+label { line-height: var(--line-height-input); }
+small { line-height: var(--line-height-caption); }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
 a { color: var(--color-accent); }
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3, p { margin-top: 0; }
-h1, h2, h3 { text-wrap: balance; }
+h1, h2, h3 { line-height: var(--line-height-heading); text-wrap: balance; }
 p { color: var(--color-text-muted); }
 
 :focus-visible {

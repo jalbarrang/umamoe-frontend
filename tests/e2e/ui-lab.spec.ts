@@ -115,8 +115,7 @@ test('main-parent and P2 sparks preserve the Angular source accents', async ({ p
   const p2 = page.getByLabel(/2 star Swinging Maestro.*P2 legacy/).first();
   await expect(main).toHaveAttribute('data-source', 'main');
   await expect(p2).toHaveAttribute('data-source', 'p2');
-  await expect(main.locator('.source-marker')).toBeVisible();
-  await expect(p2.locator('.source-marker')).toBeVisible();
+  await expect(p2.locator('.p2-marker')).toBeVisible();
 
   const colors = await page.evaluate(() => {
     const resolvedToken = (token: string) => {
@@ -129,13 +128,19 @@ test('main-parent and P2 sparks preserve the Angular source accents', async ({ p
     };
     return {
       main: getComputedStyle(document.querySelector<HTMLElement>('[data-source="main"] .level')!).color,
-      p2: getComputedStyle(document.querySelector<HTMLElement>('[data-source="p2"] .level')!).color,
+      p2: getComputedStyle(document.querySelector<HTMLElement>('[data-source="p2"] .p2-marker')!).color,
       warning: resolvedToken('--accent-warning'),
       purple: resolvedToken('--accent-purple')
     };
   });
   expect(colors.main).toBe(colors.warning);
   expect(colors.p2).toBe(colors.purple);
+
+  const centers = await Promise.all(['.level', '.star', '.name', '.chance'].map(async (selector) => {
+    const box = await main.locator(selector).boundingBox();
+    return (box?.y ?? 0) + (box?.height ?? 0) / 2;
+  }));
+  expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1.5);
 });
 
 test('the UI lab itself uses the canonical responsive shell and page gutters', async ({ page }) => {
