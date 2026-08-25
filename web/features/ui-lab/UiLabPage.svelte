@@ -12,9 +12,12 @@
   import Checkbox from '../../ui/Checkbox.svelte';
   import ClientIndicator from '../../ui/ClientIndicator.svelte';
   import Combobox from '../../ui/Combobox.svelte';
+  import CharacterPicker from '../../ui/CharacterPicker.svelte';
+  import ChartFrame from '../../ui/ChartFrame.svelte';
   import CountedOption from '../../ui/CountedOption.svelte';
   import DataTable from '../../ui/DataTable.svelte';
   import Dialog from '../../ui/Dialog.svelte';
+  import DistanceSelector from '../../ui/DistanceSelector.svelte';
   import EmptyState from '../../ui/EmptyState.svelte';
   import FileDrop from '../../ui/FileDrop.svelte';
   import FilterChip from '../../ui/FilterChip.svelte';
@@ -25,21 +28,27 @@
   import GameIcon from '../../ui/GameIcon.svelte';
   import IconButton from '../../ui/IconButton.svelte';
   import Icon from '../../ui/Icon.svelte';
+  import InspectPopover from '../../ui/InspectPopover.svelte';
   import type { IconName } from '../../ui/icon-types';
   import LogoMark from '../../ui/LogoMark.svelte';
   import Menu from '../../ui/Menu.svelte';
+  import GuidedTourCallout from '../../ui/GuidedTourCallout.svelte';
+  import LeaderboardRow from '../../ui/LeaderboardRow.svelte';
   import NavigationTree from '../../ui/NavigationTree.svelte';
   import type { NavigationItem } from '../../ui/navigation-types';
   import Pagination from '../../ui/Pagination.svelte';
   import Progress from '../../ui/Progress.svelte';
+  import QueryEditor from '../../ui/QueryEditor.svelte';
   import RaceBadge from '../../ui/RaceBadge.svelte';
   import RaceSchedule from '../../ui/RaceSchedule.svelte';
   import RankBadge from '../../ui/RankBadge.svelte';
   import RadioGroup from '../../ui/RadioGroup.svelte';
   import RangeField from '../../ui/RangeField.svelte';
+  import ResultToolbar from '../../ui/ResultToolbar.svelte';
   import SkillChip from '../../ui/SkillChip.svelte';
   import Slider from '../../ui/Slider.svelte';
   import SparkRow from '../../ui/SparkRow.svelte';
+  import SparkEditor from '../../ui/SparkEditor.svelte';
   import SegmentedControl from '../../ui/SegmentedControl.svelte';
   import SelectionChip from '../../ui/SelectionChip.svelte';
   import SelectField from '../../ui/SelectField.svelte';
@@ -49,11 +58,13 @@
   import StatStrip from '../../ui/StatStrip.svelte';
   import StatusPill from '../../ui/StatusPill.svelte';
   import Switch from '../../ui/Switch.svelte';
+  import SupportCardPicker from '../../ui/SupportCardPicker.svelte';
   import Tabs from '../../ui/Tabs.svelte';
   import TextArea from '../../ui/TextArea.svelte';
   import TextField from '../../ui/TextField.svelte';
   import ToastRegion, { type Toast } from '../../ui/ToastRegion.svelte';
   import Tooltip from '../../ui/Tooltip.svelte';
+  import TimelineEventCard from '../../ui/TimelineEventCard.svelte';
   import VeteranSelector from '../../ui/VeteranSelector.svelte';
   import VeteranListItem from '../../ui/VeteranListItem.svelte';
   import VeteranSummary from '../../ui/VeteranSummary.svelte';
@@ -79,6 +90,10 @@
   import raceImageG1 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_1001_00.webp';
   import raceImageG2 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_2001_00.webp';
   import raceImageG3 from '../../../src/assets/images/race-thumbnails/thum_race_rt_000_3001_00.webp';
+  import supportCardSpeed from './fixtures/support-card-speed.webp';
+  import supportCardStamina from './fixtures/support-card-stamina.webp';
+  import supportCardPower from './fixtures/support-card-power.webp';
+  import timelineBanner from './fixtures/timeline-support-banner.webp';
 
   let density = $state('comfortable');
   let reducedMotion = $state(false);
@@ -111,6 +126,15 @@
   let veteranRowSelected = $state(false);
   let selectedLineageId = $state('lineage-main');
   let selectedRace = $state('');
+  let selectedCharacters = $state<string[]>(['mcqueen']);
+  let selectedSupportCard = $state('support-speed');
+  let selectedDistance = $state<'sprint' | 'mile' | 'medium' | 'long' | 'dirt'>('long');
+  let editedSparkLevel = $state(3);
+  let resultSort = $state('affinity');
+  let resultView = $state<'list' | 'grid'>('list');
+  let queryValue = $state('distance = long AND blue.speed >= 3');
+  let timelinePlanned = $state(false);
+  let tourStep = $state(2);
   let toasts = $state<Toast[]>([]);
 
   const viewports = REVIEW_VIEWPORTS;
@@ -222,6 +246,21 @@
     { id: 'long-parent', name: 'Long-distance parents', activeCount: 4, mode: 'Advanced' },
     { id: 'white-sparks', name: 'White spark search', activeCount: 2, mode: 'UQL' }
   ];
+  const characterPickerOptions = [
+    { id: 'mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, subtitle: 'Long · Leader', affinity: 83 },
+    { id: 'oguri', name: 'Oguri Cap', image: oguriCapImage, subtitle: 'Mile · Betweener', affinity: 72 },
+    { id: 'kitasan', name: 'Kitasan Black', image: kitasanBlackImage, subtitle: 'Medium · Runner', affinity: 68 }
+  ];
+  const supportCardOptions = [
+    { id: 'support-speed', title: 'Fire at My Heels', character: 'Kitasan Black', image: supportCardSpeed, type: 'Speed' as const, rarity: 'SSR' as const },
+    { id: 'support-stamina', title: 'A Long-Awaited Chance', character: 'Mejiro McQueen', image: supportCardStamina, type: 'Stamina' as const, rarity: 'SSR' as const },
+    { id: 'support-power', title: 'Get Lots of Hugs for Me', character: 'Oguri Cap', image: supportCardPower, type: 'Power' as const, rarity: 'SR' as const }
+  ];
+  const timelineEvent = {
+    id: 'timeline-support-2022-30137', title: 'Story Event Support Card Scout', typeLabel: 'Support Card Scout', dateLabel: 'Aug 29 – Sep 11', context: 'Global', image: timelineBanner, tone: 'support' as const, rerun: true, canPlan: true,
+    rewards: [{ id: 'carats', label: 'Carats', amount: '×1,500', icon: caratIcon }],
+    pickups: [{ id: 'support', name: 'Kitasan Black support card', image: kitasanBlackSupportImage, kind: 'support' as const }, { id: 'mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, kind: 'character' as const }]
+  };
 
   $effect(() => {
     document.documentElement.dataset.density = density;
@@ -355,6 +394,15 @@
 
     <LabSection id="overlays" title="Overlays" description="Native dialog behavior supplies the focus trap and Escape handling; menu and tooltip use disclosure and CSS instead of an overlay runtime.">
       <DemoBlock id="dialog" title="Dialog, sheet, menu, tooltip"><div id="menu" class="state-row"><Button onclick={() => dialogOpen = true}>Open dialog</Button><Button variant="secondary" onclick={() => sheetOpen = true}>Open mobile sheet</Button><Menu label="Actions" items={[{ id: 'edit', label: 'Edit Veteran', icon: 'user' }, { id: 'export', label: 'Export JSON', icon: 'download' }, { id: 'delete', label: 'Delete', icon: 'trash', danger: true }]}/><Tooltip text="Uses native browser focus behavior"><Button variant="ghost" icon="info">Why?</Button></Tooltip></div></DemoBlock>
+      <div class="demo-grid">
+        <DemoBlock id="inspect" title="Inspect popover" note="Click, keyboard, and touch instead of hover-only details">
+          <InspectPopover label="Swinging Maestro details">
+            {#snippet trigger()}<SkillChip icon={skillRecoveryIcon} name="Swinging Maestro" level="Lv.1" rarity="gold"/>{/snippet}
+            <div class="inspect-content"><strong>Swinging Maestro</strong><span>Recover endurance on a corner with good positioning.</span><dl><div><dt>Rarity</dt><dd>Rare</dd></div><div><dt>Cost</dt><dd>180 pt</dd></div></dl></div>
+          </InspectPopover>
+        </DemoBlock>
+        <DemoBlock id="tour" title="Guided tour callout" note="Optional local help for dense tools"><GuidedTourCallout title="Choose the main parent" description="Affinity and inherited sparks update as soon as a compatible Veteran is selected." step={tourStep} total={4} onback={() => tourStep = Math.max(1, tourStep - 1)} onnext={() => tourStep = tourStep >= 4 ? 1 : tourStep + 1}/></DemoBlock>
+      </div>
       <Dialog id="confirm-demo" title="Replace Local workspace?" description="A recovery snapshot is created before replacement." bind:open={dialogOpen}>
         <Banner title="This affects 43 Veterans" tone="warning"><p>You can recover the current device state from Settings for 30 days.</p></Banner>
         {#snippet actions()}<Button variant="ghost" onclick={() => dialogOpen = false}>Cancel</Button><Button variant="danger" onclick={() => { dialogOpen = false; showToast('warning'); }}>Replace device</Button>{/snippet}
@@ -367,6 +415,7 @@
     <LabSection id="data" title="Data patterns" description="Small sets use semantic tables and cards; large sets use a fixed-row virtual window so DOM size stays constant.">
       <DemoBlock id="cards" title="Stat tiles"><div class="stats"><StatTile label="Veterans" value="2,481" detail="+18 this week" trend="up" tone="accent"/><StatTile label="Synced" value="98.7%" detail="32 pending" tone="success"/><StatTile label="Race logs" value="14,209" detail="Last 30 days"/><StatTile label="Conflicts" value="2" detail="Needs review" tone="warning"/></div></DemoBlock>
       <DemoBlock id="filters" title="Filters and sort"><div class="state-row"><FilterChip label="All" count={2481} selected/><FilterChip label="Long" count={412} bind:selected={selectedFilter}/><FilterChip label="Runner" count={188}/><FilterChip label="UE+" count={74}/><FilterChip label="Imported today" removable/><Button variant="ghost" size="sm" icon="sort">Evaluation</Button></div></DemoBlock>
+      <DemoBlock id="result-toolbar" title="Database result toolbar" note="Count · live state · sort · responsive view controls"><ResultToolbar count={2481} noun="Veterans" filtered sortOptions={[{ value: 'affinity', label: 'Affinity' }, { value: 'score', label: 'Score' }, { value: 'newest', label: 'Newest' }]} bind:sort={resultSort} bind:view={resultView} live onrefresh={() => showToast()}/></DemoBlock>
       <DemoBlock id="filter-composition" title="Database filter composition" note="Modes · presets · sections · counted options · mobile sheet">
         <div class="state-stack">
           <FilterShell activeCount={4} modes={['Basic', 'Advanced', 'UQL']} bind:mode={filterMode} bind:expanded={filtersExpanded} onclear={() => showToast('warning')}>
@@ -386,6 +435,14 @@
           </FilterSheet>
         </div>
       </DemoBlock>
+      <div class="demo-grid">
+        <DemoBlock id="query-editor" title="UQL query editor" note="Parser and suggestions remain lazy route code"><QueryEditor id="database-uql" bind:value={queryValue} suggestions={[{ label: 'Distance', insert: 'distance = long', description: 'Filter by aptitude distance' }, { label: 'Blue factor', insert: 'blue.speed >= 3', description: 'Require Speed inheritance stars' }]} examples={['rank >= UE', 'white.maestro >= 2']} onrun={() => showToast()}/></DemoBlock>
+        <DemoBlock id="chart-frame" title="Statistics chart frame" note="Renderer-independent title, legend, status, and export">
+          <ChartFrame id="distance-veterans" title="Veterans by distance" description="Current Local workspace" legend={[{ label: 'Veterans', color: 'var(--accent-primary)' }, { label: 'Selected', color: 'var(--accent-secondary)' }]} onexport={() => showToast()}>
+            <div class="chart-bars" aria-label="Veterans by distance bar chart">{#each [{ label: 'Sprint', value: 42 }, { label: 'Mile', value: 78 }, { label: 'Medium', value: 94 }, { label: 'Long', value: 66 }, { label: 'Dirt', value: 28 }] as bar}<div style={`--bar:${bar.value}%`}><span></span><b>{bar.value}</b><small>{bar.label}</small></div>{/each}</div>
+          </ChartFrame>
+        </DemoBlock>
+      </div>
       <DemoBlock id="table" title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
       <DemoBlock title="Virtual list" note="2,500 records · roughly 20 live rows">
         <VirtualList items={virtualItems} rowHeight={54} height={320} label="Veterans">
@@ -398,6 +455,14 @@
       <div class="demo-grid">
         <DemoBlock id="artwork" title="Real game artwork and icons"><div class="state-row"><Artwork src={mejiroMcQueenImage} alt="Mejiro McQueen" size="lg" rarity="★5"/><Artwork src={kitasanBlackSupportImage} alt="Kitasan Black support card" kind="card" size="lg" rarity="SSR"/><span class="item-example"><GameIcon src={caratIcon} alt="Carats" size={36}/><span><strong>Carats</strong><small>Item icon</small></span></span></div></DemoBlock>
         <DemoBlock title="Skills"><div class="skill-examples"><SkillChip icon={skillRecoveryIcon} name="Swinging Maestro" level="Lv.1" rarity="gold"/><SkillChip icon={skillSpeedIcon} name="Long-Distance Corner ○" level="Lv.3"/><SkillChip icon={skillSpeedIcon} name="The View from the Lead Is Mine!" level="Lv.2" rarity="unique-main"/></div></DemoBlock>
+      </div>
+      <div class="demo-grid">
+        <DemoBlock id="character-picker" title="Character picker" note="Search · affinity sort · target/include/exclude semantics"><CharacterPicker options={characterPickerOptions} bind:selected={selectedCharacters} multiple mode="include"/></DemoBlock>
+        <DemoBlock id="support-picker" title="Support card picker" note="Search · type · rarity · real card art"><SupportCardPicker options={supportCardOptions} bind:value={selectedSupportCard}/></DemoBlock>
+      </div>
+      <div class="demo-grid">
+        <DemoBlock id="distance-selector" title="Distance selector" note="Full labels become compact marks at component width"><DistanceSelector bind:value={selectedDistance}/></DemoBlock>
+        <DemoBlock id="spark-editor" title="Inheritance spark editor" note="Existing spark presentation with an explicit star control"><div class="state-stack"><SparkEditor id="edit-speed" name="Speed" tone="blue" source="main" chance="10%" bind:level={editedSparkLevel} onremove={() => showToast('warning')}/><SparkEditor id="edit-maestro" name="Swinging Maestro" tone="white" source="p2" level={2}/></div></DemoBlock>
       </div>
       <DemoBlock id="identity" title="Rank, aptitude, stats, and affinity" note="Angular game semantics as small reusable contracts">
         <div class="identity-contract">
@@ -432,6 +497,10 @@
           {#if selectedRace}<span class="selected-race">Selected race: {selectedRace}</span>{/if}
         </div>
       </DemoBlock>
+      <div class="demo-grid">
+        <DemoBlock id="timeline-card" title="Timeline event, rewards, and pickups" note="Angular event vocabulary without route-owned card chrome"><TimelineEventCard event={timelineEvent} bind:planned={timelinePlanned} onopen={() => showToast('success')}/></DemoBlock>
+        <DemoBlock id="leaderboard-row" title="Community ranking row" note="Dense desktop comparison becomes a readable mobile stats row"><div class="state-stack"><LeaderboardRow rank={1} name="Team Spica" group="Global Stars" meta="Open · Top 100" trend={3} stats={[{ label: 'Fans', value: '2.48B' }, { label: 'Daily', value: '+18.4M', emphasized: true }, { label: 'Members', value: '29/30' }, { label: 'Rank', value: 'A+' }]} onclick={() => showToast()}/><LeaderboardRow rank={12} name="Tracen Academy" group="Casual Club" meta="Approval" trend={-2} stats={[{ label: 'Fans', value: '816M' }, { label: 'Daily', value: '+4.2M', emphasized: true }, { label: 'Members', value: '27/30' }, { label: 'Rank', value: 'B' }]}/></div></DemoBlock>
+      </div>
       <DemoBlock id="connection" title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
     </LabSection>
 
@@ -512,6 +581,11 @@
   .virtual-row { height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); padding: 7px var(--space-3); border-bottom: 1px solid var(--color-border); }
   .virtual-row > span { min-width: 0; display: flex; flex-direction: column; } .virtual-row strong, .virtual-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .virtual-row strong { font-size: var(--font-sm); } .virtual-row small { color: var(--color-text-subtle); font-size: var(--font-xs); }
   .item-example { display: inline-flex; align-items: center; gap: 8px; padding: 4px 9px 4px 4px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-2); } .item-example > span { display: flex; flex-direction: column; } .item-example strong { font-size: var(--font-sm); } .item-example small { color: var(--color-text-subtle); font-size: var(--font-xs); }
+  .inspect-content { min-width: 0; display: grid; gap: 5px; padding-right: 24px; } .inspect-content > strong { font-size: var(--font-sm); } .inspect-content > span { color: var(--color-text-muted); font-size: 10px; line-height: 1.4; } .inspect-content dl { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 3px; } .inspect-content dl div { padding: 6px; }
+  .chart-bars { height: 180px; display: flex; align-items: end; gap: 7px; padding: 8px 4px 0; border-bottom: 1px solid var(--border-primary); background: repeating-linear-gradient(to top, transparent 0 35px, var(--border-subtle) 36px); }
+  .chart-bars > div { position: relative; min-width: 0; height: 100%; flex: 1; display: grid; grid-template-rows: minmax(0, 1fr) auto; align-items: end; justify-items: center; gap: 3px; color: var(--color-text-muted); font-size: 9px; }
+  .chart-bars > div > span { width: min(42px, 70%); height: var(--bar); grid-row: 1; align-self: end; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--accent-primary), rgb(var(--accent-primary-rgb) / .42)); }
+  .chart-bars b { position: absolute; left: 50%; bottom: calc(var(--bar) + 16px); color: var(--color-text); font-size: 9px; transform: translateX(-50%); } .chart-bars small { padding-bottom: 2px; color: var(--color-text-subtle); font-size: 8px; }
   .slider-examples { display: grid; gap: var(--space-6); }
   .skill-examples { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
   .spark-examples { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 6px; }

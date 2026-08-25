@@ -487,3 +487,45 @@ test('database slider exposes independent range thumbs and threshold semantics',
   await threshold.press('ArrowRight');
   await expect(threshold).toHaveValue('3');
 });
+
+test('extended Angular UI contracts remain functional and mobile-safe', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ui-lab');
+  const demo = (title: string) => page.locator('article.demo').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+
+  const characterPicker = demo('Character picker');
+  const oguri = characterPicker.getByRole('button', { name: /Oguri Cap/ });
+  await oguri.click();
+  await expect(oguri).toHaveAttribute('aria-pressed', 'true');
+
+  const supportPicker = demo('Support card picker');
+  const staminaCard = supportPicker.getByRole('radio', { name: /A Long-Awaited Chance/ });
+  await staminaCard.click();
+  await expect(staminaCard).toHaveAttribute('aria-checked', 'true');
+
+  const distanceSelector = demo('Distance selector');
+  const mile = distanceSelector.locator('[data-distance="mile"]');
+  await mile.click();
+  await expect(mile).toHaveAttribute('aria-pressed', 'true');
+
+  const sparkEditor = demo('Inheritance spark editor');
+  const speedStars = sparkEditor.getByRole('group', { name: 'Stars for Speed' });
+  await speedStars.getByRole('button').nth(1).click();
+  await expect(speedStars.getByRole('button').nth(1)).toHaveAttribute('aria-pressed', 'true');
+
+  const resultToolbar = demo('Database result toolbar');
+  await resultToolbar.getByRole('button', { name: 'Grid view' }).click();
+  await expect(resultToolbar.getByRole('button', { name: 'Grid view' })).toHaveAttribute('aria-pressed', 'true');
+
+  await demo('UQL query editor').getByRole('button', { name: 'Run query' }).click();
+  await demo('Inspect popover').getByRole('button', { name: 'Swinging Maestro' }).click();
+  await expect(page.getByRole('dialog', { name: 'Swinging Maestro details' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Swinging Maestro details' })).not.toBeVisible();
+
+  const timelineCard = demo('Timeline event, rewards, and pickups');
+  await timelineCard.getByRole('button', { name: 'Plan' }).click();
+  await expect(timelineCard.getByRole('button', { name: 'Added' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(demo('Statistics chart frame').getByText('94', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

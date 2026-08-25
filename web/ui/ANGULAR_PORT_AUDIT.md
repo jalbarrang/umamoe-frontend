@@ -5,7 +5,7 @@ This audit treats the Angular frontend as the visual and interaction reference, 
 ## Already represented in the Svelte UI system
 
 - Original semantic colors, typography, spacing, density, themes, and responsive page geometry.
-- Buttons, fields, selects, comboboxes, choice controls, sliders, dialogs, sheets, menus, feedback, tables, virtualization, artwork, skill chips, sparks, Veteran selection, workspace state, and ad regions.
+- Buttons, fields, selects, comboboxes, choice controls, sliders, dialogs, sheets, menus, feedback, tables, virtualization, artwork, skill chips, sparks, Veteran selection, character/support-card picking, workspace state, and ad regions.
 - Adaptive shell navigation. `NavigationTree` now adds optional subsections through the same typed model in the expanded rail, compact rail flyout, and mobile More sheet.
 
 ## Implemented foundation contracts
@@ -21,17 +21,20 @@ These contracts are now implemented and exercised in the UI Lab. Product routes 
 | `VeteranSummary`, `VeteranListItem` | `veteran-display.component.html` and `vpd-row.component.html` | Show identity, rank, scenario, affinity, main sparks, P1/P2 summaries, source/workspace, selection, and actions in one responsive row. Do not copy the Angular phone micro-font sizes. |
 | `LineageTree`, `LineageNode`, `AffinityStat` | `lineage-display.component.html` and `inheritance-entry.component.html` | Preserve parent/grandparent relationships, connectors, role colors, focusable nodes, base/race affinity, rank/score, sparks, and route actions. Use semantic DOM first and decorative SVG only for connectors. |
 | `RaceBadge`, `RaceSchedule`, `PlacementBadge` | `race-scheduler.component.html` | Preserve G1/G2/G3 semantics, early/late month slots, win/place state, optimal-affinity gain, search/add/remove, and a purpose-built mobile list instead of compressing the calendar. |
+| `CharacterPicker`, `SupportCardPicker` | `character-select-dialog` and `support-card-select-dialog` | Reuse Angular's compact search/filter panels, real game art, selection state, affinity ordering, type/rarity filters, and target/include/exclude meaning without Material dialogs or route-owned grids. |
+| `DistanceSelector`, `SparkEditor` | `distance-selector` and `spark-editor` | Keep distance colors and factor presentation consistent while exposing explicit pressed/radio state and component-width mobile compaction. Do not port Angular scroll listeners or manual change detection. |
+| `ResultToolbar`, `LeaderboardRow` | inheritance results, rankings, and circles pages | Share count/filter context, live state, sort, view mode, rank/trend, identity, and comparison stats. Mobile changes the information layout rather than scaling desktop rows down. |
+| `TimelineEventCard` | `timeline-event-card.component.html` | Retain event type, rerun/prediction state, date/context, real banner, reward items, pickups, race context, overflow count, and direct planner action in one container-responsive contract. |
+| `ChartFrame`, `QueryEditor` | `statistics-chart` and Database UQL | Standardize renderer-independent chart metadata/status/export and the lazy parser/editor shell without including route datasets or parser code in the UI component. |
+| `InspectPopover`, `GuidedTourCallout` | card hover menus, details previews, and `page-tour-intro-dialog` | Replace hover-only inspection and Material overlay coupling with click/keyboard/touch disclosure, explicit progress, and reduced-motion-safe local help. |
 
 ## Port when their owning routes begin
 
 | Contract | Route | Notes |
 | --- | --- | --- |
-| `TimelineEventCard`, `RewardStrip`, `PickupStrip` | Timeline | Media is optional; retain type/rerun/prediction labels, date/context, reward icons, pickup art, overflow count, and a direct planner action. |
 | `EventDetails` section patterns | Timeline | Reusable definition-list facts, source links, reward outcome summaries, and prediction/alternative fit displays. |
-| `ChartFrame`, `ChartLegend`, `ChartEmptyState` | Statistics and Race Lab | Keep chart title/description/legend/loading/empty/export semantics independent of the eventual chart renderer. Domain color tokens belong in the UI system. |
-| `QueryEditor` shell | Database UQL | Lazy-load parser/editor code. Preserve validation state, contextual tokens, snippets, suggestions, accessible docs, and copyable examples; do not make the reference article part of the initial route chunk. |
-| `InspectPopover` | Cards and Database | Replace hover-only previews with focus, click, and touch activation. Use it for artwork/rank/progression summaries, not arbitrary route content. |
-| `GuidedTourCallout` | Complex filters and planners | Optional anchored callout with progress and Back/Next/Done. No global Material overlay styling; disable or simplify under reduced motion. |
+| `RaceResultEditor` details | Race Lab | Reuse approved race, placement, character, skill, and input contracts; add only the race-specific result correction workflow when the route is ported. |
+| `CaratPlannerEventRow` | Carat Planner | Compose the approved timeline/reward vocabulary with planner-owned cost and schedule calculations once the route logic is migrated. |
 
 ## Semantic tokens to retain
 
