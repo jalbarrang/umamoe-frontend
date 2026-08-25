@@ -108,6 +108,24 @@ test('inheritance spark labels remain complete in the mobile layout', async ({ p
   expect(clipping).toEqual({ overflow: 'visible', textOverflow: 'clip' });
 });
 
+test('Hakuraku ports load on demand and remain mobile-safe', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/ui-lab');
+
+  const tab = page.getByRole('tab', { name: /Hakuraku/ });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('heading', { name: 'Hakuraku component ports' })).toBeVisible();
+  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Race runners' })).toBeVisible();
+
+  const play = page.getByRole('button', { name: 'Play replay' });
+  await play.click();
+  await expect(page.getByRole('button', { name: 'Pause replay' })).toBeVisible();
+  await expect(page.locator('#haku-race-chart svg').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
 test('main-parent and P2 sparks preserve the Angular source accents', async ({ page }) => {
   await page.goto('/ui-lab');
 

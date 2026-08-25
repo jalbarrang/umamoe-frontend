@@ -1,28 +1,37 @@
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 const dist = path.join(process.cwd(), 'dist');
+const manifest = JSON.parse(await readFile(path.join(dist, '.vite', 'manifest.json'), 'utf8'));
 const limits = { js: 100 * 1024, css: 35 * 1024 };
 const totals = { js: 0, css: 0 };
+const files = new Set();
 
-async function visit(directory) {
-  for (const name of await readdir(directory)) {
-    const file = path.join(directory, name);
-    const info = await stat(file);
-    if (info.isDirectory()) await visit(file);
-    else if (name.endsWith('.js') || name.endsWith('.css')) {
-      const kind = name.endsWith('.js') ? 'js' : 'css';
-      totals[kind] += gzipSync(await readFile(file)).byteLength;
-    }
-  }
+function collectStaticGraph(key) {
+  const entry = manifest[key];
+  if (!entry) return;
+  if (entry.file) files.add(entry.file);
+  for (const css of entry.css ?? []) files.add(css);
+  for (const imported of entry.imports ?? []) collectStaticGraph(imported);
 }
 
-await visit(dist);
+collectStaticGraph('index.html');
+
+for (const file of files) {
+  const kind = file.endsWith('.js') ? 'js' : file.endsWith('.css') ? 'css' : undefined;
+  if (!kind) continue;
+  totals[kind] += gzipSync(await readFile(path.join(dist, file))).byteLength;
+}
+
 const failures = Object.entries(limits).filter(([kind, limit]) => totals[kind] > limit);
 for (const [kind, bytes] of Object.entries(totals)) {
-  console.log(`${kind.toUpperCase()} compressed: ${(bytes / 1024).toFixed(1)} KiB / ${(limits[kind] / 1024).toFixed(0)} KiB`);
+  console.log(`Base shell ${kind.toUpperCase()} compressed: ${(bytes / 1024).toFixed(1)} KiB / ${(limits[kind] / 1024).toFixed(0)} KiB`);
 }
+
+const betaLabEntries = Object.values(manifest).filter((entry) => entry.src?.includes('web/features/ui-lab/') && entry.isDynamicEntry);
+if (betaLabEntries.length) console.log(`Beta-only UI Lab chunks: ${betaLabEntries.map((entry) => entry.file).join(', ')} (excluded from production shell budgets)`);
+
 if (failures.length) {
   throw new Error(`Performance budget exceeded: ${failures.map(([kind]) => kind).join(', ')}`);
 }

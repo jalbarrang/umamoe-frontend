@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Component } from 'svelte';
   import { theme, setTheme, toggleTheme, type Theme } from '../../platform/theme';
   import { setMockClientState } from '../../platform/client/client-state';
   import Artwork from '../../ui/Artwork.svelte';
@@ -80,6 +81,7 @@
   import { componentCount, uiRegistry } from '../../ui/registry';
   import DemoBlock from './DemoBlock.svelte';
   import LabSection from './LabSection.svelte';
+  import { hakurakuComponentCount, hakurakuRegistry } from './hakuraku-registry';
   import oguriCapImage from './fixtures/oguri-cap.webp';
   import mejiroMcQueenImage from './fixtures/mejiro-mcqueen.webp';
   import kitasanBlackImage from './fixtures/kitasan-black.webp';
@@ -96,6 +98,8 @@
   import timelineBanner from './fixtures/timeline-support-banner.webp';
 
   let density = $state('comfortable');
+  let labLibrary = $state<'uma' | 'hakuraku'>('uma');
+  let HakuLab = $state<Component | null>(null);
   let reducedMotion = $state(false);
   let segment = $state('overview');
   let textValue = $state('Mejiro McQueen');
@@ -144,17 +148,20 @@
   const previewStyle = $derived(`--lab-preview-width:${selectedPreview ? `${selectedPreview.width}px` : '100%'};--lab-preview-height:${selectedPreview ? `${selectedPreview.height}px` : 'calc(100dvh - 50px)'};--page-viewport-height:${selectedPreview ? `${selectedPreview.height}px` : 'calc(100dvh - 50px)'};--page-viewport-top:0px`);
   const sectionIcons: Record<string, IconName> = {
     tokens: 'home', actions: 'activity', inputs: 'filter', navigation: 'menu',
-    feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans'
+    feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans',
+    'haku-foundation': 'home', 'haku-race-data': 'database', 'haku-replay': 'race', 'haku-analysis': 'chart'
   };
-  const mobileSections = uiRegistry.filter((section) => ['tokens', 'actions', 'inputs', 'data'].includes(section.id));
-  const labNavigationItems: NavigationItem[] = uiRegistry.map((section) => ({
+  const activeRegistry = $derived(labLibrary === 'uma' ? uiRegistry : hakurakuRegistry);
+  const activeComponentCount = $derived(labLibrary === 'uma' ? componentCount : hakurakuComponentCount);
+  const mobileSections = $derived(labLibrary === 'uma' ? uiRegistry.filter((section) => ['tokens', 'actions', 'inputs', 'data'].includes(section.id)) : hakurakuRegistry.slice(0, 4));
+  const labNavigationItems: NavigationItem[] = $derived(activeRegistry.map((section) => ({
     id: section.id,
     label: section.title,
     href: `#${section.id}`,
     icon: sectionIcons[section.id] ?? 'more',
     meta: String(section.entries.length),
     children: section.entries.map((entry) => ({ id: entry.id, label: entry.name, href: `#${entry.id}` }))
-  }));
+  })));
   const colors = [
     ['Page', 'var(--bg-primary)'], ['Navbar', 'var(--bg-secondary)'], ['Panel', 'var(--bg-tertiary)'],
     ['Border', 'var(--border-primary)'], ['Text', 'var(--text-primary)'], ['Muted', 'var(--text-secondary)'],
@@ -273,6 +280,11 @@
   }
 
   function previewClientState(value: string) { setMockClientState(value as Parameters<typeof setMockClientState>[0]); }
+
+  async function selectLibrary(library: 'uma' | 'hakuraku') {
+    labLibrary = library;
+    if (library === 'hakuraku' && !HakuLab) HakuLab = (await import('./HakurakuLab.svelte')).default;
+  }
 </script>
 
 <svelte:head><title>UI Lab · uma.moe beta</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
@@ -293,7 +305,7 @@
 <div class="lab-shell" data-ui-lab-shell>
   <header class="lab-bar" data-shell-utility>
     <a class="lab-brand" href="/ui-lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
-    <div class="lab-context"><strong>UI lab</strong><span>{componentCount} component contracts</span></div>
+    <div class="lab-context"><strong>{labLibrary === 'uma' ? 'uma.moe UI' : 'Hakuraku UI'}</strong><span>{activeComponentCount} component contracts</span></div>
     <div class="lab-controls">
       <SegmentedControl label="Theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} value={$theme} onchange={(value) => setTheme(value as Theme)}/>
       <SegmentedControl label="Density" options={[{ value: 'comfortable', label: 'Touch' }, { value: 'compact', label: 'Compact' }]} bind:value={density}/>
@@ -308,7 +320,7 @@
 
   <aside class="lab-index" data-shell-rail>
     <a class="rail-brand" href="/ui-lab" aria-label="uma.moe UI lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
-    <div class="index-head"><strong>{componentCount} contracts</strong><span>v0 · review</span></div>
+    <div class="index-head"><strong>{activeComponentCount} contracts</strong><span>v0 · review</span></div>
     <div class="lab-navigation-scroll"><NavigationTree items={labNavigationItems} label="UI lab sections"/></div>
     <p>Beta/dev only. This module is removed from production builds.</p>
   </aside>
@@ -318,11 +330,21 @@
     {#snippet leftAd()}<AdRegion placement="ui_lab_sticky_vrec_left" kind="rail" sizes={['160x600', '120x600']} active preview/>{/snippet}
     {#snippet rightAd()}<AdRegion placement="ui_lab_sticky_vrec_right" kind="rail" sizes={['160x600', '120x600']} active preview/>{/snippet}
   <main class="lab-main" data-page-width={pageWidth}>
+    <div class="library-tabs" role="tablist" aria-label="UI component library">
+      <button id="uma-library-tab" role="tab" aria-selected={labLibrary === 'uma'} class:active={labLibrary === 'uma'} onclick={() => selectLibrary('uma')}><LogoMark size={22}/><span><strong>uma.moe</strong><small>Angular parity</small></span></button>
+      <button id="hakuraku-library-tab" role="tab" aria-selected={labLibrary === 'hakuraku'} class:active={labLibrary === 'hakuraku'} onclick={() => selectLibrary('hakuraku')}><Icon name="race" size={20}/><span><strong>Hakuraku</strong><small>Race analysis ports</small></span></button>
+    </div>
     <section class="lab-intro">
-      <div><Badge tone="accent">Svelte port · review</Badge><h1 id="ui-lab-title">uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
-      <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
+      {#if labLibrary === 'uma'}
+        <div><Badge tone="accent">Svelte port · review</Badge><h1 id="ui-lab-title">uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
+        <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
+      {:else}
+        <div><Badge tone="success">Hakuraku port · review</Badge><h1 id="ui-lab-title">Hakuraku component ports</h1><p>Race-data, replay, and analysis patterns translated into responsive Svelte contracts. React and Bootstrap stay out; Hakuraku’s modular ECharts approach becomes our future chart boundary.</p></div>
+        <dl><div><dt>Source</dt><dd>MIT</dd></div><div><dt>Runtime</dt><dd>Svelte only</dd></div><div><dt>Charts</dt><dd>ECharts SVG</dd></div></dl>
+      {/if}
     </section>
 
+    {#if labLibrary === 'uma'}
     <LabSection id="tokens" title="Foundation" description="The original Angular palette, type rhythm, radii, and elevations are the source of truth. Svelte components consume stable semantic aliases.">
       <DemoBlock title="Original color roles" note="Ported from src/styles.scss"><div class="swatches">{#each colors as color}<div><span style:background={color[1]}></span><strong>{color[0]}</strong><code>{color[1]}</code></div>{/each}</div></DemoBlock>
       <div class="demo-grid">
@@ -504,7 +526,11 @@
       <DemoBlock id="connection" title="Workspace and live-client state"><div class="state-row"><WorkspaceSwitcher/><ClientIndicator/><SelectField id="client-state" label="Preview connection" value="not-installed" options={[{ value: 'not-installed', label: 'Not installed' }, { value: 'detected', label: 'Detected' }, { value: 'pairing', label: 'Pairing' }, { value: 'connected', label: 'Connected' }, { value: 'reconnecting', label: 'Reconnecting' }, { value: 'permission-blocked', label: 'Permission blocked' }, { value: 'version-incompatible', label: 'Version incompatible' }, { value: 'cloud-fallback', label: 'Cloud fallback' }]} onchange={previewClientState}/></div></DemoBlock>
     </LabSection>
 
-    <footer class="lab-footer"><strong>UI contract v0</strong><span>Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.</span></footer>
+    {:else}
+      {#if HakuLab}<HakuLab/>{:else}<p class="library-loading" role="status">Loading Hakuraku component contracts…</p>{/if}
+    {/if}
+
+    <footer class="lab-footer"><strong>{labLibrary === 'uma' ? 'UI contract v0' : 'Hakuraku port contract v0'}</strong><span>{labLibrary === 'uma' ? 'Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.' : 'Approve these clean Svelte ports before Race Lab route integration; feature state and chart rendering remain separately replaceable.'}</span></footer>
   </main>
   </PageFrame>
   </div>
@@ -547,6 +573,14 @@
   .rail-brand { display: none; }
   .lab-page { min-width: 0; }
   .lab-main { width: 100%; min-width: 0; display: grid; gap: var(--space-10); padding-bottom: var(--space-12); }
+  .library-tabs { width: fit-content; max-width: 100%; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-1); }
+  .library-tabs button { min-width: 150px; min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 4px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-muted); cursor: pointer; text-align: left; }
+  .library-tabs button:hover { color: var(--color-text); background: var(--surface-2); }
+  .library-tabs button.active { background: var(--surface-3); color: var(--color-text); box-shadow: inset 0 -2px var(--color-accent); }
+  .library-tabs button > span { min-width: 0; display: grid; gap: 1px; }
+  .library-tabs strong { font-size: 11px; line-height: 15px; }
+  .library-tabs small { color: var(--color-text-subtle); font-size: 8px; line-height: 11px; }
+  .library-loading { min-height: 180px; display: grid; place-items: center; margin: 0; color: var(--color-text-muted); }
   .lab-bottom { z-index: var(--z-header); width: 100%; height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-bottom a, .lab-bottom button { min-width: 0; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0 2px; border: 0; background: transparent; color: var(--color-text-subtle); cursor: pointer; font: inherit; font-size: 9px; text-decoration: none; }
   .lab-bottom a:hover, .lab-bottom button:hover { color: var(--color-text); }
@@ -606,6 +640,8 @@
   .selected-race { color: var(--color-text-muted); font-size: var(--font-xs); }
   .lab-footer { display: grid; gap: var(--space-1); padding-top: var(--space-6); border-top: 1px solid var(--color-border); } .lab-footer span { color: var(--color-text-muted); font-size: var(--font-sm); }
   @container app-viewport (max-width: 620px) {
+    .library-tabs { width: 100%; }
+    .library-tabs button { min-width: 0; flex: 1; padding-inline: 8px; }
     .identity-data { grid-template-columns: 1fr; }
     .identity-head { gap: 6px; }
     .rank-reference { align-items: flex-start; flex-direction: column; gap: 3px; }

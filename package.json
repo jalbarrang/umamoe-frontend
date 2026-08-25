@@ -26,6 +26,7 @@
   "private": true,
   "dependencies": {
     "ajv": "^8.17.1",
+    "echarts": "^6.1.0",
     "sv-router": "^0.17.0",
     "svelte": "^5.39.0"
   },

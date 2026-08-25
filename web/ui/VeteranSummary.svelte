@@ -17,23 +17,18 @@
       <div class="identity">
         <div class="name-row"><h3>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
         {#if veteran.detail}<span class="detail">{veteran.detail}</span>{/if}
-        <div class="identity-meta">
-          <RankBadge label={veteran.rank} size="sm"/>
-          <AffinityStat value={veteran.affinity} kind="total" compact/>
-          {#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}
-          {#if veteran.score !== undefined}<span class="score"><b>{veteran.score.toLocaleString()}</b><small>score</small></span>{/if}
-        </div>
       </div>
+      <div class="rank-score"><RankBadge label={veteran.rank} size="sm"/>{#if veteran.score !== undefined}<span>{veteran.score.toLocaleString()}</span>{/if}</div>
     </header>
 
     {#if veteran.stats?.length}<StatStrip items={veteran.stats} compact={compact}/>{/if}
 
     {#if veteran.sparks.length}
       <section class="factor-section" aria-label="Veteran sparks">
-        <span class="section-label">Sparks</span>
         <div class="factor-list">
           {#each veteran.sparks as group}{#each group.items as item (item.id)}<SparkItem {...item} tone={group.tone} compact={compact}/>{/each}{/each}
         </div>
+        <div class="summary-affinity"><AffinityStat value={veteran.affinity} kind="total" compact/>{#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}</div>
       </section>
     {/if}
 
@@ -59,51 +54,41 @@
 
 <style>
   .veteran-summary-container { min-width: 0; container-type: inline-size; }
-  .veteran-summary { min-width: 0; display: grid; grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); gap: 8px 12px; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-1); }
-  .summary-head { min-width: 0; grid-row: 1 / 3; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; align-items: center; gap: 9px; padding-right: 12px; border-right: 1px solid var(--border-subtle); }
+  .veteran-summary { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-1); }
+  .summary-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; }
   .identity { min-width: 0; display: grid; gap: 4px; }
   .name-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
   h3 { min-width: 0; margin: 0; overflow: hidden; color: var(--color-text); font-size: var(--font-md); text-overflow: ellipsis; white-space: nowrap; }
-  .scenario { padding: 2px 6px; border: 0; border-radius: var(--radius-xs); background: rgb(var(--accent-secondary-rgb) / .1); color: var(--accent-secondary); font-size: 8px; font-weight: 650; }
+  .scenario { padding: 2px 6px; border: 0; border-radius: var(--radius-xs); background: rgb(129 199 132 / .1); color: var(--accent-secondary); font-size: 8px; font-weight: 650; line-height: 1; }
   .detail { color: var(--color-text-subtle); font-size: 10px; }
-  .identity-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-  .score { min-height: 21px; display: inline-flex; align-items: baseline; gap: 3px; padding-left: 5px; border-left: 1px solid var(--border-subtle); color: var(--accent-primary); }
-  .score b { font-size: 12px; font-variant-numeric: tabular-nums; }
-  .score small { color: var(--color-text-subtle); font-size: 8px; text-transform: uppercase; }
-  .factor-section { min-width: 0; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 6px; }
-  .section-label { padding-top: 5px; color: var(--color-text-subtle); font-size: 8px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+  .rank-score { display: grid; justify-items: center; gap: 2px; }
+  .rank-score > span { color: var(--color-text-muted); font-family: var(--font-mono); font-size: 9px; font-variant-numeric: tabular-nums; line-height: 1; }
+  .factor-section { min-width: 0; display: flex; align-items: center; gap: 6px; padding-top: 7px; border-top: 1px solid var(--border-subtle); }
   .factor-list, .parent-factors { min-width: 0; display: flex; flex-wrap: wrap; gap: 3px; }
-  .parent-rows { min-width: 0; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; border-top: 1px solid var(--border-subtle); }
-  .parent-row { min-width: 0; display: grid; grid-template-columns: minmax(176px, auto) minmax(0, 1fr); align-items: start; gap: 7px; padding: 5px 0; }
-  .parent-row + .parent-row { padding-left: 10px; border-left: 1px solid var(--border-subtle); }
+  .factor-list { flex: 1; }
+  .summary-affinity { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; margin-left: auto; }
+  .parent-rows { min-width: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border-subtle); }
+  .parent-row { min-width: 0; display: grid; grid-template-columns: minmax(176px, auto) minmax(0, 1fr); align-items: center; gap: 7px; padding: 5px 0; }
+  .parent-row + .parent-row { border-top: 1px solid var(--border-subtle); }
   .parent-id { min-width: 0; display: flex; align-items: center; gap: 5px; }
   .parent-id strong { max-width: 100px; overflow: hidden; color: var(--color-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .parent-position { flex: 0 0 auto; padding: 2px 5px; border-radius: var(--radius-xs); font-size: 9px; font-weight: 800; }
   .parent-position--p1 { background: rgb(100 181 246 / .12); color: #90caf9; }
   .parent-position--p2 { background: rgb(186 104 200 / .12); color: #ce93d8; }
-  .compact { grid-template-columns: 1fr; gap: 7px; padding: 7px; }
-  .compact .summary-head { grid-row: auto; padding-right: 0; border-right: 0; }
-  .compact .factor-section { grid-template-columns: 1fr; gap: 3px; }
-  .compact .section-label { padding: 0; }
+  .compact { gap: 7px; padding: 7px; }
 
   @container (max-width: 760px) {
-    .veteran-summary { grid-template-columns: 1fr; gap: 7px; padding: 7px; }
-    .summary-head { grid-row: auto; padding-right: 0; padding-bottom: 6px; border-right: 0; border-bottom: 1px solid var(--border-subtle); }
+    .veteran-summary { gap: 7px; padding: 7px; }
     .summary-head { gap: 7px; }
-    .identity-meta { gap: 3px; }
-    .score { display: none; }
-    .factor-section { grid-template-columns: 1fr; gap: 3px; }
-    .section-label { padding: 0; }
-    .parent-rows { grid-column: auto; }
-    .parent-rows { grid-template-columns: 1fr; gap: 0; }
+    .factor-section { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .summary-affinity { order: -1; margin-left: 0; }
     .parent-row { grid-template-columns: minmax(158px, auto) minmax(0, 1fr); gap: 5px; }
-    .parent-row + .parent-row { padding-left: 0; border-top: 1px solid var(--border-subtle); border-left: 0; }
     .parent-id strong { max-width: min(140px, 42vw); }
   }
   @container (max-width: 430px) {
     .veteran-summary { padding: 4px; border-inline: 0; border-radius: 0; }
     .parent-row { grid-template-columns: 1fr; }
-    .factor-section { grid-template-columns: 1fr; gap: 2px; }
-    .section-label { padding-top: 0; }
+    .factor-section { gap: 3px; }
+    .rank-score > span { display: none; }
   }
 </style>
