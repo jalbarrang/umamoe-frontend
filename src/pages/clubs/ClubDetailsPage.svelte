@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContentAd from '@/layouts/ContentAd.svelte';
   import { copyText } from '@/lib/clipboard';
   import { onMount, untrack } from 'svelte';
   import { router } from '@/routes/router';
@@ -153,7 +154,9 @@
           </section>
           <section class="details-card progression-card" aria-label="Club Progression"><header><h2>Club Progression</h2></header><div class="card-body"><div class="club-chart" bind:clientHeight={clubChartHeight}><LazyEChartsSurface option={clubChart} label="Club progression by observed day" height={clubChartHeight} dismissTouchTooltip/></div></div></section>
         </div>
+        <ContentAd routeId="clubs"/>
         <ClubMemberProgression snapshots={details.members} {year} {month} includePrior={config.includePriorClubData} {search} bind:mode={memberChartMode} bind:view={memberView}/>
+        <ContentAd routeId="clubs" index={2}/>
         <div class="club-toolbar">
           <h2>Members <span class="member-count">{members.length}</span></h2>
           <div class="member-search"><TextField id="club-member-search" label="Filter by name or ID" hideLabel type="search" placeholder="Search members by name or ID" suffixIcon="search" bind:value={search}/></div>
@@ -238,9 +241,9 @@
   .name-block .member-id { min-height:18px; padding:1px 4px; line-height:1.2; }
   .role-badge { flex:none; padding:2px 5px; border-radius:3px; font-size:9px; text-transform:uppercase; color:var(--text-muted); background:var(--surface-2); }.role-badge[data-role="leader"] { color:var(--accent-warning); background:rgb(255 167 38/.1); }.role-badge[data-role="officer"] { color:var(--accent-secondary); }
   .total-fans,.primary-metric { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 10px; }
-  .total-fans { padding-top:6px; margin-top:6px; border-top:1px solid var(--border-subtle); line-height:1.35; }.total-fans>span,.primary-metric>span { color:var(--text-muted); font-size:11px; }.total-fans strong { font-size:12px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; max-width:100%; }
-  .primary-metric { padding:3px 0; line-height:1.35; }.primary-metric>span { color:var(--accent-primary); }.primary-metric strong { font-size:16px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; max-width:100%; }
-  .member-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 16px; padding-top:6px; border-top:1px solid var(--border-subtle); }.member-stats>div { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 6px; min-width:0; }.member-stats dt { color:var(--text-muted); font-size:10px; }.member-stats dd { font-size:11px; font-weight:600; max-width:100%; overflow-wrap:anywhere; }
+  .total-fans { padding-top:6px; margin-top:6px; border-top:1px solid var(--border-subtle); line-height:1.35; }.total-fans>span,.primary-metric>span { color:var(--text-muted); font-size:11px; }.total-fans strong { margin-left:auto; font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; max-width:100%; }
+  .primary-metric { padding:3px 0; line-height:1.35; }.primary-metric>span { color:var(--accent-primary); }.primary-metric strong { margin-left:auto; font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap; max-width:100%; }
+  .member-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 16px; padding-top:6px; border-top:1px solid var(--border-subtle); }.member-stats>div { display:grid; align-content:start; gap:2px; min-width:0; }.member-stats dt { color:var(--text-muted); font-size:10px; }.member-stats dd { min-width:0; font-size:11px; font-weight:600; line-height:1.4; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .member-expand,.member-details { display:none; }.member-name-row { min-width:0; display:flex; align-items:center; gap:4px; }.identity-tools { display:flex;align-items:center;gap:4px; }.inactive { opacity:.55; }.member-table-scroll { background:var(--card-surface-bg); max-width:100%; overflow:auto; border:1px solid var(--border-subtle); border-radius:8px; }table { border-collapse:collapse; width:100%; font-size:12px; }th,td { padding:9px 12px; text-align:right; border-bottom:1px solid var(--border-subtle); white-space:nowrap; }th { color:var(--text-muted); background:var(--surface-2); }th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left; }
   .details-card { min-width:0; overflow:hidden; border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-1); }.details-card>header { display:flex; align-items:center; min-height:52px; padding:12px 16px; }.progression-card { display:flex; flex-direction:column; }.card-body { display:flex; flex:1; padding:0 16px 16px; }.club-chart { flex:1; position:relative; min-height:240px; }.club-chart :global(.lazy-surface) { position:absolute; inset:0; min-height:0; }
   .loading { min-height:220px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--text-muted); }.no-members { padding:24px 0; color:var(--text-muted); text-align:center; font-size:12px; }

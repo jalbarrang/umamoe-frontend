@@ -100,7 +100,7 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
       for (const width of [320,390,768,1200]) {
         await page.setViewportSize({width,height:900});
         await fits(page);
-        const numberLines = await page.locator('.club-fans .value>span,.club-fans .value>small,.tier-gap-value,.tier-delta').evaluateAll(nodes => nodes.map(node => {
+        const numberLines = await page.locator('.club-fans .value>span,.club-fans .value>small,.tier-gap-value,.tier-delta,.member-stats dd').evaluateAll(nodes => nodes.map(node => {
           const box = node.getBoundingClientRect();
           return { height:box.height, lineHeight:parseFloat(getComputedStyle(node).lineHeight), overflow:node.scrollWidth > node.clientWidth + 1 };
         }));
@@ -112,6 +112,7 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
       }
       await page.setViewportSize({width:390,height:844});
       await page.screenshot({path:info.outputPath(`${scenario}-${theme}.png`)});
+      if (scenario === 'large values' || scenario === 'full club') await page.locator('.member-card').first().screenshot({path:info.outputPath(`member-${scenario}-${theme}.png`)});
     }
     await expect(page.getByRole('figure',{name:'Club progression by observed day'})).toBeVisible();
     await page.getByRole('region',{name:'Member Progression',exact:true}).scrollIntoViewIfNeeded();

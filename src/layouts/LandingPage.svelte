@@ -3,6 +3,7 @@
   import { loadSiteStatistics, type SiteStatistics } from '@/services/site-statistics';
   import SiteStatisticsStrip from '@/components/SiteStatistics.svelte';
   import SourcePage from './SourcePage.svelte';
+  import ContentAd from './ContentAd.svelte';
 
   let { routeId, title, description, heading, children }: {
     routeId: string; title: string; description: string; heading: Snippet; children: Snippet;
@@ -23,6 +24,7 @@
       <div class="quick-links">{@render children()}</div>
     </div></section>
   </SourcePage></div>
+  <ContentAd {routeId} railAlternative={false}/>
   <SiteStatisticsStrip stats={siteStats}/>
 </div>
 

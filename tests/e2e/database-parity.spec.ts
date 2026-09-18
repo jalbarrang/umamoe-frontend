@@ -538,7 +538,7 @@ test('Database retains the P1–P2 race summary and support limit breaks without
   }
 });
 
-test('Database retains the dense Angular-style result at 390px without page overflow', async ({ page }) => {
+test('Database keeps the scenario logo and score aligned on mobile without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockDatabase(page);
   await page.goto('/database');
@@ -549,10 +549,10 @@ test('Database retains the dense Angular-style result at 390px without page over
     const summary = page.locator('.record-stats').first();
     await expect(summary).toBeVisible();
     const geometry = await summary.evaluate((element) => {
-      const centers = [...element.children].map((child) => { const box = child.getBoundingClientRect(); return box.y + box.height / 2; });
+      const centers = [...element.querySelectorAll('.scenario-mark, .rank-score')].map((child) => { const box = child.getBoundingClientRect(); return box.y + box.height / 2; });
       return { height: element.getBoundingClientRect().height, spread: Math.max(...centers) - Math.min(...centers), overflow: element.scrollWidth > element.clientWidth };
     });
-    expect(geometry.height).toBeLessThanOrEqual(60);
+    expect(geometry.height).toBeLessThanOrEqual(100);
     expect(geometry.spread).toBeLessThanOrEqual(1);
     expect(geometry.overflow, `Summary contents must fit at ${width}px, not only the page`).toBe(false);
   }

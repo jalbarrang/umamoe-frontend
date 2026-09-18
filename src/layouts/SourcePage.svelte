@@ -3,7 +3,7 @@
   import AdRegion from './AdRegion.svelte';
   import PageFrame from './PageFrame.svelte';
   import type { PageWidth } from './breakpoints';
-  import { adSurfaceForRoute } from '@/services/ads/ad-slots';
+  import { adSurfaceForRoute, fuseIdForPlacement } from '@/services/ads/ad-slots';
 
   interface Props {
     children: Snippet;
@@ -18,7 +18,7 @@
   const adSurface = $derived(adSurfaceForRoute(routeId));
 </script>
 
-<PageFrame {routeId} featureId={routeId} pageTitle={title} {width} {fullBleed} adsEnabled={Boolean(adSurface) && !fullBleed}>
+<PageFrame {routeId} featureId={routeId} pageTitle={title} {width} {fullBleed} adsEnabled={Boolean(adSurface && fuseIdForPlacement(`${adSurface}_sticky_vrec_right`)) && !fullBleed}>
   {#snippet leftAd()}<AdRegion placement={`${adSurface}_sticky_vrec_left`} kind="rail" sizes={['160x600', '120x600']} active={Boolean(adSurface)}/>{/snippet}
   {#snippet rightAd()}<AdRegion placement={`${adSurface}_sticky_vrec_right`} kind="rail" sizes={['160x600', '120x600']} active={Boolean(adSurface)}/>{/snippet}
   <main class="source-page" class:source-hakuraku={source === 'hakuraku'} class:source-moe={source === 'moe'} data-page-source={source}>

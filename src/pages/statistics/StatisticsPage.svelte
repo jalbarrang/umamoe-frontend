@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContentAd from '@/layouts/ContentAd.svelte';
   import PageHeading from '@/layouts/PageHeading.svelte';
   import { tick } from 'svelte';
   import type { EChartsCoreOption } from 'echarts/core';
@@ -15,7 +16,8 @@
   import ChartFrame from '@/components/ChartFrame.svelte';
   import MetricBar from '@/components/MetricBar.svelte';
   import FilterChip from '@/components/FilterChip.svelte';
-  import FilterSection from '@/components/FilterSection.svelte';
+  import StatisticsFilterControls from './StatisticsFilterControls.svelte';
+  import { classColors, distanceColors, distanceNames } from './statistics-display';
   import SegmentedControl from '@/components/SegmentedControl.svelte';
   import Disclosure from '@/components/Disclosure.svelte';
   import StatisticsRanking from './StatisticsRanking.svelte';
@@ -25,12 +27,9 @@
   import StatisticsChartPanel from './StatisticsChartPanel.svelte';
   import { statisticsRepository, type StatisticsCatalogEntry, type CharacterStatistics, type DistributionItem, type GlobalStatistics, type StatDistribution, type StatisticsDataset } from './statistics-repository';
 
-  const distanceNames: Record<string, string> = { '1': 'Sprint', '2': 'Mile', '3': 'Medium', '4': 'Long', '5': 'Dirt', sprint: 'Sprint', mile: 'Mile', medium: 'Medium', long: 'Long', dirt: 'Dirt' };
   const scenarioNames = Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((id) => [String(id), scenarioName(id)]));
   const statNames: Record<string, string> = { speed: 'Speed', stamina: 'Stamina', power: 'Power', guts: 'Guts', wiz: 'Wit', wisdom: 'Wit', rank_score: 'Rank Score' };
   const statColors: Record<string, string> = { speed: '#098cdb', stamina: '#da4b38', power: '#db7602', guts: '#db447e', wiz: '#009e5e', wisdom: '#009e5e', wit: '#009e5e', friend: '#ffb441', group: '#21ce3e' };
-  const classColors: Record<string, string> = { '1': '#4fc3f7', '2': '#66bb6a', '3': '#c6ff00', '4': '#ffb300', '5': '#f4511e', '6': '#8e24aa' };
-  const distanceColors: Record<string, string> = { '1': '#64b5f6', '2': '#81c784', '3': '#ba9af0', '4': '#efb45f', '5': '#ed8da4' };
   const chartText = $derived({ color: $theme === 'light' ? '#4b5563' : '#bdbdbd', fontFamily: 'Arial, sans-serif' });
   const chartGrid = $derived($theme === 'light' ? '#e5e7eb' : '#363636');
 
@@ -137,10 +136,6 @@
     const card = supportCatalog.get(item.id);
     return { ...item, image: card?.image, detail: [...(card?.tags ?? []), '#' + item.id].join(' · ') };
   }
-  function toggle(list: string[], value: string): string[] { return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]; }
-  function toggleDistance(value: string): void { selectedDistances = toggle(selectedDistances, value); }
-  function toggleClass(value: string): void { selectedClasses = toggle(selectedClasses, value); }
-  function toggleScenario(value: string): void { selectedScenarios = toggle(selectedScenarios, value); }
   function statStrip(values: Record<string, number>): StatStripItem[] {
     return statIds.map((id) => ({ id, label: statName(id), value: values[id] ?? '—', tone: (id === 'wiz' ? 'wit' : id) as StatStripItem['tone'], icon: '/assets/images/icon/stats/' + (id === 'wiz' ? 'wit' : id) + '.webp' }));
   }
@@ -275,21 +270,6 @@
 </script>
 <svelte:head><title>Team Stadium Statistics · uma.moe</title><meta name="description" content="Explore the Umas, support decks, skills, and training stats used by the Team Stadium community."/></svelte:head>
 
-{#snippet filterControls()}
-  <p class="filter-intro">Choose the training samples to explore. Your selection applies to every view.</p>
-  <FilterSection title="Scenario" count={selectedScenarios.length}>
-    <div class="filter-options">{#each allScenarios as scenario}<FilterChip label={scenarioNames[scenario] ?? 'Scenario ' + scenario} selected={selectedScenarios.includes(scenario)} onclick={() => toggleScenario(scenario)}/>{/each}</div>
-  </FilterSection>
-  <FilterSection title="Team Class" count={selectedClasses.length}>
-    <div class="filter-options">{#each [...allClasses].reverse() as item}<FilterChip label={'Class ' + item} selected={selectedClasses.includes(item)} onclick={() => toggleClass(item)}/>{/each}</div>
-    <Button variant="ghost" size="sm" ariaLabel={selectedClasses.length === allClasses.length ? 'Deselect all classes' : 'Select all classes'} onclick={() => selectedClasses = selectedClasses.length === allClasses.length ? [] : [...allClasses]}>{selectedClasses.length === allClasses.length ? 'Deselect all' : 'Select all'}</Button>
-  </FilterSection>
-  {#if allDistances.length}<FilterSection title="Distance" count={selectedDistances.length}>
-    <div class="filter-options">{#each allDistances as distance}<FilterChip label={distanceNames[distance] ?? title(distance)} selected={selectedDistances.includes(distance)} onclick={() => toggleDistance(distance)}/>{/each}</div>
-    <Button variant="ghost" size="sm" ariaLabel={selectedDistances.length === allDistances.length ? 'Deselect all distances' : 'Select all distances'} onclick={() => selectedDistances = selectedDistances.length === allDistances.length ? [] : [...allDistances]}>{selectedDistances.length === allDistances.length ? 'Deselect all' : 'Select all'}</Button>
-  </FilterSection>{/if}
-{/snippet}
-
 {#snippet distributions(values: Record<string, StatDistribution>, prefix: string)}
   <div class="distribution-controls">
     <SegmentedControl label="Stat to explore" options={statOptions} bind:value={activeStat}/>
@@ -319,6 +299,7 @@
         </div>
       </div>
 
+      <ContentAd routeId="statistics"/>
       <div id="statistics-panel" class="content-area" role="tabpanel" aria-labelledby={'statistics-tabs-' + activeSection} tabindex="-1">
         {#if allDistances.length > 1}<div class="distance-focus"><span>Explore by distance</span><SegmentedControl label="Distance focus" options={distanceOptions} value={distanceFocus} onchange={value => selectedDistances = value === 'all' ? [...allDistances] : [value]}/></div>{/if}
         {#if activeSection === 'overview'}
@@ -414,9 +395,8 @@
 
       <footer><Icon name="info" size={15}/><p>Community data, anonymized and aggregated. Usage describes popularity; it does not measure race results.</p></footer>
       <Dialog bind:open={filtersOpen} title="Statistics filters" icon="tune" mobileSheet maxWidth="540px">
-        {@render filterControls()}
-        <div class="filter-result" aria-live="polite"><strong>{selectedSamples.toLocaleString()}</strong> matching training samples</div>
-        {#snippet actions()}<Button variant="ghost" size="sm" onclick={resetFilters}>Reset filters</Button><Button size="sm" onclick={() => filtersOpen = false}>Show results</Button>{/snippet}
+        <StatisticsFilterControls {allScenarios} {allClasses} {allDistances} bind:selectedScenarios bind:selectedClasses bind:selectedDistances {selectedSamples}/>
+        {#snippet actions()}<Button variant="ghost" size="sm" icon="refresh" disabled={!filtersChanged} onclick={resetFilters}>Reset filters</Button><Button size="sm" onclick={() => filtersOpen = false}>Show results</Button>{/snippet}
       </Dialog>
     {/if}
   </div>
@@ -446,7 +426,7 @@
   .two-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-block:12px}.support-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;align-items:start}.type-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.type-filters :global(button){min-height:32px;padding-inline:10px;font-size:11px}.type-metrics{display:grid;gap:10px;padding:8px 2px}.type-metrics>div{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:12px;font-size:12px}.type-metrics>p{color:var(--text-muted);font-size:12px}.stack :global(.chart-frame){padding:12px}.stack>:global(.ranking){height:auto}
   .explanation{display:flex;gap:8px;align-items:start;margin-bottom:12px;color:var(--text-secondary)}.explanation>:global(svg){flex:none;color:var(--accent-primary)}.explanation p{margin:0;font-size:12px;line-height:1.5}.distribution-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 8px}.stat-overview{max-width:100%;margin:12px 0}.stat-overview :global(.stats>div){min-height:48px}.stat-overview :global(dd){font-size:18px}.stat-overview :global(dt){font-size:10px}.section-gap{margin-top:12px}.subheading{font-size:16px;margin:18px 0 0}
   .character-heading{display:flex;align-items:center;gap:12px;margin:10px 0 12px}.character-heading>img{width:52px;height:52px;border-radius:var(--radius-lg);background:var(--surface-2);object-fit:cover}.character-heading h2{margin-top:4px;font-size:23px}.character-heading p{margin:4px 0 0;color:var(--text-muted);font-size:12px}
-  .filter-options{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.filter-intro{margin:0 0 18px;color:var(--text-secondary);font-size:13px;line-height:1.6}.filter-result{border-top:1px solid var(--border-subtle);margin-top:16px;padding-top:16px;font-size:12px;color:var(--text-secondary)}.filter-result strong{color:var(--accent-primary)}.loading{min-height:300px;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--text-secondary);font-size:14px}
+  .loading{min-height:300px;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--text-secondary);font-size:14px}
   footer{display:flex;align-items:start;justify-content:center;gap:7px;padding:16px 0;color:var(--text-muted)}footer>:global(svg){flex:none;margin-top:1px}footer p{margin:0;font-size:10px;line-height:1.6}
   @container statistics (max-width:1050px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.scope-bar{justify-content:space-between}.content-area{scroll-margin-top:114px}}
   @container statistics (max-width:700px){.overview-grid,.support-grid,.two-columns{grid-template-columns:minmax(0,1fr)}.overview-grid{grid-auto-rows:auto}.dataset-summary>div{padding-inline:10px}.dataset-summary>div>span:last-child{grid-column:1/-1}.context-label{display:none}.distance-focus{display:block}.distance-focus>span{display:none}.distance-focus :global(.segments){width:100%}.distance-focus :global(.segments button){flex:1;padding-inline:10px}.training-profile{padding-inline:10px}}

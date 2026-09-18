@@ -26,6 +26,7 @@ export default defineConfig(async ({ mode }) => {
         siteKey: variables.VITE_TURNSTILE_SITE_KEY ?? environment.turnstile.siteKey,
         measurementId: variables.VITE_GOOGLE_ANALYTICS_ID ?? environment.googleAnalytics.measurementId,
         providersEnabled: mode === 'production' || mode === 'beta',
+        fuseSlots: environment.fuse.slots,
         statusApiUrl: environment.statusApiUrl
       }),
       __UI_LAB_ENABLED__: JSON.stringify(mode !== 'production')

@@ -22,6 +22,7 @@ interface RawTimelineEvent {
   jp_release_date?: string | null;
   is_confirmed?: boolean;
   image_path?: string | null;
+  image?: string | null;
   gacha_id?: unknown;
   gacha_ids?: unknown;
   gacha_type?: unknown;
@@ -40,7 +41,7 @@ interface RawTimelineEvent {
   umapyoi_url?: string;
   prediction?: Parameters<typeof toTimelinePrediction>[0];
 }
-interface TimelineResource { events?: RawTimelineEvent[]; anniversaries?: { index?: number; label?: string; jp_date?: string; global_date?: string; source_event_id?: string; image_path?: string; is_confirmed?: boolean }[]; calculation?: Parameters<typeof toTimelineCalculation>[0]; }
+interface TimelineResource { events?: RawTimelineEvent[]; anniversaries?: { index?: number; label?: string; jp_date?: string; global_date?: string; source_event_id?: string; image_path?: string; image?: string; is_confirmed?: boolean }[]; calculation?: Parameters<typeof toTimelineCalculation>[0]; }
 
 const typeLabels: Record<string, string> = {
   character_banner: 'Character scout', support_card_banner: 'Support scout', paid_banner: 'Paid scout', story_event: 'Story event', campaign: 'Mission campaign', scenario_release: 'Training scenario', champions_meeting: 'Champions Meeting', legend_race: 'Legend Race', league_of_heroes: 'League of Heroes', masters_challenge: 'Masters Challenge', trainer_skills_test: 'Trainer Skills Test', factor_research: 'Factor Research', strongest_team: 'Strongest Team', racing_carnival: 'Racing Carnival', event: 'Event'
@@ -103,7 +104,7 @@ export const timelineRepository = {
           dateLabel: dateFormatter.format(date) + (estimatedEndDate && estimatedEndDate > date ? ' – ' + dateFormatter.format(estimatedEndDate) : ''),
           gachaLabel: (typeof event.gacha_type_name === 'string' ? gachaLabels[event.gacha_type_name] : '') || gachaTypes[Number(event.gacha_type)] || '',
           context,
-          image: contentUrl(timelineImage(event.image_path, event.type, event.id)),
+          image: contentUrl(timelineImage(event.image_path, event.type, event.id, contentUrl(event.image))),
           predicted: !event.is_confirmed,
           canPlan: ['character_banner', 'support_card_banner'].includes(event.type ?? '') && Boolean(event.planner_data_available === true || event.gacha_id || numbers(event.gacha_ids).length),
           rerun: strings(event.tags).includes('rerun-banner'),
@@ -131,7 +132,7 @@ export const timelineRepository = {
         const phase = (title: string) => { const match = title.match(/(?:vol(?:ume)?\.?|part|phase)\s*([0-9]+)/i); return match ? Number(match[1]) === 1 ? 1 : 1 + Number(match[1]) : 0; };
         const source = events.find(event => event.id === item.source_event_id) ?? events.filter(event => event.eventType === 'campaign' && event.image && /anniversary/i.test(event.title) && event.jpReleaseDate && Math.abs(event.jpReleaseDate.getTime() - jpDate.getTime()) <= 14 * 86_400_000)
           .sort((a, b) => Math.abs(a.jpReleaseDate!.getTime() - jpDate.getTime()) - Math.abs(b.jpReleaseDate!.getTime() - jpDate.getTime()) || phase(a.title) - phase(b.title))[0];
-        return [{ date, label: item.label, predicted: item.is_confirmed !== true, image: contentUrl(timelineImage(item.image_path, undefined, '')) ?? source?.image }];
+        return [{ date, label: item.label, predicted: item.is_confirmed !== true, image: contentUrl(timelineImage(item.image_path, undefined, '', contentUrl(item.image))) ?? source?.image }];
       }).sort((a, b) => a.date.getTime() - b.date.getTime());
       return { events: events.map(event => ({ ...event, pickups: timelinePickups(event, catalog) })), anniversaries, calculation: toTimelineCalculation(resource.calculation), catalog };
     }, refresh);

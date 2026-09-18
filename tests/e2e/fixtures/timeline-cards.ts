@@ -12,7 +12,8 @@ export const cardTimeline = {
     { ...detailTimeline.events[4]!, id: 'legend-media', image_path: media },
     { ...detailTimeline.events[4]!, id: 'legend-no-pickups', image_path: media, pickup_card_ids: [], related_characters: [] },
     { ...detailTimeline.events[0]!, id: 'scout-no-pickups', pickup_card_ids: [], related_characters: [] },
-    { ...detailTimeline.events[0]!, id: 'broken-media', image_path: 'https://example.test/missing-card.webp' }
+    { ...detailTimeline.events[0]!, id: 'broken-media', image_path: 'https://example.test/missing-card.webp' },
+    { ...detailTimeline.events[0]!, id: 'news-event-campaign-994', type: 'campaign', title: 'Umayuru Celebration', image_path: 'assets/timeline-images/events/campaign/994.webp', image: 'https://example.test/source-banner.webp' }
   ]
 };
 
@@ -21,4 +22,5 @@ export async function mockTimelineCards(page: Page) {
   await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: cardTimeline }));
   await page.route('**/resources/test/planner_rewards.json*', route => route.fulfill({ json: { ...detailRewards, competitive_variants: [{ id: 'legend-clear', competition: 'legend_race', event_id: 'legend-no-pickups', label: 'First clear', source_items: [{ item_category: 90, item_id: 43, amount: 300 }] }] } }));
   await page.route('https://example.test/missing-card.webp', route => route.fulfill({ status: 404, body: '' }));
+  await page.route('https://example.test/source-banner.webp', route => route.fulfill({ path: 'src/pages/ui/fixtures/timeline-support-banner.webp', contentType: 'image/webp' }));
 }

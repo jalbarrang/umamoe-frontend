@@ -46,7 +46,17 @@ test('Timeline cards use readable typography, fluid media, event colors and uncl
       expect(geometry.rewardTop).toBeGreaterThan(0);
       expect(geometry.rewardBottom).toBeLessThanOrEqual(0);
     }
-    await expect(page.locator('[data-event-id="broken-media"] .event-media img')).toHaveCSS('display', 'none');
+    const missingBanner = page.locator('[data-event-id="broken-media"]');
+    await missingBanner.scrollIntoViewIfNeeded();
+    await expect(missingBanner.locator('.event-media')).toHaveCount(0);
+    const sourceBanner = page.locator('[data-event-id="news-event-campaign-994"]');
+    await sourceBanner.scrollIntoViewIfNeeded();
+    await expect(sourceBanner.locator('.event-media img')).toHaveAttribute('src', 'https://example.test/source-banner.webp');
+    await expect.poll(() => sourceBanner.locator('.event-media img').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await sourceBanner.getByRole('button', { name: 'Open details for Umayuru Celebration' }).click();
+    const details = page.getByRole('dialog', { name: 'Umayuru Celebration', exact: true });
+    await expect.poll(() => details.locator('.banner').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await details.getByRole('button', { name: 'Close dialog' }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

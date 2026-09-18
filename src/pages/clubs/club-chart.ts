@@ -12,7 +12,7 @@ function tooltip(labels: string[], members: ClubChartMember[], mode?: ClubChartM
       const value = member.values[index]!, previous = member.values.slice(0, index).findLast(value => value !== null);
       const delta = previous == null ? 0 : value - previous;
       const line = document.createElement('div'), marker = document.createElement('span');
-      line.style.cssText = 'white-space:nowrap;line-height:1.5';
+      line.style.cssText = 'white-space:normal;overflow-wrap:anywhere;line-height:1.5;padding:2px 0';
       marker.style.cssText = `display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;border:1px solid ${member.color};vertical-align:middle`;
       // Text nodes preserve trainer names literally; chart labels never become HTML.
       line.append(marker, `${member.name}: ${mode === 'delta' && value > 0 ? '+' : ''}${value.toLocaleString()}${mode === 'cumulative' && delta ? ` (${delta > 0 ? '+' : ''}${delta.toLocaleString()})` : ''}`);
@@ -30,7 +30,7 @@ function axes(labels: string[], theme: Theme) {
     grid: { left: 0, right: 4, top: 12, bottom: 8, containLabel: true },
     xAxis: { type: 'category', boundaryGap: false, data: labels, axisLabel: { ...ticks, alignMaxLabel: 'right', showMaxLabel: true }, axisLine: { lineStyle: gridLine }, axisTick: { show: false }, splitLine: { show: true, lineStyle: gridLine } },
     yAxis: { type: 'value', scale: true, axisLabel: { ...ticks, formatter: (value: number) => new Intl.NumberFormat('en', { notation: 'compact', compactDisplay: 'short' }).format(value) }, axisLine: { show: false }, splitLine: { lineStyle: gridLine } },
-    tooltip: { trigger: 'axis', renderMode: 'html', appendToBody: true, backgroundColor: 'rgba(18,18,18,.95)', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1, padding: [8, 10], textStyle: { fontFamily: 'inherit', fontSize: 12, color: '#fff' }, extraCssText: 'border-radius:8px;max-height:70vh;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:99999', axisPointer: { type: 'none' } }
+    tooltip: { trigger: 'axis', renderMode: 'html', enterable: true, transitionDuration: 0, backgroundColor: 'rgba(18,18,18,.95)', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1, padding: [8, 10], textStyle: { fontFamily: 'inherit', fontSize: 12, color: '#fff' }, extraCssText: 'border-radius:8px;box-sizing:border-box;max-height:min(320px,50dvh);max-width:min(380px,calc(100vw - 16px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:99999', axisPointer: { type: 'none' } }
   };
 }
 

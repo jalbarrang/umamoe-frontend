@@ -4,7 +4,7 @@ import { accountId, profile, mockOwnerProfile } from './fixtures/api';
 test('Fan activity loads each year at daily resolution with its selector in the header and working zoom', async ({ page, isMobile }) => {
   await mockOwnerProfile(page, []);
   const monthly = [2026, 2025].flatMap(year => Array.from({length:12}, (_, index) => ({...profile.fan_history.monthly[0], year, month:index + 1})));
-  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({json:{...profile, fan_history:{...profile.fan_history, monthly}}}));
+  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({json:{...profile, circle:null, fan_history:{...profile.fan_history, monthly}}}));
   const requests: string[] = [];
   await page.route('**/api/v4/circles?*', route => {
     const query = new URL(route.request().url()).searchParams, year = Number(query.get('year')), month = Number(query.get('month'));
@@ -71,12 +71,13 @@ test('Fan activity loads each year at daily resolution with its selector in the 
   const dayX = dayLabel!.x + dayLabel!.width / 2;
   if (isMobile) await page.touchscreen.tap(dayX, dailyBounds!.y + 70);
   else await page.mouse.move(dayX, dailyBounds!.y + 70);
-  await expect(activity.getByText(/Change since prior snapshot: \+50,000/)).toBeVisible();
+  await expect(page.getByText(/Change since prior snapshot: \+50,000/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
 
 test('Yearly daily history can retry failures and never substitutes another trainer or year', async ({ page }) => {
   await mockOwnerProfile(page, []);
+  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({json:{...profile, circle:null}}));
   let calls = 0, fail = true;
   await page.route('**/api/v4/circles?*', route => {
     calls++;
@@ -99,7 +100,7 @@ test('Yearly daily history can retry failures and never substitutes another trai
 test('Changing years ignores late responses and keeps successful months visible after a partial failure', async ({ page }) => {
   await mockOwnerProfile(page, []);
   const monthly = [2026, 2025].flatMap(year => [1, 2].map(month => ({...profile.fan_history.monthly[0], year, month})));
-  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({json:{...profile, fan_history:{...profile.fan_history, monthly}}}));
+  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({json:{...profile, circle:null, fan_history:{...profile.fan_history, monthly}}}));
   let release!: () => void;
   const pending = new Promise<void>(resolve => release = resolve);
   await page.route('**/api/v4/circles?*', async route => {

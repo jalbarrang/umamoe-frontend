@@ -41,7 +41,7 @@ test('mobile Database groups display settings and keeps cards compact without lo
     await expect(card.getByRole('button', { name: 'Save', exact: true })).toHaveCSS('color', 'rgb(255, 215, 0)');
     await expect(card.getByRole('button', { name: 'Plan', exact: true })).toHaveCSS('color', 'rgb(100, 181, 246)');
     await expect(card.getByRole('button', { name: 'Share', exact: true })).toHaveCSS('color', 'rgb(77, 182, 172)');
-    for (const selector of ['.record-stats .stat strong', '.record-stats .stat > span']) {
+    for (const selector of ['.record-stats .stat:not(.score) strong', '.record-stats .stat:not(.score) > span']) {
       const lines = await card.locator(selector).evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().y));
       expect(Math.max(...lines) - Math.min(...lines)).toBeLessThan(1);
     }
@@ -76,10 +76,12 @@ test('mobile Database groups display settings and keeps cards compact without lo
     await options.getByRole('button', { name: 'All', exact: true }).click();
     await display.click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    if (width === 320 || width === 390) await card.locator('.record-stats').screenshot({path:test.info().outputPath(`scenario-summary-${width}.png`)});
   }
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.getByRole('button', { name: 'Display options', exact: true })).toBeHidden();
   await expect(page.locator('#database-display-options')).toBeVisible();
   await expect(card.locator('.lineage-main .art')).toHaveCSS('width', '80px');
+  await card.locator('.record-stats').screenshot({path:test.info().outputPath('scenario-summary-desktop.png')});
 });

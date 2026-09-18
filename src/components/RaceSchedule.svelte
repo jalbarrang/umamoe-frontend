@@ -90,7 +90,9 @@
   .race-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.race-options button{min-width:0;padding:6px;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--surface-2);color:var(--color-text);cursor:pointer}.race-options button:hover{border-color:var(--accent-primary)}.race-options button>span{display:block;font-size:11px;margin-top:5px}.race-options small{color:var(--color-text-muted)}
   .race-open{display:block;width:100%;min-width:0;padding:0;border:0;border-radius:5px;background:transparent;cursor:pointer}.race-open:focus-visible{outline:2px solid var(--accent-primary);outline-offset:2px}
   .mobile-races{display:none}
-  @container race-schedule (max-width:680px){.race-schedule{grid-template-columns:1fr;gap:16px}.race-schedule-container:not(.selectable) .calendar{display:none}.selectable .year+ .year{border-left:0;padding-left:0}.mobile-races{display:grid;gap:5px}.mobile-race{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:8px;padding:5px;background:var(--surface-2);border-radius:4px}.mobile-race time{text-align:left}.mobile-race strong{font-size:11px}.calendar-cell time{font-size:10px}}
+  .mobile-race{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:8px;padding:5px;background:var(--surface-2);border-radius:4px}.mobile-race time{text-align:left}.mobile-race strong{font-size:11px}
+  @container race-schedule (max-width:1120px){.race-schedule-container:not(.selectable) .race-schedule{grid-template-columns:1fr;gap:16px}.race-schedule-container:not(.selectable) .calendar{display:none}.mobile-races{display:grid;gap:5px}}
+  @container race-schedule (max-width:680px){.race-schedule{grid-template-columns:1fr;gap:16px}.selectable .year+ .year{border-left:0;padding-left:0}.calendar-cell time{font-size:10px}}
   @media(pointer:coarse){.selectable .cell-races,.add-race :global(.ui-button){min-height:36px}}
   @media(max-width:600px){.race-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>

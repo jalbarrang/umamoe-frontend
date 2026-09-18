@@ -4,6 +4,8 @@
   import type { TimelineEventData } from './timeline-types';
   interface Props { event: TimelineEventData; mobile?: boolean; planned?: boolean; onopen?: (event: TimelineEventData) => void; onplan?: (event: TimelineEventData, planned: boolean) => void; }
   let { event, mobile = false, planned = $bindable(false), onopen, onplan }: Props = $props();
+  let failedImage = $state<string>();
+  const hasImage = $derived(Boolean(event.image && event.image !== failedImage));
   const icons: Record<string, IconName> = { character_banner: 'user', support_card_banner: 'cards', paid_banner: 'paid', story_event: 'book', champions_meeting: 'trophy', legend_race: 'race', league_of_heroes: 'users', masters_challenge: 'star', trainer_skills_test: 'book', factor_research: 'tune', strongest_team: 'users', racing_carnival: 'race', scenario_release: 'home' };
   const hasPickups = $derived(Boolean(event.pickups?.length));
   const hasRace = $derived(Boolean(event.raceLines?.length));
@@ -14,9 +16,9 @@
   function hideImage(event: Event) { (event.currentTarget as HTMLImageElement).style.display = 'none'; }
 </script>
 
-<article class="event-card" class:is-mobile={mobile} class:has-media={Boolean(event.image)} class:no-pickups={!hasPickups} class:has-race={hasRace} class:can-plan={event.canPlan} data-event-type={event.eventType} data-event-id={event.id}>
+<article class="event-card" class:is-mobile={mobile} class:has-media={hasImage} class:no-pickups={!hasPickups} class:has-race={hasRace} class:can-plan={event.canPlan} data-event-type={event.eventType} data-event-id={event.id}>
   <button type="button" class="open-action" aria-label={`Open details for ${event.title}`} onclick={(click) => { click.currentTarget.focus({ preventScroll: true }); onopen?.(event); }}></button>
-  {#if event.image}<div class="event-media"><img src={event.image} alt={event.title} width="512" height="125" loading="lazy" decoding="async" onerror={hideImage}/></div>{/if}
+  {#if hasImage}<div class="event-media"><img src={event.image} alt={event.title} width="512" height="125" loading="lazy" decoding="async" onerror={() => failedImage = event.image}/></div>{/if}
   <div class="event-body">
     <div class="metadata" title={metadata}><span class="kind"><Icon name={icons[event.eventType] ?? 'gift'} size={13}/><span>{event.typeLabel}</span></span>{#if event.gachaLabel}<span class="metadata-item">{event.gachaLabel}</span>{/if}{#if event.rerun}<span class="metadata-item rerun">Rerun</span>{/if}{#if event.predicted}<span class="metadata-item predicted">Predicted</span>{/if}</div>
     <h3>{event.title}</h3>

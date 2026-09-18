@@ -92,6 +92,36 @@ test('factor ranges, operators, and presets preserve the Angular search and stor
   await expect(page.getByText('No presets yet')).toBeVisible();
 });
 
+test('mixed AND/OR factor toggles update the search and survive a shared-link reload', async ({ page, isMobile }) => {
+  const requests: URLSearchParams[] = [];
+  page.on('request', request => { if (request.url().includes('/search/query?')) requests.push(new URL(request.url()).searchParams); });
+  const blue = page.getByRole('region', { name: 'Blue Factors (Stats)', exact: true });
+  for (const [index, name] of ['Speed', 'Stamina', 'Speed'].entries()) {
+    await blue.getByRole('button', { name: 'Add Blue Factor', exact: true }).click();
+    await page.locator(`#blue-factors-factor-${index}`).click();
+    await page.getByRole('option', { name, exact: true }).click();
+  }
+  const speed = '101,102,103,104,105,106,107,108,109';
+  const stamina = '201,202,203,204,205,206,207,208,209';
+  await expect.poll(() => requests.at(-1)?.getAll('blue_sparks')).toEqual([speed, stamina, speed]);
+  const relations = blue.getByRole('radiogroup', { name: 'Requirement operator' });
+  await relations.nth(0).getByRole('radio', { name: 'OR', exact: true }).click();
+  const predicate = `overlaps(blue_sparks, (${speed},${stamina})) and overlaps(blue_sparks, (${speed}))`;
+  await expect.poll(() => requests.at(-1)?.get('uql')).toBe(predicate);
+  expect(requests.at(-1)?.has('blue_sparks')).toBe(false);
+  await relations.nth(1).getByRole('radio', { name: 'OR', exact: true }).click();
+  await expect.poll(() => requests.at(-1)?.getAll('blue_sparks')).toEqual([`${speed},${stamina}`]);
+  expect(requests.at(-1)?.has('uql')).toBe(false);
+  await relations.nth(1).getByRole('radio', { name: 'AND', exact: true }).click();
+  await expect.poll(() => requests.at(-1)?.get('uql')).toBe(predicate);
+  await page.reload();
+  await expect.poll(() => requests.at(-1)?.get('uql')).toBe(predicate);
+  await page.getByRole('button', { name: /Filters/ }).click();
+  if (isMobile) await page.getByRole('button', { name: 'Inheritance Factors', exact: true }).click();
+  await expect(relations.nth(0).getByRole('radio', { name: 'OR', exact: true })).toBeChecked();
+  await expect(relations.nth(1).getByRole('radio', { name: 'AND', exact: true })).toBeChecked();
+});
+
 test('target, include/exclude, legacy, and support dialogs retain selection and cancellation behavior', async ({ page, isMobile }) => {
   await page.getByRole('radio', { name: 'Advanced', exact: true }).click();
   // Start with keyboard focus; Safari intentionally does not focus touch-clicked buttons.
@@ -231,4 +261,3 @@ test('a failed character resource stays inside the picker and can be retried wit
   await expect(page.getByRole('radio', {name:'Advanced',exact:true})).toHaveAttribute('aria-checked','true');
   await expect(page.getByRole('button', {name:'Clear target character'})).toBeVisible();
 });
-

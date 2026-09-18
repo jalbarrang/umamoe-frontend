@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContentAd from '@/layouts/ContentAd.svelte';
   import { copyText } from '@/lib/clipboard';
   import { onMount, untrack } from 'svelte';
   import { watchFactorCatalog, factorOptions, factorMetadata } from '@/lib/catalog/factor-catalog';
@@ -355,6 +356,7 @@
             {/each}
           </div>
         </div>
+        <ContentAd routeId="lineage-planner"/>
         <LineageSparkOdds {nodes} {affinity} bind:perRun bind:tab={oddsTab} {skillIcons}/>
         </div>
       </div>

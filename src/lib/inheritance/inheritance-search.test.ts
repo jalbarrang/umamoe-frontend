@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { activeInheritanceFilterCount, emptyInheritanceFilters, inheritanceSearchQuery, normalizeInheritanceSearch } from './inheritance-search';
+import { validateInheritanceUql } from './uql';
 
 describe('inheritance search contract', () => {
   it('keeps UQL requests independent of structured controls while retaining target and legacy context', () => {
@@ -41,14 +42,39 @@ describe('inheritance search contract', () => {
     expect(query.get('page')).toBe('2');
   });
 
-  it('keeps AND requirements in separate groups and merges OR requirements into the preceding group', () => {
+  it('uses an explicit predicate for mixed AND/OR groups without also sending the legacy count filter', () => {
     const filters = emptyInheritanceFilters();
     filters.blue = [
       { factorId: 10, minimumStars: 3, maximumStars: 3 },
       { factorId: 20, minimumStars: 2, maximumStars: 2, operator: 'or' },
       { factorId: 30, minimumStars: 1, maximumStars: 1, operator: 'and' }
     ];
-    expect(inheritanceSearchQuery(filters, 1, 20).getAll('blue_sparks')).toEqual(['103,202', '301']);
+    const query = inheritanceSearchQuery(filters, 1, 20);
+    expect(query.getAll('blue_sparks')).toEqual([]);
+    expect(query.get('uql')).toBe('overlaps(blue_sparks, (103,202)) and overlaps(blue_sparks, (301))');
+    expect(validateInheritanceUql(query.get('uql')!).state).toBe('valid');
+    filters.blue[2]!.operator = 'or';
+    const alternatives = inheritanceSearchQuery(filters, 1, 20);
+    expect(alternatives.getAll('blue_sparks')).toEqual(['103,202,301']);
+    expect(alternatives.has('uql')).toBe(false);
+  });
+
+  it('keeps overlapping alternatives independent across every toggleable factor section', () => {
+    const filters = emptyInheritanceFilters();
+    for (const key of ['blue', 'pink', 'green', 'white', 'mainWhite'] as const) {
+      filters[key] = [
+        { factorId: 10, minimumStars: 3, maximumStars: 3 },
+        { factorId: 20, minimumStars: 2, maximumStars: 2, operator: 'or' },
+        { factorId: 10, minimumStars: 3, maximumStars: 3, operator: 'and' }
+      ];
+    }
+    const query = inheritanceSearchQuery(filters, 0, 12, 'advanced');
+    const fields = ['blue_sparks', 'pink_sparks', 'green_sparks', 'white_sparks', 'main_white_factors'];
+    expect(query.get('uql')).toBe(fields.map((field) => `overlaps(${field}, (103,202)) and overlaps(${field}, (103))`).join(' and '));
+    expect(validateInheritanceUql(query.get('uql')!).state).toBe('valid');
+    for (const parameter of [...fields.slice(0, 4), 'main_parent_white_sparks']) expect(query.has(parameter)).toBe(false);
+    filters.uql = 'win_count >= 10';
+    expect(inheritanceSearchQuery(filters, 0, 12, 'uql').get('uql')).toBe('win_count >= 10');
   });
 
   it('normalizes only accounts that contain inheritance data', () => {

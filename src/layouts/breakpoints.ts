@@ -11,7 +11,7 @@ export interface ScreenLayoutContract {
 
 export const SCREEN_LAYOUTS: readonly ScreenLayoutContract[] = [
   { id: 'mobile', label: 'Mobile', min: 0, max: 767, navigation: 'Utility header + bottom navigation' },
-  { id: 'compact', label: 'Compact', min: 768, max: 1799, navigation: '64px navigation rail; preserves the right ad rail from 1280px' },
+  { id: 'compact', label: 'Compact', min: 768, max: 1799, navigation: '64px navigation rail; inline ads through 1300px, right ad rail above' },
   { id: 'expanded', label: 'Expanded', min: 1800, navigation: '240px navigation rail' }
 ] as const;
 
@@ -44,7 +44,7 @@ export const PAGE_LAYOUT = {
   ads: {
     railWidth: 160,
     railGap: 20,
-    railMin: 1280,
+    railMin: 1301,
     counterRailMin: 1800,
     balancedRailsMin: 2200,
     leaderboardHeight: 90,

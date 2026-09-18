@@ -12,10 +12,9 @@ test('Profile reuses browser veteran cards and shared table styling in both them
   await mockOwnerProfile(page, []);
   await mockVeteranProfile(page);
   for (const theme of ['Dark', 'Light']) {
-    await page.goto('/ui-lab#veteran-summary');
-    const labSummary = page.locator('#veteran-summary .veteran-summary').first();
+    await page.goto('/ui-lab#table');
     const labTable = page.locator('#table .table-wrap').first();
-    await expect(labSummary).toBeVisible();
+    await expect(labTable).toBeVisible();
     if (await page.locator('html').getAttribute('data-theme') !== theme.toLowerCase()) {
       const toggle = page.getByRole('button', { name:'Toggle theme', exact:true });
       if (await toggle.isVisible()) await toggle.click();

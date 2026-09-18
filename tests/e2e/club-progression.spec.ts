@@ -112,7 +112,7 @@ test('Chart rendering includes prior dashes and source tooltip values with point
   else await page.mouse.move(point.x, point.y);
   await expect(page.getByText('Gold "Ship", Jr.: 80 (+30)', { exact: true })).toBeVisible();
   await expect(page.getByText('McQueen: 50', { exact: true })).toBeVisible();
-  if (testInfo.project.name.startsWith('mobile')) await expect(page.getByText('McQueen: 50', { exact: true })).not.toBeVisible({ timeout: 4000 });
+  if (testInfo.project.name.startsWith('mobile')) { await panel.getByRole('heading').tap(); await expect(page.getByText('McQueen: 50', { exact: true })).not.toBeVisible(); }
   else { await panel.getByRole('heading').click(); await expect(page.getByText('McQueen: 50', { exact: true })).not.toBeVisible(); }
   await panel.getByRole('button', { name: 'Show daily gains' }).click();
   await panel.screenshot({ path: testInfo.outputPath('member-daily-gains.png') });
@@ -144,5 +144,34 @@ test('Full clubs retain every legend item and scrollable contributor; colors and
     expect(box.y).toBeGreaterThanOrEqual(0); expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
     await popup.screenshot({ path: testInfo.outputPath(`calendar-contributors-${theme}.png`) });
     await popup.getByRole('button', { name: 'Close Day 1 contributors', exact: true }).click();
+  }
+});
+
+test('a full club tooltip stays inside the viewport and lets every member be read', async ({ page, isMobile }) => {
+  const fixture = clubProgressionFixture('current');
+  fixture.response.members = Array.from({ length: 30 }, (_, index) => ({ ...fixture.response.members[0]!, viewer_id: 9000 + index, trainer_name: `Trainer ${index + 1} with a longer name`, daily_fans: [100000000, 200000000 + index, 300000000 + index, 400000000 + index, 500000000 + index] }));
+  const panel = await openClub(page, fixture);
+  for (const width of isMobile ? [390, 320] : [1300, 768]) {
+    await page.setViewportSize({ width, height: 540 });
+    const host = panel.locator('.chart-host');
+    await host.evaluate(element => { element.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); });
+    const label = (await host.locator('svg text').filter({ hasText: /^02\.09$/ }).boundingBox())!;
+    const chart = (await host.boundingBox())!;
+    const point = { x: label.x + label.width / 2, y: chart.y + 100 };
+    if (isMobile) await page.touchscreen.tap(point.x, point.y); else await page.mouse.move(point.x, point.y);
+    const tooltip = page.locator('[class^="chart-tooltip-"]:visible');
+    await expect(tooltip).toHaveCount(1);
+    const box = (await tooltip.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(7); expect(box.x + box.width).toBeLessThanOrEqual(width - 7);
+    expect(box.y).toBeGreaterThanOrEqual(7); expect(box.y + box.height).toBeLessThanOrEqual(533);
+    expect(await tooltip.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+    if (isMobile) await page.touchscreen.tap(box.x + 10, box.y + 10); else await tooltip.hover();
+    await tooltip.evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.getByText(/^Trainer 1 with a longer name:/)).toBeInViewport();
+    expect(await tooltip.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await tooltip.screenshot({ path: test.info().outputPath(`member-tooltip-${width}.png`) });
+    await panel.getByRole('heading').click();
+    await expect(tooltip).toHaveCount(0);
   }
 });

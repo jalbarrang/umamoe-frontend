@@ -5,17 +5,32 @@
   import { AriaComponent, AxisPointerComponent, DataZoomComponent, GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
   import { SVGRenderer } from 'echarts/renderers';
   import type { EChartsCoreOption, EChartsType } from 'echarts/core';
+  import type { TooltipComponentOption } from 'echarts/components';
 
   interface Props { option: EChartsCoreOption; label: string; description?: string; height?: number; dismissTouchTooltip?: boolean; zoomable?: boolean; }
   let { option, label, description, height = 280, dismissTouchTooltip = false, zoomable = false }: Props = $props();
   let host: HTMLDivElement;
   let chart: EChartsType | undefined;
+  const surfaceId = $props.id();
+  const tooltipClass = `chart-tooltip-${surfaceId}`;
+  const tooltipElement = () => document.getElementsByClassName(tooltipClass)[0];
+  const viewportPosition: TooltipComponentOption['position'] = (point, _params, _element, _rect, size) => {
+    const bounds = host.getBoundingClientRect();
+    return [
+      Math.max(8 - bounds.left, Math.min(point[0] + 12, document.documentElement.clientWidth - bounds.left - size.contentSize[0] - 8)),
+      Math.max(8 - bounds.top, Math.min(point[1] + 12, window.innerHeight - bounds.top - size.contentSize[1] - 8))
+    ];
+  };
+  const chartOption = $derived.by(() => {
+    const tooltip = option.tooltip as TooltipComponentOption | undefined;
+    return tooltip ? { ...option, tooltip: { ...tooltip, className: tooltipClass, appendToBody: true, confine: false, position: tooltip.position ?? viewportPosition } } : option;
+  });
 
   echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AxisPointerComponent, AriaComponent, SVGRenderer]);
 
   onMount(() => {
     chart = echarts.init(host, undefined, { renderer: 'svg' });
-    chart.setOption(option);
+    chart.setOption(chartOption);
     const observer = new ResizeObserver(() => chart?.resize());
     observer.observe(host);
     let dismissTimer: ReturnType<typeof setTimeout>;
@@ -23,10 +38,10 @@
     const pointerDown = (event: PointerEvent) => {
       if (!dismissTouchTooltip) return;
       clearTimeout(dismissTimer);
-      if (!host.contains(event.target as Node)) hideTooltip();
+      if (!host.contains(event.target as Node) && !tooltipElement()?.contains(event.target as Node)) hideTooltip();
     };
     const pointerUp = (event: PointerEvent) => {
-      if (dismissTouchTooltip && event.pointerType === 'touch') {
+      if (dismissTouchTooltip && event.pointerType === 'touch' && !(option.tooltip as TooltipComponentOption | undefined)?.enterable) {
         clearTimeout(dismissTimer); dismissTimer = setTimeout(hideTooltip, 2000);
       }
     };
@@ -40,7 +55,7 @@
     };
   });
 
-  $effect(() => { if (chart) chart.setOption(option, { notMerge: true }); });
+  $effect(() => { if (chart) chart.setOption(chartOption, { notMerge: true }); });
 
   function navigate(event: KeyboardEvent): void {
     if (!zoomable || !chart || !['+', '=', '-', 'ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;

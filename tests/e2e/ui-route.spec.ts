@@ -3,7 +3,7 @@ import { expect, test } from './fixtures/test';
 test('hidden UI gallery loads directly with working artwork and keeps its legacy alias', async ({ page }) => {
   for (const path of ['/ui', '/ui-lab']) {
     await page.goto(path);
-    await expect(page.getByRole('heading', { name: 'uma.moe UI system' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'UI components' })).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
     await expect(page.locator('[data-ui-lab-shell]')).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => [...document.images].filter(image =>
@@ -11,7 +11,7 @@ test('hidden UI gallery loads directly with working artwork and keeps its legacy
     ).every(image => image.complete && image.naturalWidth > 0))).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'uma.moe UI system' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'UI components' })).toBeVisible();
   }
 });
 

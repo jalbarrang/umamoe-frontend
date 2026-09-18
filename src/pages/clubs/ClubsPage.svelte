@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ContentAd from '@/layouts/ContentAd.svelte';
   import { onMount } from 'svelte';
   import AppPage from '@/layouts/AppPage.svelte';
   import Button from '@/components/Button.svelte';
@@ -116,9 +117,11 @@
   {#if loading}<div class="loading"><Spinner size={28}/><span>Loading clubs…</span></div>
   {:else if !error && visibleClubs.length === 0}<div class="no-results"><Icon name="search" size={42}/><p>No clubs match your filters.</p><Button variant="secondary" size="sm" onclick={clearFilters}>Clear all filters</Button></div>
   {:else if visibleClubs.length}
+    <ContentAd routeId="clubs"/>
     <section class="club-list" aria-label="Club results">
-      {#each visibleClubs as club (club.circleId)}
+      {#each visibleClubs as club, index (club.circleId)}
         <CircleCard circle={club}/>
+        {#if index % 20 === 19 && index < visibleClubs.length - 1 && index < 60}<ContentAd routeId="clubs" index={2 + Math.floor(index / 20)}/>{/if}
       {/each}
     </section>
   {/if}

@@ -195,15 +195,23 @@ export function encodedFactorLevels(requirement: FactorRequirement, maximumCap =
   return Array.from({ length: maximum - minimum + 1 }, (_, index) => Number(`${id}${minimum + index}`));
 }
 
-function appendFactorGroups(query: URLSearchParams, name: string, requirements: FactorRequirement[], maximumCap = 9): void {
+function appendFactorGroups(query: URLSearchParams, name: string, requirements: FactorRequirement[], maximumCap = 9): string | undefined {
   const groups: number[][] = [];
+  let hasAlternatives = false;
   for (const requirement of requirements) {
     const levels = encodedFactorLevels(requirement, maximumCap);
     if (!levels.length) continue;
-    if (requirement.operator === 'or' && groups.length) groups[groups.length - 1]!.push(...levels);
+    if (requirement.operator === 'or' && groups.length) { groups[groups.length - 1]!.push(...levels); hasAlternatives = true; }
     else groups.push(levels);
   }
-  for (const group of groups) query.append(name, [...new Set(group)].join(','));
+  const alternatives = groups.map((group) => [...new Set(group)].join(','));
+  // The legacy matcher counts overlapping groups. Mixed AND/OR needs each group to match.
+  if (groups.length > 1 && hasAlternatives) {
+    const field = name === 'main_parent_white_sparks' ? 'main_white_factors' : name;
+    return alternatives.map((values) => `overlaps(${field}, (${values}))`).join(' and ');
+  }
+  for (const group of alternatives) query.append(name, group);
+  return undefined;
 }
 
 function priorityValues(requirements: FactorRequirement[]): { ids: number[]; priorities: string[] } {
@@ -244,14 +252,16 @@ export function inheritanceSearchQuery(filters: InheritanceSearchFilters, page: 
   appendList(query, 'exclude_parent_id', filters.excludeParentIds);
   appendList(query, 'exclude_main_parent_id', excludedMainParentIds(filters));
   appendList(query, 'scenario_id', filters.scenarioIds);
-  appendFactorGroups(query, 'blue_sparks', filters.blue);
-  appendFactorGroups(query, 'pink_sparks', filters.pink);
-  appendFactorGroups(query, 'green_sparks', filters.green);
-  appendFactorGroups(query, 'white_sparks', filters.white);
+  const factorPredicates = [
+    appendFactorGroups(query, 'blue_sparks', filters.blue),
+    appendFactorGroups(query, 'pink_sparks', filters.pink),
+    appendFactorGroups(query, 'green_sparks', filters.green),
+    appendFactorGroups(query, 'white_sparks', filters.white),
+    appendFactorGroups(query, 'main_parent_white_sparks', filters.mainWhite, 3)
+  ].filter((predicate) => predicate !== undefined);
   appendList(query, 'main_parent_blue_sparks', filters.mainBlue.flatMap((item) => encodedFactorLevels(item, 3)));
   appendList(query, 'main_parent_pink_sparks', filters.mainPink.flatMap((item) => encodedFactorLevels(item, 3)));
   appendList(query, 'main_parent_green_sparks', filters.mainGreen.flatMap((item) => encodedFactorLevels(item, 3)));
-  appendFactorGroups(query, 'main_parent_white_sparks', filters.mainWhite, 3);
   const optionalWhite = priorityValues(filters.optionalWhite.length ? filters.optionalWhite : filters.optionalWhiteIds.map((factorId) => ({ factorId, minimumStars: 1 })));
   const optionalMainWhite = priorityValues(filters.optionalMainWhite);
   const lineageWhite = priorityValues(filters.lineageWhite.length ? filters.lineageWhite : filters.lineageWhiteIds.map((factorId) => ({ factorId, minimumStars: 1 })));
@@ -278,6 +288,7 @@ export function inheritanceSearchQuery(filters: InheritanceSearchFilters, page: 
   const uql = mode === 'uql' && validation ? validation : validateInheritanceUql(filters.uql ?? '');
   if (uql.state === 'invalid' || uql.state === 'incomplete') throw new Error(uql.message);
   if (uql.state === 'valid' && uql.compiled) query.set('uql', uql.compiled);
+  else if (factorPredicates.length) query.set('uql', factorPredicates.join(' and '));
   if (uql.explicitFollowerFilter) query.set('max_follower_num', '1000');
   appendList(query, 'main_win_saddle', filters.mainWinSaddle);
   appendList(query, 'p2_win_saddle', filters.p2WinSaddle);

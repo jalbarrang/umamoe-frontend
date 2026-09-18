@@ -1,12 +1,22 @@
-<script lang="ts">import type { Snippet } from 'svelte'; interface Props { id?: string; title: string; note?: string; children: Snippet; } let { id, title, note, children }: Props = $props();</script>
-<article {id} class="demo"><header><h3>{title}</h3>{#if note}<span>{note}</span>{/if}</header><div class="canvas">{@render children()}</div></article>
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import { previews } from './catalog';
+  let { id, children }: { id: string; children: Snippet } = $props();
+  const entry = $derived(previews.find(item => item.id === id)!);
+</script>
+
+<section {id} class="preview" aria-labelledby={`${id}-title`}>
+  <header>
+    <div><h2 id={`${id}-title`}>{entry.title}</h2><div class="sources">{#each entry.components as path}<code title={`src/${path}`}>{path.split('/').at(-1)}</code>{/each}</div></div>
+    <a href={entry.route} target="_blank" rel="noopener">In app ↗</a>
+  </header>
+  <div class="canvas">{@render children()}</div>
+</section>
+
 <style>
-  .demo { min-width: 0; overflow: visible; scroll-margin-top: calc(var(--utility-height) + var(--space-3)); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: var(--surface-2); }
-  header { min-height: 45px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-4); border-bottom: 1px solid var(--border-subtle); background: var(--surface-1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-  h3 { margin: 0; font-size: var(--font-sm); }
-  header span { color: var(--color-text-subtle); font-size: var(--font-xs); }
-  .canvas { min-width: 0; padding: var(--space-4); }
-  :global(.demo-grid) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--space-4); }
-  :global(.state-row) { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-  :global(.state-stack) { display: grid; gap: var(--space-3); }
+  .preview{min-width:0;padding-block:24px;scroll-margin-top:20px}.preview:global(+.preview){border-top:1px solid var(--border-primary)}
+  header{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:20px}header>div{min-width:0}h2{margin:0 0 7px;font-size:16px}header>a{flex:none;font-size:12px;text-decoration:none;color:var(--accent-primary);padding-block:3px}
+  .sources{display:flex;flex-wrap:wrap;gap:4px 10px}code{font-size:10px;color:var(--text-muted);overflow-wrap:anywhere}.canvas{min-width:0}
+  :global(.preview-row){display:flex;flex-wrap:wrap;align-items:center;gap:10px}:global(.preview-stack){display:grid;gap:16px;min-width:0}:global(.preview-grid){display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;align-items:start}:global(.preview-narrow){max-width:540px;min-width:0}
+  @media(max-width:600px){header{gap:10px}h2{font-size:14px}.preview{padding-block:20px}}
 </style>

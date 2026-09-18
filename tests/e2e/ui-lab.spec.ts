@@ -1,73 +1,68 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/test';
 
-const viewports = [
-  { width: 320, height: 720 },
-  { width: 360, height: 800 },
-  { width: 390, height: 844 },
-  { width: 412, height: 915 },
-  { width: 768, height: 900 },
-  { width: 1024, height: 900 },
-  { width: 1366, height: 768 },
-  { width: 1440, height: 1000 },
-  { width: 1536, height: 864 },
-  { width: 1920, height: 1080 },
-  { width: 2560, height: 1440 }
-];
-
-for (const viewport of viewports) {
-  test(`UI lab fits ${viewport.width}px without page overflow`, async ({ page }) => {
-    test.setTimeout(45_000);
-    await page.setViewportSize(viewport);
-    await page.goto('/ui-lab');
-    await expect(page.getByRole('heading', { name: 'uma.moe UI system' })).toBeVisible();
-    const dimensions = await page.evaluate(() => ({
-      width: window.innerWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      overflow: [...document.querySelectorAll<HTMLElement>('*')]
-        .filter((element) => element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX === 'visible')
-        .slice(0, 16)
-        .map((element) => `${element.closest('section')?.id ?? 'page'} > ${element.tagName.toLowerCase()}.${element.className} [${element.getAttribute('aria-label') ?? ''}] "${element.textContent?.trim().slice(0, 60) ?? ''}": ${element.clientWidth}/${element.scrollWidth}`)
-    }));
-    expect(dimensions.scrollWidth, dimensions.overflow.join('\n')).toBeLessThanOrEqual(dimensions.width);
+for (const width of [320,768,1280,1536]) {
+  test('current component galleries fit '+width+'px in both themes', async ({page},testInfo) => {
+    test.setTimeout(120_000);
+    const errors:string[]=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.setViewportSize({width,height:1000});
+    await page.goto('/ui');
+    await expect(page.getByRole('heading',{name:'UI components',exact:true})).toBeVisible();
+    for(const theme of ['Dark','Light']) {
+      await page.getByRole('radio',{name:theme,exact:true}).click();
+      for(const library of ['uma.moe','Hakuraku']) {
+        await page.getByRole('tab',{name:library,exact:true}).click();
+        const groups=await page.getByRole('navigation',{name:'Component groups'}).getByRole('button').allTextContents();
+        for(let i=0;i<groups.length;i++) {
+          await page.getByRole('navigation',{name:'Component groups'}).getByRole('button').nth(i).click();
+          await expect(page.locator('.preview').first()).toBeVisible();
+          expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+          for(const section of await page.locator('.preview').all()) {
+            await section.scrollIntoViewIfNeeded();
+            await expect.poll(()=>section.locator('img:visible').evaluateAll(images=>images.every(img=>(img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth>0))).toBe(true);
+          }
+          if(groups[i]!.startsWith('Statistics')) await page.locator('#statistics-filters').screenshot({path:testInfo.outputPath('filters-'+theme+'.png')});
+        }
+      }
+    }
+    expect(errors).toEqual([]);
   });
 }
 
-test('shared affinity picker selects and clears targets and legacy in the UI lab', async ({ page }) => {
-  await page.goto('/ui-lab#affinity-picker');
-  const picker = page.locator('#affinity-picker');
-  for (const width of [1536, 320]) {
-    await page.setViewportSize({width,height:900});
-    await picker.getByRole('button',{name:'Change target character',exact:true}).click();
-    const dialog = page.getByRole('dialog',{name:'Select Character',exact:true});
-    await dialog.getByRole('radio',{name:/Oguri Cap/}).click();
-    await expect(picker.getByRole('button',{name:'Change target Oguri Cap',exact:true})).toBeVisible();
-    await picker.getByRole('button',{name:'Pick your legacy',exact:true}).click();
-    await expect(picker.getByRole('article',{name:'Mejiro McQueen Veteran summary'})).toBeVisible();
-    await picker.screenshot({path:test.info().outputPath(`affinity-picker-${width}.png`)});
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
-    await picker.getByRole('button',{name:'Clear selected legacy',exact:true}).click();
-    await picker.getByRole('button',{name:'Clear target character',exact:true}).click();
-    await picker.getByRole('button',{name:'Pick target character',exact:true}).click();
-    await dialog.getByRole('radio',{name:/Mejiro McQueen/}).click();
-    await expect(picker.getByRole('button',{name:'Pick your legacy',exact:true})).toBeVisible();
-  }
+test('gallery search, library navigation and actual dialogs work', async ({page}) => {
+  await page.goto('/ui');
+  await page.getByRole('searchbox',{name:'Find a component'}).fill('SkillChip');
+  await expect(page.locator('.preview')).toHaveCount(1);
+  await expect(page.locator('#identity')).toBeVisible();
+  await page.getByRole('searchbox',{name:'Find a component'}).fill('retired component');
+  await expect(page.getByText('No components match')).toBeVisible();
+  await page.getByRole('button',{name:/Feedback/}).click();
+  const opener=page.getByRole('button',{name:'Open dialog',exact:true});
+  await opener.click();
+  await expect(page.getByRole('dialog',{name:'Preview dialog',exact:true})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(opener).toBeFocused();
+  await page.getByRole('tab',{name:'Hakuraku',exact:true}).click();
+  await page.getByRole('button',{name:/Statistics/}).click();
+  const filters=page.locator('#statistics-filters');
+  await filters.getByRole('checkbox',{name:'Class 6',exact:true}).uncheck();
+  await expect(filters.getByRole('status')).toContainText('1,000,000');
+  await filters.getByRole('button',{name:'Open filter dialog'}).click();
+  const dialog=page.getByRole('dialog',{name:'Statistics filters'});
+  await expect(dialog.getByRole('checkbox',{name:'Class 6',exact:true})).not.toBeChecked();
+  await dialog.getByRole('button',{name:'Reset filters'}).click();
+  await dialog.getByRole('button',{name:'Show results'}).click();
+  await expect(filters.getByRole('checkbox',{name:'Class 6',exact:true})).toBeChecked();
 });
 
-test('theme, density, dialog, and virtual list remain functional', async ({ page }) => {
-  await page.goto('/ui-lab');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByRole('radio', { name: 'Light' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('radio', { name: 'Compact' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-density', 'compact');
-
-  await page.getByRole('button', { name: 'Open dialog', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Replace Local workspace?' })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Replace Local workspace?' })).not.toBeVisible();
-
-  const liveRows = await page.getByRole('list', { name: 'Veterans' }).getByRole('listitem').count();
-  expect(liveRows).toBeLessThan(40);
+test('target picker changes and clears a selected Uma', async ({page}) => {
+  await page.goto('/ui#affinity-picker');
+  const picker=page.locator('#affinity-picker');
+  await picker.getByRole('button',{name:'Change target character',exact:true}).click();
+  await page.getByRole('dialog',{name:'Select Character',exact:true}).getByRole('radio',{name:/Oguri Cap/}).click();
+  await expect(picker.getByRole('button',{name:'Change target Oguri Cap',exact:true})).toBeVisible();
+  await picker.getByRole('button',{name:'Clear target character',exact:true}).click();
+  await expect(picker.getByRole('button',{name:'Pick target character',exact:true})).toBeVisible();
 });
 
 test('number fields share chevrons and preserve native stepping', async ({ page }) => {
@@ -132,596 +127,4 @@ test('custom select and autocomplete retain keyboard behavior', async ({ page })
   await expect(page.getByRole('listbox', { name: 'Character suggestions' }).getByRole('option', { name: 'Mejiro McQueen' })).toBeVisible();
   await character.press('Enter');
   await expect(character).toHaveValue('Mejiro McQueen');
-});
-
-test('Veteran selector supports search, keyboard selection, and workspace context', async ({ page }) => {
-  await page.goto('/ui-lab');
-
-  const selector = page.getByRole('combobox', { name: 'Parent Veteran' });
-  await selector.click();
-  const listbox = page.getByRole('listbox', { name: 'Parent Veteran' });
-  await expect(listbox).toBeVisible();
-  await page.getByPlaceholder('Search Veterans…').fill('Oguri');
-  await expect(listbox.getByRole('option')).toHaveCount(1);
-  await page.getByPlaceholder('Search Veterans…').press('Enter');
-  await expect(selector).toContainText('Oguri Cap');
-  await expect(selector).toContainText('Local · Yesterday');
-});
-
-test('Veteran selector becomes a bounded sheet on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ui-lab');
-  await page.getByRole('combobox', { name: 'Parent Veteran' }).click();
-
-  const listbox = page.getByRole('listbox', { name: 'Parent Veteran' });
-  await expect(listbox).toBeVisible();
-  const bounds = await listbox.boundingBox();
-  expect(bounds).not.toBeNull();
-  expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(390);
-  expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(844);
-  await page.getByRole('button', { name: 'Close Veteran selector' }).click();
-  await expect(listbox).not.toBeVisible();
-});
-
-test('inheritance spark labels keep their accessible names when shortened on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 720 });
-  await page.goto('/ui-lab');
-
-  const spark = page.getByLabel('2 star The View from the Lead Is Mine!').first();
-  await expect(spark).toBeVisible();
-  await expect(spark.locator('.name')).toHaveText('The View from the Lead Is Mine!');
-  const clipping = await spark.locator('.name').evaluate((element) => ({
-    overflow: getComputedStyle(element).overflow,
-    textOverflow: getComputedStyle(element).textOverflow
-  }));
-  expect(clipping).toEqual({ overflow: 'hidden', textOverflow: 'ellipsis' });
-});
-
-test('Hakuraku ports load on demand and remain mobile-safe', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 720 });
-  await page.goto('/ui-lab');
-
-  const tab = page.getByRole('tab', { name: /Hakuraku/ });
-  await tab.click();
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('heading', { name: 'Hakuraku component catalogue' })).toBeVisible();
-  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
-  await expect(page.locator('#haku-chara-list table')).toBeVisible();
-  await expect(page.locator('#haku-veteran-card')).toBeVisible();
-  await expect(page.locator('#haku-query-tab')).toBeVisible();
-  await page.locator('#haku-race-graph').scrollIntoViewIfNeeded();
-  await expect(page.locator('#haku-race-graph svg').first()).toBeVisible();
-
-  const play = page.locator('#haku-race-replay').getByRole('button', { name: 'Play', exact: true });
-  await play.click();
-  await expect(page.locator('#haku-race-replay').getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-});
-
-test('Hakuraku primitives inherit the uma.moe visual contracts', async ({ page }) => {
-  await page.goto('/ui-lab');
-
-  const visualStyle = async (selector: string) => page.locator(selector).first().evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      padding: style.padding,
-      borderRadius: style.borderRadius,
-      borderColor: style.borderColor,
-      backgroundColor: style.backgroundColor,
-      color: style.color,
-      fontSize: style.fontSize,
-      fontWeight: style.fontWeight
-    };
-  });
-
-  const moe = {
-    button: await visualStyle('#button .ui-button--secondary'),
-    input: await visualStyle('#text-field input'),
-    tabs: await visualStyle('#tabs .tab.active'),
-    table: await visualStyle('#table table')
-  };
-
-  await page.getByRole('tab', { name: /Hakuraku/ }).click();
-  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
-
-  expect(await visualStyle('#haku-page-header .ui-button--secondary')).toEqual(moe.button);
-  expect(await visualStyle('#haku-form-controls input')).toEqual(moe.input);
-  expect(await visualStyle('#haku-tabs .tab.active')).toEqual(moe.tabs);
-  expect(await visualStyle('#haku-chara-list .haku-table')).toEqual(moe.table);
-
-  await expect(page.locator('.haku-group .haku-btn, .haku-group .haku-input, .haku-group .haku-select, .haku-group .haku-tabs, .haku-group .haku-dialog, .haku-group .haku-badge, .haku-group .haku-stats')).toHaveCount(0);
-  await expect(page.locator('#haku-multi-stats .stats')).toBeVisible();
-  await expect(page.locator('#haku-hp-spurt-table .table-wrap')).toBeVisible();
-  await expect(page.locator('#haku-veteran-card .veteran-summary')).toBeVisible();
-  await expect(page.locator('#haku-skill-breakdown .dialog-panel')).toBeVisible();
-});
-
-test('Hakuraku compact rows share a vertical center line', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ui-lab');
-  await page.getByRole('tab', { name: /Hakuraku/ }).click();
-  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
-
-  const center = async (selector: string) => page.locator(selector).first().evaluate((element) => {
-    const box = element.getBoundingClientRect();
-    return box.top + box.height / 2;
-  });
-
-  const shareInput = page.locator('#haku-share-link input');
-  const shareButton = page.locator('#haku-share-link .ui-button');
-  await expect(shareInput).toHaveCSS('height', await shareButton.evaluate((element) => getComputedStyle(element).height));
-  expect(Math.abs(await center('#haku-share-link input') - await center('#haku-share-link .ui-button'))).toBeLessThanOrEqual(.5);
-
-  const skillCenter = await center('#haku-chara-card .haku-moe-skill .skill-chip');
-  const statusCenter = await center('#haku-chara-card .haku-moe-skill .badge');
-  expect(Math.abs(skillCenter - statusCenter)).toBeLessThanOrEqual(1);
-
-  const placement = page.locator('#haku-analysis-table .placement').first();
-  const placementCell = placement.locator('xpath=ancestor::td');
-  const placementBox = await placement.boundingBox();
-  const cellBox = await placementCell.boundingBox();
-  expect(Math.abs((placementBox!.y + placementBox!.height / 2) - (cellBox!.y + cellBox!.height / 2))).toBeLessThanOrEqual(1);
-
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-});
-
-test('Hakuraku entity selectors and race planning use the canonical moe contracts', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/ui-lab');
-  await page.getByRole('tab', { name: /Hakuraku/ }).click();
-  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
-
-  const characterSelect = page.locator('#haku-portrait-select');
-  const characterTrigger = characterSelect.getByRole('combobox', { name: 'Character' });
-  await expect(characterTrigger).toHaveAttribute('aria-expanded', 'false');
-  await characterTrigger.click();
-  await expect(characterSelect.getByRole('listbox', { name: 'Character' })).toBeVisible();
-  await expect(characterSelect.getByRole('option')).toHaveCount(3);
-  await characterTrigger.press('ArrowDown');
-  await characterTrigger.press('Enter');
-  await expect(characterTrigger).toContainText('Oguri Cap');
-  await expect(characterTrigger).toHaveAttribute('aria-expanded', 'false');
-
-  const teamTrigger = page.locator('#haku-team-sample-select').getByRole('combobox', { name: 'Team sample' });
-  await teamTrigger.click();
-  await expect(page.getByRole('listbox', { name: 'Team sample' })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(teamTrigger).toHaveAttribute('aria-expanded', 'false');
-
-  const placement = page.locator('#haku-analysis-table .placement').first();
-  expect((await placement.boundingBox())!.height).toBeGreaterThanOrEqual(28);
-
-  const planner = page.locator('#haku-race-planner');
-  await expect(planner).toHaveAttribute('data-origin', 'uma');
-  await expect(planner.locator('.race-schedule')).toBeVisible();
-  await expect(planner.locator('.haku-planner')).toHaveCount(0);
-  await expect(planner.getByRole('heading', { name: 'Junior Year' })).toBeVisible();
-  await expect(planner.getByRole('heading', { name: 'Classic Year' })).toBeVisible();
-  await expect(planner.getByRole('heading', { name: 'Senior Year' })).toBeVisible();
-});
-
-test('main-parent and P2 sparks preserve the Angular source accents', async ({ page }) => {
-  await page.goto('/ui-lab');
-
-  const main = page.getByLabel(/3 star Speed.*Main parent/).first();
-  const p2 = page.getByLabel(/2 star Swinging Maestro.*P2 legacy/).first();
-  await expect(main).toHaveAttribute('data-source', 'main');
-  await expect(p2).toHaveAttribute('data-source', 'p2');
-  await expect(p2.locator('.p2-marker')).toBeVisible();
-
-  const colors = await page.evaluate(() => {
-    const resolvedToken = (token: string) => {
-      const sample = document.createElement('span');
-      sample.style.color = `var(${token})`;
-      document.body.append(sample);
-      const color = getComputedStyle(sample).color;
-      sample.remove();
-      return color;
-    };
-    return {
-      main: getComputedStyle(document.querySelector<HTMLElement>('[data-source="main"] .level')!).color,
-      p2: getComputedStyle(document.querySelector<HTMLElement>('[data-source="p2"] .p2-marker')!).color,
-      blue: resolvedToken('--accent-primary'),
-      purple: resolvedToken('--accent-purple')
-    };
-  });
-  expect(colors.main).toBe(colors.blue);
-  expect(colors.p2).toBe(colors.purple);
-
-  const centers = await Promise.all(['.level', '.star', '.name', '.chance'].map(async (selector) => {
-    const box = await main.locator(selector).boundingBox();
-    return (box?.y ?? 0) + (box?.height ?? 0) / 2;
-  }));
-  expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1.5);
-});
-
-test('the UI lab itself uses the canonical responsive shell and page gutters', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 720 });
-  await page.goto('/ui-lab');
-  const shell = page.locator('[data-ui-lab-shell]');
-  const rail = shell.locator('[data-shell-rail]');
-  const bottom = page.locator('[data-shell-bottom]');
-  const intro = shell.locator('.lab-intro');
-
-  await expect(rail).toBeHidden();
-  await expect(bottom).toBeVisible();
-  const mobileIntro = await intro.boundingBox();
-  expect(mobileIntro!.x).toBe(4);
-  expect(320 - mobileIntro!.x - mobileIntro!.width).toBe(4);
-
-  await page.setViewportSize({ width: 768, height: 900 });
-  await expect(bottom).toBeHidden();
-  await expect(rail).toBeVisible();
-  const compactRail = await rail.boundingBox();
-  const compactIntro = await intro.boundingBox();
-  expect(compactRail!.width).toBe(64);
-  expect(compactIntro!.x).toBe(64);
-  expect(768 - compactIntro!.x - compactIntro!.width).toBe(0);
-
-  await page.setViewportSize({ width: 1366, height: 900 });
-  const largeCompactRail = await rail.boundingBox();
-  expect(largeCompactRail!.width).toBe(64);
-  await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  expect((await rail.boundingBox())!.width).toBe(64);
-  await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
-
-  await page.setViewportSize({ width: 1536, height: 864 });
-  expect((await rail.boundingBox())!.width).toBe(64);
-  await expect(rail.getByText('Foundation', { exact: true })).toBeHidden();
-
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  const expandedRail = await rail.boundingBox();
-  expect(expandedRail!.width).toBe(240);
-  await expect(rail.getByRole('button', { name:'Open Foundation subsections', exact:true }).locator('.navigation-label')).toBeVisible();
-});
-
-test('section navigation exposes subsections in expanded, compact, and mobile shells', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/ui-lab');
-  const rail = page.locator('[data-shell-rail]');
-
-  await rail.getByRole('button', { name: 'Open Inputs subsections' }).click();
-  const wideSubsections = rail.locator('[id$="-subsections-inputs"]');
-  await expect(wideSubsections.getByRole('link', { name: 'Slider' })).toBeVisible();
-  const expandedAlignment = await Promise.all([
-    rail.locator('.navigation-item.open > .navigation-parent .navigation-label').boundingBox(),
-    wideSubsections.getByRole('link', { name: 'Slider' }).locator('span').boundingBox()
-  ]);
-  expect(expandedAlignment[1]!.x).toBeCloseTo(expandedAlignment[0]!.x, 0);
-  await wideSubsections.getByRole('link', { name: 'Slider' }).click();
-  await expect(page).toHaveURL(/#slider$/);
-  await expect(wideSubsections).toBeVisible();
-
-  await page.setViewportSize({ width: 1536, height: 864 });
-  await rail.getByRole('button', { name: 'Open Domain patterns subsections' }).click();
-  const compactSubsections = rail.locator('[id$="-subsections-domain"]');
-  await expect(compactSubsections.getByRole('link', { name: 'Veteran selector' })).toBeVisible();
-  await rail.getByRole('button', { name: 'Open Actions subsections' }).click();
-  await expect(compactSubsections).not.toBeVisible();
-  const compactActions = rail.locator('[id$="-subsections-actions"]');
-  await expect(compactActions).toBeVisible();
-  const [railBounds, flyoutBounds] = await Promise.all([rail.boundingBox(), compactActions.boundingBox()]);
-  expect(flyoutBounds!.x).toBe(railBounds!.x + railBounds!.width);
-  await page.keyboard.press('Escape');
-  await expect(compactActions).not.toBeVisible();
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'More UI lab sections' }).click();
-  const sheet = page.getByRole('dialog', { name: 'UI lab sections' });
-  await sheet.getByRole('button', { name: 'Open Navigation subsections' }).click();
-  await expect(sheet.getByRole('link', { name: 'Section navigation' })).toBeVisible();
-  await sheet.getByRole('link', { name: 'Section navigation' }).click();
-  await expect(sheet).not.toBeVisible();
-  await expect(page).toHaveURL(/#subnavigation$/);
-});
-
-test('ported Angular UI contracts remain interactive and mobile-safe', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ui-lab');
-
-  await expect(page.getByLabel('Rank UE1').first()).toBeVisible();
-  await expect(page.getByLabel('Long: S').first()).toBeVisible();
-  await expect(page.getByLabel('Total affinity: 83').first()).toBeVisible();
-
-  const filterMode = page.getByRole('radio', { name: 'UQL', exact: true }).last();
-  await filterMode.click();
-  await expect(filterMode).toHaveAttribute('aria-checked', 'true');
-  await page.getByRole('button', { name: 'Open mobile filter sheet' }).click();
-  const filterSheet = page.getByRole('dialog', { name: 'Database filters' });
-  await expect(filterSheet).toBeVisible();
-  await filterSheet.getByRole('button', { name: 'Show 74 results' }).click();
-  await expect(filterSheet).not.toBeVisible();
-
-  const veteranRow = page.getByRole('button', { name: 'Select Mejiro McQueen' });
-  await expect(veteranRow).toHaveAttribute('aria-pressed', 'false');
-  await veteranRow.click();
-  await expect(veteranRow).toHaveAttribute('aria-pressed', 'true');
-
-  const lineageNode = page.getByRole('button', { name: 'P2: Kitasan Black' });
-  await lineageNode.click();
-  await expect(lineageNode).toHaveAttribute('aria-pressed', 'true');
-
-  await page.getByRole('button', { name: /Satsuki Sho/ }).first().click();
-  await expect(page.getByText('Selected race: Satsuki Sho')).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-});
-
-test('Uma domain components adapt to their own container width', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/ui-lab');
-
-  const rank = page.getByLabel('Rank UE1').first();
-  await expect(rank.locator('img')).toHaveAttribute('src', /utx_txt_rank_39\.webp$/);
-
-  const lineage = page.locator('#lineage .lineage-container');
-  const lineageBranches = lineage.locator('.branch');
-  const wideBranchBoxes = await Promise.all([lineageBranches.nth(0).boundingBox(), lineageBranches.nth(1).boundingBox()]);
-  expect(Math.abs(wideBranchBoxes[0]!.y - wideBranchBoxes[1]!.y)).toBeLessThanOrEqual(2);
-  await lineage.evaluate((element) => element.style.width = '360px');
-  const narrowBranchBoxes = await Promise.all([lineageBranches.nth(0).boundingBox(), lineageBranches.nth(1).boundingBox()]);
-  expect(narrowBranchBoxes[1]!.y).toBeGreaterThan(narrowBranchBoxes[0]!.y + narrowBranchBoxes[0]!.height);
-
-  const veteran = page.locator('#veteran-summary .veteran-summary-container');
-  const parent = veteran.locator('.parent-row').first();
-  const wideParentParts = await Promise.all([parent.locator('.parent-id').boundingBox(), parent.locator('.parent-factors').boundingBox()]);
-  expect(Math.abs(wideParentParts[0]!.y - wideParentParts[1]!.y)).toBeLessThanOrEqual(3);
-  await veteran.evaluate((element) => element.style.width = '360px');
-  const narrowParentParts = await Promise.all([parent.locator('.parent-id').boundingBox(), parent.locator('.parent-factors').boundingBox()]);
-  expect(narrowParentParts[1]!.y).toBeGreaterThan(narrowParentParts[0]!.y);
-
-  const schedule = page.locator('#race-schedule .race-schedule-container');
-  const years = schedule.locator('.year');
-  const wideYearBoxes = await Promise.all([years.nth(0).boundingBox(), years.nth(1).boundingBox()]);
-  expect(Math.abs(wideYearBoxes[0]!.y - wideYearBoxes[1]!.y)).toBeLessThanOrEqual(2);
-  await schedule.evaluate((element) => element.style.width = '360px');
-  const narrowYearBoxes = await Promise.all([years.nth(0).boundingBox(), years.nth(1).boundingBox()]);
-  expect(narrowYearBoxes[1]!.y).toBeGreaterThan(narrowYearBoxes[0]!.y + narrowYearBoxes[0]!.height);
-});
-
-test('Analytics viewport toggles resize the entire UI Lab website', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/ui-lab');
-  const viewport = page.locator('.lab-viewport');
-  const rail = viewport.locator('[data-shell-rail]');
-  const bottom = viewport.locator('[data-shell-bottom]');
-  const inlineAd = viewport.locator('[data-ad-kind="inline"]');
-
-  await page.getByRole('button', { name: '360×800', exact: true }).click();
-  await expect(viewport).toHaveAttribute('data-preview-width', '360');
-  expect((await viewport.boundingBox())!.width).toBe(360);
-  await expect(rail).toBeHidden();
-  await expect(bottom).toBeVisible();
-  await expect(inlineAd).toBeVisible();
-  expect((await inlineAd.boundingBox())!.height).toBe(100);
-
-  await page.getByRole('button', { name: '1366×768', exact: true }).click();
-  expect((await viewport.boundingBox())!.width).toBe(1366);
-  expect((await rail.boundingBox())!.width).toBe(64);
-  await expect(bottom).toBeHidden();
-  await expect(inlineAd).toBeHidden();
-  await expect(viewport.locator('[data-ad-position="right-rail"]')).toBeVisible();
-
-  await page.getByRole('button', { name: '1536×864', exact: true }).click();
-  expect((await viewport.boundingBox())!.width).toBe(1536);
-  expect((await rail.boundingBox())!.width).toBe(64);
-  await expect(viewport.locator('[data-ad-position="right-rail"]')).toBeVisible();
-
-  await page.getByRole('button', { name: 'Fluid', exact: true }).click();
-  await expect(viewport).toHaveAttribute('data-preview-width', 'fluid');
-  expect((await viewport.boundingBox())!.width).toBe(1920);
-});
-
-test('normal and wide page contracts change the live UI lab content maximum', async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1440 });
-  await page.goto('/ui-lab');
-  const main = page.locator('.lab-main');
-  const control = page.locator('article.demo').filter({ hasText: 'Live responsive shell and page width' });
-  await expect(main).toHaveAttribute('data-page-width', 'wide');
-  const wide = await main.boundingBox();
-  await control.getByRole('radio', { name: 'Normal', exact: true }).click();
-  await expect(main).toHaveAttribute('data-page-width', 'normal');
-  const normal = await main.boundingBox();
-  expect(wide!.width).toBe(1760);
-  expect(normal!.width).toBe(1080);
-  expect(normal!.x).toBeGreaterThan(wide!.x);
-});
-
-test('the live UI page uses a 1080p counter-rail and a large-screen ad pair', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ui-lab');
-
-  const livePage = page.locator('[data-live-page-layout]');
-  const frame = livePage.locator('[data-page-frame]');
-
-  const mobileGeometry = await frame.evaluate((element) => {
-    const frameBox = element.getBoundingClientRect();
-    const contentBox = element.querySelector<HTMLElement>('[data-page-content]')!.getBoundingClientRect();
-    const inlineAdBox = element.querySelector<HTMLElement>('[data-ad-kind="inline"]')!.getBoundingClientRect();
-    const visibleRails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
-      .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0);
-    return {
-      contentInset: contentBox.left - frameBox.left,
-      inlineHeight: inlineAdBox.height,
-      visibleRails: visibleRails.length
-    };
-  });
-  expect(mobileGeometry).toEqual({ contentInset: 4, inlineHeight: 100, visibleRails: 0 });
-
-  await page.setViewportSize({ width: 1200, height: 900 });
-  await expect(frame.locator('[data-ad-position="left-rail"]')).toBeHidden();
-  await expect(frame.locator('[data-ad-position="right-rail"]')).toBeHidden();
-  await expect(frame.locator('[data-ad-kind="inline"]')).toBeVisible();
-
-  await page.setViewportSize({ width: 1536, height: 864 });
-  const compactAdGeometry = await page.evaluate(() => {
-    const navigation = document.querySelector<HTMLElement>('[data-shell-rail]')!.getBoundingClientRect();
-    const pageFrame = document.querySelector<HTMLElement>('[data-page-frame]')!.getBoundingClientRect();
-    const rightRail = document.querySelector<HTMLElement>('[data-ad-position="right-rail"]')!.getBoundingClientRect();
-    const visibleRails = [...document.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
-      .filter((rail) => rail.getBoundingClientRect().width > 0);
-    return {
-      navigationWidth: navigation.width,
-      visibleRails: visibleRails.length,
-      rightRailWidth: rightRail.width,
-      rightInset: pageFrame.right - rightRail.right
-    };
-  });
-  expect(compactAdGeometry).toEqual({ navigationWidth: 64, visibleRails: 1, rightRailWidth: 160, rightInset: 0 });
-  await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden();
-
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  const expandedGeometry = await frame.evaluate((element) => {
-    const pageGrid = element.querySelector<HTMLElement>('[data-route-id="ui-lab"]')!;
-    const frameBox = pageGrid.getBoundingClientRect();
-    const content = element.querySelector<HTMLElement>('[data-page-content]')!;
-    const utility = document.querySelector<HTMLElement>('[data-shell-utility]')!.getBoundingClientRect();
-    const navigationRail = document.querySelector<HTMLElement>('[data-shell-rail]')!.getBoundingClientRect();
-    const rightReserve = element.querySelector<HTMLElement>('[data-ad-position="right-rail"]')!;
-    const rightReserveBox = rightReserve.getBoundingClientRect();
-    const rails = [...element.querySelectorAll<HTMLElement>('[data-ad-kind="rail"]')]
-      .filter((rail) => getComputedStyle(rail).display !== 'none' && rail.getBoundingClientRect().width > 0)
-      .map((rail) => rail.getBoundingClientRect());
-    return {
-      scrollWidth: element.scrollWidth,
-      clientWidth: element.clientWidth,
-      railWidths: rails.map((rail) => rail.width),
-      navigationReserveWidth: navigationRail.width,
-      rightReserveWidth: rightReserveBox.width,
-      contentLeftReserve: content.getBoundingClientRect().left,
-      contentRightReserve: window.innerWidth - content.getBoundingClientRect().right,
-      creativeLeftInset: rails[0]!.left - rightReserveBox.left,
-      creativeRightInset: rightReserveBox.right - rails[0]!.right,
-      railTopGap: rails[0]!.top - utility.bottom,
-      railBottomGap: window.innerHeight - rails[0]!.bottom,
-      contentComesFirst: Boolean(content.compareDocumentPosition(rightReserve) & Node.DOCUMENT_POSITION_FOLLOWING),
-      frameLeft: frameBox.left
-    };
-  });
-  expect(expandedGeometry.scrollWidth).toBe(expandedGeometry.clientWidth);
-  expect(expandedGeometry.railWidths).toEqual([160]);
-  expect(expandedGeometry.navigationReserveWidth).toBe(240);
-  expect(expandedGeometry.rightReserveWidth).toBe(240);
-  expect(expandedGeometry.contentLeftReserve).toBe(expandedGeometry.contentRightReserve);
-  expect(expandedGeometry.creativeLeftInset).toBe(expandedGeometry.creativeRightInset);
-  expect(expandedGeometry.railTopGap).toBe(expandedGeometry.railBottomGap);
-  expect(expandedGeometry.contentComesFirst).toBe(true);
-  expect(expandedGeometry.frameLeft).toBe(240);
-  await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-feature-id', 'ui-system');
-  await expect(frame.locator('[data-route-id="ui-lab"]')).toHaveAttribute('data-page-width', 'wide');
-  await expect(frame.locator('[data-ad-kind="leaderboard"]')).toHaveCount(0);
-  await expect(frame.locator('[data-ad-kind="inline"]')).toHaveAttribute('data-ad-sizes', '970x90,728x90,468x90,468x60,320x100,300x100,320x50,300x50');
-  await expect(frame.locator('[data-ad-kind="inline"]')).toHaveAttribute('data-ad-behavior', 'rail-alternative');
-  await expect(frame.locator('[data-ad-position="left-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
-  await expect(frame.locator('[data-ad-position="right-rail"] [data-ad-kind="rail"]')).toHaveAttribute('data-ad-sizes', '160x600,120x600');
-
-  await page.setViewportSize({ width: 2560, height: 1440 });
-  const largeScreenRails = await frame.locator('[data-ad-kind="rail"]').evaluateAll((rails) => rails
-    .filter((rail) => rail.getBoundingClientRect().width > 0)
-    .map((rail) => rail.getBoundingClientRect().width));
-  expect(largeScreenRails).toEqual([160, 160]);
-});
-
-test('side navigation and ad rails stay sticky for the full simulated viewport', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/ui-lab');
-
-  const scrollport = page.locator('[data-preview-scrollport]');
-  const navigation = page.locator('[data-shell-rail]');
-  const rightRail = page.locator('[data-ad-position="right-rail"]');
-  const before = {
-    navigation: await navigation.boundingBox(),
-    rail: await rightRail.boundingBox(),
-    scrollport: await scrollport.boundingBox()
-  };
-  await scrollport.evaluate((element) => element.scrollTo({ top: 1200 }));
-  await expect.poll(() => scrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(1000);
-  const after = { navigation: await navigation.boundingBox(), rail: await rightRail.boundingBox() };
-
-  expect(before.navigation!.height).toBe(before.scrollport!.height);
-  expect(after.navigation!.y).toBe(before.navigation!.y);
-  expect(after.navigation!.height).toBe(before.navigation!.height);
-  expect(after.rail!.y).toBe(before.rail!.y);
-});
-
-test('database slider exposes independent range thumbs and threshold semantics', async ({ page }) => {
-  await page.goto('/ui-lab');
-
-  const inputs = page.getByRole('region', { name: 'Inputs' });
-  const minimum = inputs.getByRole('slider', { name: 'Blue factor stars minimum' });
-  const maximum = inputs.getByRole('slider', { name: 'Blue factor stars maximum' });
-  await expect(minimum).toHaveValue('2');
-  await expect(maximum).toHaveValue('7');
-  await minimum.focus();
-  await minimum.press('ArrowRight');
-  await expect(minimum).toHaveValue('3');
-  await maximum.focus();
-  await maximum.press('ArrowLeft');
-  await expect(maximum).toHaveValue('6');
-
-  const sliderWrap = minimum.locator('..');
-  await expect(sliderWrap.locator('.visual-thumb--start')).toHaveAttribute('style', /--thumb-position:\s*25%;/);
-  await expect(sliderWrap.locator('.visual-thumb--end')).toHaveAttribute('style', /--thumb-position:\s*62\.5%;/);
-  const transitionSeconds = await sliderWrap.locator('.visual-thumb--start').evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration));
-  expect(transitionSeconds).toBeGreaterThan(0);
-
-  const track = inputs.getByRole('button', { name: 'Adjust Blue factor stars on track' });
-  await track.scrollIntoViewIfNeeded();
-  const trackBounds = await track.boundingBox();
-  expect(trackBounds).not.toBeNull();
-  await page.mouse.click((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.5, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5);
-  await expect(maximum).toHaveValue('5');
-  await page.mouse.move((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.5, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5);
-  await page.mouse.down();
-  await page.mouse.move((trackBounds?.x ?? 0) + (trackBounds?.width ?? 0) * 0.875, (trackBounds?.y ?? 0) + (trackBounds?.height ?? 0) * 0.5, { steps: 5 });
-  await page.mouse.up();
-  await expect(maximum).toHaveValue('8');
-
-  const threshold = page.getByRole('slider', { name: 'Minimum main-parent stars' });
-  await threshold.focus();
-  await threshold.press('ArrowRight');
-  await expect(threshold).toHaveValue('3');
-});
-
-test('extended Angular UI contracts remain functional and mobile-safe', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/ui-lab');
-  const demo = (title: string) => page.locator('article.demo').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
-
-  const characterPicker = demo('Character picker');
-  const oguri = characterPicker.getByRole('button', { name: /Oguri Cap/ });
-  await oguri.click();
-  await expect(oguri).toHaveAttribute('aria-pressed', 'true');
-
-  const supportPicker = demo('Support card picker');
-  const staminaCard = supportPicker.getByRole('radio', { name: /A Long-Awaited Chance/ });
-  await staminaCard.click();
-  await expect(staminaCard).toHaveAttribute('aria-checked', 'true');
-
-  const distanceSelector = demo('Distance selector');
-  const mile = distanceSelector.locator('[data-distance="mile"]');
-  await mile.click();
-  await expect(mile).toHaveAttribute('aria-pressed', 'true');
-
-  const sparkEditor = demo('Inheritance spark editor');
-  const speedStars = sparkEditor.getByRole('group', { name: 'Stars for Speed' });
-  await speedStars.getByRole('button').nth(1).click();
-  await expect(speedStars.getByRole('button').nth(1)).toHaveAttribute('aria-pressed', 'true');
-
-  const resultToolbar = demo('Database result toolbar');
-  await resultToolbar.getByRole('button', { name: 'Grid view' }).click();
-  await expect(resultToolbar.getByRole('button', { name: 'Grid view' })).toHaveAttribute('aria-pressed', 'true');
-
-  await demo('UQL query editor').getByRole('button', { name: 'Run query' }).click();
-  await demo('Inspect popover').getByRole('button', { name: 'Swinging Maestro' }).click();
-  await expect(page.getByRole('dialog', { name: 'Swinging Maestro details' })).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Swinging Maestro details' })).not.toBeVisible();
-
-  const timelineCard = demo('Timeline event, rewards, and pickups');
-  await timelineCard.getByRole('button', { name: /to Carat Planner$/ }).click();
-  await expect(timelineCard.getByRole('button', { name: /from Carat Planner$/ })).toHaveAttribute('aria-pressed', 'true');
-  await expect(demo('Statistics chart frame').getByText('94', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

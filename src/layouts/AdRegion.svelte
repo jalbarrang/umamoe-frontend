@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import type { Snippet } from 'svelte';
   import { fuseIdForPlacement } from '@/services/ads/ad-slots';
   import { registerFuseZone } from '@/services/ads/fuse-ads';
@@ -19,11 +18,24 @@
   let { placement, kind, sizes, active = false, preview = false, railAlternative = false, children }: Props = $props();
   const elementId = $derived(`ad-${placement.replaceAll(/[^a-zA-Z0-9_-]/g, '-')}`);
   const fuseId = $derived(fuseIdForPlacement(placement));
-  onMount(() => active && !preview ? registerFuseZone(elementId, fuseId) : undefined);
+  let region: HTMLElement | undefined = $state();
+  $effect(() => {
+    if (!active || preview || !fuseId || !region) return;
+    const element = region;
+    let unregister: (() => void) | undefined;
+    const sync = () => {
+      if (element.getBoundingClientRect().width > 0) unregister ??= registerFuseZone(elementId, fuseId);
+      else { unregister?.(); unregister = undefined; }
+    };
+    const observer = new ResizeObserver(sync);
+    observer.observe(element); sync();
+    return () => { observer.disconnect(); unregister?.(); };
+  });
 </script>
 
-{#if active}
+{#if active && (fuseId || preview)}
   <aside
+    bind:this={region}
     id={`${elementId}-region`}
     class="ad-region ad-region--{kind}"
     class:preview
@@ -45,7 +57,7 @@
   .ad-target { width: 100%; height: 100%; display: grid; place-items: center; }
   .ad-region--leaderboard,
   .ad-region--inline { width: calc(100% + var(--page-gutter-current, 16px) + var(--page-gutter-current, 16px) - 4px); max-width: 1200px; min-height: var(--ad-mobile-height); margin-inline: calc(0px - var(--page-gutter-current, 16px) + 2px); }
-  .ad-region--inline { min-height: var(--ad-inline-mobile-height); }
+  .ad-region--inline { width:100%; max-width:100%; min-height:var(--ad-inline-mobile-height); margin:12px auto; grid-column:1/-1; }
   .ad-region--rail { width: var(--ad-rail-width); height: var(--ad-rail-height); }
   .preview { border: 1px dashed var(--color-border-strong); background: var(--color-surface-1); color: var(--color-text-subtle); }
   .preview span { display: grid; place-items: center; gap: 2px; padding: var(--space-2); text-align: center; }
@@ -57,7 +69,7 @@
     .ad-region--inline { width: 100%; min-height: var(--ad-leaderboard-height); margin-inline: auto; }
   }
 
-  @container app-viewport (min-width: 1280px) {
+  @container app-viewport (min-width: 1301px) {
     .rail-alternative { display: none; }
   }
 </style>

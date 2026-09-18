@@ -41,7 +41,7 @@ function resolveSourceImagePath(
   masterEventId: number | null | undefined,
 ): string | undefined {
   const bundledFallback = resolveBundledTimelineEventImagePath(eventType, masterEventId);
-  if (!imagePath) return bundledFallback;
+  if (!imagePath || imagePath.endsWith('/')) return bundledFallback;
   return ENGLISH_TIMELINE_IMAGE_PATHS[imagePath]
     ?? JAPANESE_TIMELINE_IMAGE_PATHS[imagePath]
     ?? bundledFallback
@@ -55,8 +55,8 @@ const artwork: Record<string, string> = import.meta.env.DEV
   ? Object.fromEntries(Object.keys(import.meta.glob('/src/assets/timeline-images/**/*.webp')).map(path => [path, path]))
   : (await import('./timeline-artwork-urls')).default;
 
-export function timelineImage(path: string | null | undefined, type: string | undefined, id: string): string | undefined {
+export function timelineImage(path: string | null | undefined, type: string | undefined, id: string, sourceImage?: string): string | undefined {
   const resolved = resolveSourceImagePath(path, type, timelineEventMasterId(id));
-  if (!resolved) return undefined;
-  return artwork['/src/' + resolved.replace(/^\//, '')] ?? resolved;
+  if (!resolved) return sourceImage;
+  return artwork['/src/' + resolved.replace(/^\//, '')] ?? sourceImage ?? resolved;
 }

@@ -58,7 +58,7 @@ test('overview rankings retain portraits, readable themes, class charts and empt
   await page.getByRole('button', { name: 'Deselect all distances', exact: true }).click();
   await expect(popular).toHaveCount(0);
   await page.getByRole('button', { name: 'Select all distances', exact: true }).click();
-  await page.getByRole('button', { name: 'URA', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'URA', exact: true }).click();
   await page.getByRole('button', { name: 'Show results', exact: true }).click();
   await expect(page.getByTestId('selected-samples')).toHaveText('0');
   await expect(page.getByRole('figure', { name: 'Most Popular Uma Musume', exact: true }).getByText('No data available', { exact: true })).toBeVisible();
@@ -138,24 +138,60 @@ test('overview opens character analysis and every analysis view remains availabl
   const decks = page.getByRole('list', { name: 'Most Used Deck Compositions' });
   await expect(decks.getByRole('img')).toHaveCount(6);
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Class 1', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'URA', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'Class 1', exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'URA', exact: true }).click();
   await expect(decks).toHaveCount(0);
-  await page.getByRole('button', { name: 'URA', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'URA', exact: true }).click();
   await expect(decks.getByRole('listitem')).toHaveCount(1);
   await page.getByRole('button', { name: 'Show results', exact: true }).click();
 });
 
-test('mobile filter sheet fits the viewport and restores focus', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('filter groups update live, reset and fit desktop and narrow mobile in both themes', async ({ page }, testInfo) => {
   await mockStatistics(page);
+  const distances = ['1', '2', '3', '4', '5'];
+  const scenarios = ['1', '2', '3', '4'];
+  const scope = { total_entries: 10, uma_distribution: { '100101': { count: 10 } } };
+  await page.route('**/assets/statistics/datasets.json', route => route.fulfill({ json: { datasets: [{ id: 'fixture', name: 'All filter options', basePath: '/assets/statistics/fixture', format_version: 4, index: { distances, character_ids: ['100101'], total_entries: 200 } }] } }));
+  await page.route('**/assets/statistics/fixture/global/global.json*', route => route.fulfill({ json: {
+    metadata: { total_entries: 200 },
+    scenario_distribution: Object.fromEntries(scenarios.map(id => [id, { count: 50 }])),
+    by_distance: Object.fromEntries(distances.map(id => [id, { by_team_class: { '6': { overall: { ...scope, total_entries: 40 }, by_scenario: Object.fromEntries(scenarios.map(id => [id, scope])) } } }]))
+  } }));
   await page.goto('/tools/statistics');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Statistics filters' })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+  const dialog = page.getByRole('dialog', { name: 'Statistics filters' });
+  await expect(dialog.getByRole('checkbox')).toHaveCount(15);
+  await expect(dialog.getByRole('status')).toContainText('200');
+  await expect(dialog.getByRole('button', { name: 'Reset filters' })).toBeDisabled();
+  await dialog.getByRole('checkbox', { name: 'URA', exact: true }).focus();
+  await page.keyboard.press('Space');
+  await expect(dialog.getByRole('checkbox', { name: 'URA', exact: true })).not.toBeChecked();
+  await expect(dialog.getByRole('status')).toContainText('150');
+  await dialog.getByRole('button', { name: 'Select all scenarios' }).click();
+  await dialog.getByRole('button', { name: 'Deselect all scenarios' }).click();
+  await expect(dialog.getByRole('status')).toHaveText('Matching training samples0');
+  await dialog.getByRole('button', { name: 'Reset filters' }).click();
+  await expect(dialog.getByRole('status')).toContainText('200');
+  await dialog.getByRole('checkbox', { name: 'Class 1', exact: true }).uncheck();
+  await expect(dialog.getByRole('group', { name: 'Team class' })).toContainText('5 / 6');
+  await dialog.screenshot({ path: testInfo.outputPath('statistics-filters-dark.png') });
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Statistics filters' })).not.toBeVisible();
+  await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Filters', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await expect(dialog.getByRole('checkbox', { name: 'Class 1', exact: true })).not.toBeChecked();
+  await dialog.screenshot({ path: testInfo.outputPath('statistics-filters-light.png') });
+  await page.setViewportSize({ width: 320, height: 640 });
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await expect(dialog.getByRole('button', { name: 'Show results' })).toBeInViewport();
+  await dialog.getByRole('checkbox', { name: 'Dirt', exact: true }).uncheck();
+  await expect(dialog.getByRole('status')).toContainText('160');
+  await dialog.screenshot({ path: testInfo.outputPath('statistics-filters-narrow.png') });
+  await dialog.getByRole('button', { name: 'Show results' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByTestId('selected-samples')).toHaveText('160');
 });
 
 test('tabs retain filters, character search and selection with keyboard navigation', async ({ page }) => {
@@ -164,7 +200,7 @@ test('tabs retain filters, character search and selection with keyboard navigati
   const selectedCount = page.getByTestId('selected-samples');
   await expect(selectedCount).toHaveText('10');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
-  await page.getByRole('button', { name: 'Sprint', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Sprint', exact: true }).click();
   await page.getByRole('button', { name: 'Show results', exact: true }).click();
   await expect(selectedCount).toHaveText('0');
   await page.getByRole('tab', { name: 'Supports', exact: true }).click();
@@ -200,11 +236,11 @@ test('character comparisons, distances and support decks respond to the same fil
   await classes.scrollIntoViewIfNeeded();
   await expect(classes.locator('svg text').filter({ hasText: /^Class 6$/ })).toBeVisible();
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
-  await page.getByRole('button', { name: 'Sprint', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Sprint', exact: true }).click();
   await expect(distance).toHaveCount(0);
   await expect(comparison).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Most Used Deck Compositions' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Sprint', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Sprint', exact: true }).click();
   await expect(page.getByRole('list', { name: 'Most Used Deck Compositions' }).getByRole('listitem')).toHaveCount(1);
   await page.getByRole('button', { name: 'Show results', exact: true }).click();
 });
@@ -282,4 +318,3 @@ test('switching Statistics versions ignores an older in-flight response', async 
     await expect(page.getByText('of 999 training samples', { exact: true })).toHaveCount(0);
   } finally { release(); }
 });
-

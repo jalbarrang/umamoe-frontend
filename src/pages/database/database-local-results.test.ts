@@ -36,5 +36,12 @@ describe('Angular Database local result behavior', () => {
     filters.blue = [{ factorId: 10, minimumStars: 3 }, { factorId: 20, minimumStars: 2, operator: 'or' }];
     const result = filterAndSortBookmarks([record({ id: 1, blueSparks: [103] }), record({ id: 2, blueSparks: [202] }), record({ id: 3, blueSparks: [301] })], filters, 'all', true);
     expect(result.map((item) => item.id)).toEqual([1, 2]);
+    filters.blue.push({ factorId: 10, minimumStars: 3, operator: 'and' });
+    const overlapping = filterAndSortBookmarks([
+      record({ id: 1, blueSparks: [103] }),
+      record({ id: 2, blueSparks: [202, 203] }),
+      record({ id: 3, blueSparks: [103, 202] })
+    ], filters, 'all', true);
+    expect(overlapping.map((item) => item.id)).toEqual([1, 3]);
   });
 });
