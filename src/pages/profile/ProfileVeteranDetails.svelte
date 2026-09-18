@@ -46,7 +46,7 @@
   const visibleSkills=$derived(skills.filter(item => (item.skill?.name ?? `Skill ${item.id}`).toLocaleLowerCase().includes(skillSearch.trim().toLocaleLowerCase())));
   const spTotal=$derived(skillPointTotal(skillCatalog,encodedSkills(veteran)));
   const ownSources=$derived([
-    {value:'family',label:'Combined'},
+    {value:'family',label:'Combined',description:'Own + P1 + P2'},
     {value:'main',label:summary.name,shortLabel:'Own',description:'This veteran',image:summary.image}
   ]);
   const branchSources=$derived(family.branches.map(({parent,grandparents})=>({
@@ -104,7 +104,7 @@
   <section class="spark-section" aria-label="Inheritance sparks" tabindex="-1" bind:this={sparkSection}>
     <header class="spark-header">
       <h3>Sparks <span>{sparks.length}</span></h3>
-      <p class="source-name" title={sparkSource==='family' ? 'Combined stars from this veteran and both parents.' : selectedSparkSource?.label+' · '+selectedSparkSource?.description}>{#if sparkSource==='family'}Veteran + parents{:else}{selectedSparkSource?.label}<span>{' · '+selectedSparkSource?.description}</span>{/if}</p>
+      <p class="source-name" title={sparkSource==='family' ? 'Combined stars from this veteran and both parents.' : selectedSparkSource?.label+' · '+selectedSparkSource?.description}>{#if sparkSource==='family'}Own + P1 + P2{:else}{selectedSparkSource?.label}<span>{' · '+selectedSparkSource?.description}</span>{/if}</p>
     </header>
     <div class="spark-sources" role="group" aria-label="Show sparks from">
       <div class="own-sources"><RadioGroup id={lineageId+'-spark-runner'} legend="Veteran" options={ownSources} bind:value={sparkSource} cards compact/></div>

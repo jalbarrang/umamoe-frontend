@@ -6,7 +6,7 @@ test('Profile keeps light filters and complete veteran information, with a stand
   await mockOwnerProfile(page, []);
   await mockAffinity(page);
   const denseFactors = factorCatalog.filter(factor => factor.type === 3).slice(0, 24).map(factor => Number(factor.id) * 10 + 3);
-  const veterans = Array.from({ length: 6 }, (_, index) => ({ ...veteran, id: index + 1, card_id: [101101, 101301, 100601, 106701, 108801, 100701][index], trained_chara_id: 900 + index, factors: [103, 1203, 10010103, 2000102], speed: veteran.speed - index * 10 }));
+  const veterans = Array.from({ length: 6 }, (_, index) => ({ ...veteran, id: index + 1, card_id: [101101, 101301, 100601, 106701, 108801, 100701][index], trained_chara_id: 900 + index, factors: [103, 1203, 10010103, 2000102], skills: index === 1 ? [] : veteran.skills, speed: veteran.speed - index * 10 }));
   await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({ json: { ...profile, veterans, support_card: { ...profile.support_card, support_card_id: 30028 }, inheritance: { ...profile.inheritance, main_green_factors: 10010103, left_green_factors: 10010102, right_green_factors: 10010103, main_white_factors: denseFactors, left_white_factors: [2000102], right_white_factors: [2000102] }, fan_history: { ...profile.fan_history, monthly: Array.from({ length: 8 }, (_, index) => ({ ...profile.fan_history.monthly[0], month: 8 - index, total_fans: 42000000 - index * 4200000 + index % 2 * 600000 })) } } }));
   await page.goto(`/profile/${accountId}`);
   await expect(page.getByRole('heading', { name: 'Current borrow', exact: true })).toBeVisible();
@@ -71,6 +71,14 @@ test('Profile keeps light filters and complete veteran information, with a stand
   await expect(card.locator('.skill-chip')).toHaveCount(2);
   await expect(card.getByRole('region', { name:'Family spark totals', exact: true })).toBeVisible();
   await expect(card.locator('.affinity-parent')).toHaveCount(2);
+  const cards = await collection.locator('.veteran-card').evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect(), footer = node.querySelector('footer')!.getBoundingClientRect();
+    return { top:box.top, height:box.height, bottom:box.bottom, footer:footer.bottom };
+  }));
+  for (const row of cards) {
+    for (const peer of cards.filter(peer => Math.abs(peer.top - row.top) < 1)) expect(peer.height).toBeCloseTo(row.height, 0);
+    expect(row.bottom - row.footer).toBeLessThanOrEqual(1);
+  }
   await expect(collection.getByRole('button', { name: /Filters/ })).toHaveCount(0);
   await expect(collection.getByLabel('Search veterans')).toBeVisible();
   await collection.screenshot({ path: testInfo.outputPath('svelte-profile-collection.png') });

@@ -91,12 +91,20 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
       await expect(page.locator('.tier-gap-value').first()).toHaveText('0');
       await expect(page.locator('.primary-metric .positive,.primary-metric .negative')).toHaveCount(0);
     }
-    if (scenario === 'large values') await expect(page.locator('.club-fans .value').first()).toHaveText('999,999,999,999,999');
+    if (scenario === 'large values') {
+      await expect(page.locator('.club-fans .value>span').first()).toHaveText('1000T');
+      await expect(page.locator('.club-fans .value>small').first()).toHaveText('999,999,999,999,999');
+    }
     for (const theme of ['light','dark']) {
       if (await page.locator('html').getAttribute('data-theme') !== theme) await page.getByRole('button',{name:'Toggle theme'}).click();
       for (const width of [320,390,768,1200]) {
         await page.setViewportSize({width,height:900});
         await fits(page);
+        const numberLines = await page.locator('.club-fans .value>span,.club-fans .value>small,.tier-gap-value,.tier-delta').evaluateAll(nodes => nodes.map(node => {
+          const box = node.getBoundingClientRect();
+          return { height:box.height, lineHeight:parseFloat(getComputedStyle(node).lineHeight), overflow:node.scrollWidth > node.clientWidth + 1 };
+        }));
+        for (const value of numberLines) { expect(value.height).toBeLessThanOrEqual(value.lineHeight + 1); expect(value.overflow).toBe(false); }
         await page.getByRole('button',{name:'Show member rows',exact:true}).click();
         await expect(page.locator('tbody tr')).toHaveCount(fixture.response.members.length);
         if (width < 768) await fits(page);

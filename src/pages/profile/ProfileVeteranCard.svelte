@@ -65,7 +65,7 @@
     </section>
 
     <section class="sparks" aria-label="Family spark totals">
-      <header><h4>Combined sparks</h4><span>Veteran + parents</span></header>
+      <header><h4>Combined sparks</h4><span>Own + P1 + P2</span></header>
       {@render sparkList(sparks)}
       {#if !sparks.length}<small>No sparks recorded.</small>{/if}
     </section>
@@ -104,7 +104,7 @@
         {#snippet trigger()}<span class="white-count"><span>★</span><strong>{white.length}</strong> white <Icon name="chevron" size={12}/></span>{/snippet}
           {@const results = white.filter(factor => factor.name.toLocaleLowerCase().includes(sparkSearch.trim().toLocaleLowerCase()))}
         <div class="white-browser">
-          <header><h4>Family sparks</h4><span>{white.length} white sparks</span></header>
+          <header><h4>Own + P1 + P2</h4><span>{white.length} white sparks</span></header>
           <TextField id={id + '-white'} label="Search white sparks" hideLabel prefixIcon="search" type="search" placeholder="Find a skill or race…" bind:value={sparkSearch}/>
           <div class="white-list">{#each results as factor}{@render sparkButton(factor)}{/each}{#if !results.length}<p>No matching sparks.</p>{/if}</div>
           <small>{results.length} of {white.length} · Click a spark to filter</small>
@@ -115,7 +115,7 @@
 {/snippet}
 
 <style>
-  .veteran-card { min-width:0; overflow:hidden; border:1px solid var(--border-primary); border-radius:10px; background:var(--card-surface-bg); container-type:inline-size; }
+  .veteran-card { min-width:0; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border-primary); border-radius:10px; background:var(--card-surface-bg); container-type:inline-size; }
   .veteran-card:hover { border-color:var(--border-secondary); }
   .card-heading { border-bottom:1px solid var(--border-subtle); background:var(--surface-1); }
   .card-annotations { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:0 12px 8px; }
@@ -148,7 +148,7 @@
   .skill-filter :global(.skill-chip) { min-height:22px; font-size:10px; }
   .skill-filter :global(.skill-chip img) { width:22px; height:22px; }
   .skill-filter :global(.skill-body) { min-height:22px; }.skill-filter :global(.skill-name) { white-space:normal; overflow:visible; line-height:1.25; }
-  footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; min-height:30px; padding:4px 12px; border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:10px; }
+  footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; min-height:30px; margin-top:auto; padding:4px 12px; border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:10px; }
   .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; margin-left:auto; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; cursor:pointer; }
   small { color:var(--color-text-muted); font-size:10px; }button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }.card-open:focus-visible { outline-offset:-2px; }
   @container(max-width:330px) { .card-open { padding:8px; }.card-body { padding:8px; }}

@@ -41,7 +41,7 @@ test('Database keeps populated Angular results, filter modes, sharing, and Train
   await expect(page.getByText('Trainer ID submitted successfully!')).toBeVisible();
 });
 
-test('Database keeps authenticated bookmark loading, stale filters, and removal contracts', async ({ page }) => {
+test('Database keeps authenticated bookmark loading, stale filters, and removal contracts', async ({ page }, testInfo) => {
   await mockDatabase(page);
   await page.addInitScript(() => localStorage.setItem('auth_token', 'test-token'));
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { id: 'user-1', display_name: 'Bookmark Tester', created_at: '2026-01-01T00:00:00Z' } }));
@@ -52,7 +52,15 @@ test('Database keeps authenticated bookmark loading, stale filters, and removal 
   await page.goto('/database');
   await page.getByRole('tab', { name: /Bookmarks/ }).click();
   await expect(page.getByText('2 bookmarked records')).toBeVisible();
-  await page.getByRole('button', { name: 'Modified 1' }).click();
+  const status = page.getByRole('radiogroup', { name: 'Bookmark status filter', exact: true });
+  await expect(status.getByRole('radio', { name: 'All (2)', exact: true })).toBeChecked();
+  await status.getByRole('radio', { name: 'All (2)', exact: true }).press('ArrowRight');
+  await expect(status.getByRole('radio', { name: 'Unchanged (1)', exact: true })).toBeChecked();
+  await expect(page.getByText('Modified Trainer', { exact: true })).toHaveCount(0);
+  await status.getByRole('radio', { name: 'Modified (1)', exact: true }).click();
+  await expect(status.getByRole('radio', { name: 'Modified (1)', exact: true })).toBeChecked();
+  await page.screenshot({ path: testInfo.outputPath('bookmark-status.png') });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   await expect(page.getByText('Modified Trainer').first()).toBeVisible();
   await expect(page.getByText('Parity Trainer').first()).toHaveCount(0);
   await page.getByTitle('Remove bookmark').click();

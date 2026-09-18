@@ -49,7 +49,6 @@ export async function completeLogin(token: string): Promise<AuthUser> {
 
 export function logout(): void {
   clearAuthToken();
-  authUser.set(null);
-  setAccountWorkspaces([]);
+  // The fresh page resets stores; clearing them here races protected-route redirects with this navigation.
   window.location.assign('/');
 }

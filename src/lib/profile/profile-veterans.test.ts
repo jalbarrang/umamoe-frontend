@@ -51,7 +51,7 @@ describe('profile Veteran parity logic', () => {
     const v: ProfileVeteran = {...base,succession_chara_array:[
       {position_id:10,card_id:1002,rank:1,rarity:1,talent_level:1,factor_id_array:[103]},
       {position_id:20,card_id:1003,rank:1,rarity:1,talent_level:1,factor_id_array:[102]},
-      {position_id:11,card_id:1004,rank:1,rarity:1,talent_level:1,factor_id_array:[103]}
+      ...[11,12,21,22].map(position_id => ({position_id,card_id:1004,rank:1,rarity:1,talent_level:1,factor_id_array:[103,203]}))
     ]};
     const state=filters(computeVeteranStatBounds([v]));
     const matches=()=>filterAndSortVeterans([v],state,'blue','desc',new Map());
@@ -65,7 +65,7 @@ describe('profile Veteran parity logic', () => {
     expect(matches()).toHaveLength(0);
     state.factors[0]!.scope='any';
     expect(matches()).toHaveLength(1);
-    expect(veteranFactorTotals(v)[0]).toMatchObject({id:10,level:8,ownStars:3});
+    expect(veteranFactorTotals(v).map(({id,level,ownStars}) => ({id,level,ownStars}))).toEqual([{id:10,level:8,ownStars:3}]);
     expect(factorStarSum(v,'blue')).toBe(8);
     expect(v.factors).toEqual([103]);
     state.factors=[];state.skills=[1011];

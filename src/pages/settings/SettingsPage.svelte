@@ -5,6 +5,7 @@
   import { loadCharacterImageCatalog } from '@/lib/catalog/character-catalog';
   import { authRepository } from '@/services/auth/auth-repository';
   import { authReady, authUser } from '@/services/auth/auth-state';
+  import { setAccountWorkspaces } from '@/lib/workspaces/workspace-state';
   import type { ApiKey, AuthIdentity, LinkedAccount } from '@/services/auth/auth-types';
   import { router } from '@/routes/router';
   import Banner from '@/components/Banner.svelte';
@@ -43,7 +44,13 @@
 
   async function loadAccounts(): Promise<void> {
     const request = ++accountsRequest; loading.accounts = true; loadErrors.accounts = '';
-    try { const result = await authRepository.linkedAccounts(); if (request === accountsRequest) accounts = result; }
+    try {
+      const result = await authRepository.linkedAccounts();
+      if (request === accountsRequest) {
+        accounts = result;
+        setAccountWorkspaces(result.filter(account => account.verification_status === 'verified').map(account => ({ accountId: account.account_id, label: account.trainer_name || account.account_id })));
+      }
+    }
     catch (reason) { if (request === accountsRequest) loadErrors.accounts = message(reason); }
     finally { if (request === accountsRequest) loading.accounts = false; }
   }

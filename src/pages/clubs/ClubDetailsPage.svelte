@@ -58,6 +58,7 @@
   const primary = $derived(clubMetric(config));
   const extraMetrics = $derived(clubMetrics.filter((metric) => config[metric.flag] && metric.value !== primary.value));
   const clubChart = $derived(clubProgressionOption(history, $theme));
+  const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 });
   function number(value: number): string { return Math.round(value).toLocaleString(); }
   function signed(value: number): string { return `${value > 0 ? '+' : ''}${number(value)}`; }
   function joinLabel(value: number): string { return value === 1 ? 'Open' : value === 2 ? 'Approval' : 'Closed'; }
@@ -123,21 +124,21 @@
             <div class="info-body">
             <div class="club-overview">
             <dl class="club-fans">
-              <div class="info-row fan-metric"><dt class="label">Monthly Fans</dt><dd class="value">{number(monthlyFans)}</dd></div>
-              {#if dataStatus?.liveFresh}<div class="info-row fan-metric live-row"><dt class="label"><span class="live-dot"></span>Live Points</dt><dd class="value">{number(details.circle.live_points!)}</dd></div>{/if}
+              <div class="info-row fan-metric"><dt class="label">Monthly Fans</dt><dd class="value"><span>{compactNumber.format(monthlyFans)}</span>{#if Math.abs(monthlyFans) >= 1000}<small>{number(monthlyFans)}</small>{/if}</dd></div>
+              {#if dataStatus?.liveFresh}<div class="info-row fan-metric live-row"><dt class="label"><span class="live-dot"></span>Live Points</dt><dd class="value"><span>{compactNumber.format(details.circle.live_points!)}</span>{#if Math.abs(details.circle.live_points!) >= 1000}<small>{number(details.circle.live_points!)}</small>{/if}</dd></div>{/if}
             </dl>
             {#if details.clubRank}
               <div class="club-rank-row" class:max-rank={!details.fansToNextTier}>
                 {#if details.fansToLowerTier != null}<div class="tier-side lower">
                   {#if rankIcon(details.clubRank - 1)}<img class="tier-icon" src={rankIcon(details.clubRank - 1)} alt="Lower Tier"/>{/if}
-                  <div class="tier-info"><span class="tier-gap-label"><span class="tier-direction"><Icon name="arrow-right" size={16}/></span>Tier buffer</span><strong class="tier-gap-value safe">{number(details.fansToLowerTier)}</strong>
-                    {#if details.yesterdayFansToLowerTier != null}{@const delta = details.fansToLowerTier - details.yesterdayFansToLowerTier}<span class="tier-delta" class:positive={delta > 0} class:negative={delta < 0}>{signed(delta)}</span>{/if}
+                  <div class="tier-info"><span class="tier-gap-label"><span class="tier-direction"><Icon name="arrow-right" size={16}/></span>Tier buffer</span><strong class="tier-gap-value safe" title={number(details.fansToLowerTier)}>{compactNumber.format(details.fansToLowerTier)}</strong>
+                    {#if details.yesterdayFansToLowerTier != null}{@const delta = details.fansToLowerTier - details.yesterdayFansToLowerTier}<span class="tier-delta" title={signed(delta)} class:positive={delta > 0} class:negative={delta < 0}>{delta > 0 ? '+' : ''}{compactNumber.format(delta)}</span>{/if}
                   </div>
                 </div>{/if}
                 <div class="rank-center">{#if rankIcon(details.clubRank)}<img class="club-rank-icon" src={rankIcon(details.clubRank)} alt="Club Rank"/>{/if}{#if displayedRank !== undefined}<span class="rank-label">Rank #{number(displayedRank)}</span>{/if}</div>
                 {#if details.fansToNextTier}<div class="tier-side upper">
-                  <div class="tier-info"><span class="tier-gap-label"><span class="tier-direction"><Icon name="arrow-right" size={16}/></span>Next tier</span><strong class="tier-gap-value needed">{number(details.fansToNextTier)}</strong>
-                    {#if details.yesterdayFansToNextTier != null}{@const delta = details.fansToNextTier - details.yesterdayFansToNextTier}<span class="tier-delta" class:positive={delta < 0} class:negative={delta > 0}>{signed(delta)}</span>{/if}
+                  <div class="tier-info"><span class="tier-gap-label"><span class="tier-direction"><Icon name="arrow-right" size={16}/></span>Next tier</span><strong class="tier-gap-value needed" title={number(details.fansToNextTier)}>{compactNumber.format(details.fansToNextTier)}</strong>
+                    {#if details.yesterdayFansToNextTier != null}{@const delta = details.fansToNextTier - details.yesterdayFansToNextTier}<span class="tier-delta" title={signed(delta)} class:positive={delta < 0} class:negative={delta > 0}>{delta > 0 ? '+' : ''}{compactNumber.format(delta)}</span>{/if}
                   </div>
                   {#if rankIcon(details.clubRank + 1)}<img class="tier-icon" src={rankIcon(details.clubRank + 1)} alt="Next Tier"/>{/if}
                 </div>{/if}
@@ -214,12 +215,12 @@
   dl { margin:0; }dd { margin:0; font-variant-numeric:tabular-nums; }h2 { margin:0; font-size:14px; font-weight:600; }
   .club-fans { display:flex; align-items:stretch; gap:24px; min-width:0; }.fan-metric { display:flex; flex:1; flex-direction:column; gap:4px; min-width:0; }
   .label { color:var(--text-muted); font-size:11px; }.value { color:var(--text-primary); overflow-wrap:anywhere; }
-  .fan-metric .value { font-size:24px; font-weight:700; line-height:1.3; }.live-row .label { display:flex; align-items:center; gap:5px; }.live-row .value { color:var(--accent-secondary); }
+  .fan-metric .value { display:grid; gap:2px; font-size:24px; font-weight:700; line-height:1.3; font-variant-numeric:tabular-nums; white-space:nowrap; }.fan-metric .value small { color:var(--text-secondary); font-size:11px; font-weight:400; }.live-row .label { display:flex; align-items:center; gap:5px; }.live-row .value { color:var(--accent-secondary); }
   .club-rank-row { display:grid; grid-template-columns:84px minmax(0,1fr); align-items:center; gap:8px 14px; min-width:0; padding:12px 0; border-block:1px solid var(--border-subtle); }
   .rank-center { grid-column:1; grid-row:1/3; display:grid; justify-items:center; gap:3px; }.club-rank-icon { width:76px; height:76px; object-fit:contain; }.rank-label { color:var(--text-primary); font-size:15px; font-weight:700; overflow-wrap:anywhere; }
   .tier-side { display:flex; align-items:center; gap:8px; min-width:0; }.lower { grid-column:2; grid-row:2; }.upper { grid-column:2; grid-row:1; }.upper .tier-icon{order:-1}
   .tier-icon { width:24px; height:24px; object-fit:contain; opacity:.7; flex:none; }.tier-info { display:grid; flex:1; grid-template-columns:minmax(0,.85fr) minmax(0,1fr); align-items:center; gap:2px 6px; min-width:0; }.tier-gap-value,.tier-delta{justify-self:end;text-align:right}.tier-delta{grid-column:2}
-  .tier-gap-label { display:flex;align-items:center;gap:3px;color:var(--text-primary); font-size:14px; font-weight:600; }.tier-direction{display:flex;flex:none;transform:rotate(90deg);color:var(--text-muted)}.upper .tier-direction{transform:rotate(-90deg);color:var(--accent-secondary)}.tier-gap-value { font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; max-width:100%; }.tier-delta { font-size:10px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; max-width:100%; color:var(--text-muted); }
+  .tier-gap-label { display:flex;align-items:center;gap:3px;color:var(--text-primary); font-size:14px; font-weight:600; }.tier-direction{display:flex;flex:none;transform:rotate(90deg);color:var(--text-muted)}.upper .tier-direction{transform:rotate(-90deg);color:var(--accent-secondary)}.tier-gap-value { font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; max-width:100%; }.tier-delta { font-size:10px; font-variant-numeric:tabular-nums; white-space:nowrap; max-width:100%; color:var(--text-muted); }
   .safe,.positive { color:var(--accent-secondary); }.needed { color:var(--accent-warning); }.negative { color:var(--accent-error); }
   .club-details { display:grid; gap:12px; }
   .club-metadata { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }.club-metadata .info-row { display:grid; gap:4px; min-width:0; font-size:12px; }.club-metadata .value { min-width:0; }.info-card>header{justify-content:space-between;gap:8px}.updated-row{display:flex;align-items:baseline;justify-content:flex-end;gap:4px;white-space:nowrap}.updated-row .label,.updated-row .value { color:var(--text-muted);font-size:10px;line-height:1.2; }

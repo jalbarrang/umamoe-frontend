@@ -30,8 +30,9 @@ test('Club information retains live freshness, timestamp precedence, tier change
   await expect(info).toContainText('Live Points');
   await expect(info.locator('.live-row')).toContainText('1,100,000');
   await expect(info.locator('.updated-row')).toContainText('5m ago');
-  await expect(info.locator('.lower .tier-delta')).toHaveText('+100,000');
-  await expect(info.locator('.upper .tier-delta')).toHaveText('-50,000');
+  await expect(info.locator('.lower .tier-delta')).toHaveText('+100K');
+  await expect(info.locator('.lower .tier-delta')).toHaveAttribute('title', '+100,000');
+  await expect(info.locator('.upper .tier-delta')).toHaveText('-50K');
   await expect(info.locator('.tier-delta.positive')).toHaveCount(2);
   await expect(info.getByRole('link', { name: 'discord.gg/parity' })).toHaveAttribute('href', 'https://discord.gg/parity');
   await expect(info.locator('img[alt="Lower Tier"]')).toHaveAttribute('src', /circle_rank_04.webp$/);
