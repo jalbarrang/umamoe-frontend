@@ -8,6 +8,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": { "@/*": ["./src/*"] },
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
@@ -18,6 +19,6 @@
     "target": "ES2022",
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["web/**/*.ts", "web/**/*.svelte", "vite.config.ts", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist", "src"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist", ".tmp"]
 }

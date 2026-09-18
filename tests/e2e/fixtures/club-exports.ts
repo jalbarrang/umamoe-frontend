@@ -1,5 +1,5 @@
 import { clubDetailsFixture } from './club-details';
-import { defaultClubConfig } from '../../../web/domain/clubs/club-display';
+import { defaultClubConfig } from '../../../src/lib/clubs/club-display';
 
 export const clubExportCases = ['current', 'prior-excluded', 'legacy', 'embedded', 'incomplete'] as const;
 export type ClubExportCase = typeof clubExportCases[number];

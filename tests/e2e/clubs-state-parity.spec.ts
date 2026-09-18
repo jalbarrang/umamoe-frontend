@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockCommunity } from './fixtures/angular-api';
+import { mockCommunity } from './fixtures/api';
 
 const clubs = (prefix: string) => [1, 2, 3].map((join_style, index) => ({
   circle_id: index + 7, name: `${prefix} ${['Open', 'Approval', 'Closed'][index]}`,

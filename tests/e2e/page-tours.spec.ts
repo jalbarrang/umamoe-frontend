@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase, mockCharacterCatalog, mockCommunity, mockActivity, mockTimeline, mockStatistics } from './fixtures/angular-api';
-import { pageStepIds, tourSteps, type PageTourId } from '../../web/platform/tours/page-tours';
+import { mockDatabase, mockCharacterCatalog, mockCommunity, mockActivity, mockTimeline, mockStatistics } from './fixtures/api';
+import { pageStepIds, tourSteps, type PageTourId } from '../../src/components/tours/page-tours';
 
 const routes: Record<PageTourId, string> = { home:'/', database:'/database', clubs:'/circles', rankings:'/rankings', activity:'/activity/42', tierlist:'/tierlist', tools:'/tools', timeline:'/timeline', 'carat-planner':'/timeline?tab=carat-planner' };
 test.beforeEach(async ({ page }) => {

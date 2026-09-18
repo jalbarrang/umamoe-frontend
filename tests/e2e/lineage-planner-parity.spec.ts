@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockAffinity } from './fixtures/angular-api';
+import { mockAffinity } from './fixtures/api';
 
 const populatedTree = '/tools/lineage-planner?cards=100101,100201,100601,101301,100701,100801,100901,101001,101101,101401,101701,101801,102401,102701,103001';
 
@@ -128,7 +128,7 @@ test('Lineage character resource errors remain in the dialog and retry without l
   let fail = true;
   await page.route('**/resources/*/character.json*',route => fail ? route.fulfill({status:503,json:{error:'Unavailable'}}) : route.fallback());
   await page.goto('/tools/lineage-planner?cards=100101,0,0,0,0');
-  await page.getByRole('button',{name:'Change Target: Special Week',exact:true}).click();
+  await page.getByRole('button',{name:'Change Target: Character 100101',exact:true}).click();
   const dialog = page.getByRole('dialog',{name:'Select Character',exact:true});
   await expect(dialog.getByText('Character data unavailable',{exact:true})).toBeVisible();
   await expect(dialog.getByRole('link',{name:/Discord/})).toBeVisible();

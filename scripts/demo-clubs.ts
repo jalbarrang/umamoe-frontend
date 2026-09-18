@@ -1,4 +1,4 @@
-import { clubProgression, type ClubMemberSnapshot } from '../web/domain/clubs/member-metrics';
+import { clubProgression, type ClubMemberSnapshot } from '../src/lib/clubs/member-metrics';
 
 /** Deterministic sample observations, including joins, departures and quiet days. */
 export function demoClubDetails(id: number, year: number, month: number, now = new Date()) {

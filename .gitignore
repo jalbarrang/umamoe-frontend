@@ -10,7 +10,7 @@
 npm-debug.log
 yarn-error.log
 
-# ===== ANGULAR =====
+# ===== LOCAL BUILD / TEST ARTIFACTS =====
 /.angular/cache
 .sass-cache/
 /connect.lock
@@ -50,18 +50,14 @@ venv/
 .Trashes
 ehthumbs.db
 Thumbs.db
-statistics/
+/statistics/
 assets/
 src/assets/
 scripts/
 !scripts/
 scripts/*
-!scripts/precompute-tierlist.js
-!scripts/tierlist-calculation-engine.js
-!scripts/compress-images.js
 !scripts/sync-planner-item-icons.mjs
 !scripts/verify-google-analytics-build.js
-!scripts/generate-seo-pages.mjs
 !scripts/generate-favicon.mjs
 !scripts/generate-ai-metadata.mjs
 !scripts/check-performance-budgets.mjs
@@ -70,12 +66,6 @@ scripts/*
 !scripts/demo-data.ts
 !scripts/demo-clubs.ts
 !scripts/demo-clubs.test.ts
-!scripts/capture-angular-parity.mjs
-!scripts/verify-planner-ledger.mjs
-!scripts/verify-planner-rewards.mjs
-!scripts/verify-club-progression.mjs
-!web/domain/statistics/
-!web/domain/statistics/**
 
 .github/copilot-instructions.md
 !src/assets/
@@ -111,4 +101,6 @@ scripts/*
 
 # WebP conversion cache
 .webp-cache/
-/docs
+/Storage/
+/AlternativeServices/
+/*.log

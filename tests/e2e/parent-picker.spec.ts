@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockAffinity, mockDatabase, mockVeteranProfile, mockParentRowProfile, record } from './fixtures/angular-api';
+import { mockAffinity, mockDatabase, mockVeteranProfile, mockParentRowProfile, record } from './fixtures/api';
 
 test('Shared legacy context survives URLs and presets without silently persisting in preferences', async ({ page, isMobile }) => {
   if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
@@ -439,7 +439,7 @@ test('Manual parent race wins and best fits preserve unsaved edits when storage 
 
 
 test('selected legacy retains the original veteran summary without its stat strip', async ({ page }) => {
-  const { veteran } = await import('./fixtures/angular-api');
+  const { veteran } = await import('./fixtures/api');
   const dialog = await prepare(page, true, { t: [100102] }, async page => {
     await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({json:{veterans:[{...veteran,name:'test'}]}}));
   });
@@ -520,7 +520,7 @@ test('selected legacy retains the original veteran summary without its stat stri
 });
 
 test('combined legacy uses the full width for fifty sparks without overflow', async ({ page }) => {
-  const { veteran } = await import('./fixtures/angular-api');
+  const { veteran } = await import('./fixtures/api');
   const dialog = await prepare(page, true, {t:[100102]}, async page => {
     await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({json:{veterans:[{
       ...veteran, factors:Array.from({length:50},(_,index)=>2000101+index*100), inheritance:null

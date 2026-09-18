@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from './fixtures/test';
-import { mockCommunity } from './fixtures/angular-api';
+import { mockCommunity } from './fixtures/api';
 import { clubExportCases, clubExportFixture } from './fixtures/club-exports';
 import { clubWorkbookSnapshot } from './fixtures/club-export-workbook';
 import reference from './fixtures/club-exports-reference.json' with { type: 'json' };

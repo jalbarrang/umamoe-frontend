@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures/test';
 
-import { mockCommunity } from './fixtures/angular-api';
+import { mockCommunity } from './fixtures/api';
 
 async function chooseSelect(page: Page, id: string, option: string): Promise<void> {
   await page.locator(id).click();

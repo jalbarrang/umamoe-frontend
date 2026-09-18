@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase, mockCharacterCatalog } from './fixtures/angular-api';
+import { mockDatabase, mockCharacterCatalog } from './fixtures/api';
 
 test.beforeEach(async ({ page, isMobile }) => {
   await mockDatabase(page);

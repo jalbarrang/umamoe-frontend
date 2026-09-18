@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { accountId, profile, mockOwnerProfile } from './fixtures/angular-api';
+import { accountId, profile, mockOwnerProfile } from './fixtures/api';
 
 test('Fan activity loads each year at daily resolution with its selector in the header and working zoom', async ({ page, isMobile }) => {
   await mockOwnerProfile(page, []);

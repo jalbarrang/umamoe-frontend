@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockAffinity, mockTimeline } from './fixtures/angular-api';
+import { mockAffinity, mockTimeline } from './fixtures/api';
 
 test('Lineage presents readable slots, explicit selection actions and expandable ancestors',async({page,isMobile},testInfo)=>{
   await mockAffinity(page);

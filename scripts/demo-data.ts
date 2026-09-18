@@ -1,8 +1,8 @@
 import type { Page, Route } from '@playwright/test';
 import type { Plugin } from 'vite';
 import { demoClubDetails } from './demo-clubs';
-import { clubProgression, type ClubMemberSnapshot } from '../web/domain/clubs/member-metrics';
-import { homeStats, profile, record, veteran, fullTeamStadium, mockActivity, mockAffinity, mockCommunity, mockDatabase, mockStatistics, mockTimeline, mockVeteranProfile } from '../tests/e2e/fixtures/angular-api';
+import { clubProgression, type ClubMemberSnapshot } from '../src/lib/clubs/member-metrics';
+import { homeStats, profile, record, veteran, fullTeamStadium, mockResources, mockActivity, mockAffinity, mockCommunity, mockDatabase, mockStatistics, mockTimeline, mockVeteranProfile } from '../tests/e2e/fixtures/api';
 
 // ponytail: reuse parity fixtures for local previews; add a stateful demo backend when demo writes are needed.
 export async function demoData(): Promise<Plugin> {
@@ -14,6 +14,7 @@ export async function demoData(): Promise<Plugin> {
       return Promise.resolve();
     }
   } as unknown as Page;
+  await mockResources(page);
   await mockDatabase(page);
   await page.route('**/search/query?*', route => route.fulfill({json:{items:Array.from({length:25}, (_, index) => {
     const item = record(String(123456789012 + index));

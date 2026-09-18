@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase, record } from './fixtures/angular-api';
+import { mockDatabase, record } from './fixtures/api';
 
 test('Notifications dismiss independently after five seconds and support manual dismissal', async ({ page }) => {
   await mockDatabase(page);

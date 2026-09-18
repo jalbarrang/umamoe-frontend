@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockAffinity } from './fixtures/angular-api';
+import { mockAffinity } from './fixtures/api';
 
 const savesKey = 'lineage-planner-saves-v1';
 const stateKey = 'lineage-planner-state-v1';

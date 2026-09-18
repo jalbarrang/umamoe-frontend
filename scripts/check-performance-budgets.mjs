@@ -29,7 +29,7 @@ for (const [kind, bytes] of Object.entries(totals)) {
   console.log(`Base shell ${kind.toUpperCase()} compressed: ${(bytes / 1024).toFixed(1)} KiB / ${(limits[kind] / 1024).toFixed(0)} KiB`);
 }
 
-const labEntries = Object.values(manifest).filter((entry) => entry.src?.includes('web/features/ui-lab/') && entry.isDynamicEntry);
+const labEntries = Object.values(manifest).filter((entry) => entry.src?.includes('src/pages/ui/') && entry.isDynamicEntry);
 if (labEntries.length) console.log(`Lazy UI Lab chunks: ${labEntries.map((entry) => entry.file).join(', ')} (loaded only when opened)`);
 
 if (failures.length) {

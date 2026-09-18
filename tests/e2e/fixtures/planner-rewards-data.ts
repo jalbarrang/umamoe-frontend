@@ -1,5 +1,5 @@
-import type { CaratPlan, PlannerRewardResource } from '../../../web/domain/timeline/carat-planner';
-import type { TimelineRecord } from '../../../web/features/timeline/timeline-repository';
+import type { CaratPlan, PlannerRewardResource } from '../../../src/lib/timeline/carat-planner';
+import type { TimelineRecord } from '../../../src/pages/timeline/timeline-repository';
 
 export const rewardEvents = [
   ['first', 'character_banner', 'First banner', '2026-09-01', '2026-09-09'],

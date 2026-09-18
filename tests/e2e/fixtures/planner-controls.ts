@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
-import type { CaratPlan, PlannerTarget } from '../../../web/domain/timeline/carat-planner';
-import { mockTimeline } from './angular-api.ts';
+import type { CaratPlan, PlannerTarget } from '../../../src/lib/timeline/carat-planner';
+import { mockTimeline } from './api.ts';
 
 const target = (id: string, title: string, start: string, end: string, extra: Partial<PlannerTarget> = {}): PlannerTarget => ({
   id, eventId: id, title, bannerKind: 'character', bannerStart: start, bannerEnd: end, plannedPulls: 10, desiredCopies: 1, pullTiming: 'end', useTickets: true, allowPaidJewels: false, ...extra

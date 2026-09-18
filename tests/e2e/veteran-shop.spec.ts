@@ -1,5 +1,5 @@
 import {expect,test,setSliderValue} from './fixtures/test';
-import {mockVeteranProfile,mockCharacterCatalog,veteran} from './fixtures/angular-api';
+import {mockVeteranProfile,mockCharacterCatalog,veteran} from './fixtures/api';
 
 test('shop sidebar and mobile sheet filter the same collection',async({page},testInfo)=>{
   const mobile=page.viewportSize()!.width < 1024;

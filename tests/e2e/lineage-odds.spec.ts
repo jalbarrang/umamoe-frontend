@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockAffinity } from './fixtures/angular-api';
+import { mockAffinity } from './fixtures/api';
 
 test('Lineage odds retain Angular source ordering, combined rolls and separate skill-creation chances', async ({page,isMobile}) => {
   await mockAffinity(page);

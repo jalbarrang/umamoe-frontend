@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase } from './fixtures/angular-api';
+import { mockDatabase } from './fixtures/api';
 
 test('landing and data pages preserve content widths, gutters and ad rails at every approved width', async ({ page }) => {
   test.setTimeout(90_000);

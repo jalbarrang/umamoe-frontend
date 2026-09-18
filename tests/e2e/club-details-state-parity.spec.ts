@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockCommunity } from './fixtures/angular-api';
+import { mockCommunity } from './fixtures/api';
 import { clubDetailsFixture } from './fixtures/club-details';
 
 test('Club information retains live freshness, timestamp precedence, tier changes and comment links', async ({ page }, testInfo) => {

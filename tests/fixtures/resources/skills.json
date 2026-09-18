@@ -1,0 +1,439 @@
+[
+  {
+    "skill_id": 200011,
+    "name": "Right-Handed ◎",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10011.png",
+    "base_cost": 110,
+    "effect": "Speed Stat Up (60)",
+    "description": "Increase performance on right-handed tracks.EN description: Your Speed stat is increased by 60 on clockwise tracksID: 200011Rarity: NormalOther versions:Right-Handed ○Right-Handed ×Clockwise DemonActivation: GuaranteedBase cost: 110Conditions:rotation==1Show conditions in the viewerBase duration: InfiniteEffect: Speed Stat Up (60)",
+    "conditions": "rotation==1",
+    "other_versions": [
+      "Right-Handed ○Right-Handed ×Clockwise Demon"
+    ]
+  },
+  {
+    "skill_id": 200012,
+    "name": "Right-Handed ○",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10011.png",
+    "base_cost": 90,
+    "effect": "Speed Stat Up (40)",
+    "description": "Moderately increase performance on right-handed tracks.EN description: Your Speed stat is increased by 40 on clockwise tracksID: 200012Supports (hint):Supports (event):Rarity: NormalOther versions:Right-Handed ◎Right-Handed ×Clockwise DemonActivation: GuaranteedBase cost: 90Conditions:rotation==1Show conditions in the viewerBase duration: InfiniteEffect: Speed Stat Up (40)",
+    "conditions": "rotation==1",
+    "other_versions": [
+      "Right-Handed ◎Right-Handed ×Clockwise Demon"
+    ]
+  },
+  {
+    "skill_id": 200022,
+    "name": "Left-Handed ○",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10011.png",
+    "base_cost": 90,
+    "effect": "Speed Stat Up (40)",
+    "description": "Moderately increase performance on left-handed tracks.EN description: Your Speed stat is increased by 40 on counterclockwise tracksID: 200022Characters:Characters (event):Supports (event):Rarity: NormalOther versions:Left-Handed ◎Left-Handed ×Counterclockwise DemonActivation: GuaranteedBase cost: 90Conditions:rotation==2Show conditions in the viewerBase duration: InfiniteEffect: Speed Stat Up (40)",
+    "conditions": "rotation==2",
+    "other_versions": [
+      "Left-Handed ◎Left-Handed ×Counterclockwise Demon"
+    ]
+  },
+  {
+    "skill_id": 201632,
+    "name": "Connection",
+    "rarity": 2,
+    "icon": "utx_ico_skill_10012.png",
+    "base_cost": 150,
+    "description": "Turf・If there's at least one girl with the Sympathy skill in the race, your Speed stat is increased by 60, and the Sympathy skills of everyone in the race activateEN description: Turf・If there's at least one girl with the Sympathy skill in the race, your Speed stat is increased by 60, and the Sympathy skills of everyone in the race activateID: 201632Rarity: RareOther versions:SympathyActivation: GuaranteedBase cost: 150Conditions:ground_type==1 &is_exist_skill_id==201631Show conditions in the viewerBase duration: InfiniteEffect 1: Speed Stat Up (60)Effect 2: Unknown Effect (0)Effect 2 target: Unknown",
+    "conditions": "ground_type==1 &is_exist_skill_id==201631",
+    "other_versions": [
+      "Sympathy"
+    ]
+  },
+  {
+    "skill_id": 200023,
+    "name": "Left-Handed ×",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10014.png",
+    "base_cost": 50,
+    "effect": "Speed Stat Down (-40)",
+    "description": "Moderately decrease performance on left-handed tracks.EN description: Your Speed stat is decreased by 40 on counterclockwise tracksID: 200023Rarity: NormalOther versions:Left-Handed ◎Left-Handed ○Counterclockwise DemonActivation: GuaranteedBase cost: 50Conditions:rotation==2Show conditions in the viewerBase duration: InfiniteEffect: Speed Stat Down (-40)",
+    "conditions": "rotation==2",
+    "other_versions": [
+      "Left-Handed ◎Left-Handed ○Counterclockwise Demon"
+    ]
+  },
+  {
+    "skill_id": 200132,
+    "name": "Standard Distance ○",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10021.png",
+    "base_cost": 90,
+    "effect": "Stamina Stat Up (40)",
+    "description": "Moderately increase performance over standard distances (multiples of 400m).EN description: Your Stamina stat is increased by 40 in Core Distance races (multiples of 400m)ID: 200132Characters:Supports (hint):Training events:Rarity: NormalOther versions:Standard Distance ◎Standard Distance ×Activation: GuaranteedBase cost: 90Conditions:is_basis_distance==1Show conditions in the viewerBase duration: InfiniteEffect: Stamina Stat Up (40)",
+    "conditions": "is_basis_distance==1",
+    "other_versions": [
+      "Standard Distance ◎Standard Distance ×"
+    ]
+  },
+  {
+    "skill_id": 202161,
+    "name": "Self-Control",
+    "rarity": 1,
+    "icon": "utx_ico_skill_10051.png",
+    "base_cost": 160,
+    "description": "Your Wisdom stat is increased by 60 and you're a little harder to panicEN description: Your Wisdom stat is increased by 60 and you're a little harder to panicID: 202161Rarity: NormalActivation: GuaranteedBase cost: 160Conditions:always==1Show conditions in the viewerBase duration: InfiniteEffect 1: Wisdom Stat Up (60)Effect 2: Decreased Rush Chance (-3)",
+    "conditions": "always==1"
+  },
+  {
+    "skill_id": 200352,
+    "name": "Corner Recovery ○",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20021.png",
+    "base_cost": 170,
+    "effect": "Stamina Recovery (0.015)",
+    "description": "Slightly recover endurance on a corner with efficient turning.EN description: At a random point on any corner, your stamina will slightly recoverID: 200352Characters:Characters (event):Supports (hint):Supports (event):Rarity: NormalOther versions:Swinging MaestroCorner Recovery ×Activation: Wisdom checkBase cost: 170Conditions:corner_random==1 @ corner_random==2 @ corner_random==3 @ corner_random==4Show conditions in the viewerBase duration: Instant effectEffect: Stamina Recovery (0.015)",
+    "conditions": "corner_random==1 @ corner_random==2 @ corner_random==3 @ corner_random==4",
+    "other_versions": [
+      "Swinging MaestroCorner Recovery ×"
+    ]
+  },
+  {
+    "skill_id": 201202,
+    "name": "Passing Pro",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20021.png",
+    "base_cost": 160,
+    "effect": "Stamina Recovery (0.015)",
+    "description": "Slightly decrease fatigue when determined to pass another runner. (Long)EN description: Long・Become slightly harder to tire when overtakingID: 201202Supports (hint):Training events:Rarity: NormalOther versions:VIP PassActivation: Wisdom checkBase cost: 160Conditions:distance_type==4 &is_overtake==1 &accumulatetime>=5Show conditions in the viewerBase duration: Instant effectEffect: Stamina Recovery (0.015)",
+    "conditions": "distance_type==4 &is_overtake==1 &accumulatetime>=5",
+    "other_versions": [
+      "VIP Pass"
+    ]
+  },
+  {
+    "skill_id": 203242,
+    "name": "Fuse",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20021.png",
+    "base_cost": 200,
+    "description": "During any Middle Leg straight, you will get a marginal speed boost and your stamina will slightly recoverEN description: During any Middle Leg straight, you will get a marginal speed boost and your stamina will slightly recoverID: 203242Rarity: NormalOther versions:Chain ReactionActivation: Wisdom checkBase cost: 200Conditions:phase==1 &corner==0Show conditions in the viewerBase duration: 2.4 sEffect 1: Stamina Recovery (0.015)Effect 2: Increase Current Speed (0.035)",
+    "conditions": "phase==1 &corner==0",
+    "other_versions": [
+      "Chain Reaction"
+    ]
+  },
+  {
+    "skill_id": 200351,
+    "name": "Swinging Maestro",
+    "rarity": 2,
+    "icon": "utx_ico_skill_20022.png",
+    "base_cost": 170,
+    "effect": "Stamina Recovery (0.055)",
+    "description": "Recover endurance on a corner with efficient turning.EN description: At a random point on any corner, your stamina will recoverID: 200351Characters:Supports (event):Rarity: RareOther versions:Corner Recovery ○Corner Recovery ×Activation: Wisdom checkBase cost: 170Conditions:corner_random==1 @ corner_random==2 @ corner_random==3 @ corner_random==4Show conditions in the viewerBase duration: Instant effectEffect: Stamina Recovery (0.055)",
+    "conditions": "corner_random==1 @ corner_random==2 @ corner_random==3 @ corner_random==4",
+    "other_versions": [
+      "Corner Recovery ○Corner Recovery ×"
+    ]
+  },
+  {
+    "skill_id": 201201,
+    "name": "VIP Pass",
+    "rarity": 2,
+    "icon": "utx_ico_skill_20022.png",
+    "base_cost": 160,
+    "effect": "Stamina Recovery (0.055)",
+    "description": "Long・Your stamina will recover when you're about to overtake someoneEN description: Long・Your stamina will recover when you're about to overtake someoneID: 201201Rarity: RareOther versions:Passing ProActivation: Wisdom checkBase cost: 160Conditions:distance_type==4 &is_overtake==1 &accumulatetime>=5Show conditions in the viewerBase duration: Instant effectEffect: Stamina Recovery (0.055)",
+    "conditions": "distance_type==4 &is_overtake==1 &accumulatetime>=5",
+    "other_versions": [
+      "Passing Pro"
+    ]
+  },
+  {
+    "skill_id": 200362,
+    "name": "Straightaway Adept",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20011.png",
+    "base_cost": 170,
+    "effect": "Increase Target Speed (0.15)",
+    "description": "Slightly increase velocity on a straight.EN description: At a random point on a random straight, your speed will slightly increaseID: 200362Characters:Characters (event):Supports (hint):Supports (event):Training events:Rarity: NormalOther versions:Beeline BurstActivation: Wisdom checkBase cost: 170Conditions:straight_random==1Show conditions in the viewerBase duration: 0.9 sBase cooldown: 30 sEffect: Increase Target Speed (0.15)",
+    "conditions": "straight_random==1",
+    "other_versions": [
+      "Beeline Burst"
+    ]
+  },
+  {
+    "skill_id": 203582,
+    "name": "Capture",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20011.png",
+    "base_cost": 190,
+    "effect": "Increase Target Speed (0.25)Trigger 2Conditions:running_style==4 &phase_random==1Show conditions in the viewerBase duration: 3 sEffect: Increase Target Speed (0.15)",
+    "description": "Chaser・At a random point during the Middle Leg, your speed will slightly increase; the effect is strongner if you're at least 20 meters away from the first placeEN description: Chaser・At a random point during the Middle Leg, your speed will slightly increase; the effect is strongner if you're at least 20 meters away from the first placeID: 203582Rarity: NormalActivation: Wisdom checkBase cost: 190Trigger 1Conditions:running_style==4 &phase_random==1 &distance_diff_top>=20Show conditions in the viewerBase duration: 3 sEffect: Increase Target Speed (0.25)Trigger 2Conditions:running_style==4 &phase_random==1Show conditions in the viewerBase duration: 3 sEffect: Increase Target Speed (0.15)",
+    "conditions": "running_style==4 &phase_random==1 &distance_diff_top>=20"
+  },
+  {
+    "skill_id": 110031,
+    "name": "Certain Victory",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.45)",
+    "description": "Increase velocity with an indomitable fighting spirit when on the heels of another runner toward the front on the final straight.EN description: If you're chasing after another girl in the front during the Final Corner or beyond, your speed on the Final Straight will increaseID: 110031Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedPreconditions:is_finalcorner==1 &is_overtake==1 &order<=5 &order_rate<=50 (CM <= 5 | LoH <= 6) &overtake_target_no_order_up_time>=2Conditions:is_last_straight==1Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.45)",
+    "conditions": "is_last_straight==1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100011,
+    "name": "Shooting Star",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)",
+    "description": "Ride the momentum and increase velocity after passing another runner toward the front late-race.EN description: During the Final Leg or beyond, if you've overtaken someone in the first half of the pack, your acceleration will slightly increase and you will get a speed boostID: 100011Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:phase>=2 &order>=2 &order_rate<=50 (CM <= 5 | LoH <= 6) &change_order_onetime<0Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.35)",
+    "conditions": "phase>=2 &order>=2 &order_rate<=50 (CM <= 5 | LoH <= 6) &change_order_onetime<0",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100021,
+    "name": "The View from the Lead Is Mine!",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)",
+    "description": "Increase velocity by drawing on all remaining strength when in the lead by a fair margin on the final straight.EN description: If you're in the first position during the second half of the race, your speed will increaseID: 100021Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:is_finalcorner==1 &corner==0 &order==1 &bashin_diff_behind>=1Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.35)",
+    "conditions": "is_finalcorner==1 &corner==0 &order==1 &bashin_diff_behind>=1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100301,
+    "name": "Blue Rose Closer",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)",
+    "description": "Increase velocity with strong willpower when breaking out of the pack on the final straight.EN description: If you've overtaken another girl in the front during the Final Leg or beyond, then on the Final Straight, your speed will increaseID: 100301Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:is_finalcorner==1 &corner==0 &order<=4 &change_order_onetime<0Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.35)",
+    "conditions": "is_finalcorner==1 &corner==0 &order<=4 &change_order_onetime<0",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100601,
+    "name": "Just a Little Farther!",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)",
+    "description": "Increase velocity with flaring fighting spirit when positioned 3rd and about to lose late-race.EN description: When you're in 3rd place at the end of the race and about to lose, your speed increasesID: 100601Characters:Rarity: Upgraded uniqueOther versions:When inheritedActivation: GuaranteedConditions:phase>=2 &order==3 &bashin_diff_behind<=1Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.35)",
+    "conditions": "phase>=2 &order==3 &bashin_diff_behind<=1",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100501,
+    "name": "Nemesis",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)",
+    "description": "Increase velocity with smoldering ambition when moving up from a position toward the back of the pack on the final corner.EN description: If you're overtaking someone on the Final Corner or beyond from the middle of the pack, your speed will increaseID: 100501Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:is_finalcorner==1 &order_rate>=40 (CM >= 4 | LoH >= 5) &order_rate<=75 (CM <= 7 | LoH <= 9) &is_overtake==1Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.35)",
+    "conditions": "is_finalcorner==1 &order_rate>=40 (CM >= 4 | LoH >= 5) &order_rate<=75 (CM <= 7 | LoH <= 9) &is_overtake==1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100401,
+    "name": "KEEP IT REAL.",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.25)",
+    "description": "Moderately increase acceleration steadily with a captivating performance when starting to make a move from midpack in the second half of the race.EN description: In the second half of the race, if you're about to overtake someone from the middle of the pack, your speed will slightly increaseID: 100401Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:distance_rate>=50 &order_rate>=40 (CM >= 4 | LoH >= 5) &order_rate<=80 (CM <= 7 | LoH <= 10) &is_overtake==1Show conditions in the viewerBase duration: 6 sEffect: Increase Target Speed (0.25)",
+    "conditions": "distance_rate>=50 &order_rate>=40 (CM >= 4 | LoH >= 5) &order_rate<=80 (CM <= 7 | LoH <= 10) &is_overtake==1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 101001,
+    "name": "Never Say Never",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.25)",
+    "description": "With 300 meters remaining in the race, if you're in a good position, your speed will increase; if it's a dirt race and you're close to the lead, you will also immediately accelerateEN description: With 300 meters remaining in the race, if you're in a good position, your speed will increase; if it's a dirt race and you're close to the lead, you will also immediately accelerateID: 101001Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Conditions:remain_distance>=299 &remain_distance<=301 &order_rate>=20 (CM >= 2 | LoH >= 2) &order_rate<=40 (CM <= 4 | LoH <= 5) &distance_diff_top<=5 &ground_type==2Show conditions in the viewerBase duration: 5 sEffect 1: Increase Target Speed (0.25)Effect 2: Increase Current Speed (0.25)Trigger 2Conditions:remain_distance>=299 &remain_distance<=301 &order_rate>=20 (CM >= 2 | LoH >= 2) &order_rate<=40 (CM <= 4 | LoH <= 5)Show conditions in the viewerBase duration: 5 sEffect: Increase Target Speed (0.25)",
+    "conditions": "remain_distance>=299 &remain_distance<=301 &order_rate>=20 (CM >= 2 | LoH >= 2) &order_rate<=40 (CM <= 4 | LoH <= 5) &distance_diff_top<=5 &ground_type==2",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100801,
+    "name": "Info: Acquired",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Current Speed (0.25)",
+    "description": "If you stayed in the top 20% for the entire first half of the race, and one of your opponents uses an acceleration skill, your speed will slightly increase; in dirt races on big racetracks (non-NAR), you will also get a speed boostEN description: If you stayed in the top 20% for the entire first half of the race, and one of your opponents uses an acceleration skill, your speed will slightly increase; in dirt races on big racetracks (non-NAR), you will also get a speed boostID: 100801Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Preconditions:distance_rate>=50 &order_rate_in20_continue==1 (CM <= 2 | LoH <= 2) &track_id>=10001 &track_id<=10010 &ground_type==2Conditions:is_other_character_activate_advantage_skill==31Show conditions in the viewerBase duration: 5 sEffect 1: Increase Current Speed (0.25)Effect 2: Increase Target Speed (0.15)Trigger 2Preconditions:distance_rate>=50 &order_rate_in20_continue==1 (CM <= 2 | LoH <= 2)Conditions:is_other_character_activate_advantage_skill==31Show conditions in the viewerBase duration: 5 sEffect: Increase Current Speed (0.25)",
+    "conditions": "is_other_character_activate_advantage_skill==31",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 101201,
+    "name": "Path of Singular Focus",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.65)Trigger 2Conditions:furlong==3 &order_rate<=50 (CM <= 5 | LoH <= 6)Show conditions in the viewerBase duration: 4 sEffect: Increase Target Speed (0.35)",
+    "description": "If you're in the first half of the pack during at the fourth furlong, your speed will increase; it will increase tremendously if you've also activated the 無二 and 無三 skillsEN description: If you're in the first half of the pack during at the fourth furlong, your speed will increase; it will increase tremendously if you've also activated the 無二 and 無三 skillsID: 101201Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Conditions:furlong==3 &order_rate<=50 (CM <= 5 | LoH <= 6) &is_used_skill_id==203061 &is_used_skill_id==203071Show conditions in the viewerBase duration: 4 sEffect: Increase Target Speed (0.65)Trigger 2Conditions:furlong==3 &order_rate<=50 (CM <= 5 | LoH <= 6)Show conditions in the viewerBase duration: 4 sEffect: Increase Target Speed (0.35)",
+    "conditions": "furlong==3 &order_rate<=50 (CM <= 5 | LoH <= 6) &is_used_skill_id==203061 &is_used_skill_id==203071",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 101101,
+    "name": "Guiding Sea",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "description": "If you're in the middle of the pack with 800 m remaining, you will get a slight speed boost and your acceleration will slightly increase; bonus acceleration if you're in a Core race (length divisible by 400) and you're slightly more in the back of the packEN description: If you're in the middle of the pack with 800 m remaining, you will get a slight speed boost and your acceleration will slightly increase; bonus acceleration if you're in a Core race (length divisible by 400) and you're slightly more in the back of the packID: 101101Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Conditions:remain_distance>=799 &remain_distance<=801 &is_basis_distance==1 &order_rate>=70 (CM >= 6 | LoH >= 8) &order_rate<=80 (CM <= 7 | LoH <= 10)Show conditions in the viewerBase duration: 4 sEffect 1: Increase Current Speed (0.25)Effect 2: Increase Acceleration (0.1)Effect 3: Increase Acceleration (0.2)Trigger 2Conditions:remain_distance>=799 &remain_distance<=801 &order_rate>=50 (CM >= 5 | LoH >= 6) &order_rate<=80 (CM <= 7 | LoH <= 10)Show conditions in the viewerBase duration: 4 sEffect 1: Increase Current Speed (0.25)Effect 2: Increase Acceleration (0.1)",
+    "conditions": "remain_distance>=799 &remain_distance<=801 &is_basis_distance==1 &order_rate>=70 (CM >= 6 | LoH >= 8) &order_rate<=80 (CM <= 7 | LoH <= 10)",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100901,
+    "name": "Queen's Rebirth",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20013.png",
+    "effect": "Increase Target Speed (0.35)Trigger 2Conditions:is_activate_other_skill_detail==1 &phase>=2 &is_last_straight==1 &overtake_target_time>=1 &distance_type==2 @ is_activate_other_skill_detail==1 &phase>=2 &is_last_straight==1 &overtake_target_time>=1 &distance_type==3Show conditions in the viewerBase duration: 4 sEffect: Increase Current Speed (0.25)",
+    "description": "Turf・If you're in the first half of the pack on any corner during the first half of the race, your speed will increase; (Mile/Medium only) then, if someone is trying to overtake you during the Last Straight, you will get a speed boostEN description: Turf・If you're in the first half of the pack on any corner during the first half of the race, your speed will increase; (Mile/Medium only) then, if someone is trying to overtake you during the Last Straight, you will get a speed boostID: 100901Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Conditions:distance_rate<=50 &corner!=0 &order_rate<=50 (CM <= 5 | LoH <= 6) &ground_type==1Show conditions in the viewerBase duration: 3 sEffect: Increase Target Speed (0.35)Trigger 2Conditions:is_activate_other_skill_detail==1 &phase>=2 &is_last_straight==1 &overtake_target_time>=1 &distance_type==2 @ is_activate_other_skill_detail==1 &phase>=2 &is_last_straight==1 &overtake_target_time>=1 &distance_type==3Show conditions in the viewerBase duration: 4 sEffect: Increase Current Speed (0.25)",
+    "conditions": "distance_rate<=50 &corner!=0 &order_rate<=50 (CM <= 5 | LoH <= 6) &ground_type==1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 101302211,
+    "name": "End of Sky",
+    "rarity": 4,
+    "icon": "utx_ico_skill_20016.png",
+    "effect": "Increase Target Speed (0.45)",
+    "description": "At a random point on a random straight, your speed will greatly increaseEN description: At a random point on a random straight, your speed will greatly increaseID: 101302211Rarity: EvolvedEvolved from: Beeline BurstActivation: Wisdom checkConditions:straight_random==1Show conditions in the viewerBase duration: 3 sBase cooldown: 30 sEffect: Increase Target Speed (0.45)",
+    "conditions": "straight_random==1"
+  },
+  {
+    "skill_id": 201601,
+    "name": "Groundwork",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20041.png",
+    "base_cost": 100,
+    "effect": "Increase Acceleration (0.2)",
+    "description": "Slightly increase acceleration after activating many skills early-race.EN description: Slightly increase acceleration when many skills are activated during the Opening LegID: 201601Supports (hint):Rarity: NormalOther versions:Unshakable StanceActivation: Wisdom checkBase cost: 100Conditions:activate_count_start>=3Show conditions in the viewerBase duration: 3 sEffect: Increase Acceleration (0.2)",
+    "conditions": "activate_count_start>=3",
+    "other_versions": [
+      "Unshakable Stance"
+    ]
+  },
+  {
+    "skill_id": 202711,
+    "name": "Check",
+    "rarity": 2,
+    "icon": "utx_ico_skill_20042.png",
+    "base_cost": 180,
+    "effect": "Increase Acceleration (0.4)",
+    "description": "Leader/Betweener・If you're on the final corner in the Final Leg, you're not in the back of the pack, and there's at least 600 m remaining in the race, your acceleration will greatly increaseEN description: Leader/Betweener・If you're on the final corner in the Final Leg, you're not in the back of the pack, and there's at least 600 m remaining in the race, your acceleration will greatly increaseID: 202711Rarity: RareOther versions:Satisfying PaceActivation: Wisdom checkBase cost: 180Conditions:running_style==2 &phase>=2 &is_finalcorner==1 &corner!=0 &remain_distance>=600 &order_rate<=70 (CM <= 6 | LoH <= 8) @ running_style==3 &phase>=2 &is_finalcorner==1 &corner!=0 &remain_distance>=600 &order_rate<=70 (CM <= 6 | LoH <= 8)Show conditions in the viewerBase duration: 0.9 sEffect: Increase Acceleration (0.4)",
+    "conditions": "running_style==2 &phase>=2 &is_finalcorner==1 &corner!=0 &remain_distance>=600 &order_rate<=70 (CM <= 6 | LoH <= 8) @ running_style==3 &phase>=2 &is_finalcorner==1 &corner!=0 &remain_distance>=600 &order_rate<=70 (CM <= 6 | LoH <= 8)",
+    "other_versions": [
+      "Satisfying Pace"
+    ]
+  },
+  {
+    "skill_id": 100101,
+    "name": "Shooting for Victory!",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20043.png",
+    "effect": "Increase Acceleration (0.4)",
+    "description": "Increase acceleration with a pow, a wow, and a bang when well-positioned on the final corner.EN description: If you're in the middle of the pack during the second half of the final corner, your acceleration will increaseID: 100101Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:is_finalcorner==1 &corner!=0 &order>=3 &order_rate<=50 (CM <= 5 | LoH <= 6)Show conditions in the viewerBase duration: 4 sEffect: Increase Acceleration (0.4)",
+    "conditions": "is_finalcorner==1 &corner!=0 &order>=3 &order_rate<=50 (CM <= 5 | LoH <= 6)",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100201,
+    "name": "Angling and Scheming",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20043.png",
+    "effect": "Increase Acceleration (0.4)",
+    "description": "Increase acceleration at an opportune moment when in the lead on a corner late-race.EN description: If you're in the first position on any corner in the Final Leg or beyond, your acceleration will increaseID: 100201Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedConditions:phase>=2 &corner!=0 &order==1Show conditions in the viewerBase duration: 4 sEffect: Increase Acceleration (0.4)",
+    "conditions": "phase>=2 &corner!=0 &order==1",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 100701,
+    "name": "Seirios",
+    "rarity": 3,
+    "icon": "utx_ico_skill_20043.png",
+    "effect": "Increase Acceleration (0.5)Trigger 2Conditions:remain_distance>=799 &remain_distance<=801 &order_rate>=30 (CM >= 3 | LoH >= 4) &order_rate<=60 (CM <= 5 | LoH <= 7)Show conditions in the viewerBase duration: 4 sEffect: Increase Acceleration (0.2)",
+    "description": "With 800 meters remaining in the race, if you're in the middle of the pack, your acceleration will slightly increase; it will increase greatly if the race is 2400 m long and you're top 3 in popularityEN description: With 800 meters remaining in the race, if you're in the middle of the pack, your acceleration will slightly increase; it will increase greatly if the race is 2400 m long and you're top 3 in popularityID: 100701Characters:Rarity: Unique (⭐⭐⭐)Other versions:When inheritedActivation: GuaranteedTrigger 1Conditions:remain_distance>=799 &remain_distance<=801 &order_rate>=30 (CM >= 3 | LoH >= 4) &order_rate<=60 (CM <= 5 | LoH <= 7) &course_distance==2400 &popularity<=3Show conditions in the viewerBase duration: 4 sEffect: Increase Acceleration (0.5)Trigger 2Conditions:remain_distance>=799 &remain_distance<=801 &order_rate>=30 (CM >= 3 | LoH >= 4) &order_rate<=60 (CM <= 5 | LoH <= 7)Show conditions in the viewerBase duration: 4 sEffect: Increase Acceleration (0.2)",
+    "conditions": "remain_distance>=799 &remain_distance<=801 &order_rate>=30 (CM >= 3 | LoH >= 4) &order_rate<=60 (CM <= 5 | LoH <= 7) &course_distance==2400 &popularity<=3",
+    "unique": "true",
+    "other_versions": [
+      "When inherited"
+    ]
+  },
+  {
+    "skill_id": 200432,
+    "name": "Focus",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20061.png",
+    "base_cost": 140,
+    "effect": "Improve Start Reaction Time (0.9)",
+    "description": "Slightly decrease time lost to slow starts.EN description: Your Start Reaction Time is slightly improvedID: 200432Characters:Supports (hint):Supports (event):Training events:Rarity: NormalOther versions:ConcentrationGatekeptActivation: Wisdom checkBase cost: 140Conditions:always==1Show conditions in the viewerBase duration: Instant effectEffect: Improve Start Reaction Time (0.9)",
+    "conditions": "always==1",
+    "other_versions": [
+      "ConcentrationGatekept"
+    ]
+  },
+  {
+    "skill_id": 210052,
+    "name": "Ignited Spirit WIT",
+    "rarity": 1,
+    "icon": "utx_ico_skill_20131.png",
+    "base_cost": 200,
+    "description": "Burn bright with team spirit, slightly increasing strategic navigation in proportion to the total Wit of racing team members early-race.EN description: During the Opening Leg, the higher the total wisdom of your team, the better your positioning becomesID: 210052Rarity: NormalOther versions:Burning Spirit WITActivation: Wisdom checkBase cost: 200Conditions:phase_random==0Show conditions in the viewerBase duration: 4 sEffect 1: Increase Lane Movement Speed (Special scaling)Effect 2: Increase Field of View (Special scaling)",
+    "conditions": "phase_random==0",
+    "other_versions": [
+      "Burning Spirit WIT"
+    ]
+  },
+  {
+    "skill_id": 1000012,
+    "name": "Carnival Bonus (obsolete)",
+    "rarity": 1,
+    "icon": "utx_ico_skill_1010011.png",
+    "description": "Your stats will be raised by x％ and there is a y％ chance for your motivation to be raised to Perfect during carnival races. This skill will disappear at the end of the event.EN description: Your stats will be raised by x％ and there is a y％ chance for your motivation to be raised to Perfect during carnival races. This skill will disappear at the end of the event.ID: 1000012Rarity: NormalOther versions:Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival BonusActivation: GuaranteedConditions:Show conditions in the viewerBase duration: InfiniteEffect 1: All Stats Increased During Carnival (1)Effect 2: Mood Maxed During Carnival (1)",
+    "conditions": "Show conditions in the viewerBase duration: InfiniteEffect 1: All Stats Increased During Carnival (1)Effect 2: Mood Maxed During Carnival (1)",
+    "other_versions": [
+      "Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus (obsolete)Carnival Bonus"
+    ]
+  }
+]

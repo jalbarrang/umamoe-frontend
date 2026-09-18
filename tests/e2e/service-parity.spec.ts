@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase } from './fixtures/angular-api';
+import { mockDatabase } from './fixtures/api';
 
 test('rate limits reach the shared UI and can be dismissed before retrying', async ({ page }) => {
   await mockDatabase(page);
@@ -30,13 +30,30 @@ test('status details, build notification, and changelog work on desktop and mobi
   await details.getByRole('button', { name: 'Close Service status' }).click();
   await page.getByRole('button', { name: 'What’s new', exact: true }).click();
   const updates = page.getByRole('dialog', { name: 'What’s new', exact: true });
-  await expect(updates).toContainText('Carat Planner Accuracy and Sync');
+  await expect(updates.getByRole('heading', { name: 'uma.moe 2.0', exact: true })).toBeVisible();
+  await expect(updates).toContainText('Rebuilt in Svelte');
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
+    await updates.screenshot({ path: test.info().outputPath(`whats-new-${theme}.png`) });
+  }
+  await updates.getByRole('button', { name: 'Previous updates', exact: true }).click();
+  await expect(updates.getByRole('heading', { name: 'Previous updates', exact: true })).toBeVisible();
+  await updates.getByText('Carat Planner Accuracy and Sync', { exact: true }).click();
+  await expect(updates.getByRole('heading', { name: 'More Accurate Planning', exact: true })).toBeVisible();
+  const olderRelease = updates.locator('summary').filter({ hasText: 'August Update - Inheritance, Races & Planning' });
+  await olderRelease.focus();
+  await olderRelease.press('Enter');
+  await expect(updates.getByRole('heading', { name: 'Inheritance Results', exact: true })).toBeVisible();
+  await expect(updates.getByRole('heading', { name: 'More Accurate Planning', exact: true })).not.toBeVisible();
+  await expect(updates.locator('details[open]')).toHaveCount(1);
+  await updates.getByRole('button', { name: 'Latest release', exact: true }).click();
+  await expect(updates.getByRole('heading', { name: 'uma.moe 2.0', exact: true })).toBeVisible();
   await updates.getByRole('button', { name: 'Got it', exact: true }).click();
   await expect(page.getByText('Carat Planner Accuracy and Sync', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'What’s new', exact: true }).click();
   await expect(updates).toBeVisible();
   await updates.getByRole('button', { name: 'Got it', exact: true }).click();
-  expect(await page.evaluate(() => localStorage.getItem('lastSeenUpdateVersion'))).toBe('16');
+  expect(await page.evaluate(() => localStorage.getItem('lastSeenUpdateVersion'))).toBe('17');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
 
@@ -50,4 +67,19 @@ test('route changes refresh canonical, social, and structured metadata without p
   await page.goto('/settings');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   await expect(page.locator('#page-structured-data')).toHaveCount(0);
+});
+
+test('uma.moe 2.0 is announced once to returning visitors and stays available from the footer', async ({ page }) => {
+  await page.goto('/tools');
+  await page.evaluate(() => localStorage.setItem('lastSeenUpdateVersion', '16'));
+  await page.reload();
+  const updates = page.getByRole('dialog', { name: 'What’s new', exact: true });
+  await expect(updates.getByRole('heading', { name: 'uma.moe 2.0', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => localStorage.getItem('lastSeenUpdateVersion'))).toBe('17');
+  await page.reload();
+  await page.waitForTimeout(1800); // The automatic announcement checks after 1.5 seconds.
+  await expect(updates).not.toBeVisible();
+  await page.getByRole('button', { name: 'What’s new', exact: true }).click();
+  await expect(updates).toBeVisible();
 });

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockAffinity, mockDatabase, mockVeteranProfile, profile, veteran } from './fixtures/angular-api';
+import { mockAffinity, mockDatabase, mockVeteranProfile, profile, veteran } from './fixtures/api';
 
 const first = '123456789012', second = '222222222222';
 const imported = { ...veteran, id: 'imported', member_id: null, trained_chara_id: 90001, card_id: 100101, succession_chara_array: [] };

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockActivity, mockCommunity, mockDatabase, mockStatistics, mockTimeline } from './fixtures/angular-api';
+import { mockActivity, mockCommunity, mockDatabase, mockStatistics, mockTimeline } from './fixtures/api';
 
 test.beforeEach(async ({ page }) => {
   // Route checks must not race unavailable backend requests during navigation.

@@ -60,15 +60,12 @@ jobs:
             assets:
               - 'Dockerfile'
               - '.dockerignore'
-              - 'angular.json'
               - 'vite.config.ts'
-              - 'web/**'
+              - 'src/**'
               - 'public/**'
               - 'package.json'
               - 'package-lock.json'
               - 'scripts/**'
-              - 'src/assets/**'
-              - 'src/data/**'
 
       - name: Choose deployment plan
         id: plan
@@ -130,20 +127,20 @@ jobs:
           validate_turnstile_site_key "BETA" "$BETA_TURNSTILE_SITE_KEY"
           validate_google_analytics_measurement_id "BETA" "$GOOGLE_ANALYTICS_MEASUREMENT"
 
-          SITE_KEY="$BETA_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/environments/environment.beta.ts
-          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/environments/environment.beta.ts
+          SITE_KEY="$BETA_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/config/environment.beta.ts
+          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/config/environment.beta.ts
 
-          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/config/environment.beta.ts; then
             echo "::error title=Invalid BETA Turnstile site key injection::The beta environment file still contains a placeholder-like siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "siteKey: ['\"]['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "siteKey: ['\"]['\"]" src/config/environment.beta.ts; then
             echo "::error title=Missing BETA Turnstile site key injection::The beta environment file still contains an empty siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "measurementId: ['\"]['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "measurementId: ['\"]['\"]" src/config/environment.beta.ts; then
             echo "::error title=Missing BETA Google Analytics measurement ID injection::The beta environment file still contains an empty measurementId after injection."
             exit 1
           fi
@@ -424,10 +421,6 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
         run: |
           # Avoid --inplace: stale remote files may not be writable by the deploy user.
-          rsync -az --no-perms --no-owner --no-group \
-            -e "ssh -o LogLevel=ERROR -p $DEPLOY_PORT" \
-            "${{ runner.temp }}/asset-site/data/precomputed-tierlist.json" \
-            "$DEPLOY_USER@$DEPLOY_HOST:${{ env.BETA_REMOTE_ASSETS_DIR }}/data/"
           for relative_dir in \
             images \
             timeline-images; do
@@ -512,20 +505,20 @@ jobs:
           validate_turnstile_site_key "PROD" "$PROD_TURNSTILE_SITE_KEY"
           validate_google_analytics_measurement_id "PROD" "$GOOGLE_ANALYTICS_MEASUREMENT"
 
-          SITE_KEY="$PROD_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/environments/environment.prod.ts
-          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/environments/environment.prod.ts
+          SITE_KEY="$PROD_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/config/environment.prod.ts
+          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/config/environment.prod.ts
 
-          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/config/environment.prod.ts; then
             echo "::error title=Invalid PROD Turnstile site key injection::The production environment file still contains a placeholder-like siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "siteKey: ['\"]['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "siteKey: ['\"]['\"]" src/config/environment.prod.ts; then
             echo "::error title=Missing PROD Turnstile site key injection::The production environment file still contains an empty siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "measurementId: ['\"]['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "measurementId: ['\"]['\"]" src/config/environment.prod.ts; then
             echo "::error title=Missing PROD Google Analytics measurement ID injection::The production environment file still contains an empty measurementId after injection."
             exit 1
           fi
@@ -749,10 +742,6 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
         run: |
           # Avoid --inplace: stale remote files may not be writable by the deploy user.
-          rsync -az --no-perms --no-owner --no-group \
-            -e "ssh -o LogLevel=ERROR -p $DEPLOY_PORT" \
-            "${{ runner.temp }}/asset-site/data/precomputed-tierlist.json" \
-            "$DEPLOY_USER@$DEPLOY_HOST:${{ env.PROD_REMOTE_ASSETS_DIR }}/data/"
           for relative_dir in \
             images \
             timeline-images; do

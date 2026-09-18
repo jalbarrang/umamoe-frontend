@@ -1,5 +1,5 @@
 import { test, expect, type Page } from './fixtures/test';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 
 async function sectionLink(page: Page, name: string) {
   const mobile = await page.getByRole('button', { name:'Open navigation', exact:true }).isVisible();

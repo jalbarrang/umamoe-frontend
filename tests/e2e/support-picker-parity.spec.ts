@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockAdvertising, mockAffinity, mockDatabase, supportCards } from './fixtures/angular-api';
+import { mockResources, mockAdvertising, mockAffinity, mockDatabase, supportCards } from './fixtures/api';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,7 +19,7 @@ test('Live support cards preserve released choices, titles, search, sorting and 
   page.on('request',request => requests.push(request.url()));
   await page.goto('/database');
   await expect(page.getByRole('heading',{name:'Results',exact:true})).toBeVisible();
-  expect(requests.some(url => /\/resources\/.*support-cards-db\.json/.test(url))).toBe(false);
+  await expect.poll(() => requests.some(url => /\/resources\/.*support-cards-db\.json/.test(url))).toBe(true);
   const dialog=await openPicker(page);
   await expect(dialog.getByRole('radio')).toHaveCount(5);
   await expect(dialog.locator('.card-copy strong')).toHaveText(['[Fire at My Heels]','[Wave of Gratitude]','[Dreams Do Come True]','Daiwa Scarlet','Kitasan Black']);
@@ -59,6 +59,7 @@ test('Angular resource cache survives refresh failure and is replaced only by a 
   const profile=await mkdtemp(join(tmpdir(),'moe-cache-'));
   const context=await playwright[browserName].launchPersistentContext(profile,{baseURL,viewport,isMobile,hasTouch,userAgent});
   await mockAdvertising(context);
+  await mockResources(context);
   const page=await context.newPage(),errors:string[]=[];
   page.on('pageerror',error=>errors.push(error.message));
   try {

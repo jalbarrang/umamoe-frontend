@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockStatistics } from './fixtures/angular-api';
+import { mockStatistics } from './fixtures/api';
 
 test('distance overview shares, training means and deck slots follow the same quick filters', async ({ page }) => {
   await mockStatistics(page);

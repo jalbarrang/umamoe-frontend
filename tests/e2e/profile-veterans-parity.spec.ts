@@ -1,5 +1,5 @@
 import { expect, test, setSliderValue } from './fixtures/test';
-import { mockVeteranProfile as mockProfile, profile, veteran } from './fixtures/angular-api';
+import { mockVeteranProfile as mockProfile, profile, veteran } from './fixtures/api';
 
 test('standalone Veterans exposes search, removable spark chips and compact veteran details', async ({ page }, testInfo) => {
   await mockProfile(page);

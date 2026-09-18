@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures/test';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 
 test('Entering Timeline loads displayed artwork without importing the entire artwork catalog', async ({ page }) => {
   await mockTimeline(page);

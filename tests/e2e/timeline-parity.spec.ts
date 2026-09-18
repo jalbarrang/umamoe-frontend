@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures/test';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 import { detailRewards, detailTimeline, mockTimelineDetails } from './fixtures/timeline-details';
-import { createPlan } from '../../web/domain/timeline/carat-planner';
+import { createPlan } from '../../src/lib/timeline/carat-planner';
 
 test('Timeline retains exact event filters, date lanes, search navigation, and planner actions', async ({ page, isMobile }) => {
   await mockTimeline(page);

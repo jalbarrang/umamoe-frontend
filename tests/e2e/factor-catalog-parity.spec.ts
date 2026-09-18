@@ -1,6 +1,6 @@
 import { expect, test, replaceQuery } from './fixtures/test';
-import { mockAdvertising, mockAffinity, mockDatabase, mockVeteranProfile } from './fixtures/angular-api';
-import factors from '../../src/data/factors.json' with { type: 'json' };
+import { mockResources, mockAdvertising, mockAffinity, mockDatabase, mockVeteranProfile } from './fixtures/api';
+import factors from '../fixtures/resources/factors.json' with { type: 'json' };
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 const liveFactor = {id:'990002',text:'Live Recovery',type:3};
 const liveFactors = [...factors,liveFactor];
 
-test('failed factor loads keep usable fallback controls and readable error details in both themes, then recover', async ({page}) => {
+test('failed factor loads show retryable controls and readable error details in both themes, then recover', async ({page}) => {
   await mockDatabase(page); await mockAffinity(page);
   let failed=true;
   await page.route('**/resources/*/factors.json*',route=>route.fulfill(failed?{status:503,body:'Unavailable'}:{json:liveFactors}));
@@ -43,8 +43,6 @@ test('late catalog refresh updates an open manual editor and Veteran factor filt
   const main=dialog.getByRole('region',{name:'Parent 1',exact:true});
   await main.getByRole('button',{name:'Add Spark',exact:true}).click();
   const input=main.getByRole('combobox',{name:'Add spark to Parent 1',exact:true});
-  await input.fill('Speed'); await main.getByRole('option',{name:'Speed',exact:true}).click();
-  await main.getByRole('button',{name:'Add Spark',exact:true}).click();
   await main.getByRole('radio',{name:'2★',exact:true}).click();
   await input.fill('Live Recovery');
   await expect(main.getByText('Still fetching resources...', {exact:true})).toBeVisible();
@@ -53,9 +51,9 @@ test('late catalog refresh updates an open manual editor and Veteran factor filt
   await expect(main.getByRole('option',{name:'Live Recovery',exact:true})).toBeVisible();
   await expect(input).toHaveValue('Live Recovery');
   await main.getByRole('option',{name:'Live Recovery',exact:true}).click();
-  await expect(main.locator('.spark')).toHaveCount(2);
+  await expect(main.locator('.spark')).toHaveCount(1);
   await dialog.getByRole('button',{name:'Save Entry',exact:true}).click();
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('vpd_manual_entries')!)[0].ownSparkIds)).toEqual([103,9900022]);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('vpd_manual_entries')!)[0].ownSparkIds)).toEqual([9900022]);
   await dialog.getByRole('button',{name:'Add Spark Filter',exact:true}).click();
   await dialog.getByRole('combobox',{name:'Spark filter 1',exact:true}).fill('Live Recovery');
   await dialog.getByRole('option',{name:'Live Recovery',exact:true}).click();
@@ -72,9 +70,6 @@ test('database basic and UQL controls resolve live factors, including a query en
   const requests:URLSearchParams[]=[];
   page.on('request',request=>{if(request.url().includes('/search/query?'))requests.push(new URL(request.url()).searchParams);});
   await page.goto('/database');await page.getByRole('button',{name:/Filters/}).click();
-  if(isMobile)await page.getByRole('button',{name:'Spark Filters',exact:true}).click();
-  await page.getByRole('button',{name:'Add Blue Factor',exact:true}).click();
-  await page.locator('#blue-factors-factor-0').click();await page.getByRole('option',{name:'Speed',exact:true}).click();
   await page.getByRole('radio',{name:'UQL',exact:true}).click();
   const editor=page.getByRole('textbox',{name:'UQL query',exact:true});
   await expect(editor).toBeVisible();await replaceQuery(editor,'Main has Live Recovery');
@@ -82,6 +77,9 @@ test('database basic and UQL controls resolve live factors, including a query en
   await expect.poll(()=>requests.at(-1)?.get('uql')).toBe('overlaps(main_white_factors, (9900021, 9900022, 9900023))');
   await expect(page.locator('.uql-status')).toHaveText('Valid');
   await page.getByRole('radio',{name:'Basic',exact:true}).click();
+  if(isMobile)await page.getByRole('button',{name:'Spark Filters',exact:true}).click();
+  await page.getByRole('button',{name:'Add Blue Factor',exact:true}).click();
+  await page.locator('#blue-factors-factor-0').click();await page.getByRole('option',{name:'Speed',exact:true}).click();
   await expect(page.locator('#blue-factors-factor-0')).toContainText('Speed');
   await page.getByRole('button',{name:'Add White Factor',exact:true}).click();
   await page.locator('#white-factors-factor-0').fill('Live Recovery');
@@ -96,7 +94,8 @@ test('cached factors remain usable through failed refreshes and replace live in 
   const profile=await mkdtemp(join(tmpdir(),'moe-factor-'));
   const context=await playwright[browserName].launchPersistentContext(profile,{baseURL,viewport,isMobile,hasTouch,userAgent});
   await mockAdvertising(context);
-  await context.addInitScript(()=>localStorage.setItem('page-introduction-audience-v1','existing'));
+  await mockResources(context);
+  await context.addInitScript(()=>{ localStorage.setItem('page-introduction-audience-v1','existing'); localStorage.setItem('lastSeenUpdateVersion','17'); });
   const page=await context.newPage(),errors:string[]=[];
   page.on('pageerror',error=>errors.push(error.message));
   try {

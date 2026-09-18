@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { mockCommunity } from './fixtures/angular-api';
+import { mockCommunity } from './fixtures/api';
 import { clubProgressionFixture } from './fixtures/club-progression';
 
 test.use({ locale: 'en-US', timezoneId: 'UTC' });

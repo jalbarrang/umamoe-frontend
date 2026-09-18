@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 import { plannerControlsPlan } from './fixtures/planner-controls';
 import { readFile } from 'node:fs/promises';
 

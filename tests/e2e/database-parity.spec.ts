@@ -1,6 +1,6 @@
 import { expect, test, replaceQuery, type Page } from './fixtures/test';
 
-import { mockDatabase, mockAffinity, record } from './fixtures/angular-api';
+import { mockDatabase, mockAffinity, record } from './fixtures/api';
 
 
 test('Database keeps populated Angular results, filter modes, sharing, and Trainer submission', async ({ page, isMobile }) => {

@@ -5,8 +5,8 @@ import sharp from 'sharp';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
-const sourceFile = path.join(projectRoot, 'src/favicon.svg');
-const icoFile = path.join(projectRoot, 'src/favicon.ico');
+const sourceFile = path.join(projectRoot, 'public/favicon.svg');
+const icoFile = path.join(projectRoot, 'public/favicon.ico');
 const source = await readFile(sourceFile);
 
 const png256 = await sharp(source).resize(256, 256).png().toBuffer();

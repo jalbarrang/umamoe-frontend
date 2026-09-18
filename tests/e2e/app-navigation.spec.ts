@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures/test';
-import { mockStatistics, mockTimeline } from './fixtures/angular-api';
+import { mockStatistics, mockTimeline } from './fixtures/api';
 
 test('Tools and Timeline subsections navigate and track the active page in both sidebar sizes', async ({ page, isMobile }, testInfo) => {
   test.skip(isMobile, 'Mobile navigation is exercised below.');

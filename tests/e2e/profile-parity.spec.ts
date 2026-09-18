@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { accountId, mockOwnerProfile, mockProfilePresentation } from './fixtures/angular-api';
+import { accountId, mockOwnerProfile, mockProfilePresentation } from './fixtures/api';
 
 test('profile overview retains every populated Angular section and owner visibility contract', async ({ page }) => {
   const visibilityBodies: unknown[] = []; await mockOwnerProfile(page, visibilityBodies);

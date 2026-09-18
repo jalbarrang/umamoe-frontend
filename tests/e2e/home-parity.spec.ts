@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { homeStats, mockTimeline } from './fixtures/angular-api';
+import { homeStats, mockTimeline } from './fixtures/api';
 
 test('Home and Tools fill all four Angular counters through the shared statistics component', async ({ page }) => {
   await page.route('**/api/stats?days=30', (route) => route.fulfill({ json: homeStats }));

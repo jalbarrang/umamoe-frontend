@@ -1,0 +1,345 @@
+[
+  {
+    "id": "113301",
+    "name": "Chrono Genesis",
+    "image": "chara_stand_113301.png",
+    "rarity": 3,
+    "release_date": "2025-06-13"
+  },
+  {
+    "id": "101103",
+    "name": "Grass Wonder",
+    "image": "chara_stand_101103.png",
+    "rarity": 3,
+    "release_date": "2024-12-19"
+  },
+  {
+    "id": "104402",
+    "name": "Sweep Tosho",
+    "image": "chara_stand_104402.png",
+    "rarity": 3,
+    "release_date": "2024-05-30"
+  },
+  {
+    "id": "104503",
+    "name": "Super Creek",
+    "image": "chara_stand_104503.png",
+    "rarity": 3,
+    "release_date": "2024-04-30"
+  },
+  {
+    "id": "106803",
+    "name": "Kitasan Black",
+    "image": "chara_stand_106803.png",
+    "rarity": 3,
+    "release_date": "2023-12-28"
+  },
+  {
+    "id": "108801",
+    "name": "Satono Crown",
+    "image": "chara_stand_108801.png",
+    "rarity": 3,
+    "release_date": "2023-12-11"
+  },
+  {
+    "id": "100303",
+    "name": "Tokai Teio",
+    "image": "chara_stand_100303.png",
+    "rarity": 3,
+    "release_date": "2023-10-30"
+  },
+  {
+    "id": "106703",
+    "name": "Satono Diamond",
+    "image": "chara_stand_106703.png",
+    "rarity": 3,
+    "release_date": "2023-09-11"
+  },
+  {
+    "id": "100703",
+    "name": "Gold Ship",
+    "image": "chara_stand_100703.png",
+    "rarity": 3,
+    "release_date": "2023-08-31"
+  },
+  {
+    "id": "100202",
+    "name": "Silence Suzuka",
+    "image": "chara_stand_100202.png",
+    "rarity": 3,
+    "release_date": "2023-07-31"
+  },
+  {
+    "id": "106702",
+    "name": "Satono Diamond",
+    "image": "chara_stand_106702.png",
+    "rarity": 3,
+    "release_date": "2022-12-29"
+  },
+  {
+    "id": "106802",
+    "name": "Kitasan Black",
+    "image": "chara_stand_106802.png",
+    "rarity": 3,
+    "release_date": "2022-12-29"
+  },
+  {
+    "id": "100902",
+    "name": "Daiwa Scarlet",
+    "image": "chara_stand_100902.png",
+    "rarity": 3,
+    "release_date": "2022-11-28"
+  },
+  {
+    "id": "102102",
+    "name": "Tamamo Cross",
+    "image": "chara_stand_102102.png",
+    "rarity": 3,
+    "release_date": "2022-10-28"
+  },
+  {
+    "id": "100702",
+    "name": "Gold Ship",
+    "image": "chara_stand_100702.png",
+    "rarity": 3,
+    "release_date": "2022-07-29"
+  },
+  {
+    "id": "101303",
+    "name": "Mejiro McQueen",
+    "image": "chara_stand_101303.png",
+    "rarity": 3,
+    "release_date": "2022-07-29"
+  },
+  {
+    "id": "100103",
+    "name": "Special Week",
+    "image": "chara_stand_100103.png",
+    "rarity": 3,
+    "release_date": "2022-07-20"
+  },
+  {
+    "id": "104401",
+    "name": "Sweep Tosho",
+    "image": "chara_stand_104401.png",
+    "rarity": 3,
+    "release_date": "2022-06-20"
+  },
+  {
+    "id": "102202",
+    "name": "Fine Motion",
+    "image": "chara_stand_102202.png",
+    "rarity": 3,
+    "release_date": "2022-05-30"
+  },
+  {
+    "id": "106701",
+    "name": "Satono Diamond",
+    "image": "chara_stand_106701.png",
+    "rarity": 3,
+    "release_date": "2022-03-07"
+  },
+  {
+    "id": "106801",
+    "name": "Kitasan Black",
+    "image": "chara_stand_106801.png",
+    "rarity": 3,
+    "release_date": "2022-02-24"
+  },
+  {
+    "id": "102101",
+    "name": "Tamamo Cross",
+    "image": "chara_stand_102101.png",
+    "rarity": 3,
+    "release_date": "2021-12-22"
+  },
+  {
+    "id": "102201",
+    "name": "Fine Motion",
+    "image": "chara_stand_102201.png",
+    "rarity": 3,
+    "release_date": "2021-12-14"
+  },
+  {
+    "id": "100602",
+    "name": "Oguri Cap",
+    "image": "chara_stand_100602.png",
+    "rarity": 3,
+    "release_date": "2021-11-29"
+  },
+  {
+    "id": "104502",
+    "name": "Super Creek",
+    "image": "chara_stand_104502.png",
+    "rarity": 3,
+    "release_date": "2021-09-29"
+  },
+  {
+    "id": "100102",
+    "name": "Special Week",
+    "image": "chara_stand_100102.png",
+    "rarity": 3,
+    "release_date": "2021-07-29"
+  },
+  {
+    "id": "100501",
+    "name": "Fuji Kiseki",
+    "image": "chara_stand_100501.png",
+    "rarity": 3,
+    "release_date": "2021-07-12"
+  },
+  {
+    "id": "101102",
+    "name": "Grass Wonder",
+    "image": "chara_stand_101102.png",
+    "rarity": 3,
+    "release_date": "2021-06-29"
+  },
+  {
+    "id": "101201",
+    "name": "Hishi Amazon",
+    "image": "chara_stand_101201.png",
+    "rarity": 3,
+    "release_date": "2021-06-21"
+  },
+  {
+    "id": "100302",
+    "name": "Tokai Teio",
+    "image": "chara_stand_100302.png",
+    "rarity": 3,
+    "release_date": "2021-03-30"
+  },
+  {
+    "id": "101302",
+    "name": "Mejiro McQueen",
+    "image": "chara_stand_101302.png",
+    "rarity": 3,
+    "release_date": "2021-03-30"
+  },
+  {
+    "id": "100101",
+    "name": "Special Week",
+    "image": "chara_stand_100101.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100201",
+    "name": "Silence Suzuka",
+    "image": "chara_stand_100201.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100301",
+    "name": "Tokai Teio",
+    "image": "chara_stand_100301.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100401",
+    "name": "Maruzensky",
+    "image": "chara_stand_100401.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100601",
+    "name": "Oguri Cap",
+    "image": "chara_stand_100601.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100701",
+    "name": "Gold Ship",
+    "image": "chara_stand_100701.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100801",
+    "name": "Vodka",
+    "image": "chara_stand_100801.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "100901",
+    "name": "Daiwa Scarlet",
+    "image": "chara_stand_100901.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101001",
+    "name": "Taiki Shuttle",
+    "image": "chara_stand_101001.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101101",
+    "name": "Grass Wonder",
+    "image": "chara_stand_101101.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101301",
+    "name": "Mejiro McQueen",
+    "image": "chara_stand_101301.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101401",
+    "name": "El Condor Pasa",
+    "image": "chara_stand_101401.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101701",
+    "name": "Symboli Rudolf",
+    "image": "chara_stand_101701.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "101801",
+    "name": "Air Groove",
+    "image": "chara_stand_101801.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "102401",
+    "name": "Mayano Top Gun",
+    "image": "chara_stand_102401.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "102701",
+    "name": "Mejiro Ryan",
+    "image": "chara_stand_102701.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "103001",
+    "name": "Rice Shower",
+    "image": "chara_stand_103001.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  },
+  {
+    "id": "104501",
+    "name": "Super Creek",
+    "image": "chara_stand_104501.png",
+    "rarity": 3,
+    "release_date": "2021-02-24"
+  }
+]

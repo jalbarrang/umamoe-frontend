@@ -1,5 +1,5 @@
-import type { CaratPlan, PlannerCustomIncome, PlannerDataBundle, PlannerIncomeRule, PlannerTarget } from '../../../web/domain/timeline/carat-planner';
-import type { TimelineRecord } from '../../../web/features/timeline/timeline-repository';
+import type { CaratPlan, PlannerCustomIncome, PlannerDataBundle, PlannerIncomeRule, PlannerTarget } from '../../../src/lib/timeline/carat-planner';
+import type { TimelineRecord } from '../../../src/pages/timeline/timeline-repository';
 
 export function plannerLedgerCases(base: CaratPlan) {
   const target = (id: string, date: string): PlannerTarget => ({ id, eventId: id, title: id, bannerKind: 'character', bannerStart: date, bannerEnd: date, pullTiming: 'end', plannedPulls: 0, desiredCopies: 1, useTickets: false, allowPaidJewels: false });

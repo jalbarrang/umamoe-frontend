@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from './fixtures/test';
-import { accountId, mockOwnerProfile, mockVeteranProfile, mockDatabase } from './fixtures/angular-api';
+import { accountId, mockOwnerProfile, mockVeteranProfile, mockDatabase } from './fixtures/api';
 
 async function appearance(element: Locator) {
   return element.evaluate(node => {

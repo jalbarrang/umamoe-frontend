@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { mockTimeline } from './angular-api.ts';
+import { mockTimeline } from './api.ts';
 import { plannerRewardsData, plannerRewardsPlan, rewardEvents } from './planner-rewards-data.ts';
 export { plannerRewardsData, plannerRewardsPlan, normalizedRewardEvents, rewardEvents } from './planner-rewards-data.ts';
 export async function mockPlannerRewards(page: Page): Promise<void> {

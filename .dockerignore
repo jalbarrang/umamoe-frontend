@@ -6,9 +6,14 @@
 coverage/
 dist/
 node_modules/
-docs/
+.tmp/
+Storage/
+AlternativeServices/
+test-results/
+playwright-report/
 .webp-cache/
-statistics/
+public/assets/statistics/
+public/assets/data/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -23,5 +28,3 @@ README.md
 *.temp
 tmp/
 temp/
-desktop-odds.scss
-mobile-odds.scss

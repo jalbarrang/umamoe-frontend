@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase, record } from './fixtures/angular-api';
-import factors from '../../src/data/factors.json' with { type: 'json' };
+import { mockDatabase, record } from './fixtures/api';
+import factors from '../fixtures/resources/factors.json' with { type: 'json' };
 
 const storageKey = 'db-hidden-spark-factors';
 const february = factors.find((factor) => factor.text === 'February S.')!;

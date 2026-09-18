@@ -15,10 +15,10 @@ COPY vite.config.ts svelte.config.js vitest.setup.ts ./
 COPY tsconfig*.json ./
 COPY contracts ./contracts
 COPY public ./public
-COPY web ./web
 COPY src ./src
 COPY scripts ./scripts
 COPY tests/e2e/fixtures ./tests/e2e/fixtures
+COPY tests/fixtures ./tests/fixtures
 
 ARG BUILD_SCRIPT=build:prod
 ARG FRONTEND_CONFIG_FINGERPRINT=local

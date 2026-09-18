@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase } from './fixtures/angular-api';
+import { mockDatabase } from './fixtures/api';
 
 test('mobile Database groups display settings and keeps cards compact without losing actions', async ({ page }) => {
   await mockDatabase(page);

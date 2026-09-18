@@ -1,6 +1,6 @@
 import { expect, test, replaceQuery, setSliderValue } from './fixtures/test';
-import { mockVeteranProfile, mockCharacterCatalog, profile, veteran } from './fixtures/angular-api';
-import factorCatalog from '../../src/data/factors.json' with {type:'json'};
+import { mockVeteranProfile, mockCharacterCatalog, profile, veteran } from './fixtures/api';
+import factorCatalog from '../fixtures/resources/factors.json' with {type:'json'};
 
 test('cards show compact affinity above combined sparks and retain inline stats and skills', async ({page},testInfo) => {
   await mockVeteranProfile(page);
@@ -362,7 +362,7 @@ test('UQL accepts typing while name catalogs load and applies it when ready',asy
   await mockVeteranProfile(page);
   let releaseNames!:()=>void;
   const namesReady=new Promise<void>(resolve=>releaseNames=resolve);
-  await page.route('**/*support-cards-db*',async route=>{await namesReady;await route.continue();});
+  await page.route('**/resources/*/support-cards-db.json*',async route=>{await namesReady;await route.fallback();});
   try {
     await page.goto('/veterans/123456789012');
     if(page.viewportSize()!.width < 1024) await page.getByRole('button',{name:'Filters',exact:true}).click();

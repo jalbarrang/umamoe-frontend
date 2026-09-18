@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { mockTimeline } from './angular-api.ts';
+import { mockTimeline } from './api.ts';
 import { plannerControlsPlan } from './planner-controls.ts';
 
 import { plannerIncomeData } from './planner-income-data.ts';

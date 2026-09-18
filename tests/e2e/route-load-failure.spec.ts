@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase } from './fixtures/angular-api';
+import { mockDatabase } from './fixtures/api';
 
 test.use({ allowPageLoadFailure: true });
 

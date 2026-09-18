@@ -1,6 +1,5 @@
 import { test as base, expect, type Locator } from '@playwright/test';
-import { mockAdvertising } from './angular-api';
-import factors from '../../../src/data/factors.json' with { type: 'json' };
+import { mockAdvertising, mockResources } from './api';
 export { expect } from '@playwright/test';
 export type { Page, Locator } from '@playwright/test';
 
@@ -27,14 +26,13 @@ export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boo
     await mockAdvertising(context);
     await context.route('https://status.uma.moe/api/v1/endpoints/statuses', route => route.fulfill({ json: [{ name: 'API', group: 'uma.moe', results: [{ success: true }] }] }));
     // Page-specific resource/failure routes override this populated catalog baseline.
-    await context.route('**/resources/manifest.json*', route => route.fulfill({json:{version:'test'}}));
-    await context.route('**/resources/*/factors.json*', route => route.fulfill({json:factors}));
+    await mockResources(context);
     // Workflows use a returning visitor; onboarding tests explicitly select the new audience.
     await context.addInitScript(() => {
       if (!/^https?:$/.test(location.protocol)) return;
       try {
         if (!localStorage.getItem('page-introduction-audience-v1')) localStorage.setItem('page-introduction-audience-v1', 'existing');
-        if (!localStorage.getItem('lastSeenUpdateVersion')) localStorage.setItem('lastSeenUpdateVersion', '16');
+        if (!localStorage.getItem('lastSeenUpdateVersion')) localStorage.setItem('lastSeenUpdateVersion', '17');
       } catch { /* Sandboxed third-party frames do not share our visitor state. */ }
     });
     const errors: string[] = [];

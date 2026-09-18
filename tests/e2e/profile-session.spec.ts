@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures/test';
-import { accountId, mockOwnerProfile, mockVeteranProfile, profile } from './fixtures/angular-api';
+import { accountId, mockOwnerProfile, mockVeteranProfile, profile } from './fixtures/api';
 
 const otherId = '987654321012';
 const visible = { profile_hidden: false, hidden_sections: [] as string[] };

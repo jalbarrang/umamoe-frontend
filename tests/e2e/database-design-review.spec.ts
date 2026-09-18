@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase, mockAffinity } from './fixtures/angular-api';
+import { mockDatabase, mockAffinity } from './fixtures/api';
 
 test('Populated parent rules keep aligned rows and compact add controls', async ({page,isMobile}) => {
   await mockDatabase(page); await mockAffinity(page);

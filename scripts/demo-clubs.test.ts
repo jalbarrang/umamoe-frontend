@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { demoClubDetails } from './demo-clubs';
-import { calculateMemberMetrics, clubProgression } from '../web/domain/clubs/member-metrics';
+import { calculateMemberMetrics, clubProgression } from '../src/lib/clubs/member-metrics';
 
 test('Demo clubs expose coherent totals, tier data and varied member states', () => {
   const now = new Date('2026-09-17T12:00:00Z');

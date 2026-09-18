@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockActivity } from './fixtures/angular-api';
+import { mockActivity } from './fixtures/api';
 
 test('Activity list retains Angular filters, facts, metrics, and query compatibility', async ({ page }) => {
   await mockActivity(page); await page.goto('/activity?sortBy=active_time&minScore=40&minDays=7');

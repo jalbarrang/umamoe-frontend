@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures/test';
 import { mockPlannerIncome } from './fixtures/planner-income';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 import { plannerControlsPlan, plannerControlsTimeline } from './fixtures/planner-controls';
 
 test('Planner keeps dated deductions when editing and reopening income, and updates funded pulls in order', async ({ page }) => {

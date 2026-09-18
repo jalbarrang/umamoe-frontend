@@ -1,0 +1,1230 @@
+{
+  "metadata": {
+    "generatedAt": "2026-09-18T18:30:28.102Z",
+    "version": "1.0.0",
+    "weights": {
+      "type": -1,
+      "stats": [
+        1.7,
+        1.4,
+        1.65,
+        1.2,
+        1.2,
+        0.75,
+        1.5
+      ],
+      "cap": 1200,
+      "unbondedTrainingGain": [
+        [
+          11,
+          0,
+          6,
+          0,
+          0,
+          4,
+          5
+        ],
+        [
+          0,
+          10,
+          0,
+          6,
+          0,
+          4,
+          5
+        ],
+        [
+          0,
+          6,
+          9,
+          0,
+          0,
+          4,
+          5
+        ],
+        [
+          5,
+          0,
+          5,
+          8,
+          0,
+          4,
+          5
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          10,
+          5,
+          5
+        ]
+      ],
+      "bondedTrainingGain": [
+        [
+          18,
+          0,
+          8,
+          0,
+          0,
+          5,
+          6
+        ],
+        [
+          0,
+          16,
+          0,
+          8,
+          0,
+          5,
+          6
+        ],
+        [
+          0,
+          8,
+          15,
+          0,
+          0,
+          5,
+          6
+        ],
+        [
+          8,
+          0,
+          8,
+          13,
+          0,
+          5,
+          6
+        ],
+        [
+          3,
+          0,
+          0,
+          0,
+          16,
+          6,
+          6
+        ]
+      ],
+      "summerTrainingGain": [
+        [
+          22,
+          0,
+          10,
+          0,
+          0,
+          6,
+          7
+        ],
+        [
+          0,
+          20,
+          0,
+          10,
+          0,
+          6,
+          7
+        ],
+        [
+          0,
+          10,
+          18,
+          0,
+          0,
+          6,
+          7
+        ],
+        [
+          10,
+          0,
+          10,
+          16,
+          0,
+          6,
+          7
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          20,
+          7,
+          7
+        ]
+      ],
+      "bondPerDay": 4,
+      "races": [
+        2,
+        1,
+        1
+      ],
+      "umaBonus": [
+        1.06,
+        1.06,
+        1.06,
+        1.06,
+        1.06,
+        1
+      ],
+      "bonusSpec": 0,
+      "minimum": 50,
+      "motivation": 0.2,
+      "multi": 1.25,
+      "fanBonus": 0.1,
+      "scenarioLink": [],
+      "scenarioBonus": 0,
+      "prioritize": false,
+      "onlySummer": false
+    },
+    "globalReleaseFilterEnabled": true,
+    "globalLaunchDate": "2025-06-26T22:00:00Z",
+    "jpLaunchDate": "2021-02-24T22:00:00Z",
+    "catchupRate": 0.625,
+    "gracePeriodDays": 2
+  },
+  "cards": {
+    "10001": {
+      "id": 10001,
+      "name": "Special Week",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1722,
+        1763,
+        1822,
+        1907,
+        1993
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10002": {
+      "id": 10002,
+      "name": "Silence Suzuka",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1915,
+        1960,
+        2010,
+        2101,
+        2195
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 15,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10003": {
+      "id": 10003,
+      "name": "Tokai Teio",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1804,
+        1849,
+        1913,
+        2005,
+        2096
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10004": {
+      "id": 10004,
+      "name": "Maruzensky",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1759,
+        1813,
+        1881,
+        1951,
+        2069
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 18,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10005": {
+      "id": 10005,
+      "name": "Oguri Cap",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1646,
+        1683,
+        1738,
+        1816,
+        1904
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10006": {
+      "id": 10006,
+      "name": "Gold Ship",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1534,
+        1553,
+        1581,
+        1634,
+        1687
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 10,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10007": {
+      "id": 10007,
+      "name": "Vodka",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1737,
+        1776,
+        1820,
+        1899,
+        2026
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "D",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 17,
+        "recommendedMinLB": 3,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10008": {
+      "id": 10008,
+      "name": "Taiki Shuttle",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1767,
+        1790,
+        1828,
+        1896,
+        1968
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10009": {
+      "id": 10009,
+      "name": "Grass Wonder",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1823,
+        1865,
+        1911,
+        1996,
+        2096
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 15,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10010": {
+      "id": 10010,
+      "name": "Mejiro McQueen",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1622,
+        1657,
+        1695,
+        1766,
+        1855
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 14,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10011": {
+      "id": 10011,
+      "name": "El Condor Pasa",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1664,
+        1706,
+        1764,
+        1850,
+        1928
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10012": {
+      "id": 10012,
+      "name": "TM Opera O",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1534,
+        1553,
+        1581,
+        1634,
+        1687
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 10,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10013": {
+      "id": 10013,
+      "name": "Symboli Rudolf",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1463,
+        1493,
+        1533,
+        1596,
+        1685
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 15,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10014": {
+      "id": 10014,
+      "name": "Seiun Sky",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1622,
+        1657,
+        1695,
+        1766,
+        1866
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 15,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10015": {
+      "id": 10015,
+      "name": "Rice Shower",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1547,
+        1579,
+        1626,
+        1694,
+        1752
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 13,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10016": {
+      "id": 10016,
+      "name": "Winning Ticket",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1732,
+        1777,
+        1838,
+        1931,
+        1979
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 14,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10017": {
+      "id": 10017,
+      "name": "Gold City",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1767,
+        1790,
+        1828,
+        1896,
+        1968
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10018": {
+      "id": 10018,
+      "name": "Sakura Bakushin O",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1821,
+        1870,
+        1936,
+        2037,
+        2117
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10019": {
+      "id": 10019,
+      "name": "Super Creek",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1518,
+        1559,
+        1611,
+        1663,
+        1755
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10020": {
+      "id": 10020,
+      "name": "Haru Urara",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1675,
+        1725,
+        1789,
+        1855,
+        1933
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 15,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10023": {
+      "id": 10023,
+      "name": "Daiwa Scarlet",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1503,
+        1532,
+        1564,
+        1625,
+        1714
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 14,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10024": {
+      "id": 10024,
+      "name": "Hishi Amazon",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1737,
+        1776,
+        1820,
+        1899,
+        2007
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "D",
+        "C",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10025": {
+      "id": 10025,
+      "name": "Air Groove",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1726,
+        1753,
+        1792,
+        1864,
+        1910
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10026": {
+      "id": 10026,
+      "name": "Agnes Digital",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1649,
+        1674,
+        1711,
+        1778,
+        1819
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 10,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10027": {
+      "id": 10027,
+      "name": "Tamamo Cross",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1564,
+        1587,
+        1620,
+        1682,
+        1737
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10028": {
+      "id": 10028,
+      "name": "Fine Motion",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1420,
+        1454,
+        1496,
+        1539,
+        1622
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 14,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10029": {
+      "id": 10029,
+      "name": "Biwa Hayahide",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1649,
+        1674,
+        1711,
+        1778,
+        1834
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10030": {
+      "id": 10030,
+      "name": "Mayano Top Gun",
+      "type": 1,
+      "rarity": 1,
+      "scores": [
+        1518,
+        1559,
+        1611,
+        1663,
+        1737
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 14,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10032": {
+      "id": 10032,
+      "name": "Mihono Bourbon",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1737,
+        1776,
+        1820,
+        1899,
+        2026
+      ],
+      "tiers": [
+        "C",
+        "C",
+        "D",
+        "C",
+        "C"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 17,
+        "recommendedMinLB": 3,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10033": {
+      "id": 10033,
+      "name": "Mejiro Ryan",
+      "type": 2,
+      "rarity": 1,
+      "scores": [
+        1618,
+        1638,
+        1670,
+        1729,
+        1782
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 10,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10034": {
+      "id": 10034,
+      "name": "Yukino Bijin",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1693,
+        1715,
+        1749,
+        1813,
+        1882
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 11,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10035": {
+      "id": 10035,
+      "name": "Ines Fujin",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1726,
+        1753,
+        1792,
+        1864,
+        1936
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 12,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10036": {
+      "id": 10036,
+      "name": "Agnes Tachyon",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1463,
+        1493,
+        1533,
+        1596,
+        1652
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 13,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10037": {
+      "id": 10037,
+      "name": "Air Shakur",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1444,
+        1459,
+        1484,
+        1529,
+        1578
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 9,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10038": {
+      "id": 10038,
+      "name": "Eishin Flash",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1804,
+        1849,
+        1913,
+        2005,
+        2096
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10040": {
+      "id": 10040,
+      "name": "Narita Taishin",
+      "type": 0,
+      "rarity": 1,
+      "scores": [
+        1802,
+        1830,
+        1872,
+        1949,
+        2024
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 12,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10043": {
+      "id": 10043,
+      "name": "Marvelous Sunday",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1463,
+        1493,
+        1533,
+        1596,
+        1652
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 13,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10044": {
+      "id": 10044,
+      "name": "Matikanefukukitaru",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1447,
+        1473,
+        1511,
+        1567,
+        1631
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 13,
+        "recommendedMinLB": 1,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10045": {
+      "id": 10045,
+      "name": "Meisho Doto",
+      "type": 3,
+      "rarity": 1,
+      "scores": [
+        1675,
+        1725,
+        1789,
+        1855,
+        1940
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 16,
+        "recommendedMinLB": 2,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    },
+    "10046": {
+      "id": 10046,
+      "name": "Mejiro Dober",
+      "type": 4,
+      "rarity": 1,
+      "scores": [
+        1471,
+        1492,
+        1520,
+        1574,
+        1624
+      ],
+      "tiers": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "powerProgression": {
+        "totalGrowthPercent": 10,
+        "recommendedMinLB": 0,
+        "powerSpike": "Gradual",
+        "tierProgression": null
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { homeStats, mockAffinity, mockDatabase } from './fixtures/angular-api';
+import { homeStats, mockAffinity, mockDatabase } from './fixtures/api';
 
 test('Shared factor, distance and race-grade colors retain the Angular vocabulary in both themes', async ({ page }) => {
   await mockDatabase(page); await mockAffinity(page); await page.goto('/database');

@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures/test';
-import { accountId, mockOwnerProfile, mockAffinity, profile, veteran, fullTeamStadium } from './fixtures/angular-api';
-import factorCatalog from '../../src/data/factors.json' with { type:'json' };
+import { accountId, mockOwnerProfile, mockAffinity, profile, veteran, fullTeamStadium } from './fixtures/api';
+import factorCatalog from '../fixtures/resources/factors.json' with { type:'json' };
 
 test('Profile keeps light filters and complete veteran information, with a standalone browser', async ({ page }, testInfo) => {
   await mockOwnerProfile(page, []);

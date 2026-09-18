@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { homeStats } from './fixtures/angular-api';
+import { homeStats } from './fixtures/api';
 
 test('Coming Soon retains the Angular card and keyboard return-home action without mobile overflow', async ({ page }) => {
   await page.route('**/api/stats?days=30', route => route.fulfill({ json: homeStats }));

@@ -1,5 +1,5 @@
 import { expect, test, setSliderValue } from './fixtures/test';
-import { mockDatabase, mockAffinity } from './fixtures/angular-api';
+import { mockDatabase, mockAffinity } from './fixtures/api';
 
 test('Database filters split on small screens, share collapse styling, and retain selections', async ({ page }) => {
   await mockDatabase(page);

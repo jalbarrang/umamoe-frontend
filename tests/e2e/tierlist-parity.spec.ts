@@ -34,7 +34,7 @@ test('Tierlist retains Angular controls, percentile rows, and card interaction',
 test('Tierlist preserves the dense Angular mobile grid without page overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/tierlist');
-  await expect(page.locator('.tierlist article')).toHaveCount(6);
+  await expect(page.locator('.tierlist article')).toHaveCount(5); // Populated tiers in the small hosted-data fixture.
   const card = page.locator('.tierlist button').first();
   await card.click();
   await expect(page.getByRole('dialog').getByText('Limit Break Progression')).toBeVisible();

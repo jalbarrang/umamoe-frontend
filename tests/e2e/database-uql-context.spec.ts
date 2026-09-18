@@ -1,10 +1,13 @@
 import { expect, test, replaceQuery, type Page } from './fixtures/test';
-import { mockDatabase, mockAffinity, mockVeteranProfile } from './fixtures/angular-api';
+import { mockDatabase, mockAffinity, mockVeteranProfile } from './fixtures/api';
+import { resourceFixtures } from '../fixtures/resource-data';
 
 const veteran = { id:'veteran-uuid', member_id:42, trainer_id:'123456789012', card_id:101101, trained_chara_id:991, factors:[103], win_saddle_id_array:[30,31], speed:1200, stamina:900, power:1000, guts:700, wiz:900, rank_score:15000 };
 const path = (uql: string) => `/database?filters=${encodeURIComponent(Buffer.from(JSON.stringify({uql})).toString('base64'))}`;
 async function prepare(page: Page) {
   await mockDatabase(page); await mockAffinity(page);
+  await page.route('**/resources/*/character.json*', route => route.fulfill({ json: resourceFixtures.character }));
+  await page.route('**/resources/*/character_names.json*', route => route.fulfill({ json: resourceFixtures.character_names }));
   const requests: URLSearchParams[] = [];
   page.on('request', request => { if (request.url().includes('/search/query?')) requests.push(new URL(request.url()).searchParams); });
   return requests;

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockTimeline } from './fixtures/angular-api';
+import { mockTimeline } from './fixtures/api';
 import { mockPlannerControls, plannerControlsPlan } from './fixtures/planner-controls';
 
 test('Planner Balance keeps Angular resource groups, editable values and compact mobile controls', async ({ page }) => {
