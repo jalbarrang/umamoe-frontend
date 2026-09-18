@@ -6,25 +6,67 @@
   --bg-secondary: #121212;
   --bg-tertiary: #1e1e1e;
   --bg-quaternary: #2a2a2a;
-  --surface-1: rgb(255 255 255 / 0.02);
-  --surface-2: rgb(255 255 255 / 0.05);
+  --component-bg: #161616;
+  --surface-1: var(--component-bg);
+  --surface-2: var(--component-bg);
   --surface-3: rgb(255 255 255 / 0.08);
   --surface-4: rgb(255 255 255 / 0.12);
   --surface-overlay: #1a1a1a;
   --navbar-bg: rgb(18 18 18 / 0.95);
+  --document-bg: var(--color-canvas);
+  --tab-bar-bg: var(--component-bg);
+  --tab-bar-border: rgb(255 255 255 / .08);
+  --tab-btn-color: rgb(255 255 255 / .45);
+  --tab-btn-hover-bg: rgb(255 255 255 / .05);
+  --card-surface-bg: var(--component-bg);
+  --card-surface-border: var(--border-primary);
+  --card-surface-shadow: none;
+  --card-surface-hover-bg: var(--surface-3);
+  --card-surface-hover-border: var(--border-secondary);
+  --card-surface-hover-shadow: 0 4px 12px rgb(0 0 0 / .2);
 
   --text-primary: #ffffff;
   --text-secondary: rgb(255 255 255 / 0.70);
   --text-muted: rgb(255 255 255 / 0.50);
   --text-disabled: rgb(255 255 255 / 0.30);
 
+  --button-primary-text: #07121d;
   --accent-primary: #64b5f6;
   --accent-primary-rgb: 100 181 246;
   --accent-secondary: #81c784;
+  --accent-secondary-rgb: 129 199 132;
+  --accent-success: #81c784;
+  --accent-success-rgb: 129 199 132;
   --accent-warning: #ffb74d;
+  --clear-filter-border: rgb(255 255 255 / .08);
+  --clear-filter-color: rgb(255 255 255 / .4);
+  --accent-warning-rgb: 255 183 77;
   --accent-error: #e57373;
+  --timeline-today-color: #ff8a65;
+  --accent-error-rgb: 229 115 115;
   --accent-purple: #ce93d8;
+  --accent-purple-rgb: 206 147 216;
   --accent-pink: #f06292;
+  --accent-pink-rgb: 240 98 146;
+  --on-surface-rgb: 255 255 255;
+  --color-blue: #2196f3;
+  --color-pink: #e91e63;
+  --color-pink-rgb: 233 30 99;
+  --color-purple: #9c27b0;
+  --color-green: #4caf50;
+  --entry-plan-color: #64b5f6;
+  --entry-race-color: #f5c83a;
+  --entry-share-color: #4db6ac;
+  --entry-affinity-color: #64b5f6;
+  --entry-affinity-gp-color: #ce93d8;
+  --entry-breeding-color: #ffb74d;
+  --entry-card-bg: var(--card-surface-bg);
+  --entry-card-border: var(--card-surface-border);
+  --entry-stats-bg: var(--shared-card-soft-bg);
+  --entry-stats-border: var(--border-subtle);
+  --spark-white-text: #bdbdbd;
+  --spark-source-main: #d99383;
+  --spark-source-right: #ba68c8;
   --accent-blue-strong: #2196f3;
   --accent-blue-dark: #1976d2;
   --accent-green-strong: #4caf50;
@@ -33,11 +75,17 @@
   --rank-g: #c6c7c6; --rank-f: #ad97fc; --rank-e: #d675ef; --rank-d: #63baf7;
   --rank-c: #81d968; --rank-b: #ff7da5; --rank-a: #fa8836; --rank-s: #e7b618;
   --rank-ss: #ef5350; --rank-ultra: #de0cf7;
-  --aptitude-s: #ffb74d; --aptitude-a: #f06292; --aptitude-b: #81c784;
-  --aptitude-c: #64b5f6; --aptitude-d: #ce93d8; --aptitude-e: #b0bec5; --aptitude-f: #90a4ae; --aptitude-g: #78909c;
+  --aptitude-s: #e7b618; --aptitude-a: #fa8836; --aptitude-b: #ff7da5;
+  --aptitude-c: #81d968; --aptitude-d: #63baf7; --aptitude-e: #d675ef; --aptitude-f: #ad97fc; --aptitude-g: #c6c7c6;
+  --shared-card-soft-bg: var(--card-surface-bg);
+  --shared-card-soft-border: rgb(255 255 255 / .04);
+  --color-gold: #ffd700;
   --stat-speed: #64b5f6; --stat-stamina: #ef9a9a; --stat-power: #ffcc80; --stat-guts: #ce93d8; --stat-wit: #81c784;
-  --distance-sprint: #ff9800; --distance-mile: #e91e63; --distance-medium: #4caf50; --distance-long: #2196f3; --distance-dirt: #a1887f;
-  --race-g1: #7fb3ef; --race-g2: #ffb74d; --race-g3: #81c784;
+  --distance-sprint: #ff9800; --distance-mile: #4caf50; --distance-medium: #2196f3; --distance-long: #9c27b0; --distance-dirt: #795548;
+  --grade-g1: #7fb3ef; --grade-g1-base: 54 132 227;
+  --grade-g2: #f48fab; --grade-g2-base: 244 85 129;
+  --grade-g3: #6fcf85; --grade-g3-base: 57 187 84;
+  --race-g1: var(--grade-g1); --race-g2: var(--grade-g2); --race-g3: var(--grade-g3);
   --lineage-main: #ffb74d; --lineage-parent: #64b5f6; --lineage-grandparent: #ce93d8;
 
   --border-subtle: rgb(255 255 255 / 0.06);
@@ -46,12 +94,12 @@
   --border-strong: rgb(255 255 255 / 0.30);
 
   /* Port of the custom Angular factor/select/autocomplete field language. */
-  --factor-field-bg: rgb(255 255 255 / 0.05);
+  --factor-field-bg: #141414;
   --factor-field-border: rgb(255 255 255 / 0.10);
-  --factor-field-focus-bg: rgb(var(--accent-primary-rgb) / 0.04);
+  --factor-field-focus-bg: var(--factor-field-bg);
   --factor-field-focus-border: rgb(var(--accent-primary-rgb) / 0.40);
-  --factor-field-text: rgb(255 255 255 / 0.90);
-  --factor-field-placeholder: rgb(255 255 255 / 0.30);
+  --factor-field-text: var(--text-primary);
+  --factor-field-placeholder: rgb(255 255 255 / 0.55);
   --factor-field-arrow: rgb(255 255 255 / 0.40);
   --factor-panel-bg: #1e1e1e;
   --factor-panel-border: rgb(255 255 255 / 0.10);
@@ -61,10 +109,49 @@
   --factor-option-selected-bg: rgb(var(--accent-primary-rgb) / 0.08);
   --factor-option-selected-text: rgb(var(--accent-primary-rgb) / 0.90);
 
+  /* Angular component semantics retained during the parity migration. */
+  --filter-mode-active-bg: rgb(33 150 243 / 0.35);
+  --filter-mode-active-color: #fff;
+  --filter-mode-toggle-bg: var(--factor-field-bg);
+  --filter-mode-toggle-border: var(--border-subtle);
+  --filter-mode-option-hover-bg: rgb(var(--on-surface-rgb) / 0.06);
+  --filter-mode-active-shadow: 0 0 0 1px rgb(33 150 243 / 0.25) inset;
+  --dialog-surface-bg: var(--card-surface-bg);
+  --dialog-header-bg: var(--dialog-surface-bg);
+  --dialog-muted-bg: var(--factor-field-bg);
+  --dialog-border: var(--border-primary);
+  --dialog-soft-border: var(--border-subtle);
+  --dialog-title-color: var(--text-primary);
+  --dialog-search-bg: var(--factor-field-bg);
+  --dialog-search-focus-bg: var(--factor-field-focus-bg);
+  --dialog-input-text: var(--factor-field-text);
+  --dialog-placeholder: var(--factor-field-placeholder);
+  --dialog-icon-muted: var(--text-muted);
+  --dialog-card-hover-bg: rgb(255 255 255 / 0.04);
+  --dialog-avatar-bg: rgb(0 0 0 / 0.3);
+  --dialog-avatar-border: rgb(255 255 255 / 0.08);
+  --dialog-shadow: 0 20px 60px rgb(0 0 0 / 0.7);
+  --db-section-bg: var(--surface-1);
+  --db-section-border: var(--border-subtle);
+  --db-section-header-border: rgb(33 150 243 / 0.2);
+  --factor-row-bg: var(--surface-1);
+  --factor-row-border: var(--border-subtle);
+  --factor-optional-bg: rgb(180 180 180 / 0.02);
+  --factor-optional-border: rgb(180 180 180 / 0.3);
+  --overlay-action-bg: rgb(0 0 0 / 0.62);
+  --overlay-action-color: #fff;
+  --overlay-action-danger-bg: rgb(244 67 54 / 0.82);
+  --planner-empty-node-bg: rgb(var(--on-surface-rgb) / 0.025);
+  --planner-empty-node-border: rgb(var(--on-surface-rgb) / 0.14);
+  --planner-connector: var(--border-secondary);
+  --surface-0: var(--bg-secondary);
+  --surface-hover: var(--surface-3);
+  --motion-fast: var(--duration-fast);
+
   /* Compatibility aliases keep components semantic without losing the identity. */
   --color-canvas: var(--bg-primary);
-  --color-surface-1: var(--bg-secondary);
-  --color-surface-2: var(--bg-tertiary);
+  --color-surface-1: var(--component-bg);
+  --color-surface-2: var(--component-bg);
   --color-surface-3: var(--bg-quaternary);
   --color-overlay: var(--surface-overlay);
   --color-border: var(--border-primary);
@@ -85,10 +172,11 @@
   --color-success: var(--accent-secondary);
 
   --gradient-brand: linear-gradient(45deg, #64b5f6, #81c784, #ffb74d);
+  --gradient-heading: var(--gradient-brand);
   --gradient-logo: linear-gradient(135deg, #64b5f6, #81c784 62%, #ffb74d);
   --gradient-page-header: linear-gradient(135deg, rgb(100 181 246 / 0.10), rgb(129 199 132 / 0.10));
 
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-xs: 0.6875rem;
   --font-sm: 0.8125rem;
@@ -137,13 +225,13 @@
   /* Canonical shell thresholds. CSS media/container queries are guarded against these values in tests. */
   --screen-compact-min: 768px;
   --screen-expanded-min: 1800px;
-  --page-content-medium: 1080px;
+  --page-content-normal: 1080px;
   --page-content-wide: 1760px;
-  --page-frame-medium: 1536px;
+  --page-frame-normal: 1536px;
   --page-frame-wide: 2184px;
-  /* Backwards-compatible defaults resolve to the focused, medium page. */
-  --page-content-max: var(--page-content-medium);
-  --page-frame-max: var(--page-frame-medium);
+  /* Backwards-compatible defaults resolve to the focused, normal page. */
+  --page-content-max: var(--page-content-normal);
+  --page-frame-max: var(--page-frame-normal);
   --page-gutter-mobile: 4px;
   --page-gutter-compact: 24px;
   --page-gutter-expanded: 32px;
@@ -168,33 +256,76 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #f7f9fc;
   --bg-quaternary: #edf2f7;
-  --surface-1: #ffffff;
-  --surface-2: #ffffff;
+  --component-bg: #ffffff;
+  --surface-1: var(--component-bg);
+  --surface-2: var(--component-bg);
   --surface-3: #f2f8ff;
   --surface-4: #e7f1ff;
   --surface-overlay: #ffffff;
   --navbar-bg: rgb(255 255 255 / 0.96);
+  --document-bg: var(--color-canvas);
+  --tab-bar-bg: #ffffff;
+  --tab-bar-border: rgb(17 24 39 / .14);
+  --tab-btn-color: #4b5563;
+  --tab-btn-hover-bg: rgb(var(--accent-primary-rgb) / .08);
+  --card-surface-bg: var(--component-bg);
+  --card-surface-border: rgb(17 24 39 / .12);
+  --card-surface-shadow: 0 12px 30px rgb(15 23 42 / .075);
+  --card-surface-hover-bg: #ffffff;
+  --card-surface-hover-border: rgb(var(--accent-primary-rgb) / .32);
+  --card-surface-hover-shadow: var(--shadow-md);
+  --hero-light-bg: radial-gradient(circle at 12% 18%,rgb(var(--accent-primary-rgb) / .08),transparent 34%),radial-gradient(circle at 86% 14%,rgb(var(--accent-secondary-rgb) / .055),transparent 30%),linear-gradient(180deg,#ffffff,#f4f7fb);
+  --gradient-heading: linear-gradient(45deg, #1d4ed8, #0f766e);
 
   --text-primary: #111827;
   --text-secondary: #374151;
   --text-muted: #4b5563;
   --text-disabled: #64748b;
+  --button-primary-text: #ffffff;
   --accent-primary: #2563eb;
   --accent-primary-rgb: 37 99 235;
   --accent-secondary: #0f766e;
+  --accent-secondary-rgb: 15 118 110;
+  --accent-success: #15803d;
+  --accent-success-rgb: 21 128 61;
   --accent-warning: #b45309;
+  --clear-filter-border: rgb(17 24 39 / .14);
+  --clear-filter-color: #6b7280;
+  --accent-warning-rgb: 180 83 9;
   --accent-error: #b91c1c;
+  --timeline-today-color: #b33a00;
+  --accent-error-rgb: 185 28 28;
   --accent-purple: #6d28d9;
+  --accent-purple-rgb: 109 40 217;
   --accent-pink: #be185d;
+  --accent-pink-rgb: 190 24 93;
+  --on-surface-rgb: 17 24 39;
+  --color-blue: #1565c0;
+  --color-pink: #be185d;
+  --color-pink-rgb: 190 24 93;
+  --color-purple: #7c3aed;
+  --color-green: #15803d;
+  --entry-plan-color: #1565c0;
+  --entry-race-color: #8a5a00;
+  --entry-share-color: #00796b;
+  --entry-affinity-color: #1565c0;
+  --entry-affinity-gp-color: #7b1fa2;
+  --entry-breeding-color: #9a5600;
+  --entry-card-bg: #ffffff;
+  --entry-card-border: rgb(17 24 39 / .16);
+  --entry-stats-bg: rgb(17 24 39 / .065);
+  --entry-stats-border: rgb(17 24 39 / .1);
+  --spark-white-text: #4b5563;
+  --spark-source-main: #a34f3f;
+  --spark-source-right: #7b2b88;
   --accent-green-strong: #15803d;
   --rank-g: #5f6368; --rank-f: #7254d6; --rank-e: #a23dba; --rank-d: #1976c9;
   --rank-c: #2e7d32; --rank-b: #c52f67; --rank-a: #c75b12; --rank-s: #9a7000;
   --rank-ss: #c62828; --rank-ultra: #9c13ad;
-  --aptitude-s: #a65d00; --aptitude-a: #b42359; --aptitude-b: #287a31;
-  --aptitude-c: #1769aa; --aptitude-d: #7b2b88; --aptitude-e: #52606d; --aptitude-f: #5f6f78; --aptitude-g: #596970;
+  --shared-card-soft-bg: var(--card-surface-bg);
+  --shared-card-soft-border: rgb(17 24 39 / .12);
+  --color-gold: #b77900;
   --stat-speed: #1769aa; --stat-stamina: #b42335; --stat-power: #a65d00; --stat-guts: #7b2b88; --stat-wit: #287a31;
-  --distance-sprint: #b85c00; --distance-mile: #b42359; --distance-medium: #287a31; --distance-long: #1769aa; --distance-dirt: #72594f;
-  --race-g1: #1769aa; --race-g2: #a65d00; --race-g3: #287a31;
   --lineage-main: #a65d00; --lineage-parent: #1769aa; --lineage-grandparent: #7b2b88;
 
   --border-subtle: rgb(17 24 39 / 0.13);
@@ -202,12 +333,12 @@
   --border-secondary: rgb(17 24 39 / 0.26);
   --border-strong: rgb(17 24 39 / 0.38);
 
-  --factor-field-bg: #ffffff;
+  --factor-field-bg: var(--bg-tertiary);
   --factor-field-border: rgb(17 24 39 / 0.18);
-  --factor-field-focus-bg: rgb(var(--accent-primary-rgb) / 0.04);
+  --factor-field-focus-bg: var(--factor-field-bg);
   --factor-field-focus-border: rgb(var(--accent-primary-rgb) / 0.55);
   --factor-field-text: var(--text-primary);
-  --factor-field-placeholder: #9ca3af;
+  --factor-field-placeholder: #6b7280;
   --factor-field-arrow: #6b7280;
   --factor-panel-bg: #ffffff;
   --factor-panel-border: rgb(17 24 39 / 0.16);
@@ -217,9 +348,36 @@
   --factor-option-selected-bg: rgb(var(--accent-primary-rgb) / 0.09);
   --factor-option-selected-text: var(--accent-primary);
 
+  --filter-mode-active-bg: rgb(var(--accent-primary-rgb) / 0.14);
+  --filter-mode-active-color: #1d4ed8;
+  --filter-mode-toggle-bg: #ffffff;
+  --filter-mode-toggle-border: rgb(17 24 39 / 0.16);
+  --filter-mode-option-hover-bg: rgb(var(--accent-primary-rgb) / 0.08);
+  --filter-mode-active-shadow: 0 0 0 1px rgb(var(--accent-primary-rgb) / 0.24) inset;
+  --dialog-surface-bg: var(--card-surface-bg);
+  --dialog-card-hover-bg: rgb(var(--accent-primary-rgb) / 0.08);
+  --dialog-avatar-bg: #eef2f7;
+  --dialog-avatar-border: rgb(17 24 39 / 0.16);
+  --dialog-shadow: var(--shadow-dropdown);
+  --db-section-bg: #ffffff;
+  --db-section-border: rgb(17 24 39 / 0.14);
+  --db-section-header-border: rgb(var(--accent-primary-rgb) / 0.24);
+  --factor-row-bg: #ffffff;
+  --factor-row-border: rgb(17 24 39 / 0.14);
+  --factor-optional-bg: #ffffff;
+  --factor-optional-border: rgb(17 24 39 / 0.2);
+  --overlay-action-bg: rgb(30 47 72 / 0.74);
+  --overlay-action-color: #fff;
+  --overlay-action-danger-bg: rgb(var(--accent-error-rgb) / 0.88);
+  --planner-empty-node-bg: rgb(17 24 39 / 0.07);
+  --planner-empty-node-border: rgb(17 24 39 / 0.24);
+  --planner-connector: rgb(17 24 39 / 0.34);
+  --surface-0: var(--bg-secondary);
+  --surface-hover: var(--surface-3);
+
   --color-canvas: var(--bg-primary);
-  --color-surface-1: var(--bg-secondary);
-  --color-surface-2: var(--bg-tertiary);
+  --color-surface-1: var(--component-bg);
+  --color-surface-2: var(--component-bg);
   --color-surface-3: var(--bg-quaternary);
   --color-overlay: var(--surface-overlay);
   --color-border: var(--border-primary);
@@ -244,5 +402,22 @@
   --shadow-dropdown: 0 8px 24px rgb(17 24 39 / 0.16);
 }
 
-@media (max-width: 767px) { :root { --control-height: var(--touch-target); } }
+@media (max-width: 767px) {
+  :root {
+    --control-height: 32px;
+    --touch-target: 32px;
+    --font-sm: .75rem;
+    --font-md: .8125rem;
+    --font-lg: .875rem;
+    --font-xl: 1.25rem;
+    --font-display: clamp(1.5rem, 5vw, 2rem);
+    --space-3: .625rem;
+    --space-4: .75rem;
+    --space-5: 1rem;
+    --space-6: 1.125rem;
+    --space-8: 1.5rem;
+    --space-10: 1.75rem;
+    --space-12: 2rem;
+  }
+}
 @media (prefers-reduced-motion: reduce) { :root { --duration-fast: 0ms; --duration-normal: 0ms; } }

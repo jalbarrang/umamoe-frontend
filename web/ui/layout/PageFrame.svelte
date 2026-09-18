@@ -14,6 +14,9 @@
     header?: Snippet;
     leftAd?: Snippet;
     rightAd?: Snippet;
+    adsEnabled?: boolean;
+    fullBleed?: boolean;
+    fill?: boolean;
   }
 
   let {
@@ -21,20 +24,23 @@
     routeId,
     featureId = routeId,
     pageTitle,
-    width = 'medium',
+    width = 'normal',
     labelledby,
     contentId,
     navigation,
     header,
     leftAd,
-    rightAd
+    rightAd,
+    adsEnabled = true,
+    fullBleed = false,
+    fill = false
   }: Props = $props();
 
   const resolvedContentId = $derived(contentId ?? `${routeId}-content`);
-  const hasAdRails = $derived(Boolean(leftAd && rightAd));
+  const hasAdRails = $derived(Boolean(adsEnabled && leftAd && rightAd));
 </script>
 
-<div class="page-boundary" data-page-frame>
+<div class="page-boundary" class:fill data-page-frame>
   <article
     class="page-grid"
     class:has-ad-rails={hasAdRails}
@@ -44,6 +50,7 @@
     data-page-layout="ad-aware"
     data-page-width={width}
     class:page-grid--wide={width === 'wide'}
+    class:page-grid--full-bleed={fullBleed}
   >
     <section class="page-content" id={resolvedContentId} data-page-content>
       {#if navigation}<nav aria-label="{pageTitle} navigation" data-page-navigation>{@render navigation()}</nav>{/if}
@@ -61,8 +68,8 @@
   .page-boundary { width: 100%; min-width: 0; container: page-frame / inline-size; }
   .page-grid {
     --page-gutter-current: var(--page-gutter-mobile);
-    --page-content-current: var(--page-content-medium);
-    --page-frame-current: var(--page-frame-medium);
+    --page-content-current: var(--page-content-normal);
+    --page-frame-current: var(--page-frame-normal);
     width: min(100%, var(--page-frame-current));
     min-width: 0;
     display: grid;
@@ -73,10 +80,14 @@
     padding-inline: var(--page-gutter-current);
   }
   .page-grid--wide { --page-content-current: var(--page-content-wide); --page-frame-current: var(--page-frame-wide); }
+  .page-grid--full-bleed { --page-content-current: 100%; --page-frame-current: 100%; padding-inline: 0; }
   .page-content { width: min(100%, var(--page-content-current)); min-width: 0; grid-area: content; justify-self: center; }
   .page-content > nav { margin-bottom: var(--space-3); }
   .page-content > header { margin-bottom: var(--space-5); }
   .page-body { min-width: 0; }
+  .fill, .fill .page-content, .fill .page-body { display: flex; flex-direction: column; min-height: 0; }
+  .fill .page-grid, .fill .page-body { flex: 1 1 0px; }
+  .fill .page-grid { grid-template-rows: minmax(0, 1fr); min-height: 0; }
   .ad-rail {
     display: none;
     align-self: start;
@@ -91,6 +102,7 @@
 
   @container app-viewport (min-width: 768px) {
     .page-grid { --page-gutter-current: var(--page-gutter-compact); }
+    .page-grid--wide { padding-inline: 0; }
   }
 
   @container app-viewport (min-width: 1800px) {

@@ -12,11 +12,16 @@ export interface VeteranUiRecord {
   rank: string;
   score?: number;
   scenario?: string;
+  labels?: string[];
+  stickers?: Array<{ name: string; image: string }>;
   detail?: string;
   workspace?: string;
   updated?: string;
   affinity: number;
+  affinityNote?: string;
+  affinityTarget?: { id:number; name:string };
   raceAffinity?: number;
+  combinedSparks?: VeteranSparkGroup[];
   stats?: StatStripItem[];
   aptitudes?: AptitudeItem[];
   sparks: VeteranSparkGroup[];

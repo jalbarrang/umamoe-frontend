@@ -1,18 +1,18 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  interface Props { page?: number; pages: number; label?: string; onchange?: (page: number) => void; }
-  let { page = $bindable(1), pages, label = 'Pagination', onchange }: Props = $props();
-  const visiblePages = $derived(Array.from(new Set([1, page, pages])).filter(value => value >= 1 && value <= pages).sort((a, b) => a - b));
+  interface Props { page?: number; pages: number; label?: string; showPageNumbers?: boolean; onchange?: (page: number) => void; }
+  let { page = $bindable(1), pages, label = 'Pagination', showPageNumbers = true, onchange }: Props = $props();
+  const visiblePages = $derived(pages <= 5 ? Array.from({ length: pages }, (_, index) => index + 1) : Array.from(new Set([1, page, pages])).filter(value => value >= 1 && value <= pages).sort((a, b) => a - b));
   function select(next: number) { page = Math.max(1, Math.min(pages, next)); onchange?.(page); }
 </script>
 
 <nav aria-label={label}>
   <button type="button" aria-label="Previous page" disabled={page === 1} onclick={() => select(page - 1)}><Icon name="chevron" size={17}/></button>
-  {#each visiblePages as current, index}
+  {#each showPageNumbers ? visiblePages : [] as current, index}
     {#if index > 0 && current - (visiblePages[index - 1] ?? 0) > 1}<span>…</span>{/if}
     <button type="button" class:active={current === page} aria-current={current === page ? 'page' : undefined} onclick={() => select(current)}>{current}</button>
   {/each}
-  <button class="next" type="button" aria-label="Next page" disabled={page === pages} onclick={() => select(page + 1)}><Icon name="chevron" size={17}/></button>
+  <button class="next" type="button" aria-label="Next page" disabled={page >= pages} onclick={() => select(page + 1)}><Icon name="chevron" size={17}/></button>
 </nav>
 
 <style>

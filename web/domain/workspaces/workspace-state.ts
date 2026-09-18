@@ -16,16 +16,18 @@ export const activeWorkspaceId = writable('local');
 export const activeWorkspace = derived([workspaces, activeWorkspaceId], ([$workspaces, $id]) => $workspaces.find((workspace) => workspace.id === $id) ?? localWorkspace);
 
 export function initializeWorkspace(): void {
-  const saved = window.localStorage.getItem(ACTIVE_KEY);
-  if (saved && get(workspaces).some((workspace) => workspace.id === saved)) activeWorkspaceId.set(saved);
+  try { const saved = window.localStorage.getItem(ACTIVE_KEY); if (saved) activeWorkspaceId.set(saved); } catch { /* Selection still works in memory when storage is blocked. */ }
 }
 
 export function selectWorkspace(id: string): void {
   if (!get(workspaces).some((workspace) => workspace.id === id)) return;
   activeWorkspaceId.set(id);
-  window.localStorage.setItem(ACTIVE_KEY, id);
+  try { window.localStorage.setItem(ACTIVE_KEY, id); } catch { /* Keep the current in-memory selection. */ }
 }
 
 export function setAccountWorkspaces(accounts: Array<{ accountId: string; label: string }>): void {
-  workspaces.set([localWorkspace, ...accounts.map((account) => ({ id: `account:${account.accountId}`, kind: 'account' as const, label: account.label, accountId: account.accountId, syncStatus: 'pending' as const }))]);
+  const next = [localWorkspace, ...accounts.map((account) => ({ id: `account:${account.accountId}`, kind: 'account' as const, label: account.label, accountId: account.accountId, syncStatus: 'pending' as const }))];
+  workspaces.set(next);
+  if (!next.some((workspace) => workspace.id === get(activeWorkspaceId))) activeWorkspaceId.set('local');
+  try { if (accounts.length && !window.localStorage.getItem(ACTIVE_KEY)) selectWorkspace(next[1]!.id); } catch { /* Use the local collection when preferences are unavailable. */ }
 }

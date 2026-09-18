@@ -5,13 +5,15 @@
   interface Props {
     icon: IconName;
     label: string;
+    title?: string;
+    ariaExpanded?: boolean;
     selected?: boolean;
     disabled?: boolean;
     size?: 'sm' | 'md';
     onclick?: (event: MouseEvent) => void;
   }
 
-  let { icon, label, selected = false, disabled = false, size = 'md', onclick }: Props = $props();
+  let { icon, label, title, ariaExpanded, selected = false, disabled = false, size = 'md', onclick }: Props = $props();
 </script>
 
 <button
@@ -19,7 +21,9 @@
   class:selected
   type="button"
   aria-label={label}
-  aria-pressed={selected}
+  aria-pressed={ariaExpanded === undefined ? selected : undefined}
+  aria-expanded={ariaExpanded}
+  {title}
   {disabled}
   {onclick}
 >
@@ -46,4 +50,6 @@
   .icon-button.selected { border-color: var(--color-border); background: var(--color-accent-soft); color: var(--color-accent); }
   .icon-button:disabled { cursor: not-allowed; opacity: .45; }
   .icon-button--sm { width: 36px; height: 36px; border-radius: var(--radius-sm); }
+  @media (pointer: coarse) and (min-width:768px) { .icon-button--sm { width:var(--touch-target); height:var(--touch-target); } }
+  @media (max-width:767px) { .icon-button--sm { width:28px; height:28px; } }
 </style>

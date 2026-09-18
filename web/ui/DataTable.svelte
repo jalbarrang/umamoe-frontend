@@ -1,7 +1,8 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   export interface TableColumn { key: string; label: string; numeric?: boolean; priority?: 'primary' | 'secondary'; }
-  interface Props { caption: string; columns: TableColumn[]; rows: Record<string, string | number>[]; emptyMessage?: string; }
-  let { caption, columns, rows, emptyMessage = 'No results' }: Props = $props();
+  interface Props { caption: string; columns: TableColumn[]; rows: Record<string, string | number>[]; emptyMessage?: string; cell?: Snippet<[Record<string, string | number>, TableColumn]>; }
+  let { caption, columns, rows, emptyMessage = 'No results', cell }: Props = $props();
 </script>
 
 <div class="table-wrap">
@@ -10,7 +11,7 @@
     <thead><tr>{#each columns as column}<th class:secondary={column.priority === 'secondary'} class:numeric={column.numeric} scope="col">{column.label}</th>{/each}</tr></thead>
     <tbody>
       {#each rows as row}
-        <tr>{#each columns as column}<td class:secondary={column.priority === 'secondary'} class:numeric={column.numeric} data-label={column.label}>{row[column.key]}</td>{/each}</tr>
+        <tr>{#each columns as column}<td class:secondary={column.priority === 'secondary'} class:numeric={column.numeric} data-label={column.label}>{#if cell}{@render cell(row, column)}{:else}{row[column.key]}{/if}</td>{/each}</tr>
       {:else}
         <tr><td colspan={columns.length} class="empty">{emptyMessage}</td></tr>
       {/each}

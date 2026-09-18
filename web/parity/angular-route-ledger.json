@@ -1,0 +1,540 @@
+{
+  "schemaVersion": 1,
+  "authority": "C:/Users/lars/Documents/git/umamoe-frontend/src/app/app.routes.ts",
+  "allowedPresentationChanges": [
+    "responsive-navbar",
+    "normal-and-wide-page-frames",
+    "centralized-ad-regions"
+  ],
+  "states": [
+    "unported",
+    "structural-parity",
+    "behavior-parity",
+    "approved"
+  ],
+  "routes": [
+    { "path": "/veterans", "width": "wide", "status": "structural-parity", "evidence": ["user-requested-svelte-profile-redesign"], "pending": [] },
+    { "path": "/veterans/:accountId", "width": "wide", "status": "structural-parity", "evidence": ["user-requested-standalone-veteran-browser"], "pending": [] },
+    {
+      "path": "/",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-home-390",
+        "angular-home-1536",
+        "playwright-route",
+        "shared-feature-link-source-order-disabled-tools-and-keyboard-navigation-playwright",
+        "angular-theme-key-precedence-preview-migration-and-storage-denial-golden",
+        "home-tools-populated-and-statistics-failure-three-browser-profiles",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/database",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-database-390",
+        "angular-database-1536",
+        "filter-storage-golden",
+        "database-populated-and-bookmark-playwright",
+        "database-uql-validation-and-compilation-playwright",
+        "database-race-calendar-playwright",
+        "database-race-history-playwright",
+        "database-lineage-transfer-playwright",
+        "database-infinite-load-error-dialog-preservation-playwright",
+        "database-affinity-popover-display-controls-playwright",
+        "database-affinity-resource-retry-playwright",
+        "database-report-confirmation-retry-refresh-playwright",
+        "database-copy-reconciliation-cooldown-playwright",
+        "database-disclosure-hit-region-playwright",
+        "database-optimal-races-allocation-mobile-dialog-playwright",
+        "shared-parent-picker-verified-accounts-scoped-factors-bookmarks-playwright",
+        "parent-picker-owned-reference-storage-restore-playwright",
+        "parent-picker-manual-storage-races-best-fits-failure-retention-playwright",
+        "partner-lookup-cached-stream-failure-recovery-playwright",
+        "shared-p2-url-preset-preference-boundary-playwright",
+        "nullable-angular-tree-and-legacy-exclusion-golden",
+        "scoped-uql-encoded-levels-request-isolation-golden-and-playwright",
+        "angular-svelte-identical-p2-and-scoped-uql-requests-390-1536",
+        "uql-cursor-completion-source-positions-and-chips-golden",
+        "uql-codemirror-editing-guide-clear-focus-mobile-playwright",
+        "angular-svelte-open-uql-guide-390-1536-visual-review",
+        "uql-expression-compiler-32-live-angular-golden-cases",
+        "uql-named-catalog-restore-and-costume-scoring-playwright",
+        "uql-name-chunk-failure-preserved-query-reload-playwright",
+        "uql-target-uuid-account-member-atomic-restoration-playwright",
+        "uql-legacy-retry-stale-response-clear-and-multiple-directives-playwright",
+        "uql-shared-picker-cancel-completion-reopen-and-bracket-range-playwright",
+        "angular-svelte-full-costume-target-and-uuid-query-requests-390-1536",
+        "uql-legacy-shared-portrait-loaded-desktop-mobile-playwright",
+        "character-picker-released-variants-resource-names-card-ids-role-conflicts-retry-three-browser-profiles",
+        "character-picker-search-sort-draft-reset-additive-selection-keyboard-dismissal-playwright",
+        "angular-svelte-live-93-released-character-order-name-variant-comparison",
+        "character-and-veteran-dialog-dark-light-390-1536-populated-comparison",
+        "hidden-sparks-type-browser-staged-save-all-dismissal-paths-storage-and-priority-mode-three-browser-profiles",
+        "shared-race-and-scenario-factor-artwork-lazy-catalog-golden-and-three-browser-profiles",
+        "shared-inheritance-card-source-colors-fonts-mobile-alignment-and-320px-summary-containment",
+        "inheritance-p1-p2-race-summary-partial-unknown-limit-breaks-and-target-breeding-theme-colors-three-browser-profiles",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/circles",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-clubs-390",
+          "angular-clubs-1536",
+          "community-populated-query-playwright",
+          "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles",
+          "clubs-distinct-page-all-local-filters-history-name-api-alias-late-response-playwright",
+          "clubs-cache-expiry-revisit-delayed-refresh-503-retry-error-recovery-three-browser-profiles",
+          "clubs-angular-dark-light-chip-font-color-border-icons-mobile-filter-order-captures"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+          "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/circles/:id",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+          "angular-club-detail-1536",
+          "club-detail-populated-export-playwright",
+          "club-details-jst-freshness-selected-period-timestamp-tier-deltas-and-comment-links-three-browser-profiles",
+          "club-details-cache-revisit-refresh-failure-retry-and-historical-month-workflows-three-browser-profiles",
+          "shared-button-omitted-target-preserves-router-navigation-and-memory-cache",
+          "club-details-angular-dark-light-information-card-fonts-colors-and-1050px-stack-captures",
+          "club-metrics-five-captured-angular-current-prior-excluded-legacy-embedded-and-incomplete-export-goldens",
+          "club-json-csv-xlsx-complete-values-styles-views-and-columns-three-browser-profiles",
+          "club-member-settings-all-controls-staged-apply-dismissal-theme-and-persistence-three-browser-profiles",
+          "club-former-member-calendar-contribution-retained-outside-active-chart-three-browser-profiles",
+          "club-chart-calendar-96-live-angular-value-gap-prior-tally-period-and-search-goldens",
+          "club-chart-native-legend-hide-isolate-restore-keyboard-hover-and-month-mode-workflows",
+          "club-calendar-hover-click-keyboard-touch-popovers-and-44px-contained-mobile-targets",
+          "club-full-30-member-legend-and-scrollable-contributor-popover-three-browser-profiles",
+          "club-calendar-source-month-label-size-at-390-and-320px-final-artifact-workflows",
+          "club-chart-calendar-isolated-dark-light-390-1536-font-color-height-and-overflow-captures"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+          "Verify remaining dialogs, failure states and persistence workflows",
+          "Compare remaining details header and member layout states",
+          "Restore member autocomplete, primary/prior contribution presentation, card metric order and row-specific columns/short labels",
+          "Restore inactive role badges and copy feedback without reporting clipboard failure as success",
+          "Review chart interpolation/tick spacing and calendar visual captures; calculation parity is not pixel approval"
+      ]
+    },
+    {
+      "path": "/circles/:id/:exportFormat",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "router-parity",
+        "club-direct-export-playwright",
+        "club-source-captured-json-csv-and-two-sheet-xlsx-complete-file-parity-three-browser-profiles",
+        "club-export-formula-safety-empty-data-and-xls-excel-exel-case-aliases-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/rankings",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-rankings-390",
+        "angular-rankings-1536",
+        "rankings-populated-query-playwright",
+        "shared-ranking-row-container-query-320px-populated-playwright-and-visual-review",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/activity",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-activity-390",
+        "angular-activity-1536",
+        "activity-query-golden",
+        "activity-playwright",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles",
+        "activity-report-list-client-navigation-query-and-stale-load-guard-playwright"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/activity/:viewerId",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-activity-detail",
+        "activity-derived-state-golden",
+        "activity-playwright",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles",
+        "activity-report-list-client-navigation-query-and-stale-load-guard-playwright"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/timeline",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-timeline-390",
+        "angular-timeline-1536",
+        "timeline-filter-and-layout-golden",
+        "carat-planner-domain-goldens",
+        "planner-name-draft-delayed-resources-and-account-conflict-reversion-three-browser-profiles",
+        "timeline-planner-playwright",
+        "timeline-touch-jump-immediate-add-remove-persistence-playwright",
+        "timeline-four-live-angular-prediction-model-goldens",
+        "timeline-reward-ranges-free-pull-deduplication-and-race-facts-goldens",
+        "angular-svelte-populated-banner-details-capture-390-1536",
+        "timeline-detail-pickups-rates-rewards-sources-and-plan-persistence-playwright",
+        "timeline-detail-retry-stale-response-and-focus-restoration-playwright",
+        "timeline-detail-mobile-width-height-and-touch-targets-playwright",
+        "planner-disabled-target-settings-metadata-and-reward-override-goldens",
+        "timeline-planner-remove-reload-readd-preserves-configured-target-playwright",
+        "timeline-delayed-rewards-ignore-removal-and-plan-switch-playwright",
+        "planner-resource-inferred-rewards-and-paid-only-picker-exclusion-playwright",
+        "planner-search-normalization-ranking-and-pull-order-goldens",
+        "planner-action-combobox-clear-escape-keyboard-and-65-banner-playwright",
+        "planner-global-settings-mixed-values-disabled-retention-and-reload-playwright",
+        "planner-target-stepper-crystal-limits-options-persistence-and-artwork-playwright",
+        "angular-svelte-populated-planner-controls-capture-390-1536",
+        "planner-resource-schedule-metadata-disabled-target-and-import-validation-goldens",
+        "planner-import-export-errors-collisions-date-rehydration-and-reload-playwright",
+        "planner-absent-target-shards-stale-plan-response-retry-and-new-plan-defaults-playwright",
+        "shared-mobile-scroll-clearance-and-combobox-stationary-pointer-regression-playwright",
+        "planner-per-goal-crystals-missing-rates-joint-exactness-and-reward-contribution-goldens",
+        "planner-pickup-first-20-storage-boundary-deduplication-and-empty-selection-goldens",
+        "angular-svelte-populated-planner-goals-and-rate-up-picker-capture-390-1536",
+        "planner-goal-copy-limits-memory-crystal-odds-empty-selection-reload-and-artwork-playwright",
+        "planner-unavailable-rates-mobile-disclosure-320px-containment-and-popover-escape-focus-playwright",
+        "planner-shared-copy-reopening-identity-validation-name-and-date-goldens",
+        "planner-resource-state-compaction-idempotence-projection-and-manual-exception-golden",
+        "planner-compact-and-cloud-share-reopen-edit-reload-and-invalid-link-playwright",
+        "planner-delayed-share-response-after-unmount-playwright",
+        "planner-complete-resource-gating-inactive-plan-compaction-and-cloud-sync-playwright",
+        "planner-disabled-assumptions-seasonal-migration-and-scoped-competition-override-goldens",
+        "planner-assumption-reload-and-independent-duplicate-income-dates-playwright",
+        "planner-quota-failure-retained-edits-export-tab-switch-and-retry-playwright",
+        "live-angular-shared-copy-compaction-disabled-assumption-and-duplicate-verification",
+        "live-angular-26-income-groups-five-sections-four-presets-and-amount-oracle",
+        "planner-income-section-selection-memory-preset-reload-and-custom-income-playwright",
+        "planner-income-mobile-320-768-overflow-and-44px-targets-playwright",
+        "angular-svelte-populated-planner-income-capture-390-1536",
+        "planner-share-navigation-safari-and-shared-http-pagehide-pageshow-recovery",
+        "live-angular-26-ordered-ledger-recurrence-competition-and-speculative-income-goldens",
+        "planner-signed-income-date-validation-storage-and-share-codec-golden",
+        "planner-deduction-edit-reload-and-funded-pull-order-playwright",
+        "planner-balance-resource-groups-artwork-date-and-amount-persistence-playwright",
+        "angular-svelte-populated-planner-balance-capture-390-1536",
+        "live-angular-six-reward-group-window-source-outcome-and-campaign-oracles",
+        "planner-campaign-allocation-target-preservation-and-result-availability-goldens",
+        "planner-rewards-campaign-selection-result-search-history-and-breakdown-focus-playwright",
+        "planner-reward-85-row-news-initial-render-batching-and-320px-containment-playwright",
+        "angular-svelte-populated-planner-rewards-capture-390-1536",
+        "live-angular-initialized-planner-setup-reward-and-income-summary-comparison",
+        "planner-setup-keyboard-linked-panels-retained-search-period-batch-and-summary-playwright",
+        "angular-svelte-planner-setup-closed-balance-income-rewards-captures-390-1536",
+        "planner-manager-menu-keyboard-delete-confirmation-share-copy-failure-and-crystal-summary-playwright",
+        "angular-svelte-planner-workbench-and-plan-menus-captures-390-1536",
+        "shared-menu-club-export-and-mobile-touch-target-regression-playwright",
+        "planner-cloud-reference-fallback-compact-collection-and-expiry-playwright",
+        "planner-save-on-blur-tab-route-lifetime-conflict-and-unverified-load-playwright",
+        "planner-real-data-423-active-rewards-matched-with-angular",
+        "planner-empty-layout-and-banner-only-tab-badge-playwright",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles",
+        "angular-date-lane-order-empty-month-calendar-spacing-and-mobile-marker-ad-cadence-goldens",
+        "angular-svelte-populated-timeline-date-and-today-color-dimensions-390-1536-dark-light",
+        "timeline-group-expansion-filter-sheet-windowed-180-date-scroll-and-1149-1150-preferences-three-browser-repeats",
+        "timeline-real-today-tour-anchor-three-browser-workflow",
+        "shared-timeline-card-24-variants-14-event-colors-390-1536-dark-light-angular-comparison",
+        "timeline-card-competitive-reward-strips-keyboard-plan-focus-persistence-and-footer-three-browser-workflows",
+        "timeline-card-race-lines-context-and-detail-facts-share-parsing-golden",
+        "shared-http-beforeunload-guard-50-navigation-probe-and-477-workflow-regression",
+        "timeline-native-link-tabs-history-same-route-banner-and-compact-query-share-precedence-three-browser-workflows",
+        "timeline-intent-manifest-prefetch-deduplication-without-eager-planner-data",
+        "angular-svelte-timeline-link-tab-typography-colors-and-dimensions-390-1536-dark-light"
+      ],
+      "pending": [
+        "Remaining reward/event variants, import boundaries and complete calculation review",
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows",
+        "Unavailable storage during initial load and remaining global preference writes",
+        "Review desktop vertical card deferred instantiation"
+      ]
+    },
+    {
+      "path": "/tierlist",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-tierlist-390",
+        "angular-tierlist-1536",
+        "tierlist-percentile-golden",
+        "tierlist-playwright",
+        "shared-native-dialog-close-focus-three-keyboard-reopen-cycles-40-safari-repetitions",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/tools",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-tools-390",
+        "angular-tools-1536",
+        "shared-feature-link-source-order-disabled-tools-and-keyboard-navigation-playwright",
+        "angular-theme-key-precedence-preview-migration-and-storage-denial-golden",
+        "home-tools-populated-and-statistics-failure-three-browser-profiles",
+        "full-bleed-background-preserved-normal-content-and-ad-rails-320-to-2560",
+        "angular-ordered-page-tour-required-actions-dialog-deferral-persistence-focus-three-browser-profiles",
+        "guided-tour-inter-font-color-spacing-dark-light-390-1536-comparison-and-failed-download-recovery"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/tools/statistics",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-statistics-390",
+        "angular-statistics-1536",
+        "statistics-aggregation-golden",
+        "statistics-playwright"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/tools/lineage-planner",
+      "width": "wide",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-lineage-390",
+        "angular-lineage-1536",
+        "lineage-storage-and-affinity-golden",
+        "lineage-planner-playwright",
+        "shared-parent-picker-session-and-selection-playwright",
+        "lineage-transfer-own-sparks-and-immediate-persistence-playwright",
+        "lineage-all-15-slot-exclusions-and-trial-affinity-golden",
+        "lineage-released-variants-slot-conflicts-swap-cleanup-resource-retry-playwright",
+        "lineage-inline-sparks-default-stars-persistence-and-empty-veteran-actions-playwright",
+        "lineage-race-draft-confirm-cancel-reload-and-veteran-read-only-playwright",
+        "angular-svelte-lineage-picker-comparison-390-1536-dark-light",
+        "lineage-named-saves-confirm-cancel-storage-failure-and-transfer-playwright",
+        "lineage-legacy-card-query-slots-and-invalid-share-fallback-playwright",
+        "lineage-shared-optimal-races-parent-win-updates-playwright",
+        "lineage-skill-creation-counts-and-eligibility-golden",
+        "lineage-source-combined-and-creation-odds-populated-playwright",
+        "angular-svelte-lineage-odds-390-1536-dark-light-comparison",
+        "lineage-additive-affinity-flow-and-spark-breakdown-golden",
+        "lineage-target-inheritance-popover-dismissal-focus-and-shared-creation-odds-playwright",
+        "lineage-sibling-subgrid-alignment-and-320-to-2560-resize-playwright",
+        "angular-svelte-lineage-populated-node-font-and-background-390-1536-dark-light-comparison"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/profile/:accountId",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-profile-1536",
+        "profile-display-golden",
+        "profile-populated-owner-actions-playwright",
+        "profile-account-auth-visibility-request-guards-ordered-saves-failure-retry-and-reentry-three-browser-profiles",
+        "profile-shared-inheritance-g1-normalization-sparse-fields-borrow-view-copy-and-action-contracts-three-browser-profiles",
+        "angular-svelte-profile-inheritance-dark-light-390-1536-sampled-style-comparison"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/profile/:accountId/veterans",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "profile-veteran-golden",
+        "profile-veteran-playwright",
+        "veteran-duplicate-factor-golden",
+        "veteran-detail-playwright"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/profile/:accountId/cm",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-wip-state"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/profile/:accountId/achievements",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-wip-state"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/profile/:accountId/titles",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-wip-state"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/settings",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-settings-1536",
+        "auth-guard",
+        "settings-account-workflows-playwright",
+        "settings-clipboard-denial-fallback-key-recovery-playwright"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/login",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-login-390",
+        "angular-login-1536"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/signin",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "auth-callback-flow"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/privacy-policy",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-privacy-390",
+        "angular-privacy-1536",
+        "all-eleven-policy-sections-normalized-source-text-comparison",
+        "source-scroll-without-hash-keyboard-and-regional-consent-controls",
+        "foundation-parity-repeated-workflows-three-browser-profiles"
+      ],
+      "pending": [
+        "Complete populated desktop/mobile visual review against current Angular",
+        "Verify remaining dialogs, failure states and persistence workflows"
+      ]
+    },
+    {
+      "path": "/wip",
+      "width": "normal",
+      "status": "structural-parity",
+      "evidence": [
+        "angular-wip-state",
+        "source-coming-soon-composition-shared-button-icon-page-frame",
+        "source-wip-1536-and-390-captures",
+        "foundation-parity-keyboard-home-and-320px-containment"
+      ],
+      "pending": [
+        "Final visual acceptance of the source composition within the normal frame and dense mobile shell"
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "from": "/inheritance",
+      "to": "/database"
+    },
+    {
+      "from": "/support-cards",
+      "to": "/database"
+    },
+    {
+      "from": "/shame",
+      "to": "/activity"
+    },
+    {
+      "from": "/shame/:viewerId",
+      "to": "/activity/:viewerId"
+    },
+    {
+      "from": "*",
+      "to": "/"
+    }
+  ],
+  "productionReplacementReady": false,
+  "review": "web/PARITY_REVIEW.md"
+}

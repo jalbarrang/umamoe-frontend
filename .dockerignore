@@ -17,6 +17,7 @@ Trace-*.json
 docker-compose*.yml
 README.md
 *.md
+!public/notes/**/*.md
 *.ipynb
 *.tmp
 *.temp

@@ -11,6 +11,7 @@ export interface SupportCardPickerOption {
   id: string;
   title: string;
   character?: string;
+  searchText?: string;
   image?: string;
   type: 'Speed' | 'Stamina' | 'Power' | 'Guts' | 'Wit' | 'Friend';
   rarity: 'R' | 'SR' | 'SSR';

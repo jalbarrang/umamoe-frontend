@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 3,
   "groups": [
     {
       "id": "main",
@@ -8,35 +8,28 @@
         {
           "id": "home",
           "title": "Home",
-          "description": "Task-oriented start page and recent activity.",
+          "description": "Umamusume resource hub for the global version.",
           "path": "/",
           "adSurface": "home"
         },
         {
           "id": "database",
           "title": "Database",
-          "description": "Search characters, support cards, skills, factors, and inheritance data.",
+          "description": "Find optimal inheritance pairings and support cards for Uma Musume.",
           "path": "/database",
           "adSurface": "database"
         },
         {
-          "id": "veterans",
-          "title": "Veterans",
-          "description": "Import, persist, filter, and reuse Veteran rosters across tools.",
-          "path": "/veterans",
-          "adSurface": "veterans"
-        },
-        {
-          "id": "race-lab",
-          "title": "Race Lab",
-          "description": "UmaLogs, single-race replay, and multi-race analysis.",
-          "path": "/race-lab",
-          "adSurface": "race_lab"
+          "id": "tierlist",
+          "title": "Tierlist",
+          "description": "Support card tierlist.",
+          "path": "/tierlist",
+          "adSurface": "tierlist"
         },
         {
           "id": "timeline",
           "title": "Timeline",
-          "description": "Estimated global release schedule.",
+          "description": "Global content releases, pickups, and events.",
           "path": "/timeline",
           "adSurface": "timeline"
         }
@@ -63,7 +56,7 @@
         {
           "id": "activity",
           "title": "Activity",
-          "description": "Trainer and community activity analytics.",
+          "description": "Top 100 club activity reports.",
           "path": "/activity",
           "adSurface": "activity"
         }
@@ -76,30 +69,23 @@
         {
           "id": "tools",
           "title": "Tools",
-          "description": "Planning, statistics, and analysis utilities.",
+          "description": "Advanced tools and statistics.",
           "path": "/tools",
           "adSurface": "tools"
         },
         {
           "id": "statistics",
           "title": "Statistics",
-          "description": "Global game and player statistics.",
+          "description": "Team Stadium statistics.",
           "path": "/tools/statistics",
           "adSurface": "statistics"
         },
         {
           "id": "lineage-planner",
           "title": "Lineage Planner",
-          "description": "Plan inheritance trees with reusable Veterans.",
+          "description": "Optimize inheritance trees and parent pairings.",
           "path": "/tools/lineage-planner",
           "adSurface": "lineage_planner"
-        },
-        {
-          "id": "tierlist",
-          "title": "Tierlist",
-          "description": "Support card tierlists.",
-          "path": "/tierlist",
-          "adSurface": "tierlist"
         }
       ]
     },
@@ -108,10 +94,10 @@
       "title": "System",
       "items": [
         {
-          "id": "connect",
-          "title": "Connect client",
-          "description": "Pair the future desktop client for ephemeral live data and optional cloud saves.",
-          "path": "/connect",
+          "id": "privacy",
+          "title": "Privacy",
+          "description": "Privacy policy.",
+          "path": "/privacy-policy",
           "adSurface": null
         }
       ]

@@ -2,25 +2,25 @@
   import LineageNode from './LineageNode.svelte';
   import type { LineageBranch, LineageNodeData } from './lineage-types';
 
-  interface Props { root: LineageNodeData; branches: LineageBranch[]; selectedId?: string; onselect?: (node: LineageNodeData) => void; }
-  let { root, branches, selectedId, onselect }: Props = $props();
+  interface Props { root: LineageNodeData; branches: LineageBranch[]; selectedId?: string; compact?: boolean; onselect?: (node: LineageNodeData) => void; }
+  let { root, branches, selectedId, compact = false, onselect }: Props = $props();
 </script>
 
 <div class="lineage-container">
-  <section class="lineage-tree" aria-label="Veteran lineage">
-    <div class="root"><LineageNode node={root} selected={selectedId === root.id} onclick={() => onselect?.(root)}/></div>
-    {#if branches.length}
+  <section class="lineage-tree" class:compact aria-label="Veteran lineage">
+    {#if !compact}<div class="root"><LineageNode node={root} selected={selectedId === root.id} onclick={() => onselect?.(root)}/></div>{/if}
+    {#if !compact && branches.length}
       <div class="root-fork tree-fork" aria-hidden="true"><i class="stem"></i><i class="bar"></i><span class="drops"><i></i><i></i></span></div>
     {/if}
     <div class="branches">
       {#each branches as branch (branch.id)}
         <section class="branch">
-          <div class="parent"><LineageNode node={branch.parent} selected={selectedId === branch.parent.id} onclick={() => onselect?.(branch.parent)}/></div>
-          {#if branch.grandparents.length}
+          <div class="parent"><LineageNode {compact} node={branch.parent} selected={selectedId === branch.parent.id} onclick={() => onselect?.(branch.parent)}/></div>
+          {#if !compact && branch.grandparents.length}
             <div class="branch-fork tree-fork" aria-hidden="true"><i class="stem"></i><i class="bar"></i><span class="drops"><i></i><i></i></span></div>
           {/if}
           <div class="grandparents">
-            {#each branch.grandparents as node (node.id)}<div class="legacy"><LineageNode {node} selected={selectedId === node.id} onclick={() => onselect?.(node)}/></div>{/each}
+            {#each branch.grandparents as node (node.id)}<div class="legacy"><LineageNode {compact} {node} selected={selectedId === node.id} onclick={() => onselect?.(node)}/></div>{/each}
           </div>
         </section>
       {/each}
@@ -65,4 +65,9 @@
     .legacy:last-child::before { bottom: auto; height: 28px; }
     .parent, .legacy { height: auto; }
   }
+  .lineage-tree.compact { padding:0; }
+  .compact .branches { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0; padding:0; }
+  .compact .branch { display:grid; grid-template-rows:auto auto; align-content:start; gap:3px; }
+  .compact .grandparents { display:grid; grid-template-columns:1fr; gap:3px; margin:0 0 0 8px; padding-left:5px; border-left:1px solid var(--border-primary); }
+  .compact .branch::before,.compact .branch::after,.compact .legacy::before,.compact .legacy::after { display:none; }
 </style>

@@ -1,31 +1,69 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import * as echarts from 'echarts/core';
-  import { BarChart, LineChart } from 'echarts/charts';
-  import { AriaComponent, DataZoomComponent, GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
+  import { BarChart, LineChart, PieChart } from 'echarts/charts';
+  import { AriaComponent, AxisPointerComponent, DataZoomComponent, GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
   import { SVGRenderer } from 'echarts/renderers';
   import type { EChartsCoreOption, EChartsType } from 'echarts/core';
 
-  interface Props { option: EChartsCoreOption; label: string; description?: string; height?: number; }
-  let { option, label, description, height = 280 }: Props = $props();
+  interface Props { option: EChartsCoreOption; label: string; description?: string; height?: number; dismissTouchTooltip?: boolean; zoomable?: boolean; }
+  let { option, label, description, height = 280, dismissTouchTooltip = false, zoomable = false }: Props = $props();
   let host: HTMLDivElement;
   let chart: EChartsType | undefined;
 
-  echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AriaComponent, SVGRenderer]);
+  echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AxisPointerComponent, AriaComponent, SVGRenderer]);
 
   onMount(() => {
     chart = echarts.init(host, undefined, { renderer: 'svg' });
     chart.setOption(option);
     const observer = new ResizeObserver(() => chart?.resize());
     observer.observe(host);
-    return () => { observer.disconnect(); chart?.dispose(); chart = undefined; };
+    let dismissTimer: ReturnType<typeof setTimeout>;
+    const hideTooltip = () => { chart?.dispatchAction({ type: 'hideTip' }); chart?.dispatchAction({ type: 'downplay' }); };
+    const pointerDown = (event: PointerEvent) => {
+      if (!dismissTouchTooltip) return;
+      clearTimeout(dismissTimer);
+      if (!host.contains(event.target as Node)) hideTooltip();
+    };
+    const pointerUp = (event: PointerEvent) => {
+      if (dismissTouchTooltip && event.pointerType === 'touch') {
+        clearTimeout(dismissTimer); dismissTimer = setTimeout(hideTooltip, 2000);
+      }
+    };
+    document.addEventListener('pointerdown', pointerDown, { passive: true });
+    host.addEventListener('pointerup', pointerUp, { passive: true });
+    host.addEventListener('pointercancel', pointerUp, { passive: true });
+    return () => {
+      clearTimeout(dismissTimer); document.removeEventListener('pointerdown', pointerDown);
+      host.removeEventListener('pointerup', pointerUp); host.removeEventListener('pointercancel', pointerUp);
+      observer.disconnect(); chart?.dispose(); chart = undefined;
+    };
   });
 
   $effect(() => { if (chart) chart.setOption(option, { notMerge: true }); });
+
+  function navigate(event: KeyboardEvent): void {
+    if (!zoomable || !chart || !['+', '=', '-', 'ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
+    event.preventDefault();
+    const current = (chart.getOption().dataZoom as Array<{ start:number; end:number }> | undefined)?.[0];
+    if (!current) return;
+    const span = current.end - current.start, center = (current.start + current.end) / 2;
+    let start = current.start, end = current.end;
+    if (event.key === 'Home') { start = 0; end = 100; }
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      const shift = (event.key === 'ArrowLeft' ? -1 : 1) * span * .2;
+      start = Math.max(0, Math.min(100 - span, start + shift)); end = start + span;
+    } else {
+      const nextSpan = Math.min(100, Math.max(5, span * (event.key === '-' ? 1.5 : 1 / 1.5)));
+      start = Math.max(0, Math.min(100 - nextSpan, center - nextSpan / 2)); end = start + nextSpan;
+    }
+    chart.dispatchAction({ type:'dataZoom', start, end });
+  }
 </script>
 
 <figure aria-label={label} style:--chart-height={`${height}px`}>
-  <div bind:this={host} class="chart-host" aria-hidden="true"></div>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (Zoomable charts accept keyboard zoom and pan controls.) -->
+  <div bind:this={host} class="chart-host" role={zoomable ? 'group' : undefined} tabindex={zoomable ? 0 : undefined} aria-hidden={zoomable ? undefined : true} aria-label={zoomable ? `${label}. Plus and minus zoom; arrow keys pan; Home resets.` : undefined} onkeydown={navigate}></div>
   {#if description}<figcaption>{description}</figcaption>{/if}
 </figure>
 

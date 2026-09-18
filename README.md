@@ -46,7 +46,7 @@ The site includes a cookie consent flow for optional categories such as analytic
 
 ## Project Status
 
-This branch contains the mobile-first Svelte rewrite foundation. Production remains on the Angular artifact while the beta UI system, route parity, domain fixtures, and performance gates are reviewed. The legacy `src/` tree remains temporarily as an unbundled migration reference; Vite only compiles the new `web/` application.
+This branch contains the Svelte rewrite and its Angular parity checks. Deployment is a separate step from committing the branch. The legacy `src/` tree remains as a migration reference and supplies shared data, artwork, and CI-injected environment configuration; Vite compiles the `web/` application.
 
 The codebase is still useful for understanding and contributing to the frontend, but the README intentionally describes the product rather than presenting this as a generic installable application.
 
@@ -56,12 +56,21 @@ The codebase is still useful for understanding and contributing to the frontend,
 - No SvelteKit and no UI-component runtime
 - `sv-router` behind an app-owned route module
 - CSS custom-property tokens and scoped component styles
-- Beta/development-only, lazy-loaded `/ui-lab`
+- Hidden, lazy-loaded `/ui` component gallery (`/ui-lab` remains an alias)
 - Vitest, Playwright, accessibility-first native controls, and enforced bundle budgets
 
 ## UI foundation
 
-Run `npm start`, then open `http://127.0.0.1:5173/ui-lab`. Product routes are intentionally paused until the UI gate is approved. `npm run build:beta` includes the lab, while `npm run build` removes the route and its examples from production output.
+Run `npm start`, then open `http://127.0.0.1:5173/ui`. The gallery is available in development, beta and production, but is omitted from navigation, the sitemap and public feature metadata, and marked `noindex`. Its examples load only when opened. This is an unlisted page, not an access-controlled admin endpoint.
+
+## Deploying the Svelte rewrite
+
+- `npm run build:beta` and `npm run build:prod` generate metadata, contracts and tierlist data, run type/unit checks, and emit the Vite application to `dist/`.
+- Docker builds the same `shell` and `assets` targets used by the existing workflow. Compiled JS/CSS lives under `/app/`; `/assets/` remains the separately deployed static bundle. The existing rsync exclusion therefore preserves app code.
+- Existing Turnstile and Google Analytics repository settings still work. Vite reads the environment files that CI injects; no new secrets are required.
+- Pushes and PRs targeting `main`/`master` retain their existing workflow triggers. For this feature branch, manually dispatch the workflow to deploy beta. Production remains restricted to `main`/`master` and the production environment gate.
+- Keep the server's SPA fallback (`try_files ... /index.html`) for direct routes such as `/ui`. Existing API/resource proxies and externally maintained statistics remain required.
+- On a fresh local checkout, run `npm ci` and `npm run generate:assets` before starting development. This copies the existing artwork into Vite's public directory and generates tierlist data. Docker execution must be verified in CI when no local Docker daemon is available.
 
 ## Related Systems
 
@@ -80,3 +89,14 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## Acknowledgments
 
 Thanks to the Umamusume community for data, testing, feedback, and all the tiny edge cases that make planning tools worth building.
+
+## Local Svelte demo
+
+Run `npm run dev:demo` in this Svelte worktree, then open http://127.0.0.1:5173.
+The visible demo banner identifies sample data. Database, clubs and club details,
+rankings, activity reports, timeline/planner, statistics, and the linked demo
+profile use the existing parity fixtures. Tierlists retain their bundled data.
+Demo responses are read-only; login and account mutations still require a backend.
+Fixtures are intentionally small and do not simulate every backend filter.
+Run `npm run check:demo` with the demo server running to verify the populated routes,
+search, pagination totals, and rejected writes. Use `npm run dev` for normal backend data.

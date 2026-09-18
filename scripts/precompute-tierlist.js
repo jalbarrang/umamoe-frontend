@@ -7,13 +7,14 @@
  * and generate JSON files for the frontend to consume, eliminating runtime calculations.
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Import the calculation engine
-const { TierlistCalculationEngine } = require('./tierlist-calculation-engine');
+import { TierlistCalculationEngine } from './tierlist-calculation-engine.js';
 
-const OUTPUT_DIR = path.join(__dirname, '..', 'src', 'assets', 'data');
+const OUTPUT_DIR = fileURLToPath(new URL('../public/assets/data/', import.meta.url));
 const PRECOMPUTED_FILE = path.join(OUTPUT_DIR, 'precomputed-tierlist.json');
 
 // Default URA weights for calculations
@@ -261,9 +262,4 @@ function getPowerSpikeDescription(significantSpikes) {
     return significantSpikes.map(spike => `LB${spike.toLB}`).join(', ');
 }
 
-// Run the script
-if (require.main === module) {
-    main().catch(console.error);
-}
-
-module.exports = { main };
+await main();

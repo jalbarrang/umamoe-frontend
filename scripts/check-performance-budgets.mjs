@@ -29,8 +29,8 @@ for (const [kind, bytes] of Object.entries(totals)) {
   console.log(`Base shell ${kind.toUpperCase()} compressed: ${(bytes / 1024).toFixed(1)} KiB / ${(limits[kind] / 1024).toFixed(0)} KiB`);
 }
 
-const betaLabEntries = Object.values(manifest).filter((entry) => entry.src?.includes('web/features/ui-lab/') && entry.isDynamicEntry);
-if (betaLabEntries.length) console.log(`Beta-only UI Lab chunks: ${betaLabEntries.map((entry) => entry.file).join(', ')} (excluded from production shell budgets)`);
+const labEntries = Object.values(manifest).filter((entry) => entry.src?.includes('web/features/ui-lab/') && entry.isDynamicEntry);
+if (labEntries.length) console.log(`Lazy UI Lab chunks: ${labEntries.map((entry) => entry.file).join(', ')} (loaded only when opened)`);
 
 if (failures.length) {
   throw new Error(`Performance budget exceeded: ${failures.map(([kind]) => kind).join(', ')}`);

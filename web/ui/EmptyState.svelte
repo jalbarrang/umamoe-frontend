@@ -13,7 +13,7 @@
 </div>
 
 <style>
-  .empty { min-height: 220px; display: grid; place-items: center; align-content: center; gap: var(--space-3); padding: var(--space-6); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); text-align: center; }
+  .empty { min-height: 220px; display: grid; place-items: center; align-content: center; gap: var(--space-3); padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-align: center; }
   .empty.compact { min-height: 128px; grid-template-columns: auto minmax(0, 1fr); justify-items: start; text-align: left; }
   .icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--color-surface-2); color: var(--color-text-muted); }
   .compact .icon { width: 40px; height: 40px; }

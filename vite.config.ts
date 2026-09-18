@@ -1,38 +1,40 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+import { environment as production } from './src/environments/environment.prod';
+import { environment as beta } from './src/environments/environment.beta';
 
 const rootDirectory = fileURLToPath(new URL('.', import.meta.url));
 
-function excludeProductionUiLabFixtures() {
-  const emittedFixture = /\/(?:oguri-cap|mejiro-mcqueen|kitasan-black(?:-support)?|skill-(?:speed|recovery)|item-carats)-[^/]+\.webp$/;
+export default defineConfig(async ({ mode }) => {
+  // Keep the existing CI-injected public provider IDs during the framework migration.
+  const environment = mode === 'production' ? production : beta;
+  const variables = loadEnv(mode, rootDirectory, 'VITE_');
   return {
-    name: 'exclude-production-ui-lab-fixtures',
-    generateBundle(_options: unknown, bundle: Record<string, { type: string; originalFileNames?: string[] }>) {
-      for (const [fileName, output] of Object.entries(bundle)) {
-        const originatedInLab = output.originalFileNames?.some((path) => path.replaceAll('\\', '/').includes('web/features/ui-lab/fixtures/'));
-        if (output.type === 'asset' && (originatedInLab || emittedFixture.test(`/${fileName.replaceAll('\\', '/')}`))) {
-          delete bundle[fileName];
-        }
-      }
-    }
-  };
-}
-
-export default defineConfig(({ mode }) => ({
   root: rootDirectory,
-  plugins: [svelte(), ...(mode === 'production' ? [excludeProductionUiLabFixtures()] : [])],
+  plugins: [svelte(), ...(mode === 'demo' ? [await (await import('./scripts/demo-data')).demoData()] : [])],
   optimizeDeps: {
     noDiscovery: true,
-    include: [],
+    include: ['exceljs'],
     exclude: ['svelte', 'svelte/store', 'sv-router']
   },
   define: {
     __APP_ENVIRONMENT__: JSON.stringify(mode),
+    __APP_CONFIG__: JSON.stringify({
+      siteKey: variables.VITE_TURNSTILE_SITE_KEY ?? environment.turnstile.siteKey,
+      measurementId: variables.VITE_GOOGLE_ANALYTICS_ID ?? environment.googleAnalytics.measurementId,
+      providersEnabled: mode === 'production' || mode === 'beta',
+      statusApiUrl: environment.statusApiUrl
+    }),
     __UI_LAB_ENABLED__: JSON.stringify(mode !== 'production')
   },
   build: {
-    assetsDir: 'assets/app',
+    // Native imports remain lazy; Vite still loads split CSS before each page.
+    // ponytail: skip JS preloading until WebKit's failed-preload cache is fixed:
+    // https://bugs.webkit.org/show_bug.cgi?id=270357
+    modulePreload: false,
+    // Compiled code belongs to the shell artifact; /assets is deployed separately.
+    assetsDir: 'app',
     manifest: true,
     sourcemap: mode !== 'production',
     target: 'es2022'
@@ -44,12 +46,19 @@ export default defineConfig(({ mode }) => ({
     fs: {
       strict: true,
       allow: [rootDirectory]
+    },
+    proxy: {
+      '/api': 'http://127.0.0.1:3001',
+      '/search': 'http://127.0.0.1:3002',
+      '/ingest': 'http://127.0.0.1:3003',
+      '/resources': 'http://127.0.0.1:3004'
     }
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['web/**/*.test.ts']
+    include: ['web/**/*.test.ts', 'scripts/**/*.test.ts']
   }
-}));
+  };
+});

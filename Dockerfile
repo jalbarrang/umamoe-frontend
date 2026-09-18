@@ -16,7 +16,9 @@ COPY tsconfig*.json ./
 COPY contracts ./contracts
 COPY public ./public
 COPY web ./web
-COPY scripts/generate-ai-metadata.mjs scripts/check-performance-budgets.mjs ./scripts/
+COPY src ./src
+COPY scripts ./scripts
+COPY tests/e2e/fixtures ./tests/e2e/fixtures
 
 ARG BUILD_SCRIPT=build:prod
 ARG FRONTEND_CONFIG_FINGERPRINT=local
@@ -40,7 +42,7 @@ RUN set -eu; \
 		"$APP_BUILD_COMMIT" \
 		"$APP_BUILD_ENVIRONMENT" \
 		"$build_time" > version.json; \
-	sed -i "s|<meta name=\"app-build-version\" content=\"[^\"]*\">|<meta name=\"app-build-version\" content=\"$APP_BUILD_VERSION\">|" index.html
+	sed -i "s|<meta name=\"app-build-version\" content=\"[^\"]*\"[^>]*>|<meta name=\"app-build-version\" content=\"$APP_BUILD_VERSION\">|" index.html
 
 FROM scratch AS shell
 

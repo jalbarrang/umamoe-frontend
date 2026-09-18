@@ -1,0 +1,239 @@
+/*
+ * Hybrid contract: uma.moe owns tokens, accessibility, responsive behavior,
+ * and primitive semantics; Hakuraku contributes analytical density, row
+ * rhythm, data composition, and chart language.
+ */
+
+[data-hakuraku-library] {
+  --haku-bg-0: var(--color-canvas);
+  --haku-bg-1: var(--color-surface-1);
+  --haku-bg-2: var(--color-surface-2);
+  --haku-bg-3: var(--color-surface-3);
+  --haku-border: var(--color-border);
+  --haku-border-strong: var(--color-border-strong);
+  --haku-border-accent: var(--factor-field-focus-border);
+  --haku-accent: var(--color-accent);
+  --haku-green: var(--color-secondary);
+  --haku-text: var(--color-text);
+  --haku-text-2: var(--color-text-muted);
+  --haku-muted: var(--color-text-subtle);
+}
+
+/* One center line for every compact primitive. This prevents inherited text
+   metrics from shifting pills, icons, fields, and table content independently. */
+[data-hakuraku-library] :where(button, input, select, textarea) { margin: 0; vertical-align: middle; }
+[data-hakuraku-library] :where(.haku-rank, .haku-factor, .haku-filter-chip, .haku-visibility button, .haku-runner, .haku-parent) {
+  align-items: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* UI-lab frames use the same contract as DemoBlock. */
+.haku-contract {
+  overflow: visible;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.haku-contract-head {
+  min-height: 45px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--surface-1);
+}
+
+.haku-contract-head h3 { font-size: var(--font-sm); }
+.haku-contract-head span,
+.haku-contract-head code { color: var(--color-text-subtle); font-size: var(--font-xs); }
+.haku-contract-head code { color: var(--color-accent); }
+.haku-contract-head .haku-source { flex: none; padding: 3px 7px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); color: var(--color-text-subtle); font-size: 8px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.haku-contract-head .haku-source.moe-origin { border-color: color-mix(in srgb, var(--color-accent) 30%, var(--border-subtle)); color: var(--color-accent); }
+.haku-contract-body { padding: var(--space-4); }
+
+/* The feature-local navigation uses the moe tab surface. */
+.haku-nav {
+  max-width: 100%;
+  min-height: auto;
+  padding: 3px;
+  gap: 2px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  box-shadow: none;
+}
+
+.haku-nav { min-height: 50px; border-image: none; }
+.haku-nav-links { gap: 2px; }
+.haku-nav a {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.haku-nav a:hover { color: var(--color-text); background: transparent; }
+.haku-nav a.active {
+  border: 0;
+  background: var(--color-surface-1);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.haku-rank {
+  height: 24px;
+  min-height: 24px;
+  padding: 0 9px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-xs);
+  font-weight: 750;
+  line-height: 1;
+}
+.haku-rank.gold { background: var(--color-warning-soft); color: var(--color-warning); }
+
+/* DataTable contract: no Hakuraku gradients, striping, or accent rules. */
+.haku-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.haku-table { border-collapse: collapse; background: var(--color-surface-1); font-size: var(--font-sm); }
+.haku-table th,
+.haku-table td { min-height: 44px; padding: 10px var(--space-3); border-bottom: 1px solid var(--color-border); line-height: var(--line-height-body); vertical-align: middle; }
+.haku-table th {
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-xs);
+  letter-spacing: .025em;
+}
+.haku-table tbody tr:nth-child(odd),
+.haku-table tbody tr:nth-child(even) { background: transparent; }
+.haku-table tbody tr:hover { background: color-mix(in srgb, var(--color-surface-2) 60%, transparent); }
+.haku-table tbody tr:last-child td { border-bottom: 0; }
+.haku-runner > span { align-content: center; }
+.haku-runner > strong { line-height: var(--line-height-control); }
+
+/* Haku's analytical rhythm expressed as variants of the moe domain contracts,
+   rather than a parallel skill/aptitude/factor component system. */
+.haku-dashboard-stats,
+.haku-dashboard-stats .stats-container,
+.haku-dashboard-stats .stats { width: 100%; min-width: 0; }
+.haku-character-result { min-width: 0; }
+.haku-character-summary { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 12px; }
+.haku-character-copy { min-width: 0; display: grid; align-content: center; gap: 3px; }
+.haku-character-title { min-width: 0; display: flex; align-items: center; gap: 7px; }
+.haku-character-title h4 { margin: 0; overflow: hidden; font-size: var(--font-lg); line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.haku-character-copy p,
+.haku-character-copy span { margin: 0; color: var(--color-text-muted); font-size: var(--font-xs); line-height: 1.25; }
+.haku-character-copy span { color: var(--color-text-subtle); }
+.haku-finish-summary { min-width: 82px; display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; align-items: center; justify-content: end; gap: 2px 7px; text-align: right; }
+.haku-finish-summary :where(.placement) { grid-row: 1 / 3; }
+.haku-finish-summary strong { font-family: var(--font-mono); font-size: var(--font-lg); line-height: 1; }
+.haku-finish-summary > span { color: var(--color-text-subtle); font-size: 8px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.haku-dashboard-stats { padding-block: 10px; border-block: 1px solid var(--border-subtle); }
+.haku-chara-dashboard { grid-template-columns: minmax(280px, 1.1fr) minmax(290px, 1fr) minmax(350px, 1.25fr); gap: 0; padding-top: 12px; }
+.haku-dashboard-panel { padding: 0 14px; }
+.haku-dashboard-panel:nth-of-type(2),
+.haku-dashboard-panel:nth-of-type(3) { border-left: 1px solid var(--border-subtle); }
+.haku-dashboard-panel:first-of-type { padding-left: 0; }
+.haku-dashboard-panel:last-of-type { padding-right: 0; }
+.haku-moe-skill-list { min-width: 0; display: grid; gap: 2px; }
+.haku-moe-skill { min-width: 0; min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px; border-radius: var(--radius-sm); transition: background var(--duration-fast); }
+.haku-moe-skill:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+.haku-moe-skill > :first-child { min-width: 0; }
+.haku-moe-skill .badge { height: 22px; min-height: 22px; padding-inline: 6px; border-radius: var(--radius-xs); }
+.haku-deck-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-subtle); color: var(--color-text-muted); font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.haku-deck-heading small { color: var(--color-text-subtle); font-size: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.haku-support-deck { margin-top: 6px; align-items: start; }
+.haku-support-deck img { width: 54px; height: 70px; }
+.haku-dashboard-panel h5 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; line-height: 1; }
+.haku-dashboard-panel h5 span { color: var(--color-text-subtle); font-size: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+
+/* Cards, toolbars, charts, lists, and overlays all use moe surfaces. */
+.haku-analysis-panel,
+.haku-member-card,
+.haku-ranking-row,
+.haku-replay-result,
+.haku-spark-card,
+.haku-clip-maker,
+.haku-tooltip-box,
+.haku-race-list,
+.haku-aff-slot {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-1);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+.haku-ranking-row:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
+.haku-race-list-head { border-color: var(--color-border); background: var(--color-surface-2); }
+.haku-race-item { border-color: var(--color-border); }
+.moe-dialog-preview { min-height: 250px; display: grid; place-items: center; padding: 12px; background: color-mix(in srgb, var(--color-canvas) 78%, transparent); }
+.moe-dialog-preview .dialog-panel { width: min(100%, 560px); max-height: min(420px, 70vh); }
+
+/* Domain chips keep their semantic hue, but use the moe chip construction. */
+.haku-factor,
+.haku-filter-chip,
+.haku-visibility button {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+.haku-filter-chip { border-color: color-mix(in srgb, var(--chip) 45%, var(--color-border)); background: color-mix(in srgb, var(--chip) 12%, transparent); color: var(--chip); }
+.haku-factor:hover,
+.haku-visibility button:hover { border-color: var(--color-border-strong); color: var(--color-text); }
+.haku-visibility button.off { opacity: .45; }
+
+/* Chart framing mirrors ChartFrame while preserving Hakuraku chart internals. */
+.haku-replay-chart,
+.haku-bubble-plot,
+.haku-histogram {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-1);
+}
+.haku-mini-bars { border-color: var(--color-border); }
+.haku-minimap { border-color: var(--color-border); background: var(--color-surface-1); box-shadow: var(--shadow-sm); }
+
+@media (max-width: 767px) {
+  .haku-contract-grid,
+  .haku-split,
+  .haku-page-patterns,
+  .haku-chara-dashboard,
+  .haku-panel-grid { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); }
+  .haku-dashboard-panel { padding: 12px 0 0; border-left: 0 !important; border-top: 1px solid var(--border-subtle); }
+  .haku-dashboard-panel:first-of-type { padding-top: 0; border-top: 0; }
+}
+
+@media (max-width: 480px) {
+  .haku-contract-body { padding: 10px; }
+  .haku-nav { overflow: visible; }
+  .haku-nav-links { display: none; border-color: var(--color-border); }
+  .haku-nav-links.open { display: flex; }
+  .haku-nav-links a { min-height: var(--touch-target); }
+  .haku-character-summary { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+  .haku-finish-summary { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto; justify-content: stretch; padding-top: 8px; border-top: 1px solid var(--border-subtle); text-align: left; }
+  .haku-finish-summary :where(.placement) { grid-row: auto; }
+  .haku-finish-summary > span { justify-self: end; }
+}

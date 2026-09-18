@@ -18,68 +18,56 @@
     {
       "@type": "ListItem",
       "position": 3,
-      "name": "Veterans",
-      "url": "https://uma.moe/veterans"
-    },
-    {
-      "@type": "ListItem",
-      "position": 4,
-      "name": "Race Lab",
-      "url": "https://uma.moe/race-lab"
-    },
-    {
-      "@type": "ListItem",
-      "position": 5,
-      "name": "Timeline",
-      "url": "https://uma.moe/timeline"
-    },
-    {
-      "@type": "ListItem",
-      "position": 6,
       "name": "Clubs",
       "url": "https://uma.moe/circles"
     },
     {
       "@type": "ListItem",
-      "position": 7,
+      "position": 4,
       "name": "Rankings",
       "url": "https://uma.moe/rankings"
     },
     {
       "@type": "ListItem",
-      "position": 8,
+      "position": 5,
       "name": "Activity",
       "url": "https://uma.moe/activity"
     },
     {
       "@type": "ListItem",
-      "position": 9,
-      "name": "Tools",
-      "url": "https://uma.moe/tools"
-    },
-    {
-      "@type": "ListItem",
-      "position": 10,
-      "name": "Statistics",
-      "url": "https://uma.moe/tools/statistics"
-    },
-    {
-      "@type": "ListItem",
-      "position": 11,
-      "name": "Lineage Planner",
-      "url": "https://uma.moe/tools/lineage-planner"
-    },
-    {
-      "@type": "ListItem",
-      "position": 12,
+      "position": 6,
       "name": "Tierlist",
       "url": "https://uma.moe/tierlist"
     },
     {
       "@type": "ListItem",
-      "position": 13,
-      "name": "Connect client",
-      "url": "https://uma.moe/connect"
+      "position": 7,
+      "name": "Tools",
+      "url": "https://uma.moe/tools"
+    },
+    {
+      "@type": "ListItem",
+      "position": 8,
+      "name": "Statistics",
+      "url": "https://uma.moe/tools/statistics"
+    },
+    {
+      "@type": "ListItem",
+      "position": 9,
+      "name": "Lineage Planner",
+      "url": "https://uma.moe/tools/lineage-planner"
+    },
+    {
+      "@type": "ListItem",
+      "position": 10,
+      "name": "Timeline",
+      "url": "https://uma.moe/timeline"
+    },
+    {
+      "@type": "ListItem",
+      "position": 11,
+      "name": "Privacy",
+      "url": "https://uma.moe/privacy-policy"
     }
   ]
 }

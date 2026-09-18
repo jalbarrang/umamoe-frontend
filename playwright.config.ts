@@ -5,14 +5,18 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  reporter: 'list',
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1536, height: 960 } } },
+    { name: 'mobile-chromium', testIgnore: /ui-lab\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } } },
+    { name: 'mobile-webkit', testIgnore: /ui-lab\.spec\.ts/, use: { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } } }
+  ],
+  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
     command: 'npm run build:beta && npm run preview -- --host 127.0.0.1 --port 4173',
     url: 'http://127.0.0.1:4173/ui-lab',
     reuseExistingServer: true,

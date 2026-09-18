@@ -1,5 +1,5 @@
 <script lang="ts">
-  type SliderTone = 'accent' | 'blue' | 'pink' | 'green';
+  type SliderTone = 'accent' | 'blue' | 'coral' | 'orange' | 'pink' | 'green' | 'teal' | 'white';
   type SelectionMode = 'before' | 'after' | 'between';
 
   interface Props {
@@ -17,7 +17,10 @@
     showTicks?: boolean;
     showTickLabels?: boolean;
     tickLabels?: string[];
+    tickValues?: number[];
+    showValueLabels?: boolean;
     showOutput?: boolean;
+    hideLabel?: boolean;
     disabled?: boolean;
     onchange?: (value: number, endValue?: number) => void;
   }
@@ -37,7 +40,10 @@
     showTicks = false,
     showTickLabels = false,
     tickLabels = [],
+    tickValues,
+    showValueLabels = false,
     showOutput = true,
+    hideLabel = false,
     disabled = false,
     onchange
   }: Props = $props();
@@ -54,7 +60,7 @@
   const fillEnd = $derived(mode === 'after' ? 100 : endPercent);
   const fillScale = $derived(Math.max(0, (fillEnd - fillStart) / 100));
   const stepCount = $derived(Math.max(0, Math.round((max - min) / step)));
-  const ticks = $derived(showTicks && stepCount <= 24 ? Array.from({ length: stepCount + 1 }, (_, index) => min + index * step) : []);
+  const ticks = $derived(!showTicks ? [] : tickValues?.filter(tick=>tick>=min&&tick<=max) ?? (stepCount <= 24 ? Array.from({ length: stepCount + 1 }, (_, index) => min + index * step) : []));
 
   function toPercent(input: number) { return max === min ? 0 : Math.max(0, Math.min(100, ((input - min) / (max - min)) * 100)); }
   function tickActive(tick: number) {
@@ -105,8 +111,8 @@
   }
 </script>
 
-<div class="field field--{tone}" class:disabled role="group" aria-labelledby="{id}-label">
-  <div class="header">
+<div class="field field--{tone}" class:disabled class:with-value-labels={showValueLabels} role="group" aria-labelledby="{id}-label">
+  <div class="header" class:visually-hidden={hideLabel && !showOutput}>
     <span id="{id}-label">{label}</span>
     {#if showOutput}<output for={isRange ? `${id}-start ${id}-end` : `${id}-start`}>{formatted(value)}{#if isRange}<span aria-hidden="true">–</span>{formatted(actualEnd)}{/if}</output>{/if}
   </div>
@@ -171,6 +177,16 @@
       />
     {/if}
   </div>
+  {#if showValueLabels}
+    <div class="value-labels" aria-hidden="true">
+      {#if isRange && endPercent-startPercent<32}
+        <span class="combined" style:left={((startPercent+endPercent)/2)+'%'}>{formatted(value)}{#if value!==actualEnd}–{formatted(actualEnd)}{/if}</span>
+      {:else}
+        <span style:left={startPercent+'%'}>{formatted(value)}</span>
+        {#if isRange}<span style:left={endPercent+'%'}>{formatted(actualEnd)}</span>{/if}
+      {/if}
+    </div>
+  {/if}
   {#if showTickLabels && ticks.length}
     <div class="labels" aria-hidden="true">
       {#each ticks as tick, index}<span class:active={tickActive(tick)}>{tickLabels[index] ?? formatted(tick)}</span>{/each}
@@ -179,9 +195,13 @@
 </div>
 
 <style>
-  .field { --slider-color: var(--color-accent); min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-  .field--blue { --slider-color: #42bcf7; } .field--pink { --slider-color: #ff78b2; } .field--green { --slider-color: #97d434; }
+  .field { --slider-color: var(--color-accent); min-width: 0; display: flex; flex-direction: column; gap: var(--slider-label-gap, 5px); }
+  .field--blue { --slider-color: #42bcf7; } .field--pink { --slider-color: #ff78b2; } .field--green { --slider-color: #97d434; } .field--white { --slider-color: #c7cbd0; }
+  .field--coral { --slider-color:#ff7967; }.field--orange { --slider-color:#ffad22; }.field--teal { --slider-color:#00cda3; }
+  .with-value-labels .slider-wrap,.with-value-labels .value-labels { margin-inline:24px; }
+  .with-value-labels .visual-thumb,.with-value-labels .fill { transition:none; }
   .header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); color: var(--color-text); font-size: var(--font-sm); font-weight: 600; }
+  .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; }
   output { display: inline-flex; gap: 4px; color: var(--color-text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
   .slider-wrap { position: relative; height: 34px; margin-inline: 9px; overflow: clip; overflow-clip-margin: 12px; }
   .track { position: absolute; inset: 50% 0 auto; height: 4px; transform: translateY(-50%); border-radius: 2px; background: var(--surface-4); }
@@ -209,6 +229,7 @@
   .labels { display: flex; justify-content: space-between; gap: 0; padding-inline: 2px; color: var(--color-text-subtle); font-size: 10px; font-weight: 500; line-height: 1; user-select: none; }
   .labels span { min-width: 14px; text-align: center; }
   .labels span.active { color: var(--slider-color); font-weight: 700; }
+  .value-labels { position:relative; height:14px; margin-inline:9px; color:var(--color-text-muted); font-size:11px; line-height:14px; font-variant-numeric:tabular-nums; }.value-labels span { position:absolute; transform:translateX(-50%); white-space:nowrap; }
   .disabled { opacity: .45; }
   .disabled .thumb::-webkit-slider-thumb { cursor: not-allowed; }
   .disabled .thumb::-moz-range-thumb { cursor: not-allowed; }

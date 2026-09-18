@@ -1,42 +1,66 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import Button from './Button.svelte';
-  import Icon from './Icon.svelte';
-  interface Props { id?: string; open?: boolean; title: string; description?: string; children: Snippet; actions?: Snippet; mobileSheet?: boolean; onclose?: () => void; }
-  let { id = 'ui-dialog', open = $bindable(false), title, description, children, actions, mobileSheet = false, onclose }: Props = $props();
+  import { onDestroy } from 'svelte';
+  import DialogPanel from './DialogPanel.svelte';
+  import type { IconName } from './icon-types';
+  interface Props { id?: string; open?: boolean; title: string; description?: string; icon?: IconName; image?: string; children: Snippet; headerIdentity?: Snippet<[string | undefined, string | undefined]>; headerActions?: Snippet; eyebrow?: Snippet; actions?: Snippet; mobileSheet?: boolean; mobileActionsStack?: boolean; maxWidth?: string; maxHeight?: string; mobileMaxHeight?: string; mobileInset?: string; height?: string; stretchContent?: boolean; contentPadding?: string; mobileContentPadding?: string; onclose?: () => void; }
+  const instanceId = $props.id();
+  let { id = instanceId, open = $bindable(false), title, description, icon, image, children, headerIdentity, headerActions, eyebrow, actions, mobileSheet = false, mobileActionsStack = false, maxWidth = '540px', maxHeight = '80dvh', mobileMaxHeight, mobileInset = '8px', height, stretchContent = true, contentPadding, mobileContentPadding, onclose }: Props = $props();
   let element: HTMLDialogElement;
-  function close() { open = false; onclose?.(); }
+  let returnFocus: HTMLElement | undefined;
+  let backdropPointerDown = false;
+  function restoreFocus() {
+    if (element?.open) return;
+    // Wait for native close processing before retrying a focus lost by WebKit.
+    // Do not take focus from a new control or a subsequently opened dialog.
+    if (returnFocus?.isConnected && (document.activeElement === document.body || element?.contains(document.activeElement))) {
+      returnFocus.focus({ preventScroll: true });
+    }
+    returnFocus = undefined;
+  }
+  function closeElement() {
+    if (!element?.open) return;
+    element.close();
+    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+  }
+  function close() { closeElement(); open = false; onclose?.(); }
+  onDestroy(() => { closeElement(); restoreFocus(); });
   $effect(() => {
     if (!element) return;
-    if (open && !element.open) element.showModal();
-    if (!open && element.open) element.close();
+    if (open && !element.open) {
+      returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+      element.showModal();
+    }
+    if (!open && element.open) closeElement();
   });
 </script>
 
-<dialog
+<dialog style:--dialog-max-width={maxWidth} style:--dialog-max-height={maxHeight} style:--dialog-mobile-max-height={mobileMaxHeight ?? maxHeight} style:--dialog-mobile-inset={mobileInset} style:--dialog-height={height ?? 'fit-content'} style:--dialog-content-padding={contentPadding} style:--dialog-mobile-content-padding={mobileContentPadding}
   bind:this={element}
   class:dialog--sheet={mobileSheet}
+  class:mobile-actions-stack={mobileActionsStack}
+  class:fixed-height={Boolean(height) && stretchContent}
   aria-labelledby="{id}-title"
   aria-describedby={description ? `${id}-description` : undefined}
+  onclose={restoreFocus}
   oncancel={(event) => { event.preventDefault(); close(); }}
-  onclick={(event) => { if (event.target === event.currentTarget) close(); }}
+  onpointerdown={(event) => { backdropPointerDown = event.target === event.currentTarget; }}
+  onpointercancel={() => backdropPointerDown = false}
+  onclick={(event) => { if (backdropPointerDown && event.target === event.currentTarget) close(); backdropPointerDown = false; }}
 >
-  <section class="dialog-panel">
-    <header><div><h2 id="{id}-title">{title}</h2>{#if description}<p id="{id}-description">{description}</p>{/if}</div><Button variant="ghost" icon="close" ariaLabel="Close dialog" onclick={close}/></header>
-    <div class="content">{@render children()}</div>
-    {#if actions}<footer>{@render actions()}</footer>{/if}
-  </section>
+  <DialogPanel {title} {description} {icon} {image} titleId={`${id}-title`} descriptionId={description ? `${id}-description` : undefined} {headerIdentity} {headerActions} {eyebrow} {actions} onclose={close}>{@render children()}</DialogPanel>
 </dialog>
 <style>
-  dialog { width: min(calc(100% - 2rem), 540px); max-height: min(84dvh, 720px); margin: auto; padding: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-overlay); color: var(--color-text); box-shadow: var(--shadow-md); }
-  dialog::backdrop { background: rgb(0 0 0 / .58); }
-  .dialog-panel { max-height: min(84dvh, 720px); overflow: auto; }
-  header { position: sticky; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-5); border-bottom: 1px solid var(--color-border); background: inherit; }
-  h2 { margin: 0; font-size: var(--font-lg); } p { margin: var(--space-1) 0 0; font-size: var(--font-sm); }
-  .content { padding: var(--space-5); }
-  footer { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-border); }
+  /* Native top-layer dialogs stretch between their insets with height:auto. */
+  dialog { --dialog-height-limit:var(--dialog-max-height); width:min(90%,var(--dialog-max-width)); max-width:calc(100% - 8px); height:var(--dialog-height,fit-content); max-height:var(--dialog-height-limit); margin:auto; padding:0; overflow:visible; border:0; background:transparent; color:var(--color-text); }
+  dialog > :global(.dialog-panel) { max-height:var(--dialog-height-limit); }
+  dialog.fixed-height > :global(.dialog-panel) { height:100%; }
+  dialog::backdrop { background:rgb(0 0 0 / .68); }
   @media (max-width: 767px) {
-    dialog.dialog--sheet { width: 100%; max-width: none; max-height: 88dvh; margin: auto 0 0; border-right: 0; border-bottom: 0; border-left: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-    .dialog--sheet .dialog-panel { max-height: 88dvh; padding-bottom: env(safe-area-inset-bottom); }
+    dialog { --dialog-height-limit:var(--dialog-mobile-max-height,var(--dialog-max-height)); width:calc(100% - var(--dialog-mobile-inset)); }
+    dialog.dialog--sheet { width: 100%; max-width: none; max-height: 88dvh; margin: auto 0 0; }
+    .dialog--sheet > :global(.dialog-panel) { max-height: 88dvh; padding-bottom: env(safe-area-inset-bottom); border-right: 0; border-bottom: 0; border-left: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    dialog.mobile-actions-stack > :global(.dialog-panel > footer) { align-items:stretch; flex-direction:column; }
+    dialog.mobile-actions-stack > :global(.dialog-panel > footer .ui-button) { width:100%; }
   }
 </style>

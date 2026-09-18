@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Snippet } from 'svelte';
+  import { fuseIdForPlacement } from '../../platform/ads/ad-slots';
+  import { registerFuseZone } from '../../platform/ads/fuse-ads';
 
   export type AdRegionKind = 'leaderboard' | 'inline' | 'rail';
 
@@ -15,11 +18,13 @@
 
   let { placement, kind, sizes, active = false, preview = false, railAlternative = false, children }: Props = $props();
   const elementId = $derived(`ad-${placement.replaceAll(/[^a-zA-Z0-9_-]/g, '-')}`);
+  const fuseId = $derived(fuseIdForPlacement(placement));
+  onMount(() => active && !preview ? registerFuseZone(elementId, fuseId) : undefined);
 </script>
 
 {#if active}
   <aside
-    id={elementId}
+    id={`${elementId}-region`}
     class="ad-region ad-region--{kind}"
     class:preview
     class:rail-alternative={railAlternative}
@@ -29,7 +34,7 @@
     data-ad-sizes={sizes.join(',')}
     data-ad-behavior={railAlternative ? 'rail-alternative' : 'persistent'}
   >
-    <div class="ad-target" data-ad-target={placement}>
+    <div class="ad-target" id={elementId} data-fuse={fuseId} data-ad-target={placement}>
       {#if children}{@render children()}{:else if preview}<span><strong>Sponsored</strong><small>{placement} · {sizes.join(' / ')}</small></span>{/if}
     </div>
   </aside>

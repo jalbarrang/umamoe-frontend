@@ -11,7 +11,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "description", "path", "group", "icon", "status", "dataOwnership", "indexable", "adSurface"],
+        "required": ["id", "title", "description", "path", "group", "icon", "status", "dataOwnership", "indexable", "adSurface", "width", "navigation", "source"],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "title": { "type": "string" },
@@ -27,7 +27,10 @@
               { "type": "string", "pattern": "^[a-z0-9_]+$" },
               { "type": "null" }
             ]
-          }
+          },
+          "width": { "enum": ["normal", "wide"] },
+          "navigation": { "enum": ["primary", "secondary", "hidden"] },
+          "source": { "enum": ["moe", "hakuraku", "merged"] }
         }
       }
     }

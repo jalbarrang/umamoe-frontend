@@ -36,9 +36,9 @@ describe('screen layout contract', () => {
     expect(tokenSource).toContain(`--page-gutter-mobile: ${PAGE_LAYOUT.gutters.mobile}px`);
     expect(tokenSource).toContain(`--page-gutter-compact: ${PAGE_LAYOUT.gutters.compact}px`);
     expect(tokenSource).toContain(`--page-gutter-expanded: ${PAGE_LAYOUT.gutters.expanded}px`);
-    expect(tokenSource).toContain(`--page-content-medium: ${PAGE_LAYOUT.widths.medium.contentMax}px`);
+    expect(tokenSource).toContain(`--page-content-normal: ${PAGE_LAYOUT.widths.normal.contentMax}px`);
     expect(tokenSource).toContain(`--page-content-wide: ${PAGE_LAYOUT.widths.wide.contentMax}px`);
-    expect(tokenSource).toContain(`--page-frame-medium: ${PAGE_LAYOUT.widths.medium.frameMax}px`);
+    expect(tokenSource).toContain(`--page-frame-normal: ${PAGE_LAYOUT.widths.normal.frameMax}px`);
     expect(tokenSource).toContain(`--page-frame-wide: ${PAGE_LAYOUT.widths.wide.frameMax}px`);
     expect(tokenSource).toContain(`--ad-rail-width: ${PAGE_LAYOUT.ads.railWidth}px`);
     expect(tokenSource).toContain(`--ad-rail-gap: ${PAGE_LAYOUT.ads.railGap}px`);

@@ -2,6 +2,7 @@
 
 declare const __APP_ENVIRONMENT__: string;
 declare const __UI_LAB_ENABLED__: boolean;
+declare const __APP_CONFIG__: { siteKey: string; measurementId: string; providersEnabled: boolean; statusApiUrl: string };
 
 declare module '*.svelte' {
   import type { Component } from 'svelte';

@@ -1,75 +1,96 @@
 <script lang="ts">
+  import Dialog from './Dialog.svelte';
+  import Button from './Button.svelte';
   import RaceBadge from './RaceBadge.svelte';
-  import type { RaceBadgeData, RaceScheduleYear } from './race-types';
+  import type { RaceBadgeData, RaceScheduleYear, RaceScheduleSlot } from './race-types';
 
-  interface Props { years: RaceScheduleYear[]; label?: string; onselect?: (race: RaceBadgeData) => void; }
-  let { years, label = 'Race schedule', onselect }: Props = $props();
+  interface Props { years: RaceScheduleYear[]; label?: string; selectable?: boolean; selectedIds?: string[]; selectedKeys?: string[]; onselect?: (race: RaceBadgeData, slotId: string, yearId: string) => void; }
+  let { years, label = 'Race schedule', selectable = false, selectedIds = [], selectedKeys = [], onselect }: Props = $props();
+  let picker = $state<{ year: RaceScheduleYear; slot: RaceScheduleSlot }>();
+  let pickerOpen = $state(false);
+  const instanceId = $props.id();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function selected(race: RaceBadgeData, slot: RaceScheduleSlot): boolean { return selectedIds.includes(race.id) || selectedKeys.includes(`${slot.id}:${race.id}`); }
+  function cellSlots(year: RaceScheduleYear, month: number, half: number): RaceScheduleSlot[] { return year.slots.filter((slot) => slot.id === `${year.id}-${month}-${half}` || slot.id.startsWith(`${year.id}-${month}-${half}-`)); }
+  function openSlot(year: RaceScheduleYear, slot: RaceScheduleSlot): void { picker = { year, slot }; pickerOpen = true; }
 </script>
 
-<div class="race-schedule-container">
+{#snippet openRace(race: RaceBadgeData, slot: RaceScheduleSlot, year: RaceScheduleYear)}
+  {#if onselect}<button class="race-open" type="button" aria-label={`Open ${race.name}`} onclick={() => onselect?.(race, slot.id, year.id)}><RaceBadge {race} compact/></button>
+  {:else}<RaceBadge {race} compact/>{/if}
+{/snippet}
+
+<div class="race-schedule-container" class:selectable>
   <section class="race-schedule" aria-label={label}>
-    {#each years as year (year.id)}
+    {#each years as year, yearIndex (year.id)}
       <section class="year year--{year.id}">
-        <h4>{year.label}</h4>
-        <div class="slots">
-          {#each year.slots as slot (slot.id)}
-            <section class="slot">
-              <time>{slot.label}</time>
-              <div class="race-list">
-                {#each slot.races as race (race.id)}
-                  <button type="button" class="race-entry" onclick={() => onselect?.(race)} aria-label={`Open ${race.name}`}>
-                    <span class="race-art"><RaceBadge {race} compact/></span>
-                    <span class="entry-copy"><strong>{race.name}</strong><small>{slot.label} · {race.grade}</small></span>
-                    {#if race.affinityGain !== undefined}<span class="entry-affinity"><b>+{race.affinityGain}</b><small>affinity</small></span>{/if}
-                  </button>
-                {:else}<span class="empty">—</span>{/each}
+        <h4>{#if selectable}<span class="year-number" aria-hidden="true">0{yearIndex + 1}</span>{/if}{year.label}</h4>
+        {#if selectable}<div class="calendar-head" aria-hidden="true"><span>Month</span><span>Early</span><span>Late</span></div>{/if}
+        <div class="calendar">
+          {#each months as monthName, index}
+            {#if selectable}<span class="month-label">{monthName}</span>{/if}
+            {#each [1, 2] as half}
+              {@const slots = cellSlots(year, index + 1, half)}
+              {@const slot = slots[0]}
+              <div class="calendar-cell">
+                <div class="cell-races" class:unavailable={selectable && !slot?.races.length}>
+                  {#each slots as entry (entry.id)}
+                    {#each entry.races.filter((race) => !selectable || selected(race, entry)) as race (race.id)}
+                      {#if selectable}<RaceBadge {race} compact presentation="inline" removable onremove={() => onselect?.(race, entry.id, year.id)}/>{:else}{@render openRace(race, entry, year)}{/if}
+                    {/each}
+                  {/each}
+                  {#if selectable && slot?.races.length && !slot.races.some((race) => selected(race, slot))}
+                    <span class="add-race"><Button variant="secondary" size="sm" icon="add" ariaLabel={`Add race: ${year.label}, ${monthName} ${half === 1 ? 'Early' : 'Late'}`} onclick={() => openSlot(year, slot)}/></span>
+                  {:else if selectable && !slot?.races.length}<span class="unavailable-mark" aria-label="No races available">—</span>
+                  {/if}
+                </div>
+                {#if !selectable}<time>{monthName} {half === 1 ? 'Early' : 'Late'}</time>{/if}
               </div>
-            </section>
+            {/each}
           {/each}
         </div>
+        {#if !selectable}
+          <div class="mobile-races">
+            {#each year.slots as slot (slot.id)}{#each slot.races as race (race.id)}
+              <div class="mobile-race"><div><time>{slot.label}</time><strong>{race.name}</strong></div>{@render openRace(race, slot, year)}</div>
+            {/each}{/each}
+          </div>
+        {/if}
       </section>
     {/each}
   </section>
 </div>
 
+<Dialog id={`${instanceId}-race-slot-picker`} bind:open={pickerOpen} title={picker ? `${picker.year.label} · ${picker.slot.label}` : 'Choose a race'} maxWidth="640px">
+  <div class="race-options">
+    {#each picker?.slot.races ?? [] as race (race.id)}
+      <button type="button" aria-label={`Select ${race.name}`} onclick={() => { if (picker) onselect?.(race, picker.slot.id, picker.year.id); pickerOpen = false; }}><RaceBadge {race} compact/><span>{race.name} <small>{race.grade}</small></span></button>
+    {/each}
+  </div>
+</Dialog>
+
 <style>
-  .race-schedule-container { min-width: 0; container: race-schedule / inline-size; }
-  .race-schedule { min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .year { min-width: 0; padding: 7px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-1); }
-  h4 { margin: 0 0 7px; padding: 5px 7px; border-radius: 5px; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
-  .year--junior h4 { background: rgb(33 150 243 / .14); color: #90caf9; }
-  .year--classic h4 { background: rgb(245 200 58 / .12); color: #f5c83a; }
-  .year--senior h4 { background: rgb(102 187 106 / .12); color: var(--accent-secondary); }
-  .slots { display: grid; gap: 5px; }
-  .slot { min-width: 0; display: grid; gap: 3px; padding-bottom: 5px; border-bottom: 1px solid var(--border-subtle); }
-  .slot:last-child { padding-bottom: 0; border-bottom: 0; }
-  time { color: var(--color-text-subtle); font-size: 8px; font-weight: 650; }
-  .race-list { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 158px)); gap: 4px; }
-  .race-entry { min-width: 0; display: block; padding: 0; border: 0; background: transparent; color: var(--color-text); cursor: pointer; text-align: left; }
-  .race-art { min-width: 0; display: block; }
-  .entry-copy, .entry-affinity { display: none; }
-  .empty { color: var(--color-text-subtle); }
-
-  @container race-schedule (max-width: 680px) {
-    .race-schedule { grid-template-columns: 1fr; gap: 6px; }
-    .year { padding: 6px; }
-    h4 { margin-bottom: 5px; }
-    .slot { gap: 2px; }
-    .slot > time { display: none; }
-    .race-list { grid-template-columns: 1fr; gap: 3px; }
-    .race-entry { min-height: 48px; display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 3px 5px; border: 1px solid var(--border-subtle); border-radius: 5px; background: var(--surface-1); }
-    .race-art { width: 88px; }
-    .entry-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .entry-copy strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-    .entry-copy small { color: var(--color-text-subtle); font-size: 8px; }
-    .entry-affinity { display: flex; align-items: center; flex-direction: column; gap: 1px; }
-    .entry-affinity b { color: var(--accent-secondary); font-family: var(--font-mono); font-size: 12px; }
-    .entry-affinity small { color: var(--color-text-subtle); font-size: 7px; }
-    .race-entry :global(.race-name) { display: none; }
-  }
-
-  @container race-schedule (max-width: 360px) {
-    .race-entry { grid-template-columns: 76px minmax(0, 1fr) auto; gap: 5px; padding-inline: 3px; }
-    .race-art { width: 76px; }
-  }
+  .race-schedule-container{min-width:0;container:race-schedule / inline-size}
+  .race-schedule{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-width:0}
+  .year{min-width:0}h4{margin:0 0 8px;text-align:center;font-size:12px;font-weight:700}
+  .year--junior{--year-color:var(--accent-primary)}.year--classic{--year-color:var(--accent-warning)}.year--senior{--year-color:var(--accent-secondary)}.year h4{color:var(--year-color)}
+  .selectable .year+ .year{border-left:1px solid var(--border-subtle);padding-left:12px}
+  .selectable h4{display:flex;align-items:center;gap:8px;padding:6px 0 10px;border-bottom:2px solid color-mix(in srgb,var(--year-color) 45%,transparent);font-size:14px;text-align:left}
+  .year-number{font-size:11px;font-variant-numeric:tabular-nums;opacity:.7}
+  .calendar-head{display:grid;grid-template-columns:42px repeat(2,minmax(0,1fr));gap:4px;margin-bottom:6px;font-size:11px;color:var(--color-text-muted);text-align:center}.calendar-head>span:first-child{text-align:left}
+  .month-label{display:flex;align-items:center;font-size:11px;color:var(--color-text-muted)}
+  .calendar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 4px}.calendar-cell{min-width:0;display:grid;gap:3px}
+  .cell-races{min-height:44px;aspect-ratio:2/1;display:grid;gap:3px;background:var(--surface-2);border:1px solid var(--border-subtle);border-radius:4px;position:relative}.cell-races:has(:global(.race)){aspect-ratio:auto;background:transparent;border:0}.unavailable{opacity:.35}
+  .selectable .calendar{grid-template-columns:42px repeat(2,minmax(0,1fr));gap:4px}
+  .selectable .cell-races{aspect-ratio:auto;min-height:28px;background:transparent;border:0;border-radius:var(--radius-sm)}
+  .selectable .unavailable{opacity:1}.unavailable-mark{display:grid;place-items:center;color:var(--color-text-subtle);font-size:12px}
+  .add-race{display:flex}.add-race :global(.ui-button){width:100%;min-height:28px;padding:3px;border-radius:var(--radius-sm)}.add-race :global(svg){width:14px;height:14px;color:var(--accent-primary)}
+  .add-race :global(.ui-button:hover){border-color:var(--accent-primary);background:var(--color-accent-soft)}
+  time{display:block;text-align:center;color:var(--color-text-subtle);font-size:9px;white-space:nowrap}
+  .race-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.race-options button{min-width:0;padding:6px;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--surface-2);color:var(--color-text);cursor:pointer}.race-options button:hover{border-color:var(--accent-primary)}.race-options button>span{display:block;font-size:11px;margin-top:5px}.race-options small{color:var(--color-text-muted)}
+  .race-open{display:block;width:100%;min-width:0;padding:0;border:0;border-radius:5px;background:transparent;cursor:pointer}.race-open:focus-visible{outline:2px solid var(--accent-primary);outline-offset:2px}
+  .mobile-races{display:none}
+  @container race-schedule (max-width:680px){.race-schedule{grid-template-columns:1fr;gap:16px}.race-schedule-container:not(.selectable) .calendar{display:none}.selectable .year+ .year{border-left:0;padding-left:0}.mobile-races{display:grid;gap:5px}.mobile-race{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:8px;padding:5px;background:var(--surface-2);border-radius:4px}.mobile-race time{text-align:left}.mobile-race strong{font-size:11px}.calendar-cell time{font-size:10px}}
+  @media(pointer:coarse){.selectable .cell-races,.add-race :global(.ui-button){min-height:36px}}
+  @media(max-width:600px){.race-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>

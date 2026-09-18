@@ -65,6 +65,17 @@ scripts/*
 !scripts/generate-favicon.mjs
 !scripts/generate-ai-metadata.mjs
 !scripts/check-performance-budgets.mjs
+!scripts/prepare-assets.mjs
+!scripts/check-demo.mjs
+!scripts/demo-data.ts
+!scripts/demo-clubs.ts
+!scripts/demo-clubs.test.ts
+!scripts/capture-angular-parity.mjs
+!scripts/verify-planner-ledger.mjs
+!scripts/verify-planner-rewards.mjs
+!scripts/verify-club-progression.mjs
+!web/domain/statistics/
+!web/domain/statistics/**
 
 .github/copilot-instructions.md
 !src/assets/
@@ -87,6 +98,14 @@ scripts/*
 !/src/assets/images/race-thumbnails/
 /src/assets/images/race-thumbnails/*
 !/src/assets/images/race-thumbnails/thum_race_rt_*.webp
+!/public/assets/
+/public/assets/*
+!/public/assets/images/
+/public/assets/images/*
+!/public/assets/images/icon/
+!/public/assets/images/icon/**
+!/public/assets/images/support_card/
+!/public/assets/images/support_card/**
 !/src/favicon.svg
 *.tmp
 

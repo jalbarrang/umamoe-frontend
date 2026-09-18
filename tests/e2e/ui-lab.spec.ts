@@ -32,6 +32,27 @@ for (const viewport of viewports) {
   });
 }
 
+test('shared affinity picker selects and clears targets and legacy in the UI lab', async ({ page }) => {
+  await page.goto('/ui-lab#affinity-picker');
+  const picker = page.locator('#affinity-picker');
+  for (const width of [1536, 320]) {
+    await page.setViewportSize({width,height:900});
+    await picker.getByRole('button',{name:'Change target character',exact:true}).click();
+    const dialog = page.getByRole('dialog',{name:'Select Character',exact:true});
+    await dialog.getByRole('radio',{name:/Oguri Cap/}).click();
+    await expect(picker.getByRole('button',{name:'Change target Oguri Cap',exact:true})).toBeVisible();
+    await picker.getByRole('button',{name:'Pick your legacy',exact:true}).click();
+    await expect(picker.getByRole('article',{name:'Mejiro McQueen Veteran summary'})).toBeVisible();
+    await picker.screenshot({path:test.info().outputPath(`affinity-picker-${width}.png`)});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
+    await picker.getByRole('button',{name:'Clear selected legacy',exact:true}).click();
+    await picker.getByRole('button',{name:'Clear target character',exact:true}).click();
+    await picker.getByRole('button',{name:'Pick target character',exact:true}).click();
+    await dialog.getByRole('radio',{name:/Mejiro McQueen/}).click();
+    await expect(picker.getByRole('button',{name:'Pick your legacy',exact:true})).toBeVisible();
+  }
+});
+
 test('theme, density, dialog, and virtual list remain functional', async ({ page }) => {
   await page.goto('/ui-lab');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -49,14 +70,62 @@ test('theme, density, dialog, and virtual list remain functional', async ({ page
   expect(liveRows).toBeLessThan(40);
 });
 
+test('number fields share chevrons and preserve native stepping', async ({ page }) => {
+  await page.goto('/ui-lab');
+  const number = page.getByRole('spinbutton', { name: 'Number', exact: true });
+  const increase = page.getByRole('button', { name: 'Increase Number', exact: true });
+  const decrease = page.getByRole('button', { name: 'Decrease Number', exact: true });
+  await number.evaluate(input => {
+    for (const name of ['input', 'change']) input.addEventListener(name, () => input.setAttribute(`data-${name}-value`, (input as HTMLInputElement).value));
+  });
+  await increase.click();
+  await expect(number).toHaveValue('0.25');
+  await expect(number).toHaveAttribute('data-input-value', '0.25');
+  await expect(number).toHaveAttribute('data-change-value', '0.25');
+  await number.press('ArrowUp');
+  await expect(number).toHaveValue('0.5');
+  await number.fill('1.9');
+  await increase.click();
+  await expect(number).toHaveValue('2');
+  await expect(increase).toBeDisabled();
+  await decrease.click();
+  await expect(number).toHaveValue('1.75');
+  await number.fill('0');
+  await expect(decrease).toBeDisabled();
+  await number.fill('');
+  await expect(decrease).toBeEnabled();
+  await decrease.click();
+  await expect(number).toHaveValue('0');
+  for (const label of ['Read only number', 'Disabled number']) {
+    await expect(page.getByRole('button', { name: `Increase ${label}`, exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: `Decrease ${label}`, exact: true })).toBeDisabled();
+  }
+  for (const theme of ['Dark', 'Light']) {
+    await page.getByRole('radio', { name: theme, exact: true }).click();
+    await expect(number).toHaveCSS('appearance', 'textfield');
+    await expect(increase.locator('svg')).toHaveCSS('transform', 'matrix(-1, 0, 0, -1, 0, 0)');
+    await expect(decrease.locator('svg')).toHaveCSS('transform', 'none');
+    await page.locator('#text-field').screenshot({path:test.info().outputPath(`number-fields-${theme.toLowerCase()}.png`)});
+  }
+});
+
 test('custom select and autocomplete retain keyboard behavior', async ({ page }) => {
   await page.goto('/ui-lab');
 
-  const region = page.getByRole('combobox', { name: 'Data region' });
+  const region = page.getByRole('combobox', { name: 'Data region', exact: true });
   await region.click();
-  await expect(page.getByRole('listbox', { name: 'Data region' })).toBeVisible();
+  await expect(page.getByRole('listbox', { name: 'Data region', exact: true })).toBeVisible();
+  const normalHeight=(await page.getByRole('option',{name:'Japan',exact:true}).boundingBox())!.height;
   await page.getByRole('option', { name: 'Japan' }).click();
   await expect(region).toContainText('Japan');
+  const slim=page.getByRole('combobox',{name:'Data region (slim)',exact:true});
+  await expect(slim).toContainText('Japan');
+  await slim.click();
+  expect((await page.getByRole('option',{name:'Japan',exact:true}).boundingBox())!.height).toBeLessThan(normalHeight);
+  await slim.press('Home');
+  await slim.press('Enter');
+  await expect(slim).toContainText('Global');
+  await expect(region).toContainText('Global');
 
   const character = page.getByRole('combobox', { name: 'Character' });
   await character.fill('Mejiro');
@@ -94,7 +163,7 @@ test('Veteran selector becomes a bounded sheet on mobile', async ({ page }) => {
   await expect(listbox).not.toBeVisible();
 });
 
-test('inheritance spark labels remain complete in the mobile layout', async ({ page }) => {
+test('inheritance spark labels keep their accessible names when shortened on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/ui-lab');
 
@@ -105,7 +174,7 @@ test('inheritance spark labels remain complete in the mobile layout', async ({ p
     overflow: getComputedStyle(element).overflow,
     textOverflow: getComputedStyle(element).textOverflow
   }));
-  expect(clipping).toEqual({ overflow: 'visible', textOverflow: 'clip' });
+  expect(clipping).toEqual({ overflow: 'hidden', textOverflow: 'ellipsis' });
 });
 
 test('Hakuraku ports load on demand and remain mobile-safe', async ({ page }) => {
@@ -115,15 +184,120 @@ test('Hakuraku ports load on demand and remain mobile-safe', async ({ page }) =>
   const tab = page.getByRole('tab', { name: /Hakuraku/ });
   await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('heading', { name: 'Hakuraku component ports' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hakuraku component catalogue' })).toBeVisible();
   await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
-  await expect(page.getByRole('table', { name: 'Race runners' })).toBeVisible();
+  await expect(page.locator('#haku-chara-list table')).toBeVisible();
+  await expect(page.locator('#haku-veteran-card')).toBeVisible();
+  await expect(page.locator('#haku-query-tab')).toBeVisible();
+  await page.locator('#haku-race-graph').scrollIntoViewIfNeeded();
+  await expect(page.locator('#haku-race-graph svg').first()).toBeVisible();
 
-  const play = page.getByRole('button', { name: 'Play replay' });
+  const play = page.locator('#haku-race-replay').getByRole('button', { name: 'Play', exact: true });
   await play.click();
-  await expect(page.getByRole('button', { name: 'Pause replay' })).toBeVisible();
-  await expect(page.locator('#haku-race-chart svg').first()).toBeVisible();
+  await expect(page.locator('#haku-race-replay').getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test('Hakuraku primitives inherit the uma.moe visual contracts', async ({ page }) => {
+  await page.goto('/ui-lab');
+
+  const visualStyle = async (selector: string) => page.locator(selector).first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      padding: style.padding,
+      borderRadius: style.borderRadius,
+      borderColor: style.borderColor,
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight
+    };
+  });
+
+  const moe = {
+    button: await visualStyle('#button .ui-button--secondary'),
+    input: await visualStyle('#text-field input'),
+    tabs: await visualStyle('#tabs .tab.active'),
+    table: await visualStyle('#table table')
+  };
+
+  await page.getByRole('tab', { name: /Hakuraku/ }).click();
+  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
+
+  expect(await visualStyle('#haku-page-header .ui-button--secondary')).toEqual(moe.button);
+  expect(await visualStyle('#haku-form-controls input')).toEqual(moe.input);
+  expect(await visualStyle('#haku-tabs .tab.active')).toEqual(moe.tabs);
+  expect(await visualStyle('#haku-chara-list .haku-table')).toEqual(moe.table);
+
+  await expect(page.locator('.haku-group .haku-btn, .haku-group .haku-input, .haku-group .haku-select, .haku-group .haku-tabs, .haku-group .haku-dialog, .haku-group .haku-badge, .haku-group .haku-stats')).toHaveCount(0);
+  await expect(page.locator('#haku-multi-stats .stats')).toBeVisible();
+  await expect(page.locator('#haku-hp-spurt-table .table-wrap')).toBeVisible();
+  await expect(page.locator('#haku-veteran-card .veteran-summary')).toBeVisible();
+  await expect(page.locator('#haku-skill-breakdown .dialog-panel')).toBeVisible();
+});
+
+test('Hakuraku compact rows share a vertical center line', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ui-lab');
+  await page.getByRole('tab', { name: /Hakuraku/ }).click();
+  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
+
+  const center = async (selector: string) => page.locator(selector).first().evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return box.top + box.height / 2;
+  });
+
+  const shareInput = page.locator('#haku-share-link input');
+  const shareButton = page.locator('#haku-share-link .ui-button');
+  await expect(shareInput).toHaveCSS('height', await shareButton.evaluate((element) => getComputedStyle(element).height));
+  expect(Math.abs(await center('#haku-share-link input') - await center('#haku-share-link .ui-button'))).toBeLessThanOrEqual(.5);
+
+  const skillCenter = await center('#haku-chara-card .haku-moe-skill .skill-chip');
+  const statusCenter = await center('#haku-chara-card .haku-moe-skill .badge');
+  expect(Math.abs(skillCenter - statusCenter)).toBeLessThanOrEqual(1);
+
+  const placement = page.locator('#haku-analysis-table .placement').first();
+  const placementCell = placement.locator('xpath=ancestor::td');
+  const placementBox = await placement.boundingBox();
+  const cellBox = await placementCell.boundingBox();
+  expect(Math.abs((placementBox!.y + placementBox!.height / 2) - (cellBox!.y + cellBox!.height / 2))).toBeLessThanOrEqual(1);
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test('Hakuraku entity selectors and race planning use the canonical moe contracts', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/ui-lab');
+  await page.getByRole('tab', { name: /Hakuraku/ }).click();
+  await expect(page.locator('[data-hakuraku-library]')).toBeVisible();
+
+  const characterSelect = page.locator('#haku-portrait-select');
+  const characterTrigger = characterSelect.getByRole('combobox', { name: 'Character' });
+  await expect(characterTrigger).toHaveAttribute('aria-expanded', 'false');
+  await characterTrigger.click();
+  await expect(characterSelect.getByRole('listbox', { name: 'Character' })).toBeVisible();
+  await expect(characterSelect.getByRole('option')).toHaveCount(3);
+  await characterTrigger.press('ArrowDown');
+  await characterTrigger.press('Enter');
+  await expect(characterTrigger).toContainText('Oguri Cap');
+  await expect(characterTrigger).toHaveAttribute('aria-expanded', 'false');
+
+  const teamTrigger = page.locator('#haku-team-sample-select').getByRole('combobox', { name: 'Team sample' });
+  await teamTrigger.click();
+  await expect(page.getByRole('listbox', { name: 'Team sample' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(teamTrigger).toHaveAttribute('aria-expanded', 'false');
+
+  const placement = page.locator('#haku-analysis-table .placement').first();
+  expect((await placement.boundingBox())!.height).toBeGreaterThanOrEqual(28);
+
+  const planner = page.locator('#haku-race-planner');
+  await expect(planner).toHaveAttribute('data-origin', 'uma');
+  await expect(planner.locator('.race-schedule')).toBeVisible();
+  await expect(planner.locator('.haku-planner')).toHaveCount(0);
+  await expect(planner.getByRole('heading', { name: 'Junior Year' })).toBeVisible();
+  await expect(planner.getByRole('heading', { name: 'Classic Year' })).toBeVisible();
+  await expect(planner.getByRole('heading', { name: 'Senior Year' })).toBeVisible();
 });
 
 test('main-parent and P2 sparks preserve the Angular source accents', async ({ page }) => {
@@ -147,11 +321,11 @@ test('main-parent and P2 sparks preserve the Angular source accents', async ({ p
     return {
       main: getComputedStyle(document.querySelector<HTMLElement>('[data-source="main"] .level')!).color,
       p2: getComputedStyle(document.querySelector<HTMLElement>('[data-source="p2"] .p2-marker')!).color,
-      warning: resolvedToken('--accent-warning'),
+      blue: resolvedToken('--accent-primary'),
       purple: resolvedToken('--accent-purple')
     };
   });
-  expect(colors.main).toBe(colors.warning);
+  expect(colors.main).toBe(colors.blue);
   expect(colors.p2).toBe(colors.purple);
 
   const centers = await Promise.all(['.level', '.star', '.name', '.chance'].map(async (selector) => {
@@ -181,8 +355,8 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   const compactRail = await rail.boundingBox();
   const compactIntro = await intro.boundingBox();
   expect(compactRail!.width).toBe(64);
-  expect(compactIntro!.x).toBe(64 + 24);
-  expect(768 - compactIntro!.x - compactIntro!.width).toBe(24);
+  expect(compactIntro!.x).toBe(64);
+  expect(768 - compactIntro!.x - compactIntro!.width).toBe(0);
 
   await page.setViewportSize({ width: 1366, height: 900 });
   const largeCompactRail = await rail.boundingBox();
@@ -200,7 +374,7 @@ test('the UI lab itself uses the canonical responsive shell and page gutters', a
   await page.setViewportSize({ width: 1920, height: 1080 });
   const expandedRail = await rail.boundingBox();
   expect(expandedRail!.width).toBe(240);
-  await expect(rail.getByText('Foundation', { exact: true })).toBeVisible();
+  await expect(rail.getByRole('button', { name:'Open Foundation subsections', exact:true }).locator('.navigation-label')).toBeVisible();
 });
 
 test('section navigation exposes subsections in expanded, compact, and mobile shells', async ({ page }) => {
@@ -209,25 +383,24 @@ test('section navigation exposes subsections in expanded, compact, and mobile sh
   const rail = page.locator('[data-shell-rail]');
 
   await rail.getByRole('button', { name: 'Open Inputs subsections' }).click();
-  const wideSubsections = rail.locator('#navigation-subsections-inputs');
+  const wideSubsections = rail.locator('[id$="-subsections-inputs"]');
   await expect(wideSubsections.getByRole('link', { name: 'Slider' })).toBeVisible();
   const expandedAlignment = await Promise.all([
-    rail.locator('.navigation-item.open > .navigation-parent .navigation-link > span').boundingBox(),
+    rail.locator('.navigation-item.open > .navigation-parent .navigation-label').boundingBox(),
     wideSubsections.getByRole('link', { name: 'Slider' }).locator('span').boundingBox()
   ]);
-  expect(expandedAlignment[1]!.x).toBeLessThan(expandedAlignment[0]!.x);
-  expect(expandedAlignment[0]!.x - expandedAlignment[1]!.x).toBeLessThanOrEqual(24);
+  expect(expandedAlignment[1]!.x).toBeCloseTo(expandedAlignment[0]!.x, 0);
   await wideSubsections.getByRole('link', { name: 'Slider' }).click();
   await expect(page).toHaveURL(/#slider$/);
-  await expect(wideSubsections).not.toBeVisible();
+  await expect(wideSubsections).toBeVisible();
 
   await page.setViewportSize({ width: 1536, height: 864 });
   await rail.getByRole('button', { name: 'Open Domain patterns subsections' }).click();
-  const compactSubsections = rail.locator('#navigation-subsections-domain');
+  const compactSubsections = rail.locator('[id$="-subsections-domain"]');
   await expect(compactSubsections.getByRole('link', { name: 'Veteran selector' })).toBeVisible();
   await rail.getByRole('button', { name: 'Open Actions subsections' }).click();
   await expect(compactSubsections).not.toBeVisible();
-  const compactActions = rail.locator('#navigation-subsections-actions');
+  const compactActions = rail.locator('[id$="-subsections-actions"]');
   await expect(compactActions).toBeVisible();
   const [railBounds, flyoutBounds] = await Promise.all([rail.boundingBox(), compactActions.boundingBox()]);
   expect(flyoutBounds!.x).toBe(railBounds!.x + railBounds!.width);
@@ -270,7 +443,7 @@ test('ported Angular UI contracts remain interactive and mobile-safe', async ({ 
   await lineageNode.click();
   await expect(lineageNode).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: 'Open Satsuki Sho' }).click();
+  await page.getByRole('button', { name: /Satsuki Sho/ }).first().click();
   await expect(page.getByText('Selected race: Satsuki Sho')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
@@ -340,19 +513,19 @@ test('Analytics viewport toggles resize the entire UI Lab website', async ({ pag
   expect((await viewport.boundingBox())!.width).toBe(1920);
 });
 
-test('medium and wide page contracts change the live UI lab content maximum', async ({ page }) => {
+test('normal and wide page contracts change the live UI lab content maximum', async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1440 });
   await page.goto('/ui-lab');
   const main = page.locator('.lab-main');
   const control = page.locator('article.demo').filter({ hasText: 'Live responsive shell and page width' });
   await expect(main).toHaveAttribute('data-page-width', 'wide');
   const wide = await main.boundingBox();
-  await control.getByRole('radio', { name: 'Medium', exact: true }).click();
-  await expect(main).toHaveAttribute('data-page-width', 'medium');
-  const medium = await main.boundingBox();
+  await control.getByRole('radio', { name: 'Normal', exact: true }).click();
+  await expect(main).toHaveAttribute('data-page-width', 'normal');
+  const normal = await main.boundingBox();
   expect(wide!.width).toBe(1760);
-  expect(medium!.width).toBe(1080);
-  expect(medium!.x).toBeGreaterThan(wide!.x);
+  expect(normal!.width).toBe(1080);
+  expect(normal!.x).toBeGreaterThan(wide!.x);
 });
 
 test('the live UI page uses a 1080p counter-rail and a large-screen ad pair', async ({ page }) => {
@@ -395,7 +568,7 @@ test('the live UI page uses a 1080p counter-rail and a large-screen ad pair', as
       rightInset: pageFrame.right - rightRail.right
     };
   });
-  expect(compactAdGeometry).toEqual({ navigationWidth: 64, visibleRails: 1, rightRailWidth: 160, rightInset: 24 });
+  expect(compactAdGeometry).toEqual({ navigationWidth: 64, visibleRails: 1, rightRailWidth: 160, rightInset: 0 });
   await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden();
 
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -547,8 +720,8 @@ test('extended Angular UI contracts remain functional and mobile-safe', async ({
   await expect(page.getByRole('dialog', { name: 'Swinging Maestro details' })).not.toBeVisible();
 
   const timelineCard = demo('Timeline event, rewards, and pickups');
-  await timelineCard.getByRole('button', { name: 'Plan' }).click();
-  await expect(timelineCard.getByRole('button', { name: 'Added' })).toHaveAttribute('aria-pressed', 'true');
+  await timelineCard.getByRole('button', { name: /to Carat Planner$/ }).click();
+  await expect(timelineCard.getByRole('button', { name: /from Carat Planner$/ })).toHaveAttribute('aria-pressed', 'true');
   await expect(demo('Statistics chart frame').getByText('94', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

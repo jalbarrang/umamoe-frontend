@@ -1,4 +1,4 @@
-<script lang="ts">import Button from '../../ui/Button.svelte';</script>
+<script lang="ts">import Button from '../../ui/Button.svelte'; import AppPage from '../../ui/layout/AppPage.svelte';</script>
 <svelte:head><title>Page not found · uma.moe</title></svelte:head>
-<main class="not-found"><span>404</span><h1>This route is not in the UI foundation build.</h1><p>Only the review lab is enabled until its component contracts are approved.</p><a href="/"><Button variant="secondary">Back to foundation</Button></a></main>
-<style>.not-found { min-height: 100dvh; width: min(100%, 680px); display: grid; place-items: start; align-content: center; gap: var(--space-3); margin: auto; padding: var(--space-6); } .not-found > span { color: var(--color-accent); font-weight: 900; } h1 { margin: 0; font-size: var(--font-xl); } p { margin: 0 0 var(--space-2); } a { text-decoration: none; }</style>
+<AppPage routeId="not-found" title="Page not found" description="This destination is not part of the merged uma.moe route manifest." eyebrow="404"><div class="not-found"><p>Use the main navigation to return to an available feature.</p><Button href="/" variant="secondary">Back home</Button></div></AppPage>
+<style>.not-found { min-height: 240px; display: grid; place-items: start; align-content: center; gap: var(--space-3); padding: var(--space-5); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: var(--surface-1); } .not-found p { margin: 0; }</style>

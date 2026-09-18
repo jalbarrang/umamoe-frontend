@@ -4,19 +4,26 @@
   import { setMockClientState } from '../../platform/client/client-state';
   import Artwork from '../../ui/Artwork.svelte';
   import AffinityStat from '../../ui/AffinityStat.svelte';
+  import AffinityPicker from '../../ui/AffinityPicker.svelte';
   import AptitudeGrid from '../../ui/AptitudeGrid.svelte';
   import Badge from '../../ui/Badge.svelte';
   import Banner from '../../ui/Banner.svelte';
   import Breadcrumbs from '../../ui/Breadcrumbs.svelte';
   import Button from '../../ui/Button.svelte';
   import Card from '../../ui/Card.svelte';
+  import CircleCard from '../../ui/CircleCard.svelte';
+  import Disclosure from '../../ui/Disclosure.svelte';
   import Checkbox from '../../ui/Checkbox.svelte';
   import ClientIndicator from '../../ui/ClientIndicator.svelte';
   import Combobox from '../../ui/Combobox.svelte';
   import CharacterPicker from '../../ui/CharacterPicker.svelte';
+  import CharacterSelectDialog from '../../ui/CharacterSelectDialog.svelte';
   import ChartFrame from '../../ui/ChartFrame.svelte';
+  import StatisticsRanking from '../tools/StatisticsRanking.svelte';
+  import StatisticsDeckMatrix from '../tools/StatisticsDeckMatrix.svelte';
   import CountedOption from '../../ui/CountedOption.svelte';
   import DataTable from '../../ui/DataTable.svelte';
+  import MetricBar from '../../ui/MetricBar.svelte';
   import Dialog from '../../ui/Dialog.svelte';
   import DistanceSelector from '../../ui/DistanceSelector.svelte';
   import EmptyState from '../../ui/EmptyState.svelte';
@@ -53,6 +60,7 @@
   import SegmentedControl from '../../ui/SegmentedControl.svelte';
   import SelectionChip from '../../ui/SelectionChip.svelte';
   import SelectField from '../../ui/SelectField.svelte';
+  import SelectFieldSlim from '../../ui/SelectFieldSlim.svelte';
   import Skeleton from '../../ui/Skeleton.svelte';
   import Spinner from '../../ui/Spinner.svelte';
   import StatTile from '../../ui/StatTile.svelte';
@@ -103,6 +111,7 @@
   let reducedMotion = $state(false);
   let segment = $state('overview');
   let textValue = $state('Mejiro McQueen');
+  let numberValue = $state('');
   let searchValue = $state('');
   let selectValue = $state('global');
   let comboboxValue = $state('');
@@ -131,6 +140,9 @@
   let selectedLineageId = $state('lineage-main');
   let selectedRace = $state('');
   let selectedCharacters = $state<string[]>(['mcqueen']);
+  let affinityTarget = $state('mcqueen');
+  let affinityTargetOpen = $state(false);
+  let affinityLegacySelected = $state(false);
   let selectedSupportCard = $state('support-speed');
   let selectedDistance = $state<'sprint' | 'mile' | 'medium' | 'long' | 'dirt'>('long');
   let editedSparkLevel = $state(3);
@@ -149,11 +161,15 @@
   const sectionIcons: Record<string, IconName> = {
     tokens: 'home', actions: 'activity', inputs: 'filter', navigation: 'menu',
     feedback: 'status', overlays: 'more', data: 'database', domain: 'veterans',
-    'haku-foundation': 'home', 'haku-race-data': 'database', 'haku-replay': 'race', 'haku-analysis': 'chart'
+    'haku-foundation': 'home', 'haku-race-presenter': 'database', 'haku-replay': 'race',
+    'haku-multi-race': 'chart', 'haku-uma-logs': 'activity', 'haku-veterans': 'veterans', 'haku-page-patterns': 'more'
   };
   const activeRegistry = $derived(labLibrary === 'uma' ? uiRegistry : hakurakuRegistry);
   const activeComponentCount = $derived(labLibrary === 'uma' ? componentCount : hakurakuComponentCount);
   const mobileSections = $derived(labLibrary === 'uma' ? uiRegistry.filter((section) => ['tokens', 'actions', 'inputs', 'data'].includes(section.id)) : hakurakuRegistry.slice(0, 4));
+  const mobileSectionLabels: Record<string, string> = {
+    'haku-foundation': 'Foundation', 'haku-race-presenter': 'Race data', 'haku-replay': 'Replay', 'haku-multi-race': 'Multi-Race'
+  };
   const labNavigationItems: NavigationItem[] = $derived(activeRegistry.map((section) => ({
     id: section.id,
     label: section.title,
@@ -264,7 +280,7 @@
     { id: 'support-power', title: 'Get Lots of Hugs for Me', character: 'Oguri Cap', image: supportCardPower, type: 'Power' as const, rarity: 'SR' as const }
   ];
   const timelineEvent = {
-    id: 'timeline-support-2022-30137', title: 'Story Event Support Card Scout', typeLabel: 'Support Card Scout', dateLabel: 'Aug 29 – Sep 11', context: 'Global', image: timelineBanner, tone: 'support' as const, rerun: true, canPlan: true,
+    id: 'timeline-support-2022-30137', eventType: 'support_card_banner', title: 'Story Event Support Card Scout', typeLabel: 'Support Card Scout', dateLabel: 'Aug 29 – Sep 11', context: 'Global', image: timelineBanner, rerun: true, canPlan: true,
     rewards: [{ id: 'carats', label: 'Carats', amount: '×1,500', icon: caratIcon }],
     pickups: [{ id: 'support', name: 'Kitasan Black support card', image: kitasanBlackSupportImage, kind: 'support' as const }, { id: 'mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, kind: 'character' as const }]
   };
@@ -287,7 +303,7 @@
   }
 </script>
 
-<svelte:head><title>UI Lab · uma.moe beta</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
+<svelte:head><title>UI Lab · uma.moe</title><meta name="robots" content="noindex,nofollow" /></svelte:head>
 
 <div class="viewport-switcher" data-viewport-switcher>
   <div><strong>Website viewport</strong><span>Analytics resolution presets</span></div>
@@ -304,8 +320,8 @@
 <div class="lab-scrollport" data-preview-scrollport>
 <div class="lab-shell" data-ui-lab-shell>
   <header class="lab-bar" data-shell-utility>
-    <a class="lab-brand" href="/ui-lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
-    <div class="lab-context"><strong>{labLibrary === 'uma' ? 'uma.moe UI' : 'Hakuraku UI'}</strong><span>{activeComponentCount} component contracts</span></div>
+    <a class="lab-brand" href="/ui"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
+    <div class="lab-context"><strong>{labLibrary === 'uma' ? 'uma.moe UI' : 'Hakuraku patterns'}</strong><span>{activeComponentCount} component contracts</span></div>
     <div class="lab-controls">
       <SegmentedControl label="Theme" options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} value={$theme} onchange={(value) => setTheme(value as Theme)}/>
       <SegmentedControl label="Density" options={[{ value: 'comfortable', label: 'Touch' }, { value: 'compact', label: 'Compact' }]} bind:value={density}/>
@@ -319,7 +335,7 @@
   </header>
 
   <aside class="lab-index" data-shell-rail>
-    <a class="rail-brand" href="/ui-lab" aria-label="uma.moe UI lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
+    <a class="rail-brand" href="/ui" aria-label="uma.moe UI lab"><LogoMark size={30}/><span><strong>uma.moe</strong><small>UI lab</small></span></a>
     <div class="index-head"><strong>{activeComponentCount} contracts</strong><span>v0 · review</span></div>
     <div class="lab-navigation-scroll"><NavigationTree items={labNavigationItems} label="UI lab sections"/></div>
     <p>Beta/dev only. This module is removed from production builds.</p>
@@ -332,17 +348,14 @@
   <main class="lab-main" data-page-width={pageWidth}>
     <div class="library-tabs" role="tablist" aria-label="UI component library">
       <button id="uma-library-tab" role="tab" aria-selected={labLibrary === 'uma'} class:active={labLibrary === 'uma'} onclick={() => selectLibrary('uma')}><LogoMark size={22}/><span><strong>uma.moe</strong><small>Angular parity</small></span></button>
-      <button id="hakuraku-library-tab" role="tab" aria-selected={labLibrary === 'hakuraku'} class:active={labLibrary === 'hakuraku'} onclick={() => selectLibrary('hakuraku')}><Icon name="race" size={20}/><span><strong>Hakuraku</strong><small>Race analysis ports</small></span></button>
+      <button id="hakuraku-library-tab" role="tab" aria-selected={labLibrary === 'hakuraku'} class:active={labLibrary === 'hakuraku'} onclick={() => selectLibrary('hakuraku')}><Icon name="race" size={20}/><span><strong>Hakuraku</strong><small>Moe-themed patterns</small></span></button>
     </div>
-    <section class="lab-intro">
-      {#if labLibrary === 'uma'}
+    {#if labLibrary === 'uma'}
+      <section class="lab-intro">
         <div><Badge tone="accent">Svelte port · review</Badge><h1 id="ui-lab-title">uma.moe UI system</h1><p>The existing uma.moe visual language rebuilt as lightweight Svelte components: familiar colors, compact data controls, and touch-friendly behavior.</p></div>
         <dl><div><dt>Target</dt><dd>≤25 KB CSS</dd></div><div><dt>Touch</dt><dd>44×44 min</dd></div><div><dt>DOM</dt><dd>&lt;1,500 nodes</dd></div></dl>
-      {:else}
-        <div><Badge tone="success">Hakuraku port · review</Badge><h1 id="ui-lab-title">Hakuraku component ports</h1><p>Race-data, replay, and analysis patterns translated into responsive Svelte contracts. React and Bootstrap stay out; Hakuraku’s modular ECharts approach becomes our future chart boundary.</p></div>
-        <dl><div><dt>Source</dt><dd>MIT</dd></div><div><dt>Runtime</dt><dd>Svelte only</dd></div><div><dt>Charts</dt><dd>ECharts SVG</dd></div></dl>
-      {/if}
-    </section>
+      </section>
+    {/if}
 
     {#if labLibrary === 'uma'}
     <LabSection id="tokens" title="Foundation" description="The original Angular palette, type rhythm, radii, and elevations are the source of truth. Svelte components consume stable semantic aliases.">
@@ -370,8 +383,8 @@
 
     <LabSection id="inputs" title="Inputs" description="The Angular factor fields, selects, autocomplete panels, focus treatment, spacing, and option states are carried over without Material.">
       <div class="demo-grid">
-        <DemoBlock id="text-field" title="Text and search"><div class="state-stack"><TextField id="name" label="Veteran name" bind:value={textValue} help="A private label stored in this workspace."/><TextField id="search" type="search" label="Search database" bind:value={searchValue} placeholder="Character, skill, factor…"/><TextField id="invalid" label="Share code" value="ABC" error="The share code must contain 12 characters."/><TextField id="disabled-field" label="Account ID" value="Not connected" disabled/></div></DemoBlock>
-        <DemoBlock id="select" title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap', image: oguriCapImage }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen', image: mejiroMcQueenImage }, { value: 'Kitasan Black', label: 'Kitasan Black', image: kitasanBlackImage }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
+        <DemoBlock id="text-field" title="Text and search"><div class="state-stack"><TextField id="name" label="Veteran name" bind:value={textValue} help="A private label stored in this workspace."/><TextField id="search" type="search" label="Search database" bind:value={searchValue} placeholder="Character, skill, factor…"/><TextField id="invalid" label="Share code" value="ABC" error="The share code must contain 12 characters."/><TextField id="disabled-field" label="Account ID" value="Not connected" disabled/><TextField id="number-field" label="Number" type="number" min={0} max={2} step={0.25} bind:value={numberValue} help="Steps of 0.25, between 0 and 2."/><TextField id="readonly-number" label="Read only number" type="number" value="1" readonly/><TextField id="disabled-number" label="Disabled number" type="number" value="1" disabled/></div></DemoBlock>
+        <DemoBlock id="select" title="Select and combobox"><div class="state-stack"><SelectField id="region" label="Data region" options={[{ value: 'global', label: 'Global' }, { value: 'jp', label: 'Japan' }]} bind:value={selectValue}/><SelectFieldSlim id="region-slim" label="Data region (slim)" options={[{value:"global",label:"Global"},{value:"jp",label:"Japan"}]} bind:value={selectValue}/><Combobox id="character" label="Character" bind:value={comboboxValue} placeholder="Start typing a name" options={[{ value: 'Oguri Cap', label: 'Oguri Cap', image: oguriCapImage }, { value: 'Mejiro McQueen', label: 'Mejiro McQueen', image: mejiroMcQueenImage }, { value: 'Kitasan Black', label: 'Kitasan Black', image: kitasanBlackImage }]}/><TextArea id="notes" label="Notes" bind:value={textareaValue} placeholder="Optional private notes…" help="Never included in public metadata."/></div></DemoBlock>
       </div>
       <div class="demo-grid">
         <DemoBlock id="choice" title="Choice controls"><div class="state-stack"><Checkbox id="include-inheritance" label="Include inheritance factors" description="Adds parent and grandparent factors." bind:checked={checkboxValue}/><Checkbox id="partial-choice" label="Select visible results" indeterminate/><Checkbox id="disabled-choice" label="Unavailable option" disabled/><RadioGroup id="storage" legend="Default storage" bind:value={radioValue} options={[{ value: 'local', label: 'Local device', description: 'No login required.' }, { value: 'account', label: 'Linked account', description: 'Sync between devices.' }]}/><Switch id="auto-save" label="Automatic Veteran saves" description="Completed imports are persisted automatically." bind:checked={switchValue}/></div></DemoBlock>
@@ -390,7 +403,7 @@
         <span id="subnavigation" class="anchor-target" aria-hidden="true"></span>
         <div class="page-width-control">
           <div><strong>UI lab content width</strong><span>Medium suits focused flows; wide suits databases, tables, and dense tools.</span></div>
-          <SegmentedControl label="UI lab content width" options={[{ value: 'medium', label: 'Medium' }, { value: 'wide', label: 'Wide' }]} bind:value={pageWidth}/>
+          <SegmentedControl label="UI lab content width" options={[{ value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }]} bind:value={pageWidth}/>
         </div>
         <div class="width-contracts">
           <article><strong>Medium</strong><span>1080px content maximum</span><small>Forms, profiles, Veterans, settings, and reading pages</small></article>
@@ -436,6 +449,8 @@
 
     <LabSection id="data" title="Data patterns" description="Small sets use semantic tables and cards; large sets use a fixed-row virtual window so DOM size stays constant.">
       <DemoBlock id="cards" title="Stat tiles"><div class="stats"><StatTile label="Veterans" value="2,481" detail="+18 this week" trend="up" tone="accent"/><StatTile label="Synced" value="98.7%" detail="32 pending" tone="success"/><StatTile label="Race logs" value="14,209" detail="Last 30 days"/><StatTile label="Conflicts" value="2" detail="Needs review" tone="warning"/></div></DemoBlock>
+      <DemoBlock id="circle-card" title="Circle card" note="Shared directory row and profile summary"><div class="state-stack"><CircleCard circle={{ circleId:1, name:'Team Sirius', rank:12, members:29, monthlyFans:1200000, liveFans:1300000, clubRank:9, joinStyle:2, leaderName:'Trainer' }}/><CircleCard layout="summary" circle={{ circleId:1, name:'Team Sirius', rank:12, liveRank:9, members:29, monthlyFans:1200000, liveFans:1310000, clubRank:9 }}/></div></DemoBlock>
+      <DemoBlock id="disclosure" title="Collapsible section"><Disclosure id="lab-monthly-history" title="Fan History" description="Monthly totals, gains and ranks" icon="timeline"><p>Optional details expand directly beneath the section heading.</p></Disclosure></DemoBlock>
       <DemoBlock id="filters" title="Filters and sort"><div class="state-row"><FilterChip label="All" count={2481} selected/><FilterChip label="Long" count={412} bind:selected={selectedFilter}/><FilterChip label="Runner" count={188}/><FilterChip label="UE+" count={74}/><FilterChip label="Imported today" removable/><Button variant="ghost" size="sm" icon="sort">Evaluation</Button></div></DemoBlock>
       <DemoBlock id="result-toolbar" title="Database result toolbar" note="Count · live state · sort · responsive view controls"><ResultToolbar count={2481} noun="Veterans" filtered sortOptions={[{ value: 'affinity', label: 'Affinity' }, { value: 'score', label: 'Score' }, { value: 'newest', label: 'Newest' }]} bind:sort={resultSort} bind:view={resultView} live onrefresh={() => showToast()}/></DemoBlock>
       <DemoBlock id="filter-composition" title="Database filter composition" note="Modes · presets · sections · counted options · mobile sheet">
@@ -465,6 +480,13 @@
           </ChartFrame>
         </DemoBlock>
       </div>
+      <DemoBlock id="statistics-ranking" title="Statistics rankings" note="Production explorer · search, sorting, portraits, counts, and proportional bars">
+        <StatisticsRanking id="lab-statistics-ranking" title="Uma usage" description="Example data. Percentages show share of recorded uses; bars are relative to the leading result." searchable items={[{ id: '100601', name: 'Oguri Cap', image: oguriCapImage, value: 640, percentage: 64 }, { id: '101301', name: 'Mejiro McQueen', image: mejiroMcQueenImage, value: 360, percentage: 36 }]} onselect={() => showToast()}/>
+      </DemoBlock>
+      <DemoBlock id="statistics-deck-matrix" title="Deck composition matrix" note="Production statistics · Hakuraku composition pattern with real support types">
+        <div style="max-width:480px"><StatisticsDeckMatrix id="lab-deck-matrix" items={[{ id: 'speed-stamina', name: '3× speed · 2× stamina · 1× friend', value: 1284, percentage: 42.8, composition: { speed: 3, stamina: 2, friend: 1 } }, { id: 'speed-power', name: '2× speed · 2× power · 2× wit', value: 960, percentage: 32, composition: { speed: 2, power: 2, wisdom: 2 } }, { id: 'guts-wit', name: '3× guts · 2× wit · 1× group', value: 756, percentage: 25.2, composition: { guts: 3, wiz: 2, group: 1 } }]}/></div>
+      </DemoBlock>
+      <DemoBlock id="metric-bar" title="Analytic metric bars" note="Shared by Race Lab, UmaLogs, and compact result tables"><div class="state-stack"><MetricBar label="Win rate" value={38.2}/><MetricBar label="Full spurt" value={85.2} tone="success"/><MetricBar label="HP remaining" value={14.6} tone="warning"/><MetricBar label="Failure rate" value={8.1} tone="danger" compact/></div></DemoBlock>
       <DemoBlock id="table" title="Responsive table" note="Secondary columns hide below 520px"><DataTable caption="Veteran comparison" columns={[{ key: 'name', label: 'Veteran', priority: 'primary' }, { key: 'rank', label: 'Rank' }, { key: 'speed', label: 'Speed', numeric: true }, { key: 'stamina', label: 'Stamina', numeric: true, priority: 'secondary' }, { key: 'distance', label: 'Distance', priority: 'secondary' }]} rows={tableRows}/></DemoBlock>
       <DemoBlock title="Virtual list" note="2,500 records · roughly 20 live rows">
         <VirtualList items={virtualItems} rowHeight={54} height={320} label="Veterans">
@@ -486,6 +508,10 @@
         <DemoBlock id="distance-selector" title="Distance selector" note="Full labels become compact marks at component width"><DistanceSelector bind:value={selectedDistance}/></DemoBlock>
         <DemoBlock id="spark-editor" title="Inheritance spark editor" note="Existing spark presentation with an explicit star control"><div class="state-stack"><SparkEditor id="edit-speed" name="Speed" tone="blue" source="main" chance="10%" bind:level={editedSparkLevel} onremove={() => showToast('warning')}/><SparkEditor id="edit-maestro" name="Swinging Maestro" tone="white" source="p2" level={2}/></div></DemoBlock>
       </div>
+      <DemoBlock id="affinity-picker" title="Target and legacy picker" note="Shared by Database and Veterans · choose, change and clear · sample legacy">
+        <AffinityPicker target={characterPickerOptions.find(option => option.id === affinityTarget)} veteran={affinityLegacySelected ? veteranFixture : undefined} ontargetpick={() => affinityTargetOpen = true} ontargetclear={() => affinityTarget = ''} onlegacypick={() => affinityLegacySelected = true} onlegacyclear={() => affinityLegacySelected = false}/>
+        <CharacterSelectDialog bind:open={affinityTargetOpen} options={characterPickerOptions} selected={affinityTarget ? [affinityTarget] : []} onselect={values => { affinityTarget = values[0] ?? ''; affinityTargetOpen = false; }}/>
+      </DemoBlock>
       <DemoBlock id="identity" title="Rank, aptitude, stats, and affinity" note="Angular game semantics as small reusable contracts">
         <div class="identity-contract">
           <div class="identity-head">
@@ -530,7 +556,7 @@
       {#if HakuLab}<HakuLab/>{:else}<p class="library-loading" role="status">Loading Hakuraku component contracts…</p>{/if}
     {/if}
 
-    <footer class="lab-footer"><strong>{labLibrary === 'uma' ? 'UI contract v0' : 'Hakuraku port contract v0'}</strong><span>{labLibrary === 'uma' ? 'Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.' : 'Approve these clean Svelte ports before Race Lab route integration; feature state and chart rendering remain separately replaceable.'}</span></footer>
+    <footer class="lab-footer"><strong>{labLibrary === 'uma' ? 'UI contract v0' : 'Hakuraku pattern contract v0'}</strong><span>{labLibrary === 'uma' ? 'Approve foundation, components, overlays, data patterns, navigation, themes, and responsive behavior before product-route work.' : 'Hakuraku supplies component structures and interactions; uma.moe supplies the shared theme, controls, and visual semantics.'}</span></footer>
   </main>
   </PageFrame>
   </div>
@@ -538,7 +564,7 @@
 </div>
 
 <nav class="lab-bottom" aria-label="UI lab mobile sections" data-shell-bottom>
-    {#each mobileSections as section}<a href="#{section.id}"><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{section.title}</span></a>{/each}
+    {#each mobileSections as section}<a href="#{section.id}"><Icon name={sectionIcons[section.id] ?? 'more'} size={19}/><span>{mobileSectionLabels[section.id] ?? section.title}</span></a>{/each}
     <button aria-label="More UI lab sections" onclick={() => labNavigationOpen = true}><Icon name="more" size={19}/><span>More</span></button>
 </nav>
 
@@ -572,20 +598,20 @@
   .lab-index { display: none; }
   .rail-brand { display: none; }
   .lab-page { min-width: 0; }
-  .lab-main { width: 100%; min-width: 0; display: grid; gap: var(--space-10); padding-bottom: var(--space-12); }
+  .lab-main { width: 100%; min-width: 0; display: grid; gap: var(--space-6); padding-bottom: var(--space-12); }
   .library-tabs { width: fit-content; max-width: 100%; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-1); }
-  .library-tabs button { min-width: 150px; min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 4px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-muted); cursor: pointer; text-align: left; }
+  .library-tabs button { min-width: 168px; min-height: 48px; display: flex; align-items: center; gap: 9px; padding: 5px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-muted); cursor: pointer; text-align: left; }
   .library-tabs button:hover { color: var(--color-text); background: var(--surface-2); }
   .library-tabs button.active { background: var(--surface-3); color: var(--color-text); box-shadow: inset 0 -2px var(--color-accent); }
   .library-tabs button > span { min-width: 0; display: grid; gap: 1px; }
-  .library-tabs strong { font-size: 11px; line-height: 15px; }
-  .library-tabs small { color: var(--color-text-subtle); font-size: 8px; line-height: 11px; }
+  .library-tabs strong { font-size: var(--font-sm); line-height: var(--line-height-heading); }
+  .library-tabs small { color: var(--color-text-subtle); font-size: var(--font-xs); line-height: var(--line-height-caption); }
   .library-loading { min-height: 180px; display: grid; place-items: center; margin: 0; color: var(--color-text-muted); }
   .lab-bottom { z-index: var(--z-header); width: 100%; height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border-primary); background: var(--navbar-bg); }
   .lab-bottom a, .lab-bottom button { min-width: 0; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0 2px; border: 0; background: transparent; color: var(--color-text-subtle); cursor: pointer; font: inherit; font-size: 9px; text-decoration: none; }
   .lab-bottom a:hover, .lab-bottom button:hover { color: var(--color-text); }
-  .lab-intro { display: grid; gap: var(--space-6); padding: var(--space-5); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: radial-gradient(circle at 12% 0%, rgb(100 181 246 / .08), transparent 38%), radial-gradient(circle at 95% 100%, rgb(129 199 132 / .07), transparent 34%), var(--surface-2); }
-  .lab-intro h1 { max-width: 800px; margin: var(--space-3) 0 var(--space-2); background: var(--gradient-brand); background-clip: text; color: transparent; font-size: var(--font-display); font-weight: 700; line-height: 1.05; letter-spacing: -.025em; }
+  .lab-intro { display: grid; gap: var(--space-4); padding: var(--space-4); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background: var(--gradient-page-header), var(--surface-2); }
+  .lab-intro h1 { max-width: 800px; margin: var(--space-2) 0 var(--space-1); background: var(--gradient-brand); background-clip: text; color: transparent; font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 700; line-height: var(--line-height-heading); letter-spacing: -.02em; }
   .lab-intro p { max-width: 68ch; margin: 0; }
   dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-border); }
   dl div { min-width: 0; padding: var(--space-3); background: var(--bg-tertiary); } dt { color: var(--color-text-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; } dd { margin: 3px 0 0; font-size: var(--font-sm); font-weight: 700; }
@@ -646,7 +672,7 @@
     .identity-head { gap: 6px; }
     .rank-reference { align-items: flex-start; flex-direction: column; gap: 3px; }
   }
-  @container app-viewport (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: end; padding: var(--space-8); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @container app-viewport (min-width: 680px) { .lab-intro { grid-template-columns: minmax(0, 1fr) minmax(290px, .45fr); align-items: center; padding: var(--space-5); } .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   @container app-viewport (min-width: 768px) {
     .lab-shell { display: grid; grid-template-columns: var(--rail-compact) minmax(0, 1fr); grid-template-rows: var(--utility-height) minmax(calc(100% - var(--utility-height)), auto); }
     .lab-bar { grid-column: 2; grid-row: 1; min-width: 0; padding-inline: var(--page-gutter-compact); }

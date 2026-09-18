@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "storageKeys": [
+    "auth_token", "cookie-consent", "uma-color-mode", "christmas-theme", "lastSeenUpdateVersion",
+    "database-filter-state-v2", "database-filter-mode-v1", "database-filter-presets-v1", "db-list-mode", "db-hidden-spark-factors",
+    "circle_details_config", "umamoe.timeline.desktop-preferences.v1", "carat-planner-plans-v1", "carat-planner-cloud-meta-v1",
+    "lineage-planner-state-v1", "lineage-planner-saves-v1", "vpd_manual_entries", "partner-lookups:anon", "inheritance_votes",
+    "reported_trainers", "privacy-notice-accepted", "domain-migration-complete", "domain_migration_popup_shown", "milestone_1m_popup_shown",
+    "christmas_update_2025_seen", "umamoe-fuse-enabled-v1"
+  ],
+  "apiFamilies": [
+    "/api/auth", "/api/v3", "/api/v4/circles", "/api/v4/rankings", "/api/v4/shame", "/api/v4/user/profile",
+    "/api/v4/partner", "/api/carat-planner", "/api/borrow", "/api/tasks", "/ingest/veteran", "/search"
+  ],
+  "globalState": ["authentication", "theme", "consent", "version-status", "catalog-cache"],
+  "rule": "Existing keys and wire contracts remain authoritative until a versioned migration adapter is present."
+}

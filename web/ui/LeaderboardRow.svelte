@@ -1,22 +1,46 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  interface Stat { label: string; value: string; emphasized?: boolean; }
-  interface Props { rank: number; name: string; group?: string; meta?: string; trend?: number; stats: Stat[]; href?: string; onclick?: () => void; }
-  let { rank, name, group, meta, trend = 0, stats, href, onclick }: Props = $props();
+  interface Stat { label: string; value: string; mobileValue?: string; mobileHidden?: boolean; emphasized?: boolean; positive?: boolean; }
+  interface Props { rank: number; name: string; group?: string; groupHref?: string; meta?: string; trend?: number; stats: Stat[]; href?: string; onclick?: () => void; }
+  let { rank, name, group, groupHref, meta, trend = 0, stats, href, onclick }: Props = $props();
 </script>
 
-<article class="leader-row" class:podium={rank <= 3}>
+<div class="leader-container">
+<article class="leader-row" class:top-first={rank === 1} class:top-third={rank === 3}>
   <div class="rank"><strong>#{rank}</strong>{#if trend !== 0}<span class:positive={trend > 0} class:negative={trend < 0}><Icon name="chevron" size={12}/>{Math.abs(trend)}</span>{/if}</div>
-  <div class="identity">{#if href}<a {href}>{name}</a>{:else}<strong>{name}</strong>{/if}{#if group}<span><Icon name="community" size={12}/>{group}</span>{/if}{#if meta}<small>{meta}</small>{/if}</div>
-  <dl>{#each stats as stat}<div class:emphasized={stat.emphasized}><dt>{stat.label}</dt><dd>{stat.value}</dd></div>{/each}</dl>
+  <div class="identity">{#if href}<a {href}>{name}</a>{:else}<strong>{name}</strong>{/if}{#if group}<span>{#if groupHref}<a class="group-link" href={groupHref}><Icon name="community" size={12}/>{group}</a>{:else}<Icon name="community" size={12}/>{group}{/if}</span>{/if}{#if meta}<small>{meta}</small>{/if}</div>
+  <dl>{#each stats as stat}<div class:mobile-hidden={stat.mobileHidden} class:emphasized={stat.emphasized} class:positive={stat.positive}><dt>{stat.label}</dt><dd class:muted={stat.value === '-'}><span class="full-value">{stat.value}</span>{#if stat.mobileValue !== undefined}<span class="mobile-value">{stat.mobileValue}</span>{/if}</dd></div>{/each}</dl>
   {#if onclick}<button type="button" aria-label={`Open ${name}`} onclick={onclick}><Icon name="chevron" size={17}/></button>{/if}
 </article>
+</div>
 
 <style>
-  .leader-row { min-width: 0; min-height: 62px; display: grid; grid-template-columns: 56px minmax(120px, .7fr) minmax(260px, 1.5fr) auto; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--surface-1); container: leader-row / inline-size; }.leader-row:hover { border-color: var(--border-secondary); background: var(--surface-2); }.leader-row.podium { border-left: 3px solid var(--accent-warning); }
-  .rank { display: grid; justify-items: start; }.rank > strong { font-family: var(--font-mono); font-size: var(--font-md); }.rank span { display: inline-flex; align-items: center; color: var(--color-text-subtle); font-size: 9px; }.rank span.positive { color: var(--accent-secondary); }.rank span.positive :global(svg) { transform: rotate(-90deg); }.rank span.negative { color: var(--accent-error); }.rank span.negative :global(svg) { transform: rotate(90deg); }
-  .identity { min-width: 0; display: grid; gap: 2px; }.identity > strong, .identity > a { overflow: hidden; color: var(--color-text); font-size: var(--font-xs); font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }.identity span { display: flex; align-items: center; gap: 3px; color: var(--color-accent); font-size: 9px; }.identity small { overflow: hidden; color: var(--color-text-subtle); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-  dl { min-width: 0; display: grid; grid-template-columns: repeat(var(--stat-count, 4), minmax(64px, 1fr)); gap: 2px; margin: 0; }.leader-row dl { --stat-count: 4; } dl div { min-width: 0; display: grid; gap: 2px; padding: 4px 6px; border-left: 1px solid var(--border-subtle); } dt { color: var(--color-text-subtle); font-size: 8px; text-transform: uppercase; } dd { margin: 0; overflow: hidden; font-family: var(--font-mono); font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }.emphasized dd { color: var(--accent-secondary); }
+  .leader-container { min-width: 0; container: leader-row / inline-size; }
+  .group-link { display:inline-flex; align-items:center; gap:3px; color:inherit; text-decoration:none; }
+  .group-link:hover { text-decoration:underline; }
+  .mobile-value { display:none; }
+  @media(max-width:768px) { dd:has(.mobile-value) .full-value { display:none; } .mobile-value { display:inline; } }
+  .leader-row { min-width:0; display:flex; align-items:center; gap:1rem; padding:.75rem 1rem; border:1px solid var(--border-subtle); border-radius:10px; background:var(--surface-1); transition:background .2s,border-color .2s,transform .2s; }
+  .leader-row:hover { border-color:var(--border-primary); background:var(--surface-2); transform:translateY(-1px); }
+  .leader-row.top-first { background:linear-gradient(135deg,rgb(255 215 0/.08),rgb(255 215 0/.02)); border-color:rgb(255 215 0/.3); }
+  .leader-row.top-first:hover { border-color:rgb(255 215 0/.5); }
+  .leader-row.top-third { background:linear-gradient(135deg,rgb(205 127 50/.07),rgb(205 127 50/.02)); border-color:rgb(205 127 50/.25); }
+  .leader-row.top-third:hover { border-color:rgb(205 127 50/.45); }
+  .rank { width:72px; flex-shrink:0; text-align:center; }.rank > strong { font-size:1.05rem; font-weight:700; color:var(--text-secondary); white-space:nowrap; }
+  .top-first .rank > strong { color:#ffd700; font-size:1.5rem; }.top-third .rank > strong { color:#cd7f32; font-size:1.25rem; }
+  .rank span { display:inline-flex; align-items:center; color:var(--color-text-subtle); font-size:9px; }.rank span.positive { color:var(--accent-secondary); }.rank span.positive :global(svg) { transform:rotate(-90deg); }.rank span.negative { color:var(--accent-error); }.rank span.negative :global(svg) { transform:rotate(90deg); }
+  .identity { min-width:0; width:200px; flex-shrink:0; display:flex; flex-direction:column; gap:1px; }.identity > strong,.identity > a { overflow:hidden; color:var(--text-primary); font-size:.9375rem; font-weight:600; text-decoration:none; text-overflow:ellipsis; white-space:nowrap; }
+  .identity span { display:flex; align-items:center; gap:3px; color:rgb(100 181 246/.7); font-size:.6875rem; }.identity small { overflow:hidden; color:var(--color-text-subtle); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+  dl { min-width:0; flex:1; display:flex; align-items:center; gap:.75rem; margin:0; } dl div { min-width:0; flex:1; display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+  dt { color:var(--text-disabled); font-size:.625rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+  dd { max-width:100%; margin:0; overflow:hidden; font-size:.9375rem; font-weight:600; text-overflow:ellipsis; white-space:nowrap; } dd.muted { color:var(--text-disabled); }.emphasized dt { color:rgb(255 183 77/.6); }.emphasized dd { color:var(--accent-warning); }.positive dd { color:#66bb6a; }
   article > button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-subtle); cursor: pointer; }
-  @container leader-row (max-width: 620px) { .leader-row { grid-template-columns: 46px minmax(0, 1fr) auto; }.leader-row dl { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); }.leader-row dl div:first-child { border-left: 0; }.identity small { display: none; } article > button { min-width: 44px; min-height: 44px; } }
+  @media(max-width:768px) {
+    .leader-row { flex-wrap:wrap; gap:.5rem; padding:.75rem; }
+    .rank { width:auto; min-width:32px; }.rank > strong { font-size:.875rem; }
+    .identity { width:auto; flex:1; }.identity > strong,.identity > a { font-size:.875rem; }.identity span:has(.group-link),.identity small { display:none; }
+    dl { width:100%; justify-content:space-between; gap:.25rem; } dl .mobile-hidden { display:none; }
+    dt { font-size:.5rem; letter-spacing:0; } dd { font-size:.6875rem; }
+    article > button { min-width:var(--touch-target); min-height:var(--touch-target); }
+  }
 </style>

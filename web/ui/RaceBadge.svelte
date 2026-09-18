@@ -3,12 +3,12 @@
   import PlacementBadge from './PlacementBadge.svelte';
   import type { RaceBadgeData } from './race-types';
 
-  interface Props { race: RaceBadgeData; compact?: boolean; removable?: boolean; onremove?: () => void; }
-  let { race, compact = false, removable = false, onremove }: Props = $props();
+  interface Props { race: RaceBadgeData; compact?: boolean; presentation?: 'card' | 'inline'; removable?: boolean; onremove?: () => void; }
+  let { race, compact = false, presentation = 'card', removable = false, onremove }: Props = $props();
 </script>
 
-<span class="race race--{race.grade.toLowerCase().replace('-', '')}" class:compact class:selected={race.selected} title={`${race.name} (${race.grade})`} aria-label={`${race.name}, ${race.grade}${race.placement ? `, ${race.placement} place` : ''}${race.affinityGain ? `, plus ${race.affinityGain} affinity` : ''}`}>
-  {#if race.image}<img src={race.image} alt="" loading="lazy" decoding="async"/>{:else}<span class="image-fallback">{race.shortName ?? race.name}</span>{/if}
+<span class="race race--{race.grade.toLowerCase().replace('-', '')}" class:compact class:inline={presentation === 'inline'} class:selected={race.selected} title={`${race.name} (${race.grade})`} aria-label={`${race.name}, ${race.grade}${race.placement ? `, ${race.placement} place` : ''}${race.affinityGain ? `, plus ${race.affinityGain} affinity` : ''}`}>
+  {#if presentation === 'card'}{#if race.image}<img src={race.image} alt="" loading="lazy" decoding="async"/>{:else}<span class="image-fallback">{race.shortName ?? race.name}</span>{/if}{/if}
   <span class="race-name"><small>{race.grade}</small><strong>{race.shortName ?? race.name}</strong></span>
   {#if race.placement !== undefined}<PlacementBadge placement={race.placement} compact/>{/if}
   {#if race.affinityGain !== undefined}<b class="gain">+{race.affinityGain}</b>{/if}
@@ -32,4 +32,7 @@
   .compact { width: 100%; min-width: 0; flex-basis: auto; }
   .compact .race-name { padding: 7px 4px 2px; }
   .compact .race-name strong { font-size: 8px; }
+  .inline{display:flex;align-items:center;gap:4px;min-height:28px;aspect-ratio:auto;border-width:1px;border-radius:var(--radius-sm);border-color:color-mix(in srgb,var(--race-color) 40%,var(--border-primary));background:var(--card-surface-bg);padding:2px 4px}
+  .inline .race-name{position:static;flex:1;padding:0;background:none}.inline .race-name strong{font-size:10px;text-shadow:none;color:var(--color-text)}.inline .race-name small{font-size:9px}
+  .inline button{position:static;flex:none;width:22px;height:22px;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-muted)}.inline button:hover{background:var(--color-accent-soft);color:var(--color-text)}
 </style>

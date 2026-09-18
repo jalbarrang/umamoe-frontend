@@ -16,10 +16,10 @@
 </header>
 
 <style>
-  .result-toolbar { min-width: 0; display: flex; align-items: end; gap: 7px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle); container: result-toolbar / inline-size; }
+  .result-toolbar { min-width: 0; display: flex; flex-wrap: wrap; align-items: end; gap: 7px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle); container: result-toolbar / inline-size; }
   .result-copy { min-width: 120px; margin-right: auto; } h3, p { margin: 0; } h3 { font-size: var(--font-md); } p { margin-top: 2px; color: var(--color-text-muted); font-size: 10px; } p span { color: var(--color-accent); }
   .sort { min-width: 130px; display: grid; gap: 3px; color: var(--color-text-subtle); font-size: 9px; } select { min-height: 36px; padding: 0 27px 0 8px; border: 1px solid var(--factor-field-border); border-radius: var(--radius-md); background: var(--factor-field-bg); color: var(--factor-field-text); font: inherit; font-size: var(--font-xs); cursor: pointer; }
   .view { display: flex; padding: 2px; border: 1px solid var(--factor-field-border); border-radius: var(--radius-md); background: var(--factor-field-bg); }.view button, .refresh { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 0 7px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-muted); cursor: pointer; font: inherit; font-size: 10px; }.view button.active { background: var(--factor-option-selected-bg); color: var(--color-accent); }.refresh { min-height: 36px; border: 1px solid var(--factor-field-border); }.refresh:hover { color: var(--color-accent); }
   .live { align-self: center; display: inline-flex; align-items: center; gap: 4px; color: var(--accent-secondary); font-size: 9px; font-weight: 750; text-transform: uppercase; }.live > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  @container result-toolbar (max-width: 560px) { .result-toolbar { align-items: center; flex-wrap: wrap; }.result-copy { flex: 1 1 100%; }.sort { flex: 1 1 150px; }.sort select { width: 100%; }.view button, .refresh { min-height: 40px; }.view button span, .refresh span { display: none; } }
+  @container result-toolbar (max-width: 560px) { .result-copy { flex: 1 1 100%; }.sort { flex: 1 1 150px; }.sort select { width: 100%; }.view button, .refresh { min-height: 40px; }.view button span, .refresh span { display: none; } }
 </style>

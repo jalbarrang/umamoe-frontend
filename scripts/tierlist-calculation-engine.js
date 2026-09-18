@@ -5,8 +5,11 @@
  * extracted from the Angular service for use in build-time precomputation.
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 class TierlistCalculationEngine {
     constructor() {
@@ -1061,4 +1064,4 @@ const DEFAULT_META_DECKS = [
     }
 ];
 
-module.exports = { TierlistCalculationEngine, DEFAULT_META_DECKS };
+export { TierlistCalculationEngine, DEFAULT_META_DECKS };

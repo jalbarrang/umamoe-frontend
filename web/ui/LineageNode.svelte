@@ -5,8 +5,8 @@
   import SparkItem from './SparkItem.svelte';
   import type { LineageNodeData } from './lineage-types';
 
-  interface Props { node: LineageNodeData; selected?: boolean; onclick?: () => void; }
-  let { node, selected = false, onclick }: Props = $props();
+  interface Props { node: LineageNodeData; selected?: boolean; compact?: boolean; onclick?: () => void; }
+  let { node, selected = false, compact = false, onclick }: Props = $props();
 
   const artworkSize = $derived(node.role === 'main' ? 'sm' as const : node.role === 'parent' ? 'sm' as const : 'xs' as const);
   const roleLabel = $derived(node.role === 'grandparent' ? node.roleLabel.replace(/^.*legacy\s*/i, 'L') : node.roleLabel);
@@ -16,8 +16,10 @@
   type="button"
   class="lineage-node lineage-node--{node.role}"
   class:selected
+  class:compact
   aria-pressed={selected}
   aria-label={`${node.roleLabel}: ${node.name}`}
+  title={`${node.roleLabel}: ${node.name}`}
   {onclick}
 >
   <span class="node-head">
@@ -25,13 +27,13 @@
     <span class="node-meta">
       <span class="name-row">
         <strong>{node.name}</strong>
-        <span class="role role--{node.role}">{roleLabel}</span>
+        <span class="role role--{node.role}">{compact && node.role === 'grandparent' ? node.roleLabel.replace(/^.*legacy\s*/i, 'Grandparent ') : roleLabel}</span>
       </span>
-      {#if node.rank}<span class="rank-row"><RankBadge label={node.rank} size="sm"/></span>{/if}
+      {#if !compact && node.rank}<span class="rank-row"><RankBadge label={node.rank} size="sm"/></span>{/if}
     </span>
   </span>
 
-  {#if node.role !== 'grandparent' && (node.affinity !== undefined || node.raceAffinity !== undefined)}
+  {#if !compact && node.role !== 'grandparent' && (node.affinity !== undefined || node.raceAffinity !== undefined)}
     <span class="node-toolbar">
       {#if node.affinity !== undefined}
         <span class="node-stat node-stat--affinity" title="Base affinity">
@@ -46,7 +48,7 @@
     </span>
   {/if}
 
-  {#if node.role !== 'grandparent' && node.sparks?.length}
+  {#if !compact && node.role !== 'grandparent' && node.sparks?.length}
     <span class="node-sparks">
       {#each node.sparks as group}
         {#each group.items.slice(0, 3) as item (item.id)}<SparkItem {...item} tone={group.tone} compact/>{/each}
@@ -69,16 +71,16 @@
     overflow: visible;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
-    background: var(--surface-2);
+    background: var(--card-surface-bg);
     color: var(--color-text);
     cursor: pointer;
     line-height: 1.2;
     text-align: left;
-    box-shadow: 0 1px 8px rgb(0 0 0 / .16);
+    box-shadow: var(--card-surface-shadow);
     transition: border-color var(--duration-fast), background var(--duration-fast), box-shadow var(--duration-fast);
   }
-  .lineage-node:hover { border-color: var(--border-secondary); background: var(--surface-3); }
-  .lineage-node.selected { border-color: rgb(var(--accent-primary-rgb) / .58); background: color-mix(in srgb, var(--accent-primary) 7%, var(--surface-2)); box-shadow: 0 2px 12px rgb(0 0 0 / .22); }
+  .lineage-node:hover { border-color: var(--border-secondary); background: var(--card-surface-bg); }
+  .lineage-node.selected { border-color: rgb(var(--accent-primary-rgb) / .58); background: var(--card-surface-bg); box-shadow: var(--card-surface-shadow); }
   .node-head { min-width: 0; display: flex; align-items: flex-start; gap: 9px; }
   .node-head :global(.art) { width: 42px; height: 42px; border-radius: var(--radius-md); }
   .node-meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
@@ -100,7 +102,7 @@
   .lineage-node--parent { gap: 5px; padding: 7px 9px; border-radius: var(--radius-md); }
   .lineage-node--parent .node-head :global(.art) { width: 36px; height: 36px; border-radius: var(--radius-sm); }
   .lineage-node--parent .name-row strong { font-size: 12px; line-height: 18px; }
-  .lineage-node--grandparent { min-height: 40px; justify-content: center; gap: 3px; padding: 5px 7px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-text) 3.5%, var(--surface-1)); box-shadow: none; }
+  .lineage-node--grandparent { min-height: 40px; justify-content: center; gap: 3px; padding: 5px 7px; border-radius: var(--radius-sm); background: var(--card-surface-bg); box-shadow: none; }
   .lineage-node--grandparent .node-head { align-items: center; gap: 6px; }
   .lineage-node--grandparent .node-head :global(.art) { width: 28px; height: 28px; border-radius: var(--radius-sm); }
   .lineage-node--grandparent .node-meta { justify-content: center; }
@@ -119,4 +121,8 @@
     .node-stat small { display: none; }
     .node-sparks :global(.spark:nth-child(n + 4)) { display: none; }
   }
+  .lineage-node.compact { min-height:36px; padding:3px 4px; border-radius:var(--radius-sm); }
+  .compact .node-head { align-items:center; gap:5px; }.compact .node-head :global(.art) { width:28px; height:28px; border:0; background:transparent; }
+  .compact .name-row { flex-direction:column; align-items:flex-start; gap:0; }.compact .name-row strong { max-width:100%; font-size:11px; line-height:15px; }
+  .compact .role { min-width:0; min-height:0; padding:0; border:0; background:transparent; font-size:9px; font-weight:500; line-height:11px; }
 </style>
