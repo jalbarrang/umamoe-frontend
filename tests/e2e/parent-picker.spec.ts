@@ -56,7 +56,7 @@ async function prepare(page: Page, authenticated = false, filters?: Record<strin
   return page.getByRole('dialog',{name:'Select Parent',exact:true});
 }
 
-test('Parent rows preserve Angular encoded factors, legacy inheritance, star ordering and empty-parent omission',async({page})=>{
+test('Parent rows preserve Angular encoded factors, legacy inheritance, star ordering and empty-parent omission',async({page,isMobile})=>{
   await prepare(page,true,undefined,mockParentRowProfile);
   const dialog=page.getByRole('dialog',{name:'Select Parent',exact:true});
   await expect(dialog.locator('.parent-row')).toHaveCount(3);
@@ -64,9 +64,16 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
   const display=dialog.getByRole('radiogroup',{name:'Parent spark display'});
   await expect(display.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
   await expect(rows.first().locator('.factor-list .spark')).toHaveText(['9★Speed','3★Stamina']);
-  const combinedHeight=(await rows.first().boundingBox())!.height;
   await display.getByRole('radio',{name:'Split',exact:true}).click();
-  expect((await rows.first().boundingBox())!.height).toBeGreaterThan(combinedHeight);
+  if(!isMobile) {
+    const header=(await rows.first().locator('.summary-head').boundingBox())!;
+    const sparks=(await rows.first().locator('.factor-list').boundingBox())!;
+    const parentSparks=(await rows.first().locator('.parent-factors').boundingBox())!;
+    expect(sparks.x).toBeGreaterThan(header.x+header.width);
+    expect(sparks.y).toBeLessThan(header.y+header.height);
+    expect(sparks.x).toBe(parentSparks.x);
+    expect((await rows.first().boundingBox())!.height).toBeLessThan(110);
+  }
   for(const [index,expected] of [[0,['3 Speed','3 Stamina','1 Speed']],[1,['3 Speed','3 Stamina','1 Speed']],[2,['3 Speed','3 Stamina','1 Speed','1 Stamina']]] as const){
     await expect(rows.nth(index).locator('.factor-list .spark')).toHaveText(expected.map(text=>text.replace(' ','★')));
     const portrait = (await rows.nth(index).locator('.summary-head .art').boundingBox())!;

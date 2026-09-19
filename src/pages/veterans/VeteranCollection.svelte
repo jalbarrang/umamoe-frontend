@@ -9,14 +9,18 @@
   import FileDrop from '@/components/FileDrop.svelte';
   import Icon from '@/components/Icon.svelte';
   import SegmentedControl from '@/components/SegmentedControl.svelte';
+  import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
 
-  interface Props { children?: Snippet<[Snippet, () => void]>; compact?: boolean; empty?: boolean; preferredAccountId?: string; onaccountchange?: (accountId: string) => void; onimport?: () => void; onnavigate?: () => void; }
-  let { children, compact = false, empty = false, preferredAccountId = '', onaccountchange, onimport, onnavigate }: Props = $props();
+  interface Props { children?: Snippet<[Snippet, () => void]>; compact?: boolean; showAccountSwitch?: boolean; empty?: boolean; preferredAccountId?: string; onaccountchange?: (accountId: string) => void; onimport?: () => void; onnavigate?: () => void; }
+  let { children, compact = false, showAccountSwitch = true, empty = false, preferredAccountId = '', onaccountchange, onimport, onnavigate }: Props = $props();
   const id = $props.id();
   const accountId = $derived($authUser ? $activeWorkspace.accountId ?? '' : '');
   const scope = $derived(draftScope(accountId, $authUser?.id));
   const pending = $derived($veteranDrafts[scope]?.length ?? 0);
   const localCount = $derived($veteranDrafts.local?.length ?? 0);
+  const accounts = $derived($workspaces.filter(workspace => workspace.kind === 'account'));
+  let transferAccountId = $state('');
+  const destination = $derived(accounts.find(account => account.accountId === (accountId || transferAccountId)) ?? accounts[0]);
   let dragging = $state(0), storageError = $state(''), accountsError = $state(''), accountsBusy = $state(false);
   let fileInput = $state<HTMLInputElement>();
   function chooseFile() { fileInput?.click(); }
@@ -47,9 +51,12 @@
     try { await importVeteranFiles(files, accountId); } catch { /* The shared notice retains the error and retry action. */ }
     onimport?.();
   }
-  async function sync(includeLocal = false) {
-    if (!accountId) return;
-    try { await syncVeteranDrafts(accountId, includeLocal); } catch { /* The recovery copy remains available. */ }
+  async function sync(includeLocal = false, target = accountId) {
+    if (!target) return;
+    try {
+      await syncVeteranDrafts(target, includeLocal);
+      if (live && $authUser && includeLocal) choose(`account:${target}`);
+    } catch { /* The recovery copy remains available. */ }
     onimport?.();
   }
   const hasFiles = (event: DragEvent) => Array.from(event.dataTransfer?.types ?? []).includes('Files');
@@ -60,12 +67,12 @@
   ondragover={event => { if (hasFiles(event)) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = $veteranImportBusy ? 'none' : 'copy'; } }}
   ondragleave={event => { if (hasFiles(event)) dragging = Math.max(0, dragging - 1); }}
   ondrop={event => { if (hasFiles(event)) { event.preventDefault(); event.stopPropagation(); if (event.dataTransfer?.files.length) void receive(event.dataTransfer.files); } dragging = 0; }}>
-  <div class="collection-controls" class:empty-upload={empty && !compact} class:blank={compact && !$authUser && !storageError && !accountsError && !$veteranLibraryNotice}>
+  <div class="collection-controls" class:empty-upload={empty && !compact} class:blank={compact && (!$authUser || (!showAccountSwitch && accounts.length && !localCount)) && !(accountId && pending) && !storageError && !accountsError && !$veteranLibraryNotice}>
     <div class="collection-heading"><div><Icon name="veterans" size={18}/><strong>{accountId ? $activeWorkspace.label : 'On this device'}</strong><span>{accountId ? `Trainer ${accountId}` : 'No sign-in needed'}</span></div>{#if !empty || compact}<Button href="https://werseter.github.io/umadump/" target="_blank" size="sm" icon="download">Get umadump</Button>{/if}</div>
-    {#if $authUser && $workspaces.length > 1}<SegmentedControl label="Linked account" options={$workspaces.map(workspace => ({ value: workspace.id, label: workspace.kind === 'local' ? 'This device' : workspace.label }))} value={$activeWorkspace.id} onchange={choose}/>{/if}
+    {#if showAccountSwitch && $authUser && $workspaces.length > 1}<SegmentedControl label="Linked account" options={$workspaces.map(workspace => ({ value: workspace.id, label: workspace.kind === 'local' ? 'This device' : workspace.label }))} value={$activeWorkspace.id} onchange={choose}/>{/if}
     {#if !compact}{@render dropZone()}{:else}<input bind:this={fileInput} hidden type="file" accept=".json" multiple aria-label="Upload veteran JSON" disabled={!$authReady || accountsBusy || $veteranImportBusy || !!storageError} onchange={event => { if (event.currentTarget.files) void receive(event.currentTarget.files); event.currentTarget.value = ''; }}/>{/if}
     {#if empty && !compact}{@render exportHelp()}{/if}
-    {#if !compact || $authUser}<div class="collection-notice">
+    {#if !compact || ($authUser && !accounts.length)}<div class="collection-notice">
       {#if !$authUser}{@render signInNotice()}
       {:else if $workspaces.length === 1}<span>Import now, then link and verify a trainer account to share your veterans.</span><Button href="/settings" variant="secondary" size="sm" icon="connect" onclick={onnavigate}>Open Settings</Button>
       {:else if accountId}<span>Uploads are added to this account. Existing veterans are kept.</span>
@@ -74,8 +81,9 @@
     {#if $authUser && localCount && $workspaces.length > 1}
       <section class="device-transfer" aria-label="Add device veterans to your account">
         <Icon name="connect" size={22}/>
-        <div><strong>{localCount} veteran{localCount === 1 ? '' : 's'} saved on this device</strong><p>{accountId ? `Add them to ${$activeWorkspace.label}. Your existing veterans and device copy are kept.` : 'Choose a trainer account above, then add these veterans to it.'}</p></div>
-        {#if accountId}<Button size="sm" icon="upload" disabled={accountsBusy || $veteranImportBusy || !!storageError} onclick={() => sync(true)}>Add {localCount} from this device</Button>{/if}
+        <div><strong>{localCount} veteran{localCount === 1 ? '' : 's'} on this device</strong><p>Your existing veterans and device copy are kept.</p></div>
+        {#if !accountId && accounts.length > 1}<div class="transfer-target"><SelectFieldSlim id={`${id}-transfer`} label="Destination account" hideLabel options={accounts.map(account => ({value:account.accountId!,label:account.label}))} value={destination?.accountId ?? ''} onchange={value => transferAccountId=value}/></div>{/if}
+        <Button size="sm" icon="upload" disabled={!destination || accountsBusy || $veteranImportBusy || !!storageError} onclick={() => sync(true, destination?.accountId)}>{$veteranImportBusy ? 'Adding…' : !accountId && accounts.length > 1 ? 'Add veterans' : `Add to ${destination?.label ?? 'account'}`}</Button>
       </section>
     {/if}
     {#if storageError || accountsError}<div class="feedback error" role="alert"><span>{storageError || accountsError}</span><Button variant="secondary" size="sm" onclick={() => storageError ? loadDrafts(scope) : loadAccounts()}>Retry</Button></div>{/if}
@@ -107,6 +115,7 @@
   .collection-notice,.feedback{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.5;color:var(--text-muted);flex-wrap:wrap}.collection-notice>span,.feedback>span{flex:1;min-width:160px}.collection-notice :global(.ui-button){flex:none}
   .feedback{padding:8px 10px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary)}.feedback.error{color:var(--color-danger);border-color:var(--color-danger)}
   .device-transfer{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid rgb(var(--accent-primary-rgb)/.3);border-radius:var(--radius-md);background:rgb(var(--accent-primary-rgb)/.06)}.device-transfer>div{flex:1;min-width:160px}.device-transfer> :global(svg){flex:none;color:var(--accent-primary)}.device-transfer strong{font-size:13px}.device-transfer p{margin:4px 0 0;color:var(--text-muted);font-size:12px;line-height:1.5}
+  .device-transfer .transfer-target{flex:0 1 190px;max-width:100%;min-width:0}.device-transfer > :global(.ui-button){max-width:100%;overflow-wrap:anywhere}.compact .device-transfer{gap:8px;padding:0;border:0;border-radius:0;background:transparent}.compact .device-transfer strong{font-size:11px}.compact .device-transfer p{margin:0;font-size:10px}.compact .device-transfer > :global(svg){width:16px;height:16px}
   .dismiss{display:grid;place-items:center;width:32px;height:32px;margin:-4px;border:0;background:transparent;color:inherit;cursor:pointer}
   .drop-overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;pointer-events:none;border:2px dashed var(--color-accent);border-radius:var(--radius-md);background:color-mix(in srgb,var(--surface-1) 96%,transparent);color:var(--color-accent)}.drop-overlay span{font-size:12px;color:var(--text-secondary)}.drop-overlay> :global(svg){box-sizing:content-box;padding:12px;border:1px solid rgb(var(--accent-primary-rgb)/.25);border-radius:14px;background:rgb(var(--accent-primary-rgb)/.1)}
   .collection-drop{width:100%;min-width:0}.picker-upload{display:flex;flex:none;flex-direction:column;color:var(--text-primary);text-align:left}.compact .picker-upload .collection-heading{display:flex}.picker-upload .collection-heading strong{overflow-wrap:anywhere}.picker-upload :global(.drop){height:clamp(200px,35dvh,360px)}

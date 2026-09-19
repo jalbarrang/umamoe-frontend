@@ -29,10 +29,11 @@ test('dense lineage stays compact and editable across layout breakpoints', async
   for (const toggle of await ancestors.all()) { await toggle.click(); await expect(toggle).toHaveAttribute('aria-expanded', 'true'); }
   await expect(tree.locator('.greats .node:visible')).toHaveCount(8);
   const failures: string[] = [];
-  for (const width of [320, 359, 360, 390, 500, 628, 629, 640, 767, 768, 850, 1024, 1113, 1114, 1152, 1153, 1299, 1300, 1301, 1440, 1920, 2560]) {
-    await page.setViewportSize({ width, height: 900 });
+  for (const width of [320, 359, 360, 375, 390, 500, 628, 629, 640, 767, 768, 850, 1024, 1113, 1114, 1152, 1153, 1299, 1300, 1301, 1440, 1920, 2560]) {
+    await page.setViewportSize({ width, height: width === 375 ? 667 : 900 });
     await page.locator('.parent-branch').first().scrollIntoViewIfNeeded();
-    if ([320, 390, 500, 850, 1301, 1920].includes(width)) await page.screenshot({ path: test.info().outputPath(`dense-lineage-${width}.png`), scale: 'css' });
+    if ([320, 375, 390, 500, 850, 1301, 1920].includes(width)) await page.screenshot({ path: test.info().outputPath(`dense-lineage-${width}.png`), scale: 'css' });
+    if(width === 375) await tree.locator('.parent-branch').first().screenshot({path:test.info().outputPath('iphone-se-lineage.png'),scale:'css'});
     if ([320, 390, 850].includes(width)) await tree.locator('.gp-branch').first().screenshot({ path: test.info().outputPath(`dense-ancestors-${width}.png`), scale: 'css' });
     const issues = await tree.evaluate(element => {
       const issues: string[] = [];
@@ -54,6 +55,11 @@ test('dense lineage stays compact and editable across layout breakpoints', async
       for (const node of element.querySelectorAll('.node')) {
         const box = node.getBoundingClientRect();
         if (node.scrollWidth > node.clientWidth) issues.push(`${node.getAttribute('aria-label')} overflows`);
+        const identity=node.querySelector('.node-main')?.getBoundingClientRect(), actions=node.querySelector('.node-actions')?.getBoundingClientRect();
+        if(identity && actions && actions.top>=identity.bottom) issues.push('Card actions wrapped below identity');
+        const affinity=node.querySelector('.affinity-breakdown')?.getBoundingClientRect(), races=node.querySelector('.race-action')?.getBoundingClientRect();
+        if(affinity && races && races.top>=affinity.bottom) issues.push('Race controls wrapped below affinity');
+        for(const control of node.querySelectorAll('.race-action button')) if(getComputedStyle(control).borderTopStyle==='none') issues.push('Race control has no button border');
         for (const button of node.querySelectorAll('button')) {
           const rect = button.getBoundingClientRect();
           if (rect.width && (rect.left < box.left || rect.right > box.right)) issues.push('Node action outside card');

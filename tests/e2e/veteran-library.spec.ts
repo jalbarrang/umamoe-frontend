@@ -131,10 +131,10 @@ test('account imports append, recover after failure, and stay bound to the selec
   await expect(dialog.getByRole('radio', { name: 'Unverified' })).toHaveCount(0);
 });
 
-test('signing in keeps guest veterans and lets the user attach them to a chosen connected account', async ({ page }) => {
-  await resources(page); await accounts(page); let secondRecords: unknown[] = [veteran], postedTo = '';
+test('signing in keeps guest veterans and lets the user attach them to a chosen connected account', async ({ page,isMobile }) => {
+  await resources(page); await accounts(page); let secondRecords: unknown[] = [veteran], postedTo = '', fail = true;
   await page.route(`**/api/v4/user/profile/${second}`, route => route.fulfill({ json: { ...profile, veterans: secondRecords } }));
-  await page.route('**/ingest/veteran/append?*', route => { postedTo = new URL(route.request().url()).searchParams.get('account_id')!; secondRecords = [...secondRecords, ...route.request().postDataJSON()]; return route.fulfill({ json: { inserted: 1, updated: 0, deleted: 0, total: secondRecords.length } }); });
+  await page.route('**/ingest/veteran/append?*', route => { postedTo = new URL(route.request().url()).searchParams.get('account_id')!; if(fail) return route.fulfill({status:500,json:{error:'Offline'}}); secondRecords = [...secondRecords, ...route.request().postDataJSON()]; return route.fulfill({ json: { inserted: 1, updated: 0, deleted: 0, total: secondRecords.length } }); });
   await page.route('**/api/auth/login/google?*', route => route.fulfill({ json: { url: new URL('/signin?token=owner-token', page.url()).href } }));
   await page.goto('/veterans'); await page.locator('input[type=file]').setInputFiles(upload([imported]));
   await expect(page.locator('.veteran-card')).toHaveCount(1);
@@ -142,21 +142,40 @@ test('signing in keeps guest veterans and lets the user attach them to a chosen 
   await page.getByRole('button', { name: 'Sign in with Google', exact: true }).click();
   await expect(page).toHaveURL(url => url.pathname === '/veterans');
   expect(await page.evaluate(() => sessionStorage.getItem('auth_return_to'))).toBeNull();
-  await expect(page.getByRole('region', { name: 'Add device veterans to your account', exact: true })).toContainText('1 veteran saved on this device');
+  await expect(page.getByRole('region', { name: 'Add device veterans to your account', exact: true })).toContainText('1 veteran on this device');
   expect(postedTo).toBe('');
-  await page.getByRole('radio', { name: 'Second account', exact: true }).click();
-  await page.getByRole('button', { name: 'Add 1 from this device', exact: true }).click();
-  await expect(page.locator('.feedback')).toContainText('added to Second account'); expect(postedTo).toBe(second);
-  await expect(page.locator('.veteran-card')).toHaveCount(2);
+  const dialog=await picker(page);
+  if(isMobile) await page.setViewportSize({width:375,height:667});
+  await dialog.getByRole('radio',{name:'This device',exact:true}).click();
+  const transfer=dialog.getByRole('region',{name:'Add device veterans to your account',exact:true});
+  await transfer.getByRole('combobox',{name:'Destination account',exact:true}).click();
+  await transfer.getByRole('option',{name:'Second account',exact:true}).click();
+  expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await dialog.screenshot({path:test.info().outputPath('device-to-account.png'),scale:'css'});
+  await transfer.getByRole('button',{name:'Add veterans',exact:true}).click();
+  await expect(dialog.getByRole('alert')).toContainText('Saved on this device');
+  await expect(dialog.getByRole('radio',{name:'This device',exact:true})).toBeChecked();
+  await expect(dialog.locator('.parent-row')).toHaveCount(1);
+  expect(secondRecords).toEqual([veteran]);fail=false;
+  await transfer.getByRole('button',{name:'Add veterans',exact:true}).click();
+  await expect(dialog.locator('.feedback')).toContainText('added to Second account'); expect(postedTo).toBe(second);
+  await expect(dialog.getByRole('radio',{name:'Second account',exact:true})).toBeChecked();
+  await expect(dialog.locator('.parent-row')).toHaveCount(2);
   expect(secondRecords).toContainEqual(veteran);
-  await page.getByRole('radio', { name: 'This device', exact: true }).click(); await expect(page.locator('.veteran-card')).toHaveCount(1);
+  await dialog.getByRole('radio',{name:'This device',exact:true}).click();await expect(dialog.locator('.parent-row')).toHaveCount(1);
+  await page.goto('/veterans');
+  await expect(page.locator('.veteran-card')).toHaveCount(1);
   await page.reload(); await expect(page.locator('.veteran-card')).toHaveCount(1);
-  await expect(page.getByRole('region', { name: 'Add device veterans to your account', exact: true })).toContainText('Choose a trainer account above');
+  await expect(page.getByRole('combobox',{name:'Destination account',exact:true})).toBeVisible();
 });
 
-test('veteran drop controls and account switch fit the dialog in both themes', async ({ page }, info) => {
+test('veteran drop controls and account switch fit the dialog in both themes', async ({ page,isMobile }, info) => {
   await resources(page); await accounts(page); await page.addInitScript(() => localStorage.setItem('auth_token', 'owner-token'));
   const dialog = await picker(page);
+  if(isMobile) await page.setViewportSize({width:375,height:667});
+  const header=dialog.locator('.dialog-panel > header').first();
+  await expect(header.getByRole('radiogroup',{name:'Linked account',exact:true})).toBeVisible();
+  await expect(dialog.locator('.collection-controls')).not.toBeVisible();
   for (const theme of ['dark', 'light']) {
     await page.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
     await expect(dialog.locator('.parent-row')).toHaveCount(1);
@@ -164,6 +183,9 @@ test('veteran drop controls and account switch fit the dialog in both themes', a
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
     const row = await dialog.locator('.parent-row').first().boundingBox(); const body = await dialog.locator('.picker-body').boundingBox();
     expect(body!.height).toBeGreaterThan(150); expect(row!.y).toBeLessThan(body!.y + body!.height);
+    const headerBox=(await header.boundingBox())!,switchBox=(await header.getByRole('radiogroup').boundingBox())!;
+    expect(switchBox.y+switchBox.height).toBeLessThanOrEqual(headerBox.y+headerBox.height);
+    expect(switchBox.x+switchBox.width).toBeLessThanOrEqual(headerBox.x+headerBox.width);
     await dialog.screenshot({ path: info.outputPath(`veteran-picker-${theme}.png`) });
   }
 });

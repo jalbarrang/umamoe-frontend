@@ -10,7 +10,7 @@
   import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
   import { veteranAffinityRepository } from '@/lib/veterans/affinity-repository';
   import { authReady, authUser } from '@/services/auth/auth-state';
-  import { activeWorkspace } from '@/lib/workspaces/workspace-state';
+  import { activeWorkspace, selectWorkspace, workspaces } from '@/lib/workspaces/workspace-state';
   import { mergeVeterans } from '@/lib/veterans/veteran-profile';
   import { deviceParent } from '@/lib/veterans/parent-picker';
   import { draftScope, veteranDrafts, veteranLibraryRevision } from '@/pages/veterans/veteran-library';
@@ -147,7 +147,8 @@
 </script>
 
 <div class="parent-picker"><Dialog bind:open title="Select Parent" icon="veterans" maxWidth="1280px" height="var(--parent-picker-height)" maxHeight="var(--parent-picker-height)" mobileInset="16px" contentPadding="0" mobileContentPadding="0">
-  <VeteranCollection compact empty={emptyCollection} onnavigate={() => open=false} onimport={() => { pickerState.tab='veterans'; }}>{#snippet children(dropZone, chooseFile)}<div class="picker-layout">
+  {#snippet headerActions()}{#if $authUser && $workspaces.length > 1}<SegmentedControl label="Linked account" options={$workspaces.map(workspace => ({value:workspace.id,label:workspace.kind === 'local' ? 'This device' : workspace.label}))} value={$activeWorkspace.id} onchange={selectWorkspace}/>{/if}{/snippet}
+  <VeteranCollection compact showAccountSwitch={false} empty={emptyCollection} onnavigate={() => open=false} onimport={() => { pickerState.tab='veterans'; }}>{#snippet children(dropZone, chooseFile)}<div class="picker-layout">
     <Tabs items={tabs} bind:value={pickerState.tab} label="Veteran picker sections" variant="underline"/>
     <div class="filterbar">
       <div class="parent-search"><TextField id={id+'-search'} label="Search parents" hideLabel placeholder="Search veterans…" prefixIcon="search" bind:value={pickerState.query}/>{#if pickerState.query}<IconButton icon="close" label="Clear parent search" onclick={()=>pickerState.query=''}/>{/if}</div>
@@ -219,6 +220,10 @@
   .parent-picker > :global(dialog > .dialog-panel > header h2) { font-size:.95rem; font-weight:700; }
   .parent-picker > :global(dialog > .dialog-panel > .content) { display:flex; min-height:0; overflow:hidden; padding:0; }
   .picker-layout { display:flex; flex-direction:column; min-width:0; min-height:0; width:100%; flex:1; }
+  .parent-picker > :global(dialog > .dialog-panel > header .heading){flex:none}
+  .parent-picker > :global(dialog > .dialog-panel > header .header-actions){flex:1;justify-content:flex-start;margin-left:8px}
+  .parent-picker > :global(dialog > .dialog-panel > header .segments){padding:2px}
+  .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:30px;font-size:12px}
   .signin-notice { display:flex; align-items:center; gap:8px; flex:none; padding:8px 16px; margin:0; border-bottom:1px solid rgb(33 150 243/.25); background:rgb(33 150 243/.1); color:rgb(var(--on-surface-rgb)/.75); font-size:.8rem; line-height:1.5; }
   .signin-notice :global(svg) { flex:none; color:var(--accent-blue-strong); }
   .parent-picker :global(.tabs) { flex:none; gap:0; border-color:var(--border-subtle); }
@@ -275,6 +280,9 @@
   }
   @media(max-width:600px) {
     .parent-picker > :global(dialog > .dialog-panel > header){padding-left:12px}
+    .parent-picker > :global(dialog > .dialog-panel > header:has(.segments)){display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:4px 8px;height:auto;padding-bottom:6px}
+    .parent-picker > :global(dialog > .dialog-panel > header .header-actions:has(.segments)){grid-column:1/-1;grid-row:2;margin:0}
+    .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:var(--touch-target)}
     .filterbar{gap:6px;padding:8px}.parent-sort{width:92px}.result-count{display:none}
     .picker-body{--picker-inset:8px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
     .signin-notice{font-size:.7rem;padding:6px 10px}.parent-picker :global(.tabs button){padding-inline:4px;font-size:.7rem}

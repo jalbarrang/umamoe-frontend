@@ -15,7 +15,7 @@
 </script>
 
 <div class="veteran-summary-container">
-  <article class="veteran-summary" class:compact class:combined-layout={combined && !showStats} aria-label={`${veteran.name} Veteran summary`}>
+  <article class="veteran-summary" class:compact class:combined-layout={combined && !showStats} class:split-layout={compact && !combined && !showStats} aria-label={`${veteran.name} Veteran summary`}>
     <header class="summary-head" class:affinity-first={!showStats && Number.isFinite(veteran.affinity)}>
       {#if !showStats && Number.isFinite(veteran.affinity)}<div class="leading-affinity"><AffinityStat value={veteran.affinity} kind="total" compact/>{#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}</div>{/if}
       <Artwork src={veteran.image} alt={veteran.name} size={compact ? 'sm' : 'md'} shape="circle"/>
@@ -69,7 +69,7 @@
   .veteran-summary { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--card-surface-border); border-radius: var(--radius-md); background: var(--card-surface-bg); }
   .summary-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; }
   .identity { min-width: 0; display: grid; gap: 4px; }
-  .parent-copy{min-width:0;display:grid;justify-items:start;gap:3px}
+  .parent-copy{min-width:0;display:grid;justify-items:start;gap:2px;line-height:1.15}
   .name-row { min-width: 0; display: grid; justify-items: start; gap: 3px; }
   h3 { min-width: 0; margin: 0; overflow: hidden; color: var(--color-text); font-size: var(--font-md); text-overflow: ellipsis; white-space: nowrap; }
   .scenario { padding: 2px 6px; border: 0; border-radius: var(--radius-xs); background: rgb(129 199 132 / .1); color: var(--accent-secondary); font-size: 8px; font-weight: 650; line-height: 1; }
@@ -91,7 +91,7 @@
   .summary-parent + .summary-parent { border-top: 1px solid var(--border-subtle); }
   .parent-id { min-width: 0; display: flex; align-items: center; gap: 5px; }
   .parent-id strong { max-width: 100px; overflow: hidden; color: var(--color-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-  .parent-position { flex: 0 0 auto; padding: 2px 5px; border-radius: var(--radius-xs); font-size: 9px; font-weight: 800; }
+  .parent-position { flex: 0 0 auto; padding: 2px 5px; border-radius: var(--radius-xs); font-size: 9px; font-weight: 800; line-height:1; }
   .parent-position--p1 { background: rgb(100 181 246 / .12); color: #90caf9; }
   .parent-position--p2 { background: rgb(186 104 200 / .12); color: #ce93d8; }
   .compact { gap: 7px; padding: 7px; }
@@ -118,4 +118,12 @@
   .combined-layout .parent-rows{display:contents}
   .combined-layout .summary-parent{flex:0 1 auto;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
   .combined-layout .factor-section{order:1;flex:1 0 100%;align-items:flex-start;padding:5px 0 0;border-left:0;border-top:1px solid var(--border-subtle)}
+  @container (min-width: 600px) {
+    .split-layout{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:center;gap:4px 8px}
+    .split-layout .summary-head{gap:5px}
+    .split-layout .factor-section{padding:0;border:0}
+    .split-layout .parent-rows{display:contents}
+    .split-layout .summary-parent{grid-column:1/-1;grid-template-columns:220px minmax(0,1fr);gap:8px;padding:4px 0 0;border-top:1px solid var(--border-subtle)}
+    .split-layout .summary-extra{grid-column:1/-1}
+  }
 </style>
