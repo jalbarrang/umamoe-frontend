@@ -15,7 +15,7 @@ export async function parseJsonResponse<T>(response: Response, label = response.
 /** Manifest SHA-256 covers the original JSON bytes, regardless of HTTP/gzip encoding. */
 export async function jsonResponseHash(response: Response): Promise<string | undefined> {
   if (!globalThis.crypto?.subtle) return undefined;
-  const hash = await crypto.subtle.digest('SHA-256', await jsonBytes(response));
+  const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(await jsonBytes(response)));
   return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
