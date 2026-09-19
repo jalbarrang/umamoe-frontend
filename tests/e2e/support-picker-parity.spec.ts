@@ -23,7 +23,8 @@ test('Live support cards preserve released choices, titles, search, sorting and 
   await expect.poll(() => requests.some(url => /\/resources\/.*support-cards-db\.json/.test(url))).toBe(true);
   const dialog=await openPicker(page);
   await expect(dialog.getByRole('radio')).toHaveCount(5);
-  await expect(dialog.locator('.card-copy strong')).toHaveText(['[Fire at My Heels]','[Wave of Gratitude]','[Dreams Do Come True]','Daiwa Scarlet','Kitasan Black']);
+  await expect(dialog.locator('.card-name')).toHaveText(['Kitasan Black','Fine Motion','Tokai Teio','Daiwa Scarlet','Kitasan Black']);
+  await expect(dialog.locator('.card-title')).toHaveText(['Fire at My Heels','Wave of Gratitude','Dreams Do Come True']);
   await expect(dialog).not.toContainText('Unreleased Support');
   const search=dialog.getByRole('searchbox',{name:'Search support cards'});
   await search.fill('BLACK, FIRE'); await expect(dialog.getByRole('radio')).toHaveCount(1);

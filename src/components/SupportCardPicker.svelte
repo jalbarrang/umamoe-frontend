@@ -38,7 +38,11 @@
     {#each filtered.slice(0, effectiveLimit) as option (option.id)}
       <button type="button" role="radio" aria-checked={value === option.id} class:selected={value === option.id} disabled={option.disabled} onclick={() => select(option.id)}>
         <Artwork src={option.image} fallbackSrc="/assets/images/placeholder-card.webp" alt="" kind="card"/>
-        <span class="card-copy"><strong>{option.title}</strong>{#if option.character && option.character.trim().toLowerCase() !== option.title.trim().toLowerCase()}<small>{option.character}</small>{/if}<span class="meta"><img src={`/game-assets/support-rarity/${option.rarity.toLowerCase()}.png`} alt={option.rarity} title={option.rarity} width="24" height="24"/>{#if option.type === 'Friend'}<span role="img" aria-label="Friend support" title="Friend support"><Icon name="user" size={20}/></span>{:else}<img src={`/assets/images/icon/stats/${option.type.toLowerCase()}.webp`} alt={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} title={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} width="20" height="20"/>{/if}</span></span>
+        <span class="card-copy">
+          <strong class="card-name">{option.character || option.title}</strong>
+          {#if option.character && option.character.trim().toLowerCase() !== option.title.trim().toLowerCase()}<span class="card-title" title={option.title}>{option.title.replace(/^\[|\]$/g, '')}</span>{/if}
+          <span class="meta"><img src={`/game-assets/support-rarity/${option.rarity.toLowerCase()}.png`} alt={option.rarity} title={option.rarity} width="22" height="22"/>{#if option.type === 'Friend'}<span role="img" aria-label="Friend support" title="Friend support"><Icon name="user" size={18}/></span>{:else}<img src={`/assets/images/icon/stats/${option.type.toLowerCase()}.webp`} alt={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} title={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} width="18" height="18"/>{/if}{#if value === option.id}<span class="selection-check" aria-label="Selected"><Icon name="check" size={14}/></span>{/if}</span>
+        </span>
       </button>
     {:else}{#if !loading && !error}<p class="empty">No support cards match these filters.</p>{/if}{/each}
   </div>
@@ -52,7 +56,7 @@
       {#if !selected}<span class="compact-copy"><strong>Select card</strong><small>Borrow support</small></span>{/if}
     </button>
     {#if selected}<div class="card-actions"><Button variant="secondary" size="sm" ariaLabel="Change support card" onclick={show}>Change</Button>{#if onclear}<Button variant="secondary" icon="trash" ariaLabel="Clear support" size="sm" onclick={onclear}/>{/if}</div>{/if}
-    <Dialog id={`${id}-dialog`} title="Select Support Card" icon="cards" bind:open maxWidth="700px" mobileMaxHeight="calc(100dvh - 32px)" contentPadding="12px" mobileContentPadding="8px">
+    <Dialog id={`${id}-dialog`} title="Select Support Card" icon="cards" bind:open maxWidth="900px" mobileMaxHeight="calc(100dvh - 32px)" contentPadding="12px" mobileContentPadding="8px">
       {#if open}<div class="dialog-browser">{@render browser()}</div>{/if}
     </Dialog>
   {:else}
@@ -79,21 +83,21 @@
   .search button { flex:none; width:28px; height:28px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:transparent; color:var(--dialog-icon-muted); cursor:pointer; }
   .quick-filters { --control-height:36px; min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .quick-filters :global(.field) { min-width:0; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:4px; }
-  .cards button { min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--text-primary); cursor:pointer; text-align:center; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr)); gap:8px; }
+  .cards button { min-width:0; display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--factor-field-bg); color:var(--text-primary); cursor:pointer; text-align:left; font:inherit; }
   .cards button:hover:not(:disabled) { background:var(--surface-2); border-color:rgb(var(--accent-primary-rgb)/.3); }
   .cards button.selected { background:rgb(var(--accent-primary-rgb)/.08); border-color:rgb(var(--accent-primary-rgb)/.4); }
+  .cards button:focus-visible { outline:2px solid var(--accent-primary); outline-offset:2px; }
   .cards button:disabled { opacity:.42; cursor:not-allowed; }
-  .cards :global(.art) { width:80px; height:80px; border:2px solid var(--border-primary); }
-  .cards button.selected :global(.art) { border-color:rgb(var(--accent-primary-rgb)/.6); }
-  .card-copy { min-width:0; max-width:100%; display:flex; align-items:center; flex-direction:column; gap:4px; letter-spacing:.5px; }
-  .card-copy strong { max-width:100%; color:var(--text-muted); font-size:9px; font-weight:400; line-height:1.25; overflow-wrap:anywhere; }
-  .card-copy small { color:var(--text-secondary); font-size:12px; font-weight:500; line-height:1.3; }
-  .meta { display:flex; align-items:center; justify-content:center; gap:6px; color:var(--accent-primary); }.meta img { display:block; object-fit:contain; }.meta span { display:flex; }
+  .cards :global(.art) { width:64px; height:64px; border:0; border-radius:6px; }
+  .card-copy { min-width:0; flex:1; display:flex; align-self:stretch; flex-direction:column; gap:3px; }
+  .card-name { color:var(--text-primary); font-size:13px; font-weight:650; line-height:1.3; overflow-wrap:anywhere; }
+  .card-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; color:var(--text-secondary); font-size:11px; line-height:1.35; }
+  .meta { display:flex; align-items:center; gap:6px; margin-top:auto; padding-top:3px; color:var(--accent-primary); }.meta img { display:block; object-fit:contain; }.meta span { display:flex; }.selection-check { margin-left:auto; }
   .empty { grid-column: 1 / -1; margin: 0; padding: 20px 8px; color: var(--color-text-muted); text-align: center; }
   .load-more { min-height:38px; border:1px solid var(--factor-field-border); border-radius:var(--radius-md); background:var(--factor-field-bg); color:var(--color-accent); cursor:pointer; font-size:var(--font-xs); font-weight:700; }.load-more small { margin-left:4px; color:var(--color-text-subtle); font-size:9px; font-weight:500; }
 
-  @container support-cards (max-width:540px) { .cards { grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); }.cards button{padding:6px 3px 5px}.cards :global(.art){width:64px;height:64px}.card-copy strong{font-size:8px}.card-copy small{font-size:11px} }
+  @container support-cards (max-width:540px) { .cards { gap:6px; }.cards button{padding:8px}.card-name{font-size:12px} }
   @media(max-width:600px){.compact-trigger{width:100%}.quick-filters{gap:6px}}
   @media(max-width:600px),(pointer: coarse) and (max-width: 1300px){.quick-filters{--control-height:var(--touch-target)}.search{min-height:var(--touch-target);padding-block:0;padding-right:0}.search button{width:var(--touch-target);height:var(--touch-target)}.load-more{min-height:var(--touch-target)}}
 </style>
