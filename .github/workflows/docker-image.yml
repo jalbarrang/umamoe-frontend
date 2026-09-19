@@ -362,6 +362,8 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+          printf '%s\n' 'Host *' '  ControlMaster auto' '  ControlPersist 60s' '  ControlPath ~/.ssh/deploy-%C' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Ensure remote shell directory exists
         shell: bash
