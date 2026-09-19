@@ -9,7 +9,7 @@ export function fuseAllowed(providersEnabled: boolean): boolean {
       const value = params.get(key)?.toLowerCase();
       if (value && ['true', '1', 'on', 'false', '0', 'off'].includes(value)) localStorage.setItem('umamoe-fuse-enabled-v1', String(['true', '1', 'on'].includes(value)));
     }
-    return localStorage.getItem('umamoe-fuse-enabled-v1') !== 'false' && JSON.parse(localStorage.getItem('cookie-consent') ?? 'null')?.advertising !== false;
+    return !['false', '0'].includes(localStorage.getItem('umamoe-fuse-enabled-v1') ?? '') && JSON.parse(localStorage.getItem('cookie-consent') ?? 'null')?.advertising !== false;
   } catch { return true; }
 }
 

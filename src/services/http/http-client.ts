@@ -3,7 +3,7 @@ export interface BrowserProofPort {
   ttlHeader: string;
   getCached(): string | undefined;
   prime(): void;
-  refresh(): Promise<string>;
+  refresh(retryAfterFailure?: boolean): Promise<string>;
   capture(token: string, ttlSeconds: number): void;
   invalidate(token?: string): void;
 }

@@ -1,5 +1,5 @@
 import type { BrowserProofPort } from './http-client';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { runtimeConfig } from '@/services/runtime-config';
 
 interface TurnstileApi {
@@ -9,9 +9,14 @@ interface TurnstileApi {
     theme: 'auto';
     appearance: 'interaction-only';
     execution: 'execute';
+    retry: 'never';
+    'refresh-expired': 'manual';
+    'refresh-timeout': 'manual';
     callback: (token: string) => void;
     'error-callback': () => void;
     'expired-callback': () => void;
+    'timeout-callback': () => void;
+    'unsupported-callback': () => void;
   }): string;
   execute(widgetId: string): void;
   remove(widgetId: string): void;
@@ -87,9 +92,14 @@ async function challengeToken(): Promise<string> {
         theme: 'auto',
         appearance: 'interaction-only',
         execution: 'execute',
+        retry: 'never',
+        'refresh-expired': 'manual',
+        'refresh-timeout': 'manual',
         callback: (token) => finish(token),
         'error-callback': () => finish(undefined, new Error('Turnstile challenge failed.')),
-        'expired-callback': () => finish(undefined, new Error('Turnstile challenge expired.'))
+        'expired-callback': () => finish(undefined, new Error('Turnstile challenge expired.')),
+        'timeout-callback': () => finish(undefined, new Error('Turnstile challenge timed out.')),
+        'unsupported-callback': () => finish(undefined, new Error('Browser verification is not supported in this browser.'))
       });
       turnstile.execute(widgetId);
     } catch (error) { finish(undefined, error instanceof Error ? error : new Error('Browser verification failed.')); }
@@ -113,14 +123,15 @@ const port: BrowserProofPort = {
     if (!cached || cached.expiresAt - Date.now() <= 5000) return undefined;
     return cached.token;
   },
-  prime() { if (!refreshTask) void port.refresh().catch(() => undefined); },
-  refresh() {
-    if (!refreshTask) {
+  prime() { if (!port.getCached() && !refreshTask) void port.refresh().catch(() => undefined); },
+  refresh(retryAfterFailure = false) {
+    // Keep failures shared too, so parallel API calls cannot restart a blocked challenge.
+    if (!refreshTask || retryAfterFailure && get(browserVerification).error) {
       browserVerification.set({ pending: true, error: '' });
-      refreshTask = exchange().then(token => { browserVerification.set({ pending: false, error: '' }); return token; }, error => {
+      refreshTask = exchange().then(token => { refreshTask = undefined; browserVerification.set({ pending: false, error: '' }); return token; }, error => {
         browserVerification.set({ pending: false, error: error instanceof Error ? error.message : 'Browser verification failed.' });
         throw error;
-      }).finally(() => { refreshTask = undefined; });
+      });
     }
     return refreshTask;
   },

@@ -39,10 +39,19 @@ export function loadFuse(): Promise<boolean> {
   const script = insertFuseScript(fuseScriptUrl);
   startTask = new Promise<boolean>(resolve => {
     if (script.dataset.state === 'error') { resolve(false); return; }
-    const ready = () => { if (apiReady()) resolve(true); };
+    const finish = (loaded: boolean) => {
+      window.clearTimeout(timeout);
+      script.removeEventListener('load', ready);
+      script.removeEventListener('error', failed);
+      resolve(loaded);
+    };
+    // The provider queue can still register mounted zones after a slow CMP finishes.
+    const ready = () => { if (apiReady()) { finish(true); scheduleZones(); } };
+    const failed = () => finish(false);
+    const timeout = window.setTimeout(() => finish(false), 15_000);
     window.fusetag?.que?.push(ready);
     script.addEventListener('load', ready, { once: true });
-    script.addEventListener('error', () => resolve(false), { once: true });
+    script.addEventListener('error', failed, { once: true });
     ready();
   });
   return startTask;

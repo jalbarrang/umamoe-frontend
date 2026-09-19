@@ -25,7 +25,7 @@
   }
   async function verify() {
     verified = false;
-    try { await browserProofPort?.refresh(); verified = true; }
+    try { await browserProofPort?.refresh(true); verified = true; }
     catch { /* The verification store supplies the error and retry action. */ }
   }
   onMount(() => {

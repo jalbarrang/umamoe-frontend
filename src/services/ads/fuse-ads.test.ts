@@ -19,6 +19,7 @@ it('runs the early head loader once while honoring provider mode and stored opt-
   localStorage.clear(); history.replaceState(null, '', '/database?ads_enabled=off');
   expect(fuseAllowed(true)).toBe(false);
   history.replaceState(null, '', '/database'); expect(fuseAllowed(true)).toBe(false);
+  localStorage.setItem('umamoe-fuse-enabled-v1', '0'); expect(fuseAllowed(true)).toBe(false);
   localStorage.clear(); expect(fuseAllowed(true)).toBe(true);
   // Vite emits these self-contained functions before the SPA module script.
   new Function(`if((${fuseAllowed.toString()})(true))(${insertFuseScript.toString()})(${JSON.stringify(fuseScriptUrl)});`)();
@@ -39,7 +40,7 @@ it('does not repeatedly retry blocked ad scripts', async () => {
   expect(document.querySelectorAll('#publift-fuse-js')).toHaveLength(1);
 });
 
-it('waits for a slow provider to drain its ready queue without a polling timeout', async () => {
+it('waits for a slow provider to drain its ready queue', async () => {
   const { loadFuse } = await import('./fuse-ads');
   const task = loadFuse();
   expect(loadFuse()).toBe(task);
@@ -47,6 +48,32 @@ it('waits for a slow provider to drain its ready queue without a polling timeout
   Object.assign(window.fusetag!, { pageInit: vi.fn(), registerZone: vi.fn() });
   window.fusetag!.que!.forEach(ready => ready());
   expect(await task).toBe(true);
+});
+
+it('settles stalled loads without retrying and registers mounted zones if the provider recovers late', async () => {
+  const { loadFuse, registerFuseZone } = await import('./fuse-ads');
+  zone('late-zone'); registerFuseZone('late-zone', 'late-slot');
+  const task = loadFuse();
+  await vi.advanceTimersByTimeAsync(15_000);
+  expect(await task).toBe(false);
+  expect(await loadFuse()).toBe(false);
+  expect(document.querySelectorAll('#publift-fuse-js')).toHaveLength(1);
+  const registerZone = vi.fn();
+  const pageInit = vi.fn();
+  Object.assign(window.fusetag!, { pageInit, registerZone });
+  window.fusetag!.que!.forEach(ready => ready());
+  await vi.advanceTimersByTimeAsync(40);
+  expect(registerZone).toHaveBeenCalledExactlyOnceWith('late-zone');
+  expect(pageInit).toHaveBeenCalledOnce();
+  expect(await loadFuse()).toBe(true);
+});
+
+it('recognizes an error from the head loader before the app subscribes', async () => {
+  const script = insertFuseScript(fuseScriptUrl);
+  script.dispatchEvent(new Event('error'));
+  const { loadFuse } = await import('./fuse-ads');
+  expect(await loadFuse()).toBe(false);
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it('initializes each route before registration, destroys removed zones, and never restarts auctions on resize', async () => {
