@@ -454,6 +454,13 @@ test('selected legacy retains the original veteran summary without its stat stri
   await expect(page.getByRole('button', {name:'Clear selected legacy'})).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
   await expect(summary.locator('h3')).toHaveText('Grass Wonder');
+  const name=(await summary.locator('h3').boundingBox())!,scenario=(await summary.locator('.scenario').boundingBox())!;
+  expect(scenario.y).toBeGreaterThanOrEqual(name.y+name.height);
+  for(const copy of await summary.locator('.parent-copy').all()) {
+    const name=(await copy.locator('strong').boundingBox())!,position=(await copy.locator('.parent-position').boundingBox())!;
+    expect(position.y).toBeGreaterThanOrEqual(name.y+name.height);
+  }
+  await expect(page.getByRole('button',{name:'Clear selected legacy',exact:true})).toHaveClass(/ui-button/);
   await expect(summary.locator('.leading-affinity .affinity')).toHaveCount(1);
   await expect(summary.locator('.leading-affinity .affinity')).toHaveAttribute('aria-label','Total affinity: 8');
   await expect(summary.locator('.parent-id .affinity')).toHaveText(['3','3']);

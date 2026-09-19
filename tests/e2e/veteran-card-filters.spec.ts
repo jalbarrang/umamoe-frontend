@@ -217,7 +217,7 @@ test('spark browsing keeps optional settings in one menu and retains range editi
   await page.screenshot({path:testInfo.outputPath('selected-spark-row.png')});
 });
 
-test('cards expand fifty sparks inline, switch sources and keep skills mutually exclusive', async ({page},testInfo) => {
+test('sidebar controls expand fifty sparks inline, switch sources and keep skills mutually exclusive', async ({page},testInfo) => {
   const white=factorCatalog.filter(factor => ![0,1,5].includes(factor.type)).slice(0,50);
   const unique=factorCatalog.find(factor => factor.type === 5)!;
   const sparkIds=[103,1203,Number(unique.id)*10+3,...white.map(factor => Number(factor.id)*10+2)];
@@ -229,12 +229,19 @@ test('cards expand fifty sparks inline, switch sources and keep skills mutually 
   const card=page.locator('.veteran-card').first();
   await expect(card.locator('.white-count')).toContainText('50 white');
   await expect(card.locator('.race-style')).toHaveText('Pace');
-  const sources=card.getByRole('radiogroup',{name:'Spark source'});
+  const sources=page.getByRole('radiogroup',{name:'Spark source'});
+  const expanded=page.getByRole('radiogroup',{name:'Expanded card section'});
+  const openDisplay=async()=>{if(page.viewportSize()!.width<1024)await page.getByRole('button',{name:'Filters',exact:true}).click();};
+  const closeDisplay=async()=>{if(page.viewportSize()!.width<1024)await page.getByRole('dialog',{name:'Filter veterans'}).getByRole('button',{name:/^Show \d+ veterans?$/}).click();};
+  const chooseDisplay=async(group:'source'|'expanded',name:string)=>{await openDisplay();const control=(group==='source'?sources:expanded).getByRole('radio',{name,exact:true});await control.click();await expect(control).toBeChecked();await closeDisplay();};
+  await expect(card.getByRole('radiogroup')).toHaveCount(0);
+  await openDisplay();
   await expect(sources.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
-  await expect(card.getByRole('button',{name:'Collapse learned skills',exact:true})).toHaveAttribute('aria-expanded','true');
+  await expect(expanded.getByRole('radio',{name:'Skills',exact:true})).toBeChecked();
+  await closeDisplay();
   const initial=(await card.boundingBox())!;
   expect(initial.height).toBeLessThan(650);
-  await card.getByRole('button',{name:'Expand sparks',exact:true}).click();
+  await chooseDisplay('expanded','Sparks');
   await expect(card.locator('.spark-group[data-tone="white"] .spark-filter')).toHaveCount(50);
   await expect(card.locator('.skill-list')).not.toBeVisible();
   expect((await card.boundingBox())!.height).toBeGreaterThan(initial.height);
@@ -242,13 +249,14 @@ test('cards expand fifty sparks inline, switch sources and keep skills mutually 
   await expect(card.getByRole('searchbox')).toHaveCount(0);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   for (const source of ['Own','P1','P2']) {
-    await sources.getByRole('radio',{name:source,exact:true}).click();
-    await expect(sources.getByRole('radio',{name:source,exact:true})).toBeChecked();
+    await chooseDisplay('source',source);
     await expect(card.getByRole('button',{name:`Filter by ${white[49].text}: 2 stars (${source})`,exact:true})).toBeVisible();
   }
+  await openDisplay();
   await sources.getByRole('radio',{name:'P1',exact:true}).click();
   await sources.getByRole('radio',{name:'P1',exact:true}).press('Home');
   await expect(sources.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
+  await closeDisplay();
   await card.screenshot({path:testInfo.outputPath('fifty-parent-sparks.png')});
   const target=white[49];
   await card.getByRole('button',{name:'Filter by '+target.text+': 6 stars (family total)',exact:true}).click();
@@ -256,13 +264,14 @@ test('cards expand fifty sparks inline, switch sources and keep skills mutually 
   await expect(card.locator('.sparks .matched').first()).toBeVisible();
   await expect(card.locator('.card-aptitudes')).toBeVisible();
   await expect(card.locator('.learned-skills')).toBeVisible();
-  await card.getByRole('button',{name:'Expand learned skills',exact:true}).click();
+  await chooseDisplay('expanded','Skills');
   await expect(card.locator('.skill-list')).toBeVisible();
-  await expect(card.getByRole('button',{name:'Expand sparks',exact:true})).toHaveAttribute('aria-expanded','false');
   // A selected white spark remains visible in the compact preview.
   await expect(card.locator('.spark-group[data-tone="white"] .spark-filter')).toHaveCount(1);
-  await card.getByRole('button',{name:'Expand sparks',exact:true}).click();
-  await sources.getByRole('radio',{name:'P1',exact:true}).click();
+  await chooseDisplay('expanded','Neither');
+  await expect(card.locator('.skill-list')).not.toBeVisible();
+  await chooseDisplay('expanded','Sparks');
+  await chooseDisplay('source','P1');
   await card.getByRole('button',{name:'Filter by '+target.text+': 2 stars (P1)',exact:true}).click();
   await expect(page.locator('.active-filter-chips')).toContainText('P1');
   await expect(card.locator('.skill-list')).not.toBeVisible();

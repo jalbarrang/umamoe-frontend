@@ -151,8 +151,8 @@ test('a full club tooltip stays inside the viewport and lets every member be rea
   const fixture = clubProgressionFixture('current');
   fixture.response.members = Array.from({ length: 30 }, (_, index) => ({ ...fixture.response.members[0]!, viewer_id: 9000 + index, trainer_name: `Trainer ${index + 1} with a longer name`, daily_fans: [100000000, 200000000 + index, 300000000 + index, 400000000 + index, 500000000 + index] }));
   const panel = await openClub(page, fixture);
-  for (const width of isMobile ? [390, 320] : [1300, 768]) {
-    await page.setViewportSize({ width, height: 540 });
+  for (const [width,height] of isMobile ? [[390,540],[320,540]] : [[1920,1080],[1300,540],[768,540]]) {
+    await page.setViewportSize({ width, height });
     const host = panel.locator('.chart-host');
     await host.evaluate(element => { element.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); });
     const label = (await host.locator('svg text').filter({ hasText: /^02\.09$/ }).boundingBox())!;
@@ -162,10 +162,12 @@ test('a full club tooltip stays inside the viewport and lets every member be rea
     const tooltip = page.locator('[class^="chart-tooltip-"]:visible');
     await expect(tooltip).toHaveCount(1);
     const box = (await tooltip.boundingBox())!;
-    expect(box.width).toBeLessThanOrEqual(320); expect(box.height).toBeLessThanOrEqual(232);
+    expect(box.width).toBeLessThanOrEqual(320);
+    if(height<=600 || width<1024) expect(box.height).toBeLessThanOrEqual(232);
+    else expect(box.height).toBeGreaterThan(232);
     expect(box.x).toBeGreaterThanOrEqual(7); expect(box.x + box.width).toBeLessThanOrEqual(width - 7);
-    expect(box.y).toBeGreaterThanOrEqual(7); expect(box.y + box.height).toBeLessThanOrEqual(533);
-    expect(await tooltip.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
+    expect(box.y).toBeGreaterThanOrEqual(7); expect(box.y + box.height).toBeLessThanOrEqual(height-7);
+    expect(await tooltip.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(height<=600 || width<1024);
     if (isMobile) await page.touchscreen.tap(box.x + 10, box.y + 10); else await tooltip.hover();
     await tooltip.evaluate(element => { element.scrollTop = element.scrollHeight; });
     await expect(tooltip).toBeVisible();

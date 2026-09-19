@@ -1,6 +1,7 @@
 import type { EChartsCoreOption } from 'echarts/core';
 import type { ClubChartMember, ClubChartMode } from '@/lib/clubs/club-progression';
 import type { Theme } from '@/stores/theme';
+import './club-chart.css';
 
 function tooltip(labels: string[], members: ClubChartMember[], mode?: ClubChartMode) {
   return (params: unknown) => {
@@ -31,7 +32,7 @@ function axes(labels: string[], theme: Theme) {
     grid: { left: 0, right: 4, top: 12, bottom: 8, containLabel: true },
     xAxis: { type: 'category', boundaryGap: false, data: labels, axisLabel: { ...ticks, alignMaxLabel: 'right', showMaxLabel: true }, axisLine: { lineStyle: gridLine }, axisTick: { show: false }, splitLine: { show: true, lineStyle: gridLine } },
     yAxis: { type: 'value', scale: true, axisLabel: { ...ticks, formatter: (value: number) => new Intl.NumberFormat('en', { notation: 'compact', compactDisplay: 'short' }).format(value) }, axisLine: { show: false }, splitLine: { lineStyle: gridLine } },
-    tooltip: { trigger: 'axis', renderMode: 'html', enterable: true, transitionDuration: 0, backgroundColor: 'rgba(18,18,18,.95)', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1, padding: [6, 8], textStyle: { fontFamily: 'inherit', fontSize: 11, color: '#fff' }, extraCssText: 'border-radius:6px;box-sizing:border-box;max-height:min(232px,45dvh);max-width:min(320px,calc(100vw - 16px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:99999', axisPointer: { type: 'none' } }
+    tooltip: { trigger: 'axis', className: 'club-chart-tooltip', renderMode: 'html', enterable: true, transitionDuration: 0, backgroundColor: 'rgba(18,18,18,.95)', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1, padding: [6, 8], textStyle: { fontFamily: 'inherit', fontSize: 11, color: '#fff' }, extraCssText: 'border-radius:6px;box-sizing:border-box;max-width:min(320px,calc(100vw - 16px));overflow:auto;overscroll-behavior:contain;pointer-events:auto;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:99999', axisPointer: { type: 'none' } }
   };
 }
 

@@ -10,28 +10,21 @@
   import ProfileVeteranIdentity from './ProfileVeteranIdentity.svelte';
   import StatStrip from '@/components/StatStrip.svelte';
   import AptitudeGrid from '@/components/AptitudeGrid.svelte';
-  import SegmentedControl from '@/components/SegmentedControl.svelte';
   import SparkItem from '@/components/SparkItem.svelte';
   import SkillChip from '@/components/SkillChip.svelte';
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
   import type { VeteranQueryMatch } from '@/lib/profile/profile-veteran-query';
 
-  let { veteran, summary, skillCatalog, baseStats = false, mood = 0, selectedFactors = [], selectedSkills = [], queryMatches = [], statsOnly = false, onfactor, onskill, ondetails }: {
+  let { veteran, summary, skillCatalog, baseStats = false, mood = 0, selectedFactors = [], selectedSkills = [], queryMatches = [], statsOnly = false, expandedSection = 'skills', sparkSource = 'family', onfactor, onskill, ondetails }: {
     veteran: ProfileVeteran; summary: VeteranUiRecord; skillCatalog: Map<number,SkillCatalogEntry>;
     baseStats?: boolean; mood?: number; selectedFactors?: VeteranFactorFilter[]; selectedSkills?: number[]; statsOnly?: boolean;
     queryMatches?: VeteranQueryMatch[];
+    expandedSection?: 'sparks'|'skills'|'compact'; sparkSource?: 'family'|'parent'|'p1'|'p2';
     onfactor?: (filter: VeteranFactorFilter) => void; onskill?: (id:number) => void; ondetails?: () => void;
   } = $props();
   type CardSpark = ResolvedVeteranFactor & { ownStars?: number };
   const id = $props.id();
-  let expandedSection = $state<'sparks'|'skills'|null>('skills');
-  let sparkSource = $state<'family'|'parent'|'p1'|'p2'>('family');
-  const sparkSources = $derived([
-    {value:'family',label:'Combined'}, {value:'parent',label:'Own'},
-    {value:'p1',label:'P1',disabled:!veteran.succession_chara_array?.some(node => node.position_id === 10)},
-    {value:'p2',label:'P2',disabled:!veteran.succession_chara_array?.some(node => node.position_id === 20)}
-  ]);
-  const sourceLabel = $derived(sparkSource === 'family' ? 'family total' : sparkSources.find(source => source.value === sparkSource)!.label);
+  const sourceLabel = $derived(({family:'family total',parent:'Own',p1:'P1',p2:'P2'})[sparkSource]);
   const skills = $derived(sortEncodedSkills(skillCatalog,encodedSkills(veteran)));
   const sparks = $derived(sparkSource === 'family' ? veteranFactorTotals(veteran) : veteranFactors(veteran,sparkSource));
   const stats = $derived((summary.stats ?? []).filter(stat => stat.id !== 'total').map(stat => {
@@ -71,14 +64,14 @@
     </section>
 
     <section class="sparks" aria-label="Veteran sparks">
-      <header><h4>Sparks <span class="count">{sparks.length}</span></h4><div class="spark-sources"><SegmentedControl label="Spark source" options={sparkSources} value={sparkSource} onchange={value => sparkSource = value as typeof sparkSource}/></div><button class="section-toggle" aria-label={expandedSection === 'sparks' ? 'Collapse sparks' : 'Expand sparks'} aria-expanded={expandedSection === 'sparks'} aria-controls={id+'-sparks'} onclick={() => expandedSection = expandedSection === 'sparks' ? null : 'sparks'}>{expandedSection === 'sparks' ? 'Collapse' : 'Expand'}<Icon name="chevron" size={12}/></button></header>
+      <header><h4>{sparkSource === 'family' ? 'Combined sparks' : sourceLabel + ' sparks'} <span class="count">{sparks.length}</span></h4></header>
       {@render sparkList(sparks)}
       {#if !sparks.length}<small>No sparks recorded.</small>{/if}
     </section>
 
     {/if}
     {#if skills.length}<section class="learned-skills">
-      <header><h4>Learned skills <span class="count">{skills.length}</span></h4><button class="section-toggle" aria-label={expandedSection === 'skills' ? 'Collapse learned skills' : 'Expand learned skills'} aria-expanded={expandedSection === 'skills'} aria-controls={id+'-skills'} onclick={() => expandedSection = expandedSection === 'skills' ? null : 'skills'}>{expandedSection === 'skills' ? 'Collapse' : 'Expand'}<Icon name="chevron" size={12}/></button></header>
+      <header><h4>Learned skills <span class="count">{skills.length}</span></h4></header>
       <div class="skill-list" id={id+'-skills'} hidden={expandedSection !== 'skills'}>{#each skills as skillId}
         {@const resolved = resolveEncodedSkill(skillCatalog,skillId)}
         {@const id = resolved.skill?.skill_id ?? Math.floor(skillId / 10)}
@@ -130,12 +123,6 @@
   .spark-filter :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.2; }
   .spark-filter:hover :global(.spark) { border-color:var(--spark-border-color,currentColor); }
   .skill-filter.matched { outline:2px solid var(--color-accent); outline-offset:1px; }
-  .section-toggle { display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:0 2px; border:0; background:transparent; color:var(--color-text-muted); font-size:10px; cursor:pointer; }
-  .section-toggle:hover { color:var(--color-accent); }.section-toggle[aria-expanded='true'] :global(svg) { transform:rotate(180deg); }
-  .sparks header { gap:6px; }.sparks h4,.section-toggle { flex:none; }
-  .spark-sources { flex:1; min-width:0; }
-  .spark-sources :global(.segments) { width:100%; padding:2px; gap:2px; border-radius:5px; overflow:visible; }
-  .spark-sources :global(button) { flex:1; min-width:0; min-height:26px; padding:0 5px; border-radius:3px; font-size:10px; font-weight:600; }
   .white-count { display:inline-flex; align-items:center; gap:4px; min-height:22px; padding:3px 6px; border:1px solid var(--border-secondary); border-radius:4px; color:var(--color-text-muted); background:var(--surface-2); font-size:11px; }
   .white-count strong { color:var(--color-text); font-weight:600; }
   .card-affinity { display:grid; gap:6px; padding-bottom:8px; }
@@ -149,6 +136,5 @@
   .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; margin-left:auto; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; cursor:pointer; }
   small { color:var(--color-text-muted); font-size:10px; }button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }.card-open:focus-visible { outline-offset:-2px; }
   @container(max-width:330px) { .card-open { padding:8px; }.card-body { padding:8px; }}
-  @container(max-width:300px) { .sparks header { flex-wrap:wrap; }.spark-sources { order:1; flex-basis:100%; } }
-  @media(pointer: coarse) and (max-width: 1300px) { .section-toggle,.spark-sources :global(button),.spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }
+  @media(pointer: coarse) and (max-width: 1300px) { .spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }
 </style>

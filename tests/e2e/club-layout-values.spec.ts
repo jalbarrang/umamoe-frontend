@@ -105,11 +105,13 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
           return { height:box.height, lineHeight:parseFloat(getComputedStyle(node).lineHeight), overflow:node.scrollWidth > node.clientWidth + 1 };
         }));
         for (const value of numberLines) { expect(value.height).toBeLessThanOrEqual(value.lineHeight + 1); expect(value.overflow).toBe(false); }
-        if (scenario === 'full club') {
-          const metric = page.locator('.member-card').first().locator('.member-stats > div').filter({has:page.getByText('Daily Gain',{exact:true})});
+        if (scenario === 'full club' || scenario === 'large values') {
+          for(const name of ['Daily Gain','Projected Monthly']) {
+          const metric = page.locator('.member-card').first().locator('.member-stats > div').filter({has:page.getByText(name,{exact:true})});
           const label = (await metric.locator('dt').boundingBox())!, value = (await metric.locator('dd').boundingBox())!;
           expect(value.x).toBeGreaterThan(label.x + label.width);
           expect(Math.abs(value.y - label.y)).toBeLessThan(4);
+          }
         }
         await page.getByRole('button',{name:'Show member rows',exact:true}).click();
         await expect(page.locator('tbody tr')).toHaveCount(fixture.response.members.length);

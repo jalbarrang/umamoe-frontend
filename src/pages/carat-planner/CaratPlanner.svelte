@@ -359,12 +359,13 @@
 <p>Earliest pull first. Open a row to change rate-up goals or inspect the odds.</p>
 </div>
 <div class="target-heading-actions">
+<span>{activeTargets.length} {activeTargets.length === 1 ? 'target' : 'targets'}</span>
 {#if activeTargets.length}<div class="target-bulk" role="group" aria-label="Apply settings to every planned banner">
   <span class="bulk-title"><Icon name="tune" size={15}/><strong>All banners</strong></span>
   <SelectField id="planner-all-timing" label="Pull on" options={[{value:'',label:'Individual'},{value:'start',label:'Banner start'},{value:'end',label:'Banner end'}]} value={globalPullTiming} onchange={applyGlobalPullTiming}/>
   <SelectField id="planner-all-paid" label="Paid Carats" options={[{value:'',label:'Mixed'},{value:'free-only',label:'Do not use'},{value:'allow',label:'Allowed'}]} value={globalPaidCarats} onchange={applyGlobalPaidCarats}/>
 </div>{/if}
-<span>{activeTargets.length} {activeTargets.length === 1 ? 'target' : 'targets'}</span></div>
+</div>
 </header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. We will start with 200 pulls at banner end and select the first featured rate-up for you.</p></div></div>{:else}<div class="target-list">{#each pullItems as item (item.id)}
 {#if item.kind === 'anniversary'}<div class="anniversary-marker" role="separator" aria-label={`${item.label} on ${item.date}`}><span></span><strong><Icon name="cake" size={14}/>{item.label}</strong><span></span></div>
 {:else}{@const target = item.target}<PlannerTargetRow {target} past={item.past} projection={projectionByTarget.get(target.id)} {resources} {events} {catalog} {pickupCopyMemory} onupdate={(mutator) => updateTarget(target.id, mutator)} onremove={() => removeTarget(target.id)}/>{/if}
@@ -425,13 +426,13 @@
 .targets h2,.targets p{margin:0}
 .targets h2{font-size:16px}.targets header p{font-size:12px}
 .targets header p{color:var(--text-secondary)}
-.target-heading-actions{display:flex;align-items:center;gap:8px;min-width:0}
+.target-heading-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;flex:1 1 480px}
 .target-heading-actions>span{color:var(--text-secondary);font-size:10px;white-space:nowrap}
 .empty-targets{min-height:86px;display:flex;align-items:center;justify-content:center;gap:13px;padding:14px 18px;border:1px solid var(--border-secondary);border-radius:var(--radius-sm);text-align:left}
 .empty-targets>span{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;color:var(--accent-primary)}
 .empty-targets strong{display:block;color:var(--text-primary);font-size:.88rem}
 .empty-targets p{margin:3px 0 0;color:var(--text-muted);font-size:.76rem}
-.target-bulk{display:flex;align-items:center;gap:7px;min-width:0;padding:4px 6px;border:1px solid var(--border-primary);border-radius:var(--radius-sm);background:var(--surface-1)}
+.target-bulk{display:flex;align-items:center;gap:12px;min-width:0;margin-left:auto}
 .bulk-title{display:flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-secondary);font-size:10px}
 .bulk-title :global(svg){color:var(--accent-primary)}
 .target-bulk :global(.field){display:grid;grid-template-columns:auto minmax(90px,1fr);align-items:center;gap:5px}
@@ -462,9 +463,9 @@
 }
 
   @media(max-width:680px){.planner{padding-inline:4px}
-.target-heading-actions{width:100%;align-items:stretch;flex-direction:column}
-.target-heading-actions>span{align-self:flex-end}
-.target-bulk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.target-heading-actions{width:100%;flex-basis:100%;align-items:stretch;flex-direction:column}
+.target-heading-actions>span{align-self:flex-start}
+.target-bulk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}
 .bulk-title{grid-column:1/-1}
 .target-bulk :global(.field){grid-template-columns:minmax(0,1fr)}
 .banner-option{grid-template-columns:120px minmax(0,1fr) 18px;gap:6px}

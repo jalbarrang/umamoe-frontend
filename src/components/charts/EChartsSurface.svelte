@@ -23,7 +23,7 @@
   };
   const chartOption = $derived.by(() => {
     const tooltip = option.tooltip as TooltipComponentOption | undefined;
-    return tooltip ? { ...option, tooltip: { ...tooltip, className: tooltipClass, appendToBody: true, confine: false, position: tooltip.position ?? viewportPosition } } : option;
+    return tooltip ? { ...option, tooltip: { ...tooltip, className: [tooltipClass, tooltip.className].filter(Boolean).join(' '), appendToBody: true, confine: false, position: tooltip.position ?? viewportPosition } } : option;
   });
 
   echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AxisPointerComponent, AriaComponent, SVGRenderer]);

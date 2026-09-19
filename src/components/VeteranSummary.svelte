@@ -49,9 +49,8 @@
         {#each veteran.parents as parent (parent.id)}
           <section class="parent-row">
             <div class="parent-id" class:affinity-first={!showStats}>
-              <span class="parent-position parent-position--{parent.position.toLowerCase()}">{parent.position}</span>
-              <Artwork src={parent.image} alt={parent.name} size="xs" shape="circle"/>
-              <strong>{parent.name}</strong>
+               <Artwork src={parent.image} alt={parent.name} size="xs" shape="circle"/>
+               <div class="parent-copy"><strong>{parent.name}</strong><span class="parent-position parent-position--{parent.position.toLowerCase()}">{parent.position}</span></div>
               {#if Number.isFinite(parent.affinity)}<AffinityStat value={parent.affinity} compact/>{/if}
             </div>
             {#if !combined}<div class="parent-factors">
@@ -70,7 +69,8 @@
   .veteran-summary { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--card-surface-border); border-radius: var(--radius-md); background: var(--card-surface-bg); }
   .summary-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; }
   .identity { min-width: 0; display: grid; gap: 4px; }
-  .name-row { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+  .parent-copy{min-width:0;display:grid;justify-items:start;gap:3px}
+  .name-row { min-width: 0; display: grid; justify-items: start; gap: 3px; }
   h3 { min-width: 0; margin: 0; overflow: hidden; color: var(--color-text); font-size: var(--font-md); text-overflow: ellipsis; white-space: nowrap; }
   .scenario { padding: 2px 6px; border: 0; border-radius: var(--radius-xs); background: rgb(129 199 132 / .1); color: var(--accent-secondary); font-size: 8px; font-weight: 650; line-height: 1; }
   .detail { color: var(--color-text-subtle); font-size: 10px; }

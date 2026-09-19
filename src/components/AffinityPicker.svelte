@@ -1,7 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import Button from './Button.svelte';
-  import IconButton from './IconButton.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
   import VeteranSummary from './VeteranSummary.svelte';
   import type { CharacterPickerOption } from './picker-types';
@@ -47,7 +46,7 @@
       <span class="tree-label tree-label--veteran">Your Legacy</span>
       
       <div class="legacy-actions">{#if veteran}<Button variant="secondary" size="sm" ariaLabel="Change selected legacy" onclick={onlegacypick}>Change</Button><SegmentedControl label="Legacy spark display" options={[{value:'split',label:'Split'},{value:'combined',label:'Combined'}]} bind:value={sparkView}/>{/if}
-      {#if veteran || sharedLegacyLabel}<IconButton icon="close" label="Clear selected legacy" size="sm" onclick={onlegacyclear}/>{/if}</div>
+      {#if veteran || sharedLegacyLabel}<Button variant="secondary" icon="trash" ariaLabel="Clear selected legacy" size="sm" onclick={onlegacyclear}/>{/if}</div>
     </div>
     {#if veteran}
       <VeteranSummary {veteran} compact showStats={false} combined={sparkView === 'combined'}/>

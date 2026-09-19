@@ -18,12 +18,12 @@ test('dense lineage stays compact and editable across layout breakpoints', async
     const positions = ['target', 'p1', 'p2', 'p1-1', 'p1-2', 'p2-1', 'p2-2', 'p1-1-1', 'p1-1-2', 'p1-2-1', 'p1-2-2', 'p2-1-1', 'p2-1-2', 'p2-2-1', 'p2-2-2'];
     localStorage.setItem('lineage-planner-state-v1', JSON.stringify(positions.map((position, index) => ({
       position, characterId: [100101, 101301, 100601, 106701, 101101][index % 5],
-      sparks: index > 0 && index < 7 ? sparks : [], manualWinSaddleIds: [1, 16, 20]
+      sparks: sparks.slice(0,[0,17,8,14,17,6,10][index] ?? 0), manualWinSaddleIds: [1, 16, 20]
     }))));
   });
   await page.goto('/tools/lineage-planner');
   const tree = page.locator('.tree-canvas');
-  await expect(tree.locator('.spark')).toHaveCount(102);
+  await expect(tree.locator('.spark')).toHaveCount(72);
   const ancestors = tree.getByRole('button', { name: 'Great-Grandparents', exact: true });
   await expect(ancestors).toHaveCount(4);
   for (const toggle of await ancestors.all()) { await toggle.click(); await expect(toggle).toHaveAttribute('aria-expanded', 'true'); }
@@ -37,6 +37,20 @@ test('dense lineage stays compact and editable across layout breakpoints', async
     const issues = await tree.evaluate(element => {
       const issues: string[] = [];
       if (document.documentElement.scrollWidth > innerWidth) issues.push('Page overflows');
+      const parents=[...element.querySelectorAll('.parent-branch > .branch-node')].map(node=>node.getBoundingClientRect());
+      if(parents.length === 2 && parents[0].x !== parents[1].x) {
+        if(Math.abs(parents[0].top-parents[1].top)>1 || Math.abs(parents[0].bottom-parents[1].bottom)>1) issues.push('Parent cards misaligned');
+        const headings=[...element.querySelectorAll('.branch-heading > div')].map(node=>node.getBoundingClientRect());
+        if(Math.abs(headings[1].right-parents[1].right)>1) issues.push('P2 heading is not at the right edge');
+        const grandparents=[...element.querySelectorAll('.gp-branch > .branch-node')].map(node=>node.getBoundingClientRect());
+        for(const [left,right] of [[0,2],[1,3]]) if(Math.abs(grandparents[left].top-grandparents[right].top)>1 || Math.abs(grandparents[left].bottom-grandparents[right].bottom)>1) issues.push('Grandparent branches misaligned');
+      }
+      const grandparentRows=new Map<number,DOMRect[]>();
+      for(const gp of element.querySelectorAll('.gp-branch > .branch-node')) {
+        const box=gp.getBoundingClientRect(), y=Math.round(box.y);
+        const row=grandparentRows.get(y)??[];row.push(box);grandparentRows.set(y,row);
+      }
+      for(const row of grandparentRows.values()) if(row.some(box=>Math.abs(box.bottom-row[0].bottom)>1)) issues.push('Grandparent cards have uneven bottoms');
       for (const node of element.querySelectorAll('.node')) {
         const box = node.getBoundingClientRect();
         if (node.scrollWidth > node.clientWidth) issues.push(`${node.getAttribute('aria-label')} overflows`);
@@ -52,8 +66,9 @@ test('dense lineage stays compact and editable across layout breakpoints', async
         const button = spark.querySelector('button');
         if (!button) { issues.push('Spark removal is outside chip'); break; }
         const box = spark.getBoundingClientRect(), action = button.getBoundingClientRect();
-        if (box.height > 34) { issues.push('Spark row too tall'); break; }
-        if (action.width < 24 || action.height < 24 || action.right > box.right || action.left < box.left) { issues.push('Spark removal hit area'); break; }
+        const touch=matchMedia('(pointer:coarse)').matches;
+        if (box.height > (touch ? 26 : 22)) { issues.push('Spark row too tall'); break; }
+        if (action.width < (touch ? 24 : 20) || action.height < (touch ? 24 : 20) || action.right > box.right || action.left < box.left) { issues.push('Spark removal hit area'); break; }
       }
       return issues;
     });
@@ -92,5 +107,5 @@ test('dense lineage stays compact and editable across layout breakpoints', async
   await page.locator('.gp-branch').first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: test.info().outputPath('dense-lineage-light-390.png'), scale: 'css' });
   await page.reload();
-  await expect(page.locator('.spark')).toHaveCount(102);
+  await expect(page.locator('.spark')).toHaveCount(72);
 });

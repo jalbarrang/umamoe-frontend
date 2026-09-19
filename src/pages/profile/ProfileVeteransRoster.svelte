@@ -28,6 +28,7 @@
   import RaceBadge from '@/components/RaceBadge.svelte';
   import SelectField from '@/components/SelectField.svelte';
   import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
+  import SegmentedControl from '@/components/SegmentedControl.svelte';
   import TextField from '@/components/TextField.svelte';
   import Combobox from '@/components/Combobox.svelte';
   import Slider from '@/components/Slider.svelte';
@@ -93,6 +94,7 @@
   const toggleChoice=(choices:string[],value:string)=>choices.includes(value) ? choices.filter(choice=>choice!==value) : [...choices,value].sort();
   let query=$state(''),distance=$state<string[]>([...allDistances]),style=$state<string[]>([...allStyles]),minTotal=$state(0),sortField=$state<CollectionSortField>('total'),sortDirection=$state<'asc'|'desc'>('desc');
   let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),gridColumns=$state(2),visibleCount=$state(24);
+  let expandedSection=$state<'sparks'|'skills'|'compact'>('skills'),sparkSource=$state<'family'|'parent'|'p1'|'p2'>('family');
   let aptitudeFilters=$state<Partial<Record<AptitudeField,string>>>({}), selectedSkills=$state<number[]>([]), skillQuery=$state(''), skillCatalog=$state<Map<number,SkillCatalogEntry>>(new Map());
   let selectedFactors=$state<VeteranFactorFilter[]>([]),factorCategory=$state('all');
   let browseToolbar=$state<HTMLDivElement>();
@@ -370,7 +372,7 @@
     {:else if viewMode==='grid'}
       <div class="veteran-grid" style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
         {#each displayed as item (item.veteran.trained_chara_id ?? item.veteran.id)}
-          <ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} {skillCatalog} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/>
+          <ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/>
         {/each}
       </div>
     {:else}
@@ -412,6 +414,10 @@
 
 {#snippet filterFacets()}
   <div class="filter-facets">
+    {#if displayTab === 'cards' && viewMode === 'grid'}<section class="card-display" aria-label="Veteran card display">
+      <div><h3>Expand on cards</h3><SegmentedControl label="Expanded card section" options={[{value:'skills',label:'Skills'},{value:'sparks',label:'Sparks'},{value:'compact',label:'Neither'}]} value={expandedSection} onchange={value=>expandedSection=value as typeof expandedSection}/></div>
+      <div><h3>Spark source</h3><SegmentedControl label="Spark source" options={[{value:'family',label:'Combined'},{value:'parent',label:'Own'},{value:'p1',label:'P1'},{value:'p2',label:'P2'}]} value={sparkSource} onchange={value=>sparkSource=value as typeof sparkSource}/></div>
+    </section>{/if}
     <section class="affinity-target" aria-label="Affinity target">
       <AffinityPicker targetOnly target={target ? {...target,image:characterImage(Number(target.id))} : undefined} ontargetpick={()=>{targetSort='default';targetOpen=true;void loadTargets();}} ontargetclear={()=>selectTarget('')}/>
       {#if targetId && metricError}<Banner title="Target affinity unavailable" tone="warning"><Button variant="secondary" size="sm" onclick={loadAffinity}>Retry affinity</Button></Banner>{/if}
@@ -521,6 +527,7 @@
 <CharacterSelectDialog id="veteran-target-select" bind:open={targetOpen} options={targetOptions} loading={targetLoading} error={targetError} onretry={loadTargets} selected={targetId ? [String(targetId)] : []} bind:sort={targetSort} onselect={values=>selectTarget(values[0]??'')}/>
 
 <style>
+  .card-display{display:grid;gap:10px;padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border-subtle)}.card-display h3{margin:0 0 6px;font-size:11px;font-weight:600;color:var(--text-secondary)}.card-display :global(.segments){width:100%;padding:2px}.card-display :global(button){flex:1;min-width:0;padding-inline:6px;font-size:11px}
   .veterans-page { min-width:0; width:100%; display:grid; gap:20px; }
   .collection-header { min-width:0; display:grid; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--border-subtle); }
   .collection-toolbar { min-width:0; display:flex; align-items:center; gap:8px; }
