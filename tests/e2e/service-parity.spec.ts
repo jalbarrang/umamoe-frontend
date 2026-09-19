@@ -16,10 +16,11 @@ test('rate limits reach the shared UI and can be dismissed before retrying', asy
 test('status details, build notification, and changelog work on desktop and mobile', async ({ page }) => {
   await page.route('**/tools', async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: (await response.text()).replace('name="app-build-version" content="local"', 'name="app-build-version" content="beta-build.1.1"') });
+    await route.fulfill({ response, body: (await response.text()).replace('name="app-build-version" content="local"', 'name="app-build-version" content="2.0.371"') });
   });
-  await page.route('**/version.json*', route => route.fulfill({ json: { version: 'beta-build.2.1' } }));
+  await page.route('**/version.json*', route => route.fulfill({ json: { version: '2.0.372' } }));
   await page.goto('/tools');
+  await expect(page.getByRole('button', { name: '2.0.371', exact: true })).toBeAttached();
   await expect(page.getByText('Update available', { exact: true })).toBeVisible();
   const notice = page.getByRole('region', { name: 'Update available', exact: true });
   const originalViewport = page.viewportSize()!;

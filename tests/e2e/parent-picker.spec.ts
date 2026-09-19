@@ -218,12 +218,10 @@ test('Select Parent uses linked accounts, scoped factors, bookmarks and restores
   await page.getByRole('button',{name:'Clear selected legacy'}).click(); await page.getByRole('button',{name:'Pick your legacy',exact:true}).click();
   await dialog.getByRole('tab',{name:/Bookmarks/}).click();await expect(dialog.locator('.parent-row')).toHaveCount(1);
   await dialog.locator('.select-parent').click();
-  const popup=page.waitForEvent('popup').then(async planner=>{
-    // Finish the popup's catalog load before testing a persisted-state reload.
-    await (await planner.waitForResponse(response=>/\/resources\/.*\/factors\.json/.test(response.url()))).finished();
-    return planner;
-  });await page.locator('.inheritance-card').first().getByTitle('Open in Lineage Planner').click();
+  const popup=page.waitForEvent('popup');await page.locator('.inheritance-card').first().getByTitle('Open in Lineage Planner').click();
   const planner=await popup;await expect(planner).toHaveURL(/lineage/);
+  // A warm catalog need not make a request. Wait for the populated UI instead.
+  await expect(planner.locator('.spark--blue').first()).toContainText('Speed');
   await expect.poll(()=>planner.evaluate(()=>JSON.parse(localStorage.getItem('lineage-planner-state-v1')??'[]').find((node:{position:string})=>node.position==='p2')?.sparks.map((spark:{factorId:number})=>spark.factorId))).toEqual([10,120,1001010,200010]);
   await planner.reload();await expect(planner.getByRole('button',{name:/Change Parent 2: Mejiro McQueen/})).toBeVisible();
   await planner.getByRole('button',{name:'Pick Veteran for Parent 1',exact:true}).click();
@@ -441,7 +439,8 @@ test('Manual parent race wins and best fits preserve unsaved edits when storage 
 test('selected legacy retains the original veteran summary without its stat strip', async ({ page }) => {
   const { veteran } = await import('./fixtures/api');
   const dialog = await prepare(page, true, { t: [100102] }, async page => {
-    await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({json:{veterans:[{...veteran,name:'test'}]}}));
+    await page.route('**/resources/test/affinity.json', route => route.fulfill({json:{chars:[1001,1011,1067,1088],aff2:Array(16).fill(2),aff3:Array(64).fill(3)}}));
+    await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({json:{veterans:[{...veteran,name:'test',win_saddle_id_array:[]}]}}));
   });
   await dialog.locator('.select-parent').first().click();
   const summary = page.locator('.affinity-tree .veteran-summary');
@@ -451,10 +450,13 @@ test('selected legacy retains the original veteran summary without its stat stri
   await expect(summary.locator('.parent-row')).toHaveCount(2);
   await expect(summary.locator('.stats')).toHaveCount(0);
   await expect(page.getByRole('radiogroup', {name:'Legacy spark display'})).toBeVisible();
+  await expect(page.getByRole('radiogroup', {name:'Legacy spark display'}).getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
   await expect(page.getByRole('button', {name:'Clear selected legacy'})).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
   await expect(summary.locator('h3')).toHaveText('Grass Wonder');
   await expect(summary.locator('.leading-affinity .affinity')).toHaveCount(1);
+  await expect(summary.locator('.leading-affinity .affinity')).toHaveAttribute('aria-label','Total affinity: 8');
+  await expect(summary.locator('.parent-id .affinity')).toHaveText(['3','3']);
   await expect(summary.locator('.summary-affinity')).toHaveCount(0);
   for (const row of [summary.locator('.summary-head'), ...await summary.locator('.parent-id').all()]) {
     const badge = (await row.locator('.affinity').first().boundingBox())!;
@@ -492,6 +494,7 @@ test('selected legacy retains the original veteran summary without its stat stri
   await page.getByRole('button',{name:'Clear target character',exact:true}).click();
   await expect(page.getByRole('button',{name:'Pick target character',exact:true})).toBeVisible();
   await expect(summary.locator('h3')).toHaveText('Grass Wonder');
+  await expect(summary.locator('.affinity')).toHaveCount(0);
   const view = page.getByRole('radiogroup', {name:'Legacy spark display'});
   await view.getByRole('radio',{name:'Combined',exact:true}).click();
   await expect(summary.locator('.parent-row')).toHaveCount(2);
@@ -530,10 +533,49 @@ test('combined legacy uses the full width for fifty sparks without overflow', as
   await page.getByRole('radiogroup',{name:'Legacy spark display'}).getByRole('radio',{name:'Combined',exact:true}).click();
   const summary=page.locator('.affinity-tree .veteran-summary');
   await expect(summary.locator('.factor-list .spark')).toHaveCount(52);
+  await expect(summary.locator('.factor-list .spark-row').first().locator('.type')).toHaveClass(/type--blue/);
   expect(await summary.locator('.factor-list .spark').evaluateAll(chips=>chips.every(chip=>{
     const bounds=chip.getBoundingClientRect(), container=chip.parentElement!.getBoundingClientRect();
     return bounds.left>=container.left-1 && bounds.right<=container.right+1;
   }))).toBe(true);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
   await summary.screenshot({path:test.info().outputPath('combined-fifty-sparks.png')});
+});
+
+test('selected legacy UUID restores fresh data from a shared URL and clears deleted records on reload', async ({ page }) => {
+  const { veteran } = await import('./fixtures/api');
+  const id = 'b4608a48-729c-4ba4-a59f-5cf7937c0c21';
+  let exists = true;
+  const current = { ...veteran, id, trainer_id:'123456789012', win_saddle_id_array:[101,102] };
+  const queries: URLSearchParams[] = [];
+  page.on('request', request => { if (request.url().includes('/search/query?')) queries.push(new URL(request.url()).searchParams); });
+  const dialog = await prepare(page, true, {t:[100102]}, async page => {
+    await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({json:{veterans:[current]}}));
+    await page.route(`**/api/v4/user/profile/veterans/${id}`, route => exists ? route.fulfill({json:current}) : route.fulfill({status:404,json:{message:'Not found'}}));
+  });
+  await dialog.locator('.select-parent').click();
+  const state = () => page.evaluate(() => JSON.parse(atob(new URL(location.href).searchParams.get('filters')!)));
+  await expect.poll(async () => (await state()).vet).toBe(id);
+  const shared = page.url();
+  current.win_saddle_id_array = [103];
+  // Restore from the URL even without device preferences or linked-account discovery.
+  await page.evaluate(() => localStorage.removeItem('database-filter-state-v2'));
+  queries.length = 0;
+  await page.goto(shared);
+  await page.getByRole('button',{name:/Filters/}).click();
+  await expect(page.locator('.affinity-tree h3')).toHaveText('Grass Wonder');
+  await expect.poll(() => queries.at(-1)?.get('p2_win_saddle')).toBe('103');
+  expect(queries.every(query => query.get('p2_win_saddle') === '103')).toBe(true);
+  await expect(page.getByRole('button',{name:'Change selected legacy'})).toBeVisible();
+  exists = false; queries.length = 0;
+  await page.reload();
+  await page.getByRole('button',{name:/Filters/}).click();
+  await expect(page.getByRole('button',{name:'Pick your legacy',exact:true})).toBeVisible();
+  await expect(page.locator('.shared-legacy')).toHaveCount(0);
+  await expect.poll(async () => (await state()).vet).toBeUndefined();
+  await expect.poll(() => queries.length).toBeGreaterThan(0);
+  expect(queries.every(query => !query.has('p2_main_chara_id') && !query.has('p2_win_saddle'))).toBe(true);
+  await page.reload();
+  await page.getByRole('button',{name:/Filters/}).click();
+  await expect(page.getByRole('button',{name:'Pick your legacy',exact:true})).toBeVisible();
 });

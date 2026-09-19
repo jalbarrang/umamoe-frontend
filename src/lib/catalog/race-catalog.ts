@@ -47,6 +47,7 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 const yearLabels: Record<RaceYear, string> = { junior: 'Junior Year', classic: 'Classic Year', senior: 'Senior Year' };
 const yearOrder: RaceYear[] = ['junior', 'classic', 'senior'];
 let catalogPromise: Promise<RaceMapping[]> | undefined;
+resourceRepository.onUpdate(name => { if (name === 'race_to_saddle_mapping') catalogPromise = undefined; });
 
 function grade(value: number): RaceGrade { return value === 100 ? 'G1' : value === 200 ? 'G2' : 'G3'; }
 function years(permission: number): RaceYear[] {

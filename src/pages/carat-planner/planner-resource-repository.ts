@@ -4,7 +4,7 @@ import { applyGlobalRewardPrecedence } from '@/lib/timeline/planner-reward-prece
 import { QueryCache } from '@/services/data/query-cache';
 import { appHttp } from '@/services/http/app-http';
 import { loadSupportCardRarities } from '@/lib/catalog/support-card-catalog';
-import { parseJsonResponse } from '@/lib/catalog/json-asset';
+import { jsonResponseHash, parseJsonResponse } from '@/lib/catalog/json-asset';
 import { writable } from 'svelte/store';
 
 type ManifestEntry = string | { name?: string; path?: string; current_path?: string; currentPath?: string; url?: string; href?: string; sha256?: string; current_sha256?: string; etag?: string };
@@ -31,12 +31,21 @@ async function cachedResponse(url: string): Promise<Response | undefined> {
   if (typeof caches === 'undefined') return undefined;
   try { await writes.get(url); return await (await caches.open(diskCache)).match(url); } catch { return undefined; }
 }
+async function parseResource<T>(response: Response, url: string): Promise<T> {
+  const fingerprint = new URLSearchParams(url.split('?')[1]).get('v');
+  const expected = /^[a-f0-9]{64}$/i.test(fingerprint ?? '') ? fingerprint!.toLowerCase() : undefined;
+  const copy = expected ? response.clone() : undefined;
+  const data = await parseJsonResponse<T>(response, url);
+  const actual = copy ? await jsonResponseHash(copy) : undefined;
+  if (expected && actual && expected !== actual) throw new Error('Planner resource failed its integrity check.');
+  return data;
+}
 async function protectedResource<T>(url: string, refresh = false, isManifest = false): Promise<T> {
   const request = Symbol(); requests.set(url, request);
   try {
     const response = await appHttp.request<Response>(url, { browserProof: true, responseType: 'response', cache: isManifest ? 'no-store' : refresh ? 'reload' : 'default', query: isManifest ? { t: Date.now() } : undefined });
     const copy = response.clone();
-    const data = await parseJsonResponse<T>(response, url);
+    const data = await parseResource<T>(response, url);
     if (typeof caches !== 'undefined') {
       const write = (writes.get(url) ?? Promise.resolve()).then(async () => {
         if (requests.get(url) === request) await (await caches.open(diskCache)).put(url, copy);
@@ -49,7 +58,7 @@ async function protectedResource<T>(url: string, refresh = false, isManifest = f
   } catch (error) {
     const cached = await cachedResponse(url);
     if (!cached) throw error;
-    const data = await parseJsonResponse<T>(cached, url);
+    const data = await parseResource<T>(cached, url);
     offline = true; plannerUsingCache.set(true);
     return data;
   }
@@ -93,7 +102,13 @@ async function manifest(refresh: boolean): Promise<PlannerManifest> {
 async function artifact<T>(name: string, refresh: boolean): Promise<T> {
   const index = await manifest(refresh);
   const path = artifactPath(name, index);
-  const result = await cache.get(`planner:${path}`, 24 * 60 * 60_000, () => protectedResource<T>(path, refresh), refresh);
+  const result = await cache.get(`planner:${path}`, 24 * 60 * 60_000, async () => {
+    const stored = await cachedResponse(path);
+    if (stored && /[?&]v=/.test(path)) {
+      try { return await parseResource<T>(stored, path); } catch { refresh = true; /* Replace a damaged cached artifact, bypassing the HTTP cache too. */ }
+    }
+    return protectedResource<T>(path, refresh);
+  }, refresh);
   if (name === 'planner_rewards.json') currentRewardPath = path;
   return result;
 }

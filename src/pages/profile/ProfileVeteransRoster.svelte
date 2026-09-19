@@ -276,7 +276,7 @@
     return {
       id:String(v.trained_chara_id ?? v.id), name:item.name, image:item.image,
       rank:v.rank_score == null ? '' : getRankInfoFromScore(v.rank_score).label, score:v.rank_score ?? undefined,
-      scenario:item.scenario === '-' ? undefined : item.scenario, detail:item.distance + ' · ' + item.style,
+      scenario:item.scenario === '-' ? undefined : item.scenario, detail:[item.distance,item.style].filter(value => value && value !== '-').join(' · '),
       affinity:affinity?.main ?? Number.NaN, affinityTarget:targetId ? {id:targetId,name:target?.name ?? 'Selected Uma'} : undefined,
       affinityNote:targetId ? 'Affinity with '+(target?.name ?? 'the target')+': direct relation, both parent contributions and shared G1 wins.' : affinity?.recorded ? 'Stored main affinity; parent details unavailable' : 'Main = P1 + P2. Each parent includes base affinity and shared G1 wins.', aptitudes:aptitudes(v),
       stats:[...statFields.map(field => ({ id:field.id, label:field.label, value:(v[field.id] ?? 0).toLocaleString(), tone:field.id === 'wiz' ? 'wit' as const : field.id, icon:'/assets/images/icon/stats/' + (field.id === 'wiz' ? 'wit' : field.id) + '.webp' })), {id:'total',label:'Total',value:item.total.toLocaleString()}],

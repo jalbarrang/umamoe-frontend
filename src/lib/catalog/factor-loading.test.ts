@@ -29,8 +29,10 @@ it('shares cache/live factors with pickers and UQL, rejecting a malformed refres
   const request = catalog.loadFactorCatalog();
   expect(catalog.loadFactorCatalog()).toBe(request);
   await vi.waitFor(() => expect(catalog.factorMetadata(990001)?.text).toBe('Cached Recovery'));
-  expect(get(catalog.factorCatalogState)).toEqual({loading:true,cached:true,error:''});
-  release(); await request;
+  expect(get(catalog.factorCatalogState)).toEqual({loading:false,cached:false,error:''});
+  await request;
+  release();
+  await vi.waitFor(() => expect(catalog.factorMetadata(990002)?.text).toBe('Live Recovery'));
   expect(fetch).toHaveBeenCalledTimes(2);
   expect(catalog.factorMetadata(990001)).toBeUndefined();
   expect(catalog.decodeFactor(9900023)).toMatchObject({name:'Live Recovery',level:3,category:'skills-races'});
@@ -45,7 +47,7 @@ it('shares cache/live factors with pickers and UQL, rejecting a malformed refres
   expect(await stored.clone().json()).toEqual({default:fresh});
   expect(get(catalog.factorCatalogState)).toEqual({loading:false,cached:true,error:''});
   body = fresh; await vi.advanceTimersByTimeAsync(1000);
-  expect(get(catalog.factorCatalogState)).toEqual({loading:false,cached:false,error:''});
+  await vi.waitFor(() => expect(get(catalog.factorCatalogState)).toEqual({loading:false,cached:false,error:''}));
   stop(); stopSecond();
 });
 

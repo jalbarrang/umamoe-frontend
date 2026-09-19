@@ -6,9 +6,6 @@ export const serviceStatus = writable<{ state: 'loading' | 'operational' | 'degr
 export const availableVersion = writable('');
 export const CURRENT_UPDATE_VERSION = 17;
 export const buildVersion = () => document.querySelector<HTMLMetaElement>('meta[name="app-build-version"]')?.content.trim() || 'local';
-export function versionLabel(version: string): string {
-  return version.replace(/^(beta|prod)-build\.(\d+)\.(\d+)$/i, '$1 build #$2.$3');
-}
 export function reloadUpdatedVersion(version: string): void {
   const url = new URL(location.href);
   url.searchParams.set('__uma_version', version);

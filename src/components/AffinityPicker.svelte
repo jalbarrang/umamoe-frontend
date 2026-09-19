@@ -18,7 +18,7 @@
     onlegacyclear?: () => void;
   }
   let { target, veteran, sharedLegacyLabel, targetOnly = false, ontargetpick, ontargetclear, onlegacypick, onlegacyclear }: Props = $props();
-  let sparkView = $state('split');
+  let sparkView = $state('combined');
   let legacyGroup = $state<HTMLDivElement>();
 
   /** Restore focus after a caller-owned dialog replaces the legacy selection. */
@@ -46,7 +46,7 @@
     <div class="legacy-heading">
       <span class="tree-label tree-label--veteran">Your Legacy</span>
       
-      <div class="legacy-actions">{#if veteran}<SegmentedControl label="Legacy spark display" options={[{value:'split',label:'Split'},{value:'combined',label:'Combined'}]} bind:value={sparkView}/>{/if}
+      <div class="legacy-actions">{#if veteran}<Button variant="secondary" size="sm" ariaLabel="Change selected legacy" onclick={onlegacypick}>Change</Button><SegmentedControl label="Legacy spark display" options={[{value:'split',label:'Split'},{value:'combined',label:'Combined'}]} bind:value={sparkView}/>{/if}
       {#if veteran || sharedLegacyLabel}<IconButton icon="close" label="Clear selected legacy" size="sm" onclick={onlegacyclear}/>{/if}</div>
     </div>
     {#if veteran}

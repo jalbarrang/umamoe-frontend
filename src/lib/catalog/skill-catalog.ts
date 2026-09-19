@@ -14,6 +14,7 @@ export interface SkillCatalogEntry {
 }
 
 let catalog: Promise<Map<number, SkillCatalogEntry>> | undefined;
+resourceRepository.onUpdate(name => { if (name === 'skills') catalog = undefined; });
 
 export function skillImage(icon: string | undefined): string | undefined {
   return icon ? `/game-assets/skill_icons/${icon.replace(/\.png$/i, '.webp')}` : undefined;
@@ -65,17 +66,19 @@ export function resolveEncodedSkill(skills: Map<number, SkillCatalogEntry>, enco
 }
 
 export function sortEncodedSkills(skills: Map<number, SkillCatalogEntry>, ids: number[]): number[] {
-  function bucket(id: number): number {
-    const { skill, inherited } = resolveEncodedSkill(skills, id);
+  function bucket(skill: SkillCatalogEntry | undefined, inherited: boolean): number {
     if (!skill) return 99;
-    if (skill.unique === true) return inherited ? 1 : 0;
+    if (skill.unique || skill.rarity === 4) return inherited ? 1 : 0;
     const text = [skill.name, skill.effect, skill.description, skill.conditions, skill.icon].join(' ').toLowerCase();
     const type = /speed down|decrease(?:s|d)? .*speed|lower(?:s|ed)? .*speed|slow(?:s|ed)?|hesitat|intimidat|disorient|drain|debuff|fatigue.*(?:opponent|enemy|rival)|(?:opponent|enemy|rival).*fatigue/.test(text) ? 2
       : /stamina recovery|recover(?:s|ed)? stamina|recover endurance|restore(?:s|d)? stamina|regain|decrease fatigue|reduce fatigue|harder to tire/.test(text) ? 1
       : /speed|velocity|target speed|current speed/.test(text) ? 0 : 3;
-    return (skill.rarity === 2 || skill.rarity === 4 ? 2 : 6) + type;
+    return (skill.rarity === 2 ? 2 : 6) + type;
   }
-  return ids.map((id) => ({ id, bucket: bucket(id) })).sort((a, b) => a.bucket - b.bucket).map(({ id }) => id);
+  return ids.map(id => {
+    const { skill, inherited } = resolveEncodedSkill(skills,id);
+    return {id,bucket:bucket(skill,inherited),cost:inherited ? 200 : skill?.baseCost ?? -1};
+  }).sort((a,b) => a.bucket-b.bucket || b.cost-a.cost).map(({id}) => id);
 }
 
 /** Base purchase cost, including prerequisite skills, before hint discounts. */

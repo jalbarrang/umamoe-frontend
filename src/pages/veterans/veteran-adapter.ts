@@ -16,7 +16,7 @@ function sparkGroups(recordId: string, factors: VeteranRecord['factors'], source
     group.items.push({ id: `${recordId}:${item.id}:${item.level}:${index}`, name: metadata?.text ?? `Factor ${item.id}`, level: item.level, source });
     groups.set(groupTone, group);
   }
-  return [...groups.values()];
+  return (['blue', 'pink', 'green', 'white'] as const).flatMap(tone => groups.has(tone) ? [groups.get(tone)!] : []);
 }
 function rawNumber(record: VeteranRecord, path: string): number | undefined { const raw = record.rawSource as Record<string, unknown> | undefined; const value = raw?.[path]; return typeof value === 'number' ? value : undefined; }
 

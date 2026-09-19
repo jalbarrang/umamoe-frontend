@@ -169,7 +169,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "version=beta-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          version="$(node scripts/build-version.mjs)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build shell artifact
         uses: docker/build-push-action@v6
@@ -458,7 +459,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "version=prod-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          version="$(node scripts/build-version.mjs)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Inject production frontend config from GitHub settings
         id: production_frontend_config

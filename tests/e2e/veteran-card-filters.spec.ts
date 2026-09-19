@@ -16,7 +16,7 @@ test('cards show compact affinity above combined sparks and retain inline stats 
   await expect(card.locator('.spark-group[data-tone="white"]')).toBeVisible();
   await expect(card.locator('details')).toHaveCount(0);
   const cardSize=(await card.boundingBox())!;
-  expect(cardSize.height).toBeLessThan(600); // Larger portraits and touch targets; unknown factor labels wrap.
+  expect(cardSize.height).toBeLessThan(640); // Includes the source selector and touch-sized expansion controls.
   await expect(card.getByLabel('Main affinity: 25',{exact:true})).toBeVisible();
   await expect(card.getByLabel('P1 affinity: 10',{exact:true})).toBeVisible();
   await expect(card.getByLabel('P2 affinity: 15',{exact:true})).toBeVisible();
@@ -217,44 +217,55 @@ test('spark browsing keeps optional settings in one menu and retains range editi
   await page.screenshot({path:testInfo.outputPath('selected-spark-row.png')});
 });
 
-test('fifty white sparks stay filterable on cards and details use a single scroll', async ({page},testInfo) => {
+test('cards expand fifty sparks inline, switch sources and keep skills mutually exclusive', async ({page},testInfo) => {
   const white=factorCatalog.filter(factor => ![0,1,5].includes(factor.type)).slice(0,50);
   const unique=factorCatalog.find(factor => factor.type === 5)!;
   const sparkIds=[103,1203,Number(unique.id)*10+3,...white.map(factor => Number(factor.id)*10+2)];
   await page.route('**/api/v4/user/profile/123456789012',route => route.fulfill({json:{
     trainer:{account_id:'123456789012',name:'Spark trainer'},
-    veterans:[{...veteran,factors:sparkIds,succession_chara_array:veteran.succession_chara_array.map(parent => ({...parent,factor_id_array:[10,20].includes(parent.position_id) ? sparkIds : parent.factor_id_array}))}]
+    veterans:[{...veteran,distance_type:null,factors:sparkIds,succession_chara_array:veteran.succession_chara_array.map(parent => ({...parent,factor_id_array:[10,20].includes(parent.position_id) ? sparkIds : parent.factor_id_array}))}]
   }}));
   await page.goto('/veterans/123456789012');
   const card=page.locator('.veteran-card').first();
-  await expect(card.getByRole('button',{name:'View family white sparks',exact:true})).toBeVisible();
-  await expect(card.locator('.spark-summary')).toHaveCount(1);
+  await expect(card.locator('.white-count')).toContainText('50 white');
+  await expect(card.locator('.race-style')).toHaveText('Pace');
+  const sources=card.getByRole('radiogroup',{name:'Spark source'});
+  await expect(sources.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
+  await expect(card.getByRole('button',{name:'Collapse learned skills',exact:true})).toHaveAttribute('aria-expanded','true');
   const initial=(await card.boundingBox())!;
-  // Allow the larger portraits and affinity panel while keeping the dense spark list collapsed.
-  expect(initial.height).toBeLessThan(580);
-  await card.getByRole('button',{name:'View family white sparks',exact:true}).click();
-  const popup=page.getByRole('dialog',{name:'View family white sparks',exact:true});
-  await expect(popup).toBeVisible();
-  await expect(popup.locator('.white-list .spark-filter')).toHaveCount(50);
-  expect((await card.boundingBox())!.height).toBe(initial.height);
-  expect(await popup.locator('.white-list').evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
-  await page.screenshot({path:testInfo.outputPath('fifty-parent-sparks.png'),fullPage:true});
+  expect(initial.height).toBeLessThan(650);
+  await card.getByRole('button',{name:'Expand sparks',exact:true}).click();
+  await expect(card.locator('.spark-group[data-tone="white"] .spark-filter')).toHaveCount(50);
+  await expect(card.locator('.skill-list')).not.toBeVisible();
+  expect((await card.boundingBox())!.height).toBeGreaterThan(initial.height);
+  expect(await card.locator('.spark-groups').evaluate(element => element.scrollHeight <= element.clientHeight+1)).toBe(true);
+  await expect(card.getByRole('searchbox')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  for (const source of ['Own','P1','P2']) {
+    await sources.getByRole('radio',{name:source,exact:true}).click();
+    await expect(sources.getByRole('radio',{name:source,exact:true})).toBeChecked();
+    await expect(card.getByRole('button',{name:`Filter by ${white[49].text}: 2 stars (${source})`,exact:true})).toBeVisible();
+  }
+  await sources.getByRole('radio',{name:'P1',exact:true}).click();
+  await sources.getByRole('radio',{name:'P1',exact:true}).press('Home');
+  await expect(sources.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
+  await card.screenshot({path:testInfo.outputPath('fifty-parent-sparks.png')});
   const target=white[49];
-  await popup.getByRole('searchbox',{name:'Search white sparks',exact:true}).fill(target.text);
-  await popup.getByRole('button',{name:'Filter by '+target.text+': 6 stars (family total)',exact:true}).click();
+  await card.getByRole('button',{name:'Filter by '+target.text+': 6 stars (family total)',exact:true}).click();
   await expect(page.locator('.active-filter-chips')).toContainText(target.text+' · Total 6★+ · Veteran + parents');
-  await popup.getByRole('button',{name:'Close View family white sparks',exact:true}).click();
-  await expect(popup).not.toBeVisible();
   await expect(card.locator('.sparks .matched').first()).toBeVisible();
   await expect(card.locator('.card-aptitudes')).toBeVisible();
   await expect(card.locator('.learned-skills')).toBeVisible();
-  await card.getByRole('button',{name:'View family white sparks',exact:true}).click();
-  const second=page.getByRole('dialog',{name:'View family white sparks',exact:true});
-  await expect(second.getByRole('searchbox',{name:'Search white sparks'})).toHaveValue('');
-  await expect(second.locator('.white-list .spark-filter')).toHaveCount(50);
-  await page.keyboard.press('Escape');
-  await expect(second).not.toBeVisible();
-  await expect(card.getByRole('button',{name:'View family white sparks',exact:true})).toBeFocused();
+  await card.getByRole('button',{name:'Expand learned skills',exact:true}).click();
+  await expect(card.locator('.skill-list')).toBeVisible();
+  await expect(card.getByRole('button',{name:'Expand sparks',exact:true})).toHaveAttribute('aria-expanded','false');
+  // A selected white spark remains visible in the compact preview.
+  await expect(card.locator('.spark-group[data-tone="white"] .spark-filter')).toHaveCount(1);
+  await card.getByRole('button',{name:'Expand sparks',exact:true}).click();
+  await sources.getByRole('radio',{name:'P1',exact:true}).click();
+  await card.getByRole('button',{name:'Filter by '+target.text+': 2 stars (P1)',exact:true}).click();
+  await expect(page.locator('.active-filter-chips')).toContainText('P1');
+  await expect(card.locator('.skill-list')).not.toBeVisible();
   await card.getByRole('button',{name:'View Grass Wonder details',exact:true}).click();
   const detail=page.getByRole('dialog',{name:'Grass Wonder',exact:true});
   await expect(detail.locator('.spark-list .spark-token')).toHaveCount(53);

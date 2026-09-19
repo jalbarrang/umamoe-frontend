@@ -299,7 +299,6 @@
         </div>
       </div>
 
-      <ContentAd routeId="statistics"/>
       <div id="statistics-panel" class="content-area" role="tabpanel" aria-labelledby={'statistics-tabs-' + activeSection} tabindex="-1">
         {#if allDistances.length > 1}<div class="distance-focus"><span>Explore by distance</span><SegmentedControl label="Distance focus" options={distanceOptions} value={distanceFocus} onchange={value => selectedDistances = value === 'all' ? [...allDistances] : [value]}/></div>{/if}
         {#if activeSection === 'overview'}
@@ -393,6 +392,7 @@
         {/if}
       </div>
 
+      <ContentAd routeId="statistics"/>
       <footer><Icon name="info" size={15}/><p>Community data, anonymized and aggregated. Usage describes popularity; it does not measure race results.</p></footer>
       <Dialog bind:open={filtersOpen} title="Statistics filters" icon="tune" mobileSheet maxWidth="540px">
         <StatisticsFilterControls {allScenarios} {allClasses} {allDistances} bind:selectedScenarios bind:selectedClasses bind:selectedDistances {selectedSamples}/>

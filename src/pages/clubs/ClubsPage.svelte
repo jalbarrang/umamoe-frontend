@@ -117,7 +117,7 @@
   {#if loading}<div class="loading"><Spinner size={28}/><span>Loading clubs…</span></div>
   {:else if !error && visibleClubs.length === 0}<div class="no-results"><Icon name="search" size={42}/><p>No clubs match your filters.</p><Button variant="secondary" size="sm" onclick={clearFilters}>Clear all filters</Button></div>
   {:else if visibleClubs.length}
-    <ContentAd routeId="clubs"/>
+    <ContentAd routeId="clubs" top/>
     <section class="club-list" aria-label="Club results">
       {#each visibleClubs as club, index (club.circleId)}
         <CircleCard circle={club}/>

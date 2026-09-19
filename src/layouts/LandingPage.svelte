@@ -24,7 +24,7 @@
       <div class="quick-links">{@render children()}</div>
     </div></section>
   </SourcePage></div>
-  <ContentAd {routeId} railAlternative={false}/>
+  <ContentAd {routeId} railAlternative={false} top/>
   <SiteStatisticsStrip stats={siteStats}/>
 </div>
 

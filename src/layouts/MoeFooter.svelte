@@ -2,7 +2,7 @@
   import { openFusePrivacyControls } from '@/services/ads/fuse-ads';
   import Icon from '@/components/Icon.svelte';
   import { DISCORD_SUPPORT_URL } from '@/services/site-links';
-  import { buildVersion, serviceStatus, versionLabel } from '@/services/site-services';
+  import { buildVersion, serviceStatus } from '@/services/site-services';
   import { copyText } from '@/lib/clipboard';
   import InspectPopover from '@/components/InspectPopover.svelte';
   let privacyUnavailable = $state(false);
@@ -27,7 +27,7 @@
       <button type="button" onclick={() => window.dispatchEvent(new Event('uma:show-updates'))}>What’s new</button>
       <button type="button" onclick={() => privacyUnavailable = !openFusePrivacyControls()}>Privacy Choices</button>
     </nav>
-    <span class="footer-meta">© {year} uma.moe{#if version !== 'local'}<button class="build-version" title="Copy build version" onclick={async () => { copied = await copyText(`build=${version}`); }}>{copied ? 'Copied' : versionLabel(version)}</button>{/if}</span>
+    <span class="footer-meta">© {year} uma.moe{#if version !== 'local'}<button class="build-version" title="Copy build version" onclick={async () => { copied = await copyText(`build=${version}`); }}>{copied ? 'Copied' : version}</button>{/if}</span>
   </div>
   {#if privacyUnavailable}<p class="privacy-notice" role="status">Regional privacy controls are not currently available in this browser or region.</p>{/if}
 </footer>

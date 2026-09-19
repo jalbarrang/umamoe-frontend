@@ -2,7 +2,7 @@
   import { totalStats } from '@/lib/profile/profile-display';
   import type { ProfileVeteran } from './profile-repository';
   import type { VeteranUiRecord } from '@/components/veteran-ui-types';
-  import { encodedSkills, veteranBaseStat, veteranFactorTotals, type VeteranFactorFilter, type ResolvedVeteranFactor } from '@/lib/profile/profile-veterans';
+  import { encodedSkills, veteranBaseStat, veteranFactors, veteranFactorTotals, type VeteranFactorFilter, type ResolvedVeteranFactor } from '@/lib/profile/profile-veterans';
   import { resolveEncodedSkill, skillPointTotal, skillImage, skillRarity, sortEncodedSkills, type SkillCatalogEntry } from '@/lib/catalog/skill-catalog';
   import Icon from '@/components/Icon.svelte';
   import ProfileVeteranAffinity from './ProfileVeteranAffinity.svelte';
@@ -10,8 +10,7 @@
   import ProfileVeteranIdentity from './ProfileVeteranIdentity.svelte';
   import StatStrip from '@/components/StatStrip.svelte';
   import AptitudeGrid from '@/components/AptitudeGrid.svelte';
-  import InspectPopover from '@/components/InspectPopover.svelte';
-  import TextField from '@/components/TextField.svelte';
+  import SegmentedControl from '@/components/SegmentedControl.svelte';
   import SparkItem from '@/components/SparkItem.svelte';
   import SkillChip from '@/components/SkillChip.svelte';
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
@@ -25,9 +24,16 @@
   } = $props();
   type CardSpark = ResolvedVeteranFactor & { ownStars?: number };
   const id = $props.id();
-  let sparkSearch = $state('');
+  let expandedSection = $state<'sparks'|'skills'|null>('skills');
+  let sparkSource = $state<'family'|'parent'|'p1'|'p2'>('family');
+  const sparkSources = $derived([
+    {value:'family',label:'Combined'}, {value:'parent',label:'Own'},
+    {value:'p1',label:'P1',disabled:!veteran.succession_chara_array?.some(node => node.position_id === 10)},
+    {value:'p2',label:'P2',disabled:!veteran.succession_chara_array?.some(node => node.position_id === 20)}
+  ]);
+  const sourceLabel = $derived(sparkSource === 'family' ? 'family total' : sparkSources.find(source => source.value === sparkSource)!.label);
   const skills = $derived(sortEncodedSkills(skillCatalog,encodedSkills(veteran)));
-  const sparks = $derived(veteranFactorTotals(veteran));
+  const sparks = $derived(sparkSource === 'family' ? veteranFactorTotals(veteran) : veteranFactors(veteran,sparkSource));
   const stats = $derived((summary.stats ?? []).filter(stat => stat.id !== 'total').map(stat => {
     if (!baseStats) return stat;
     const value = veteranBaseStat(veteran[stat.id as 'speed'|'stamina'|'power'|'guts'|'wiz'],mood);
@@ -64,16 +70,16 @@
       <ProfileVeteranAffinity {summary}/>
     </section>
 
-    <section class="sparks" aria-label="Family spark totals">
-      <header><h4>Combined sparks</h4><span>Own + P1 + P2</span></header>
+    <section class="sparks" aria-label="Veteran sparks">
+      <header><h4>Sparks <span class="count">{sparks.length}</span></h4><div class="spark-sources"><SegmentedControl label="Spark source" options={sparkSources} value={sparkSource} onchange={value => sparkSource = value as typeof sparkSource}/></div><button class="section-toggle" aria-label={expandedSection === 'sparks' ? 'Collapse sparks' : 'Expand sparks'} aria-expanded={expandedSection === 'sparks'} aria-controls={id+'-sparks'} onclick={() => expandedSection = expandedSection === 'sparks' ? null : 'sparks'}>{expandedSection === 'sparks' ? 'Collapse' : 'Expand'}<Icon name="chevron" size={12}/></button></header>
       {@render sparkList(sparks)}
       {#if !sparks.length}<small>No sparks recorded.</small>{/if}
     </section>
 
     {/if}
     {#if skills.length}<section class="learned-skills">
-      <header><h4>Learned skills <span class="count">{skills.length}</span></h4></header>
-      <div class="skill-list">{#each skills as skillId}
+      <header><h4>Learned skills <span class="count">{skills.length}</span></h4><button class="section-toggle" aria-label={expandedSection === 'skills' ? 'Collapse learned skills' : 'Expand learned skills'} aria-expanded={expandedSection === 'skills'} aria-controls={id+'-skills'} onclick={() => expandedSection = expandedSection === 'skills' ? null : 'skills'}>{expandedSection === 'skills' ? 'Collapse' : 'Expand'}<Icon name="chevron" size={12}/></button></header>
+      <div class="skill-list" id={id+'-skills'} hidden={expandedSection !== 'skills'}>{#each skills as skillId}
         {@const resolved = resolveEncodedSkill(skillCatalog,skillId)}
         {@const id = resolved.skill?.skill_id ?? Math.floor(skillId / 10)}
         {#snippet chip()}<SkillChip name={resolved.skill?.name ?? `Skill ${id}`} icon={skillImage(resolved.skill?.icon)} level={`Lv.${resolved.level}`} rarity={skillRarity(resolved.skill,resolved.inherited)} compact/>{/snippet}
@@ -89,28 +95,17 @@
 {#snippet sparkButton(factor:CardSpark)}
   {@const matched=selectedFactors.some(filter => filter.factorId === factor.id) || queryMatches.some(match=>match.factor?.id===factor.id && match.factor.level>0)}
   {#snippet spark()}<SparkItem {matched} name={factor.name} level={factor.level} tone={factor.tone} mainStars={factor.ownStars ?? 0} compact/>{/snippet}
-  {#if onfactor}<button class="spark-filter" class:matched aria-label={`Filter by ${factor.name}: ${factor.level} stars (family total)`} onclick={() => onfactor?.({factorId:factor.id,minLevel:factor.level,scope:'family',mode:'total'})}>{@render spark()}</button>{:else}<span class="spark-filter">{@render spark()}</span>{/if}
+  {#if onfactor}<button class="spark-filter" class:matched aria-label={`Filter by ${factor.name}: ${factor.level} stars (${sourceLabel})`} onclick={() => onfactor?.({factorId:factor.id,minLevel:factor.level,scope:sparkSource,mode:'total'})}>{@render spark()}</button>{:else}<span class="spark-filter">{@render spark()}</span>{/if}
 {/snippet}
 
 {#snippet sparkList(items:CardSpark[])}
   {@const white = items.filter(factor => factor.tone === 'white')}
-  <div class="spark-groups">
+  <div class="spark-groups" id={id+'-sparks'}>
     {#each ['blue','pink','green','white'] as tone}
-      {@const group = items.filter(factor => factor.tone === tone && (tone !== 'white' || white.length <= 3 || selectedFactors.some(filter => filter.factorId === factor.id) || queryMatches.some(match=>match.factor?.id===factor.id && match.factor.level>0)))}
+      {@const group = items.filter(factor => factor.tone === tone && (expandedSection === 'sparks' || tone !== 'white' || white.length <= 3 || selectedFactors.some(filter => filter.factorId === factor.id) || queryMatches.some(match=>match.factor?.id===factor.id && match.factor.level>0)))}
       {#if group.length}<div class="spark-group" data-tone={tone}>{#each group as factor}{@render sparkButton(factor)}{/each}</div>{/if}
     {/each}
-    {#if white.length > 3}<div class="spark-summary">
-      <InspectPopover label="View family white sparks" onopenchange={open => {if(open) sparkSearch='';}}>
-        {#snippet trigger()}<span class="white-count"><span>★</span><strong>{white.length}</strong> white <Icon name="chevron" size={12}/></span>{/snippet}
-          {@const results = white.filter(factor => factor.name.toLocaleLowerCase().includes(sparkSearch.trim().toLocaleLowerCase()))}
-        <div class="white-browser">
-          <header><h4>Own + P1 + P2</h4><span>{white.length} white sparks</span></header>
-          <TextField id={id + '-white'} label="Search white sparks" hideLabel prefixIcon="search" type="search" placeholder="Find a skill or race…" bind:value={sparkSearch}/>
-          <div class="white-list">{#each results as factor}{@render sparkButton(factor)}{/each}{#if !results.length}<p>No matching sparks.</p>{/if}</div>
-          <small>{results.length} of {white.length} · Click a spark to filter</small>
-        </div>
-      </InspectPopover>
-    </div>{/if}
+    {#if white.length > 3 && expandedSection !== 'sparks'}<span class="white-count"><span>★</span><strong>{white.length}</strong> white</span>{/if}
   </div>
 {/snippet}
 
@@ -127,7 +122,7 @@
   .sparks,.learned-skills { min-width:0; display:grid; gap:5px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
   h4 { margin:0; color:var(--text-primary); font-size:10px; font-weight:600; }
-  header>span,.count { color:var(--color-text-muted); font-size:10px; font-weight:400; }.count { margin-left:3px; }
+  .count { margin-left:3px; color:var(--color-text-muted); font-size:10px; font-weight:400; }
   .spark-groups,.spark-group,.skill-list { min-width:0; display:flex; flex-wrap:wrap; gap:4px; }
   .spark-group[data-tone='white'] { flex-basis:100%; }
   .spark-filter,.skill-filter { max-width:100%; display:flex; align-items:center; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
@@ -135,16 +130,18 @@
   .spark-filter :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.2; }
   .spark-filter:hover :global(.spark) { border-color:var(--spark-border-color,currentColor); }
   .skill-filter.matched { outline:2px solid var(--color-accent); outline-offset:1px; }
-  .spark-summary { --inspect-popover-width:350px; --inspect-popover-padding:12px; max-width:100%; }
-  .spark-summary :global(.trigger) { min-width:0; min-height:24px; }
+  .section-toggle { display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:0 2px; border:0; background:transparent; color:var(--color-text-muted); font-size:10px; cursor:pointer; }
+  .section-toggle:hover { color:var(--color-accent); }.section-toggle[aria-expanded='true'] :global(svg) { transform:rotate(180deg); }
+  .sparks header { gap:6px; }.sparks h4,.section-toggle { flex:none; }
+  .spark-sources { flex:1; min-width:0; }
+  .spark-sources :global(.segments) { width:100%; padding:2px; gap:2px; border-radius:5px; overflow:visible; }
+  .spark-sources :global(button) { flex:1; min-width:0; min-height:26px; padding:0 5px; border-radius:3px; font-size:10px; font-weight:600; }
   .white-count { display:inline-flex; align-items:center; gap:4px; min-height:22px; padding:3px 6px; border:1px solid var(--border-secondary); border-radius:4px; color:var(--color-text-muted); background:var(--surface-2); font-size:11px; }
   .white-count strong { color:var(--color-text); font-weight:600; }
-  .white-browser { display:grid; gap:10px; min-width:0; }.white-browser header { padding-right:28px; }.white-browser h4 { color:var(--color-text); font-size:12px; }
-  .white-list { min-width:0; display:grid; gap:5px; max-height:min(300px,45dvh); overflow-y:auto; overscroll-behavior:contain; padding:2px; }
-  .white-list .spark-filter { width:100%; min-height:28px; }.white-list :global(.spark) { width:100%; min-height:28px; padding:5px 7px; font-size:12px; }.white-list p { margin:8px; color:var(--color-text-muted); font-size:12px; }
   .card-affinity { display:grid; gap:6px; padding-bottom:8px; }
   .card-affinity header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px; }.card-affinity header small { font-size:10px; color:var(--color-text-muted); }
   .skill-list { gap:4px; }.skill-filter:hover { filter:brightness(1.15); }
+  .skill-list[hidden] { display:none; }
   .skill-filter :global(.skill-chip) { min-height:22px; font-size:10px; }
   .skill-filter :global(.skill-chip img) { width:22px; height:22px; }
   .skill-filter :global(.skill-body) { min-height:22px; }.skill-filter :global(.skill-name) { white-space:normal; overflow:visible; line-height:1.25; }
@@ -152,5 +149,6 @@
   .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; margin-left:auto; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; cursor:pointer; }
   small { color:var(--color-text-muted); font-size:10px; }button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }.card-open:focus-visible { outline-offset:-2px; }
   @container(max-width:330px) { .card-open { padding:8px; }.card-body { padding:8px; }}
-  @media(pointer: coarse) and (max-width: 1300px) { .spark-summary :global(.trigger) { min-height:32px; }.white-browser header { min-height:28px; padding-right:34px; }.spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }
+  @container(max-width:300px) { .sparks header { flex-wrap:wrap; }.spark-sources { order:1; flex-basis:100%; } }
+  @media(pointer: coarse) and (max-width: 1300px) { .section-toggle,.spark-sources :global(button),.spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }
 </style>

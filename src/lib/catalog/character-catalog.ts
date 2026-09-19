@@ -13,6 +13,10 @@ export interface CharacterCatalogEntry {
 let characterCatalog: Promise<Map<number, CharacterCatalogEntry>> | undefined;
 export type CharacterNames = Record<string, { name: string; skins?: Record<string, string> }>;
 let characterNames: Promise<CharacterNames> | undefined;
+resourceRepository.onUpdate(name => {
+  if (name === 'character' || name === 'character_names') characterCatalog = undefined;
+  if (name === 'character_names') characterNames = undefined;
+});
 
 export function loadCharacterNames(): Promise<CharacterNames> {
   characterNames ??= resourceRepository.load<CharacterNames>('character_names').catch(error => { characterNames = undefined; throw error; });

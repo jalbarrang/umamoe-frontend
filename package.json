@@ -1,6 +1,6 @@
 {
   "name": "umamoe-frontend",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0",
   "description": "Mobile-first Svelte frontend for uma.moe",
   "type": "module",
   "scripts": {

@@ -16,6 +16,13 @@ export const factorCatalogState = writable({ loading: false, cached: false, erro
 let loading: Promise<void> | undefined;
 let loaded = false, consumers = 0, retryAttempt = 0;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
+resourceRepository.onUpdate(name => {
+  if (name === 'factors') { loaded = false; if (consumers) void loadFactorCatalog(); }
+  if ((name === 'skills' || name === 'race_to_saddle_mapping') && artworkLoading) {
+    artworkLoading = undefined;
+    void loadFactorArtwork().catch(() => {});
+  }
+});
 
 function normalizeFactors(data: unknown): FactorMetadata[] {
   const rows = Array.isArray(data) ? data : (data as { default?: unknown } | null)?.default;
@@ -82,6 +89,7 @@ export function watchFactorCatalog(): () => void {
 /** Shares the demand-loaded race mapping; opening a factor picker never fetches its own catalog. */
 export function loadFactorArtwork(): Promise<void> {
   return artworkLoading ??= Promise.all([loadRaceFactorImages(), loadSkillCatalog()]).then(([images, skills]) => {
+    skillIcons.clear(); raceImages.clear();
     for (const skill of skills.values()) if (skill.icon) skillIcons.set(skill.name.normalize('NFKC').toLowerCase().trim(), skill.icon);
     for (const [name, image] of images) raceImages.set(name, image);
   }).catch((error) => { artworkLoading = undefined; throw error; });

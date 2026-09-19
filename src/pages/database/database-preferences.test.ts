@@ -82,16 +82,25 @@ describe('Angular-compatible database preferences', () => {
   it('retains Angular P2 context in URLs and presets, but not silent preferences', () => {
     const filters = emptyInheritanceFilters(); filters.p2MainCharaId = 1013; filters.p2WinSaddle = [100, 101];
     const storage = memoryStorage();
-    const { compact, saved } = writeDatabasePreferences(storage, 'advanced', filters, null, { p2c: 999, p2w: [9], p2i: 42, vet: ['account', 7] });
+    const { compact, saved } = writeDatabasePreferences(storage, 'advanced', filters, null, { p2c: 999, p2w: [9], p2i: 42 });
     expect(compact).toMatchObject({ p2c: 1013, p2w: [100, 101], p2i: 42 });
     const restored = filtersFromCompactState(decodeDatabaseFilterState(encodeDatabaseFilterState(compact)), 'advanced');
     expect(restored).toMatchObject({ p2MainCharaId: 1013, p2WinSaddle: [100, 101] });
     const preference = decodeDatabaseFilterState(saved.formState);
     for (const key of ['p2c','p2w','p2i']) expect(preference).not.toHaveProperty(key);
-    expect(preference.vet).toEqual(['account', 7]);
     expect(readDatabasePreferences(storage).filters.p2MainCharaId).toBeUndefined();
     expect(compactStateFromFilters(emptyInheritanceFilters(), compact)).not.toHaveProperty('p2i');
     expect(filtersFromCompactState({ p2c: null as unknown as number, p2w: [NaN, -1, 3, 3, 1.5] }, 'advanced')).toMatchObject({ p2MainCharaId: undefined, p2WinSaddle: [3] });
+  });
+
+  it('persists the selected UUID but waits for its lookup instead of restoring stale affinity values', () => {
+    const storage = memoryStorage();
+    const filters = emptyInheritanceFilters(); filters.p2MainCharaId = 1013; filters.p2WinSaddle = [100];
+    const {compact} = writeDatabasePreferences(storage, 'advanced', filters, null, {vet:'selected-uuid'});
+    const restored = decodeDatabaseFilterState(encodeDatabaseFilterState(compact));
+    expect(restored.vet).toBe('selected-uuid');
+    expect(filtersFromCompactState(restored, 'advanced')).toMatchObject({p2MainCharaId:undefined, p2WinSaddle:[]});
+    expect(readDatabasePreferences(storage).compact.vet).toBe('selected-uuid');
   });
 
   it('reads the Angular preset schema and computes its visible count', () => {

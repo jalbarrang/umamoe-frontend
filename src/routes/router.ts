@@ -59,7 +59,7 @@ const pageRoutes = {
 const productRoutes = {
   hooks: {
     beforeLoad: (context: { pathname: string }) => { pendingRoute.set(context.pathname); preloadPageData(context); },
-    afterLoad: () => { pendingRoute.set(null); },
+    afterLoad: () => { pendingRoute.set(null); void import('@/lib/catalog/resource-repository').then(({ resourceRepository }) => resourceRepository.revalidate()).catch(() => {}); },
     onError: () => { pendingRoute.set(null); },
     onPreload: preloadPageData
   },

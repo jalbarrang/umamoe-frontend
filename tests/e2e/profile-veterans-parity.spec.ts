@@ -208,7 +208,7 @@ test('Veteran details retain support deck, stats, aptitudes, races, sparks, skil
   await dialog.getByRole('button',{name:'P1 legacy 1: Grass Wonder',exact:true}).click();
   await expect(dialog.getByRole('radio',{name:'Grass Wonder P1 · Grandparent 1',exact:true})).toBeChecked();
   await expect(dialog.getByRole('listitem',{name:'Speed: 2 stars.',exact:true})).toBeVisible();
-  await dialog.getByRole('radio',{name:'Combined',exact:true}).click();
+  await dialog.getByRole('radio',{name:'Combined Own + P1 + P2',exact:true}).click();
   await expect(dialog.getByRole('group',{name:'Show sparks from',exact:true})).toBeVisible();
   await expect(dialog.getByRole('listitem',{name:'Speed: 6 stars total. Main 3, P1 3, P2 0.',exact:true})).toBeVisible();
   expect(await dialog.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);

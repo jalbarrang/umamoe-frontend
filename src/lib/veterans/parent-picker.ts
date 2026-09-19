@@ -87,15 +87,18 @@ export function scopedParentFactors(parent: ProfileVeteran, scope: ParentFactorF
   return ancestors.filter((node) => node.position_id === (scope === 'p1' ? 10 : 20)).flatMap(parentFactors);
 }
 export function parentAffinity(parent: ProfileVeteran, targetId: number | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>): number {
-  if (!targetId || !engine) return 0;
+  const score = parentAffinityDetails(parent, targetId, engine, groups);
+  return score ? score.parentOne.total + score.race.p1Left + score.race.p1Right : 0;
+}
+export function parentAffinityDetails(parent: ProfileVeteran, targetId: number | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>) {
+  if (!targetId || !engine) return null;
   const nodes = emptyPlannerNodes(); nodes.target.characterId = targetId; nodes.p1.characterId = parent.card_id;
   nodes.p1.winSaddleIds = parent.win_saddle_id_array ?? [];
   for (const [id, position] of [[10, 'p1-1'], [20, 'p1-2']] as const) {
     const ancestor = parent.succession_chara_array?.find((node) => node.position_id === id);
     nodes[position].characterId = ancestor?.card_id ?? null; nodes[position].winSaddleIds = ancestor?.win_saddle_id_array ?? [];
   }
-  const score = calculatePlannerAffinity(engine, nodes, groups);
-  return score ? score.parentOne.total + score.race.p1Left + score.race.p1Right : 0;
+  return calculatePlannerAffinity(engine, nodes, groups);
 }
 
 /** Angular ranks affinity-resource IDs before taking 20 and resolving outfits. Race wins do not enter this ranking. */

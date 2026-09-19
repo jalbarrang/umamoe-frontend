@@ -26,14 +26,16 @@
   import ToggleButton from '@/components/ToggleButton.svelte';
   import { authUser, authReady } from '@/services/auth/auth-state';
   import { HttpError } from '@/services/http/http-client';
+  import { withPageRequest } from '@/services/http/page-request';
   import { DISCORD_SUPPORT_URL } from '@/services/site-links';
   import { factorOptions, loadFactorArtwork, watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
   import ResourceStatus from '@/components/ResourceStatus.svelte';
   import { characterImagePath, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
   import { loadLiveSupportCards, readCachedSupportCards, supportCardImagePath, type SupportCardCatalogEntry } from '@/lib/catalog/support-card-catalog';
+  import { resourceRepository } from '@/lib/catalog/resource-repository';
   import { releasedSupportCards, supportCardDisplay, supportTypeName } from '@/lib/supports/support-card';
   import type { SupportCardPickerOption } from '@/components/picker-types';
-  import { accountParent, parentCharacter, type SelectableParent } from '@/lib/veterans/parent-picker';
+  import { accountParent, parentCharacter, parentAffinityDetails, manualParent, parseManualParents, MANUAL_PARENTS_KEY, type SelectableParent } from '@/lib/veterans/parent-picker';
   import { normalizeVeteranRecord } from '@/lib/veterans/veteran-normalizer';
   import { authRepository } from '@/services/auth/auth-repository';
   import { profileRepository } from '@/pages/profile/profile-repository';
@@ -151,7 +153,7 @@
   let uqlCatalogError = $state('');
   const uqlCompiler = $derived(uqlCatalog ? new UqlCompiler(uqlCatalog) : undefined);
   let searchController: AbortController | undefined;
-  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  let cancelSearchTimer: (() => void) | undefined;
   let infiniteSentinel = $state<HTMLDivElement>();
   let infiniteObserver: IntersectionObserver | undefined;
   let lastFilterSignature = '';
@@ -169,6 +171,7 @@
   let clearBookmarksArmed = $state(false);
   let toasts = $state<Toast[]>([]);
   let selectedParent = $state<SelectableParent>();
+  const legacyRestoreKey = $derived(JSON.stringify(compactState.vet));
   let uqlParents = $state.raw<SelectableParent[]>([]);
   let uqlLegacyLoading = $state(false);
   let uqlLegacyError = $state('');
@@ -247,7 +250,16 @@
   const bookmarkPages = $derived(Math.max(1, Math.ceil(filteredBookmarks.length / pageSize)));
   const visibleBookmarks = $derived(filteredBookmarks.slice((bookmarkPage - 1) * pageSize, bookmarkPage * pageSize));
   const trainerDigits = $derived(trainerSubmission.replace(/\D/g, '').slice(0, 12));
-  const veteranView = $derived(selectedParent && partner ? veteranToUi({ ...partner, name: '' }, selectedParent.trainer_id ?? '', new Map(characters.map(character => [Number(character.id), { name: character.title }]))) : undefined);
+  const veteranView = $derived.by(() => {
+    $factorCatalogState;
+    if (!selectedParent || !partner) return undefined;
+    const view = veteranToUi({ ...partner, name: '' }, selectedParent.trainer_id ?? '', new Map(characters.map(character => [Number(character.id), { name: character.title }])));
+    const score = parentAffinityDetails(selectedParent, filters.playerCharaId, affinityEngine, raceGroups);
+    view.detail = undefined;
+    view.affinity = score ? score.parentOne.total + score.race.p1Left + score.race.p1Right : NaN;
+    for (const parent of view.parents ?? []) parent.affinity = !score ? NaN : parent.position === 'P1' ? score.parentOne.left + score.race.p1Left : score.parentOne.right + score.race.p1Right;
+    return view;
+  });
   type ActiveChipTone = 'blue' | 'pink' | 'green' | 'white' | 'optional' | 'character' | 'exclude' | 'support' | 'default';
   interface ActiveFilterView { id: string; label: string; tone: ActiveChipTone; remove: () => void; }
   const factorLabels = $derived(new Map(factorOptions().map((factor) => [factor.id, factor.text])));
@@ -344,21 +356,41 @@
     filters.p2MainCharaId = characterId ? characterId >= 10000 ? Math.floor(characterId / 100) : characterId : undefined;
     filters.p2WinSaddle = parent?.win_saddle_id_array ?? [];
     delete compactState.vet; delete compactState.p2i;
-    if (parent?.share_source === 'veteran' && parent.trainer_id && parent.member_id != null) compactState.vet = [parent.trainer_id, parent.member_id];
+    if (parent?.share_source === 'veteran') {
+      if (typeof parent.id === 'string' && parent.id) compactState.vet = parent.id;
+      else if (parent.trainer_id && parent.member_id != null) compactState.vet = [parent.trainer_id, parent.member_id];
+    }
+    if (parent?.share_source === 'manual' && parent.share_local_id) compactState.vet = `manual:${parent.share_local_id}`;
     if (parent?.share_source === 'bookmark') compactState.p2i = parent.share_inheritance_id;
     page = 1;
   }
-  async function restoreParent(accountId: string, memberId: number): Promise<void> {
-    const reference = JSON.stringify([accountId, memberId]);
+  async function restoreParent(reference: NonNullable<CompactDatabaseFilterState['vet']>): Promise<void> {
+    const key = JSON.stringify(reference);
+    const session = $authUser?.id;
+    const current = () => !disposed && $authUser?.id === session && JSON.stringify(compactState.vet) === key;
     try {
-      const accounts = await authRepository.linkedAccounts();
-      if (!accounts.some((account) => account.account_id === accountId && account.verification_status === 'verified')) return;
-      const profile = await profileRepository.load(accountId);
-      if (!$authUser || JSON.stringify(compactState.vet) !== reference) return;
-      const veteran = profile.veterans?.find((item) => item.member_id === memberId);
-      if (veteran) selectVeteran(accountParent(veteran, accountId));
-      else notify('Saved legacy is no longer available. Choose another parent.', 'warning');
-    } catch { notify('Saved legacy could not be restored. Open Your Legacy to retry.', 'warning'); }
+      let parent: SelectableParent | undefined;
+      if (typeof reference === 'string') {
+        if (reference.startsWith('device-')) parent = (await deviceVeteranParents()).find(parent => parent.id === reference);
+        else if (reference.startsWith('manual:')) {
+          const entry = parseManualParents(localStorage.getItem(MANUAL_PARENTS_KEY)).find(entry => `manual:${entry.id}` === reference);
+          if (entry) parent = manualParent(entry);
+        } else {
+          const veteran = await profileRepository.veteran(reference, true);
+          if (veteran?.id === reference) parent = accountParent(veteran, veteran.trainer_id ?? '');
+        }
+      } else if ($authUser && Array.isArray(reference) && typeof reference[0] === 'string' && Number.isSafeInteger(reference[1])) {
+        const [accountId, memberId] = reference;
+        const accounts = await authRepository.linkedAccounts();
+        if (accounts.some(account => account.account_id === accountId && account.verification_status === 'verified')) {
+          const veteran = (await profileRepository.load(accountId, true)).veterans?.find(item => item.member_id === memberId);
+          if (veteran) parent = accountParent(veteran, accountId);
+        }
+      }
+      if (current()) selectVeteran(parent);
+    } catch {
+      if (current()) { selectVeteran(undefined); notify('Saved legacy is unavailable. Select another veteran.', 'warning'); }
+    }
   }
   function legacyScope(value: string): string {
     const hint = uqlLegacyHints(value);
@@ -562,10 +594,11 @@
   }
   function scheduleSearch(immediate = false): void {
     if (!initialized) return;
-    if (searchTimer) clearTimeout(searchTimer);
+    cancelSearchTimer?.();
     // Tour examples stay local until the walkthrough ends; mode preparation must not persist a preset.
     if ($tourStepId) return;
     searchController?.abort();
+    if (filterMode !== 'uql' && compactState.vet && !selectedParent) return;
     if (filterMode === 'uql' && !uqlCatalog) { inheritanceLoading = uqlCatalogLoading; persist(); return; }
     if (filterMode === 'uql') {
       const placeholder = uqlQuery.directives.some(directive => directive.kind === 'legacy' && !directive.value);
@@ -593,7 +626,18 @@
     const signature = JSON.stringify({ filterMode, filters });
     if (signature !== lastFilterSignature) { if (lastFilterSignature && page !== 1) page = 1; lastFilterSignature = signature; }
     if (activeTab === 'bookmarks') { inheritanceLoading = false; pendingSearch = true; persist(); return; }
-    searchTimer = setTimeout(() => { persist(); void runInheritanceSearch(); }, immediate ? 0 : 320);
+    // Keep the navigation guard active while the debounced search is queued too.
+    let cancelled = false;
+    void withPageRequest(async () => {
+      await new Promise<void>(resolve => {
+        const timer = setTimeout(resolve, immediate ? 0 : 320);
+        cancelSearchTimer = () => { cancelled = true; clearTimeout(timer); resolve(); };
+      });
+      if (cancelled) return;
+      cancelSearchTimer = undefined;
+      persist();
+      await runInheritanceSearch();
+    }).catch(reason => { if (!disposed) inheritanceError = reason instanceof Error ? reason.message : 'Search could not be started.'; });
   }
 
   async function loadAffinity(refresh = false): Promise<void> {
@@ -643,19 +687,22 @@
         if (disposed) return;
         if (cached) { selectableSupports = cached; supportsCached = true; }
       }
-      const fresh = await loadLiveSupportCards(true);
+      const fresh = await loadLiveSupportCards(refresh);
       if (!disposed) { selectableSupports = fresh; supportsLoaded = true; supportsCached = false; }
     } catch (error) {
       if (!disposed) supportsError = error instanceof Error ? error.message : 'Support-card data could not be loaded.';
     } finally { if (!disposed) supportsLoading = false; }
   }
   onMount(watchFactorCatalog);
+  onMount(() => resourceRepository.onUpdate(name => {
+    if (name === 'support-cards-db') { supportsLoaded = false; void loadSupports(); }
+  }));
   onMount(() => {
     void initialize();
-    return () => { disposed = true; uqlLegacyGeneration++; infiniteObserver?.disconnect(); searchController?.abort(); if (searchTimer) clearTimeout(searchTimer); };
+    return () => { disposed = true; uqlLegacyGeneration++; infiniteObserver?.disconnect(); searchController?.abort(); cancelSearchTimer?.(); };
   });
   $effect(() => { if (filters.supportCardId) untrack(() => void loadSupports()); });
-  $effect(() => { JSON.stringify(filters); filterMode; page; listMode; activeTab; if (!initialized) return; untrack(() => scheduleSearch()); });
+  $effect(() => { JSON.stringify(filters); legacyRestoreKey; filterMode; page; listMode; activeTab; if (!initialized) return; untrack(() => scheduleSearch()); });
   $effect(() => { if (initialized && filterMode === 'uql') untrack(() => { if (!uqlCatalog && !uqlCatalogError) void loadUqlCatalog(); }); });
   $effect(() => { if (initialized && filterMode === 'uql' && uqlCompiler) untrack(() => scheduleSearch()); });
   $effect(() => {
@@ -665,20 +712,18 @@
       if (uqlSession !== session) {
         uqlLegacyGeneration++;
         uqlParents = []; uqlLegacyScope = ''; uqlLegacyError = ''; uqlLegacyLoading = false;
-        if (uqlSession !== undefined && selectedParent?.share_source === 'veteran' && selectedParent.trainer_id) selectVeteran(undefined);
+        if (uqlSession !== undefined && (selectedParent?.share_source === 'veteran' && selectedParent.trainer_id || !selectedParent && compactState.vet)) selectVeteran(undefined);
         uqlSession = session;
       }
       if (filterMode === 'uql') scheduleSearch();
     });
   });
   $effect(() => {
-    const reference = compactState.vet;
+    const key = legacyRestoreKey;
     if (!initialized || !$authReady) return;
     if (filterMode === 'uql') return;
-    if (!$authUser) { if (selectedParent?.share_source === 'veteran' && selectedParent.trainer_id) untrack(() => selectVeteran(undefined)); return; }
-    if (!Array.isArray(reference) || typeof reference[0] !== 'string' || !Number.isSafeInteger(reference[1])) return;
-    if (selectedParent?.trainer_id === reference[0] && selectedParent.member_id === reference[1]) return;
-    untrack(() => void restoreParent(reference[0], reference[1]));
+    if (!key || selectedParent) return;
+    untrack(() => void restoreParent(compactState.vet!));
   });
 </script>
 
@@ -847,7 +892,7 @@
       {#if affinityError && !inheritanceError}{@render affinityFailure()}{/if}
       {#if inheritanceLoading && !appendingResults}<div class="loading"><Spinner size={30}/><span>Searching inheritance records…</span></div>
       {:else if inheritanceError && !appendingResults}<div class="result-error" role="alert"><EmptyState icon="warning" title="Inheritance search unavailable" description={inheritanceError}>{#snippet actions()}<div class="error-actions"><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry</Button><Button href={DISCORD_SUPPORT_URL} target="_blank" variant="secondary" size="sm" icon="discord">Report on Discord</Button></div>{/snippet}</EmptyState></div>
-      {:else if inheritance.records.length}<ContentAd routeId="database"/><div class="inheritance-list">{#each inheritance.records as record, index (record.id)}<InheritanceResultCard {record} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
+      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list">{#each inheritance.records as record, index (record.id)}<InheritanceResultCard {record} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
       {:else}<EmptyState icon="search" title="No records found" description="Try adjusting your search criteria or submit your Trainer ID to help the community.">{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</EmptyState>{/if}
       {#if appendingResults && inheritanceLoading}<div class="loading" role="status"><Spinner size={30}/><span>Loading more records…</span></div>
       {:else if appendingResults && inheritanceError}<Banner title="More records could not be loaded" tone="danger"><p>{inheritanceError}</p><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry loading more</Button></Banner>{/if}
@@ -860,7 +905,7 @@
       {:else if bookmarks.length}
         <header class="bookmark-toolbar"><div><h2>Bookmarks</h2><p>{filteredBookmarks.length.toLocaleString()} bookmarked records{#if filteredBookmarks.length !== bookmarks.length} <span>(filtered from {bookmarks.length})</span>{/if}</p></div><div class="bookmark-filters"><SegmentedControl label="Bookmark status filter" value={bookmarkFilter} options={[{value:'all',label:`All (${bookmarks.length})`},{value:'unchanged',label:`Unchanged (${bookmarks.length - modifiedBookmarkCount})`},{value:'modified',label:`Modified (${modifiedBookmarkCount})`}]} onchange={value => { bookmarkFilter = value as typeof bookmarkFilter; bookmarkPage = 1; }}/></div><div class="bookmark-actions">{#if modifiedBookmarkCount}<Button variant="secondary" size="sm" onclick={() => void removeModifiedBookmarks()}>Remove modified ({modifiedBookmarkCount})</Button>{/if}<Button variant="danger" size="sm" onclick={() => void clearAllBookmarks()}>{clearBookmarksArmed ? 'Confirm clear all' : 'Clear all'}</Button></div></header>
         {#if affinityError}{@render affinityFailure()}{/if}
-        <ContentAd routeId="database"/><div class="inheritance-list">{#each visibleBookmarks as record (record.id)}<InheritanceResultCard {record} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{/each}</div>
+        <ContentAd routeId="database" top/><div class="inheritance-list">{#each visibleBookmarks as record (record.id)}<InheritanceResultCard {record} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{/each}</div>
         {#if bookmarkPages > 1}<Pagination bind:page={bookmarkPage} pages={bookmarkPages} total={filteredBookmarks.length} {pageSize} jump/>{/if}
       {:else}<EmptyState icon="veterans" title="No bookmarks yet" description="Save records from the Database tab and they will appear here."/>{/if}
     </section>{/if}

@@ -16,8 +16,8 @@
 
 <div class="veteran-summary-container">
   <article class="veteran-summary" class:compact class:combined-layout={combined && !showStats} aria-label={`${veteran.name} Veteran summary`}>
-    <header class="summary-head" class:affinity-first={!showStats}>
-      {#if !showStats}<div class="leading-affinity"><AffinityStat value={veteran.affinity} kind="total" compact/>{#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}</div>{/if}
+    <header class="summary-head" class:affinity-first={!showStats && Number.isFinite(veteran.affinity)}>
+      {#if !showStats && Number.isFinite(veteran.affinity)}<div class="leading-affinity"><AffinityStat value={veteran.affinity} kind="total" compact/>{#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}</div>{/if}
       <Artwork src={veteran.image} alt={veteran.name} size={compact ? 'sm' : 'md'} shape="circle"/>
       <div class="identity">
         <div class="name-row"><h3>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
@@ -80,7 +80,7 @@
   .factor-list, .parent-factors { min-width: 0; display: flex; flex-wrap: wrap; gap: 3px; }
   .factor-list { flex: 1; }
   .factor-list.grouped { display:flex; width:100%; gap:4px 8px; align-content:flex-start; align-items:flex-start; }
-  .factor-list.grouped :global(.spark-row){max-width:100%}
+  .factor-list.grouped :global(.spark-row){width:100%;max-width:100%}
   .factor-section.with-summary { flex-direction: column; align-items: stretch; }
   .factor-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
   .factor-heading > span { color: var(--color-text-muted); font-size: var(--font-xs); font-weight: 600; }

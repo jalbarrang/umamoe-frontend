@@ -69,7 +69,7 @@ export interface CompactDatabaseFilterState extends Record<string, unknown> {
   p2w?: number[];
   p2i?: number | string;
   rs?: [number, number, number, number][];
-  vet?: [string, number];
+  vet?: string | [string, number];
 }
 
 export interface SavedDatabaseFilterState {
@@ -242,8 +242,8 @@ export function filtersFromCompactState(state: CompactDatabaseFilterState, mode:
   filters.minMainRaceWhiteCount = finiteNumber(state.mrwc);
   filters.minMainRaceWhiteStarsSum = finiteNumber(state.mrws);
   filters.minMainWhiteCount = finiteNumber(state.mmwc);
-  filters.p2MainCharaId = typeof state.p2c === 'number' && Number.isSafeInteger(state.p2c) && state.p2c > 0 ? state.p2c : undefined;
-  filters.p2WinSaddle = [...new Set(finiteNumbers(state.p2w).filter((id) => Number.isSafeInteger(id) && id > 0))];
+  filters.p2MainCharaId = !state.vet && typeof state.p2c === 'number' && Number.isSafeInteger(state.p2c) && state.p2c > 0 ? state.p2c : undefined;
+  filters.p2WinSaddle = state.vet ? [] : [...new Set(finiteNumbers(state.p2w).filter((id) => Number.isSafeInteger(id) && id > 0))];
   filters.raceSchedule = Array.isArray(state.rs) ? state.rs : [];
   filters.uql = mode === 'uql' && typeof state.uql === 'string' ? state.uql : undefined;
   return filters;

@@ -10,6 +10,7 @@ import { compareTimelineEvents, type TimelineAnniversary } from '@/lib/timeline/
 import { QueryCache } from '@/services/data/query-cache';
 
 const cache = new QueryCache();
+resourceRepository.onUpdate(name => { if (['banner_timeline', 'character_names', 'support-cards-db'].includes(name)) cache.invalidate('timeline'); });
 
 interface RawTimelineEvent {
   id?: string;

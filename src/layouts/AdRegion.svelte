@@ -58,6 +58,8 @@
   .ad-region--leaderboard,
   .ad-region--inline { width: calc(100% + var(--page-gutter-current, 16px) + var(--page-gutter-current, 16px) - 4px); max-width: 1200px; min-height: var(--ad-mobile-height); margin-inline: calc(0px - var(--page-gutter-current, 16px) + 2px); }
   .ad-region--inline { width:100%; max-width:100%; min-height:var(--ad-inline-mobile-height); margin:12px auto; grid-column:1/-1; }
+  .ad-region--leaderboard { width:100%; max-width:100%; height:var(--ad-mobile-height); max-height:var(--ad-mobile-height); margin:12px auto; contain:strict; }
+  .ad-region--leaderboard .ad-target { min-height:0; max-height:100%; overflow:hidden; }
   .ad-region--rail { width: var(--ad-rail-width); height: var(--ad-rail-height); }
   .preview { border: 1px dashed var(--color-border-strong); background: var(--color-surface-1); color: var(--color-text-subtle); }
   .preview span { display: grid; place-items: center; gap: 2px; padding: var(--space-2); text-align: center; }
@@ -67,6 +69,7 @@
   @container app-viewport (min-width: 768px) {
     .ad-region--leaderboard,
     .ad-region--inline { width: 100%; min-height: var(--ad-leaderboard-height); margin-inline: auto; }
+    .ad-region--leaderboard { height:var(--ad-leaderboard-height); max-height:var(--ad-leaderboard-height); }
   }
 
   @container app-viewport (min-width: 1301px) {

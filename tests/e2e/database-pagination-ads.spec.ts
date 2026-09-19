@@ -91,31 +91,35 @@ test('database uses configured in-content slots through 1300px and registers onl
     window.fusetag = { registerZone(id) {
       const element = document.getElementById(id);
       window.adRegistrations.push({ id, fuse: element.dataset.fuse, width: element.getBoundingClientRect().width });
-      element.textContent = 'Test advertisement';
+      element.innerHTML = '<div style="height:250px;width:300px">Test advertisement</div>';
     }, pageInit() { window.adPages.push(location.pathname); }, destroyZone(id) { window.adDestroyed.push(id); } };
   ` }));
   await page.goto('/database');
   const inline = page.locator('[data-ad-kind="inline"]');
+  const top = page.locator('[data-ad-kind="leaderboard"]');
   const right = page.locator('[data-ad-position="right-rail"]');
-  await expect(inline).toHaveCount(2);
+  await expect(inline).toHaveCount(1);
+  await expect(top).toBeVisible();
+  expect((await top.boundingBox())!.height).toBe(90);
+  expect((await inline.boundingBox())!.height).toBeGreaterThanOrEqual(250);
   await expect(inline.first()).toBeVisible(); await expect(right).toBeHidden();
-  await expect(page.locator('[data-ad-target="database_interscroller_1"]')).toHaveAttribute('data-fuse', 'database_incontent_1');
+  await expect(page.locator('[data-ad-target="database_content_top"]')).toHaveAttribute('data-fuse', 'database_header');
   await expect(page.locator('[data-ad-target="database_interscroller_2"]')).toHaveAttribute('data-fuse', 'database_incontent_2');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { adRegistrations: Array<{ id: string }> }).adRegistrations?.map(item => item.id))).toEqual(['ad-database_interscroller_1', 'ad-database_interscroller_2']);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { adRegistrations: Array<{ id: string }> }).adRegistrations?.map(item => item.id))).toEqual(['ad-database_content_top', 'ad-database_interscroller_2']);
   const middle = page.locator('.inheritance-list [data-ad-kind="inline"]');
   expect(await middle.evaluate(element => [...element.parentElement!.children].slice(0, [...element.parentElement!.children].indexOf(element)).filter(sibling => sibling.matches('.inheritance-card')).length)).toBe(6);
   for (const width of [1301, 1299, 1300, 390]) {
     await page.setViewportSize({ width, height: 900 });
     if (width > 1300) {
-      await expect(right).toBeVisible(); await expect(inline.first()).toBeHidden();
+      await expect(right).toBeVisible(); await expect(inline.first()).toBeHidden(); await expect(top).toBeHidden();
       await expect.poll(() => page.evaluate(() => (window as unknown as { adRegistrations: Array<{ id: string }> }).adRegistrations.some(item => item.id === 'ad-database_sticky_vrec_right'))).toBe(true);
-    } else { await expect(right).toBeHidden(); await expect(inline.first()).toBeVisible(); }
+    } else { await expect(right).toBeHidden(); await expect(inline.first()).toBeVisible(); await expect(top).toBeVisible(); expect((await top.boundingBox())!.height).toBe(width < 768 ? 50 : 90); }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   const registrations = await page.evaluate(() => (window as unknown as { adRegistrations: Array<{ width: number }> }).adRegistrations);
   expect(registrations.every(item => item.width > 0)).toBe(true);
   expect(await page.evaluate(() => (window as unknown as { adPages: string[] }).adPages)).toEqual(['/database']);
-  expect(await page.evaluate(() => (window as unknown as { adDestroyed: string[] }).adDestroyed)).toEqual(expect.arrayContaining(['ad-database_interscroller_1', 'ad-database_interscroller_2', 'ad-database_sticky_vrec_right']));
+  expect(await page.evaluate(() => (window as unknown as { adDestroyed: string[] }).adDestroyed)).toEqual(expect.arrayContaining(['ad-database_content_top', 'ad-database_interscroller_2', 'ad-database_sticky_vrec_right']));
 });
 
 test('Fuse starts in the document head once and respects advertising opt-outs before startup', async ({ page }) => {

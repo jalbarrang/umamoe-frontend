@@ -89,10 +89,13 @@ test('database basic and UQL controls resolve live factors, including a query en
 });
 
 test('cached factors remain usable through failed refreshes and replace live in Lineage and profile controls', async ({playwright,browserName,baseURL}) => {
+  test.setTimeout(60_000);
   // As with the support-cache workflow, WebKit needs a persistent profile across navigations.
   const {viewport,isMobile,hasTouch,userAgent}=test.info().project.use;
   const profile=await mkdtemp(join(tmpdir(),'moe-factor-'));
   const context=await playwright[browserName].launchPersistentContext(profile,{baseURL,viewport,isMobile,hasTouch,userAgent});
+  // Use Playwright's HTTP client for bundles to avoid serial WebKit/Windows socket delays.
+  await context.route('**/app/**', async route => route.fulfill({response:await route.fetch({maxRetries:2})}));
   await mockAdvertising(context);
   await mockResources(context);
   await context.addInitScript(()=>{ localStorage.setItem('page-introduction-audience-v1','existing'); localStorage.setItem('lastSeenUpdateVersion','17'); });
@@ -120,10 +123,18 @@ test('cached factors remain usable through failed refreshes and replace live in 
   await expect(node.locator('.spark')).toHaveAttribute('aria-label',/^3 star Cached Recovery,/);
   await node.getByRole('button',{name:'Add Spark',exact:true}).click();
   await node.getByRole('combobox').fill('Live Recovery');
-  fail=false; await expect.poll(()=>requests).toBeGreaterThan(1);
-  await expect(node.getByText('Using cached resources; refreshing...', {exact:true})).toBeVisible();
+   fail=false;
+   await page.evaluate(() => {
+     const href=new URL(location.href); href.searchParams.set('cache-check','1');
+     const link=document.createElement('a'); link.href=href.href; document.body.append(link); link.click(); link.remove();
+   });
+   await expect.poll(()=>requests).toBeGreaterThan(1);
+   await expect(node.locator('.spark')).toHaveAttribute('aria-label',/^3 star Cached Recovery,/);
   await node.screenshot({path:test.info().outputPath('factor-cached-refresh.png')});
-  release();await node.getByRole('option',{name:'Live Recovery',exact:true}).click();
+   release();
+   await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('umamoe_resource_meta_v1:factors')!).cacheName)).toBe('umamoe-resource-data-test');
+   await node.getByRole('combobox').click();
+   await node.getByRole('option',{name:'Live Recovery',exact:true}).click();
   await expect(node.locator('.spark')).toHaveCount(2);
   await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('umamoe_resource_meta_v1:factors')!).cacheName)).toBe('umamoe-resource-data-test');
   await page.goto('/profile/123456789012/veterans');
