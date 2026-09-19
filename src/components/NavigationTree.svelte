@@ -127,7 +127,7 @@
 
   .sheet { gap:2px; }
   .sheet .navigation-link, .sheet .navigation-subsections a { min-height:40px; font-size:var(--font-sm); }
-  @media(pointer:coarse) { .navigation-link, .navigation-disclosure, .sheet .navigation-link, .sheet .navigation-subsections a { min-height:var(--touch-target); } }
+  @media(pointer: coarse) and (max-width: 1300px) { .navigation-link, .navigation-disclosure, .sheet .navigation-link, .sheet .navigation-subsections a { min-height:var(--touch-target); } }
 
   :global(html[data-motion='reduced']) .disclosure-chevron { transition: none; }
   @media (prefers-reduced-motion: reduce) { .disclosure-chevron { transition: none; } }

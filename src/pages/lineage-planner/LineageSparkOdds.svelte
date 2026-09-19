@@ -68,7 +68,7 @@
 </section>
 
 <style>
-  @media(pointer:coarse),(max-width:767px){.mode :global(.ui-button){min-height:44px}}
+  @media(pointer: coarse) and (max-width: 1300px),(max-width:767px){.mode :global(.ui-button){min-height:44px}}
   .odds-panel{min-width:0;overflow:hidden;border:1px solid var(--card-surface-border);border-radius:var(--radius-lg);background:var(--card-surface-bg);box-shadow:var(--card-surface-shadow);margin-top:12px}
   header{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border-primary)}header :global(svg){color:var(--accent-primary)}.mode{margin-left:auto}h2{margin:0;font-size:1rem;font-weight:600;color:var(--text-secondary)}.empty{padding:32px 16px;margin:0;text-align:center;font-size:var(--font-sm);color:var(--text-disabled)}
   [data-tone='blue']{--spark-color:var(--accent-primary)}[data-tone='pink']{--spark-color:#f06292}[data-tone='green']{--spark-color:var(--accent-secondary)}[data-tone='white']{--spark-color:var(--text-muted)}

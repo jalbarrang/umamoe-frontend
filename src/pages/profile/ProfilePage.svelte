@@ -13,6 +13,7 @@
   import ProfileBorrow from './ProfileBorrow.svelte';
   import ProfileTeamStadium from './ProfileTeamStadium.svelte';
   import ProfileVeteransRoster from './ProfileVeteransRoster.svelte';
+  import ContentAd from '@/layouts/ContentAd.svelte';
   import { DEFAULT_PROFILE_SECTIONS, type ProfileSectionId } from './profile-layout';
 
   // A future preference editor can supply this order without changing the widgets.
@@ -93,7 +94,9 @@
             circleId:circle.circle_id, name:circle.name, members:circle.member_count,
             rank:circle.monthly_rank ?? undefined, monthlyFans:circle.monthly_point ?? undefined,
             liveFans:circle.live_points ?? undefined, liveRank:circle.live_rank ?? undefined,
-            yesterdayRank:circle.yesterday_rank, yesterdayFans:circle.yesterday_points, clubRank:circle.club_rank
+            yesterdayRank:circle.yesterday_rank, yesterdayFans:circle.yesterday_points, clubRank:circle.club_rank,
+            leaderName:circle.leader_name, joinStyle:circle.join_style === 1 || circle.join_style === 2 || circle.join_style === 3 ? circle.join_style : undefined,
+            policy:circle.policy, comment:circle.comment
           }}/>
         </section>
       {/if}
@@ -131,7 +134,7 @@
 
     {@const sections = { fan_activity:fanActivity, all_time:allTime, inheritance:borrow, circle:currentCircle, circle_history:circleHistory, team_stadium:stadium, veterans }}
     <div class="content-container">
-      {#each sectionOrder as section (section)}{@render sections[section]()}{/each}
+      {#each sectionOrder as section, index (section)}{@render sections[section]()}{#if index === 1}<ContentAd routeId="profile"/>{/if}{/each}
       {#if !profile.fan_history.monthly.length && !profile.fan_history.rolling && !profile.circle && !profile.circle_history.length && !profile.fan_history.alltime && !profile.inheritance && !profile.support_card && !profile.team_stadium.length && !profile.veterans?.length}<EmptyState icon="user" title="No profile data yet" description="No data available for this trainer yet."/>{/if}
     </div>
   {/snippet}

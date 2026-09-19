@@ -55,7 +55,7 @@
   .removable .skill-body { flex:1; min-height:32px; align-items:center; gap:6px; padding:0 2px 0 8px; }
   .removable .skill-name { flex:1; }
   .removable .skill-body :global(.icon-button) { width:28px; height:28px; color:inherit; opacity:.65; }.removable .skill-body :global(.icon-button:hover),.removable .skill-body :global(.icon-button:focus-visible) { opacity:1; }.removable :global(.icon-button svg) { width:14px; height:14px; }
-  @media(pointer:coarse) { .removable,.removable .skill-body { min-height:var(--touch-target); }.removable img { width:var(--touch-target); height:var(--touch-target); }.removable .skill-body :global(.icon-button) { width:var(--touch-target); height:var(--touch-target); } }
+  @media(pointer: coarse) and (max-width: 1300px) { .removable,.removable .skill-body { min-height:var(--touch-target); }.removable img { width:var(--touch-target); height:var(--touch-target); }.removable .skill-body :global(.icon-button) { width:var(--touch-target); height:var(--touch-target); } }
   :global([data-theme='light']) .skill-chip { --skill-border: rgb(17 24 39 / .16); --skill-bg: rgb(17 24 39 / .045); --skill-text: rgb(17 24 39 / .78); }
   :global([data-theme='light']) .skill-body { box-shadow: inset 0 1px 0 rgb(255 255 255 / .6); }
   :global([data-theme='light']) .rarity-gold { --skill-border: rgb(180 83 9 / .36); --skill-bg: rgb(245 158 11 / .13); --skill-text: #92400e; }

@@ -11,7 +11,7 @@ function sessionCache(): QueryCache {
   return cache;
 }
 export interface TrainerProfile { account_id: string; name: string; follower_num: number | null; own_follow_num: number | null; best_team_class: number | null; team_class: number | null; team_evaluation_point: number | null; leader_chara_dress_id?: number | null; rank_score: number | null; comment: string | null; }
-export interface ProfileCircle { circle_id: number; name: string; member_count: number; monthly_rank: number | null; monthly_point: number | null; last_month_rank: number | null; last_month_point: number | null; live_points: number | null; live_rank: number | null; yesterday_rank?: number; yesterday_points?: number; club_rank?: number; }
+export interface ProfileCircle { circle_id: number; name: string; member_count: number; monthly_rank: number | null; monthly_point: number | null; last_month_rank: number | null; last_month_point: number | null; live_points: number | null; live_rank: number | null; yesterday_rank?: number; yesterday_points?: number; club_rank?: number; leader_name?: string; join_style?: number; policy?: number; comment?: string; }
 export interface CircleHistory { year: number; month: number; circle_id: number; circle_name: string; circle_rank: number | null; circle_points: number | null; }
 export interface MonthlyFans { year: number; month: number; total_fans: number; monthly_gain: number; active_days: number; avg_daily: number | null; rank: number; circle_id: number; circle_name: string; }
 export interface RollingFans { gain_3d: number; gain_7d: number; gain_30d: number; rank_3d: number; rank_7d: number; rank_30d: number; }

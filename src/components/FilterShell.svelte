@@ -29,7 +29,7 @@
   .filter-tools :global(.segments button) { min-width: 72px; min-height: 28px; padding-inline: 12px; border-radius: calc(var(--radius-sm) - 2px); font-size: 12px; }
   .filter-tools :global(.segments button.selected) { background: var(--filter-mode-active-bg); color: var(--filter-mode-active-color); box-shadow: var(--filter-mode-active-shadow); }
   @media (max-width: 640px) { header { min-height: 54px; flex-wrap: wrap; padding: 7px 8px; } .filter-shell:not(.open) .filter-tools :global(.segments) { display: none; } .filter-heading { min-width: 0; } .filter-tools { display:contents; } .filter-tools :global(.presets) { flex:0 0 auto; margin-left:auto; } .filter-tools :global(.segments) { width: 100%; flex:1 0 100%; order:3; } .filter-tools :global(.segments button) { min-width: 0; min-height: 32px; flex: 1 1 0; padding-inline: 6px; } }
-  @media(pointer:coarse){.filter-tools :global(.segments){height:50px}.filter-tools :global(.segments button){min-height:var(--touch-target)}}
+  @media(pointer: coarse) and (max-width: 1300px){.filter-tools :global(.segments){height:50px}.filter-tools :global(.segments button){min-height:var(--touch-target)}}
   @media (max-width:767px) {
     header { min-height:40px; padding:4px 8px; margin-bottom:6px; }
     .filter-heading { min-height:30px; font-size:12px; }

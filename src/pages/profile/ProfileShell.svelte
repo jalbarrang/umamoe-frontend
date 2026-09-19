@@ -180,7 +180,7 @@
 <ToastRegion {toasts} ondismiss={id => toasts = toasts.filter(toast => toast.id !== id)}/>
 
 <style>
-  .profile-page { min-width:0; max-width:1500px; margin:auto; padding:var(--space-6) var(--page-gutter-current) var(--space-8); color:var(--color-text); }
+  .profile-page { min-width:0; padding:var(--space-6) var(--page-gutter-current) var(--space-8); color:var(--color-text); }
   .profile-layout,.trainer-summary { min-width:0; display:grid; gap:var(--space-5); }
   .profile-main { min-width:0; }.profile-tabs { margin-bottom:var(--space-6); }
   .profile-header { display:flex; align-items:center; justify-content:space-between; gap:var(--space-6); }
@@ -200,7 +200,7 @@
   .state,.hidden-profile { min-height:60vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:var(--space-4); padding:var(--space-8); color:var(--color-text-muted); text-align:center; }.state.error { color:var(--color-danger); }.state a,.hidden-profile a { color:var(--color-accent); }.hidden-profile h2,.hidden-profile p { margin:0; }
   .browser-heading { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); margin-bottom:var(--space-6); }.browser-heading h1 { margin:var(--space-2) 0; }.browser-heading h2 { margin:0; color:var(--color-text-muted); font-size:var(--font-md); font-weight:500; }.browser-heading>div:last-child { display:flex; flex-wrap:wrap; gap:var(--space-2); }
   @media(max-width:1150px) { .profile-header { align-items:flex-start; }.trainer-facts { grid-template-columns:repeat(2,max-content); gap:var(--space-3) var(--space-6); } }
-  @media(max-width:700px) { .profile-page { padding:var(--space-3) var(--space-2) var(--space-6); }.profile-header { flex-direction:column; gap:var(--space-5); }.trainer-facts { width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-2); }.trainer-facts dd { font-size:var(--font-md); }.trainer-facts dt { font-size:10px; }.identity { gap:var(--space-3); }.identity-meta { gap:var(--space-1); flex-direction:column; align-items:flex-start; }.owner-controls { margin-left:0; }.trainer-meta { gap:var(--space-3); }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
+  @media(max-width:700px) { .profile-page { padding:var(--space-3) 0 var(--space-6); }.profile-header { flex-direction:column; gap:var(--space-5); }.trainer-facts { width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-2); }.trainer-facts dd { font-size:var(--font-md); }.trainer-facts dt { font-size:10px; }.identity { gap:var(--space-3); }.identity-meta { gap:var(--space-1); flex-direction:column; align-items:flex-start; }.owner-controls { margin-left:0; }.trainer-meta { gap:var(--space-3); }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
   @media(max-width:700px) {
     .profile-tabs :global(.tabs) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; }
     .profile-tabs :global(.tab) { min-width:0; min-height:38px; justify-content:flex-start; gap:5px; padding:5px 8px; white-space:normal; font-size:11px; }

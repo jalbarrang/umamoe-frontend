@@ -3,6 +3,7 @@
   import Button from '@/components/Button.svelte';
   import Banner from '@/components/Banner.svelte';
   import Dialog from '@/components/Dialog.svelte';
+  import Icon from '@/components/Icon.svelte';
   import { availableVersion, reloadUpdatedVersion, startSiteServices, CURRENT_UPDATE_VERSION } from '@/services/site-services';
   import { browserProofPort, browserVerification } from '@/services/http/browser-proof';
   import type { RateLimitNotice } from '@/services/http/http-client';
@@ -46,7 +47,10 @@
 {#if $availableVersion && dismissedVersion !== $availableVersion || $browserVerification.error || verified}
   <aside class="service-notices" aria-label="Service notifications">
     {#if $availableVersion && dismissedVersion !== $availableVersion}
-      <Banner title="Update available"><p>A new version of uma.moe is ready. Reload when you’ve saved your work.</p><div class="actions"><Button size="sm" onclick={() => reloadUpdatedVersion($availableVersion)}>Reload</Button><Button size="sm" variant="ghost" onclick={() => dismissedVersion = $availableVersion}>Later</Button></div></Banner>
+      <section class="update-notice" aria-label="Update available" aria-live="polite">
+        <div class="update-heading"><span class="update-icon"><Icon name="refresh" size={19}/></span><div><strong>Update available</strong><p>A new version of uma.moe is ready.</p></div></div>
+        <div class="update-footer"><span>Save your work before reloading.</span><div class="actions"><Button size="sm" variant="ghost" onclick={() => dismissedVersion = $availableVersion}>Later</Button><Button size="sm" onclick={() => reloadUpdatedVersion($availableVersion)}>Reload</Button></div></div>
+      </section>
     {/if}
     {#if $browserVerification.error}
       <Banner title="Browser verification" tone="warning"><p>{$browserVerification.error}</p><Button size="sm" disabled={$browserVerification.pending} onclick={verify}>Retry verification</Button></Banner>
@@ -61,5 +65,10 @@
 </Dialog>
 <style>
   .service-notices { position:fixed; bottom:16px; right:16px; z-index:var(--z-overlay); width:min(440px,calc(100vw - 32px)); display:grid; gap:var(--space-2); }
-  p { margin:0 0 var(--space-3); } .actions { display:flex; gap:var(--space-2); }
+  p { margin:0 0 var(--space-3); } .actions { display:flex; align-items:center; gap:var(--space-2); }
+  .update-notice { padding:var(--space-4); border:1px solid var(--card-surface-border); border-radius:var(--radius-lg); background:var(--card-surface-bg); box-shadow:var(--shadow-lg); color:var(--color-text); }
+  .update-heading { display:flex; align-items:center; gap:var(--space-3); }.update-heading strong { display:block; font-size:var(--font-sm); }.update-heading p { margin:3px 0 0; font-size:var(--font-sm); color:var(--color-text-muted); }
+  .update-icon { display:grid; place-items:center; flex-shrink:0; width:36px; height:36px; border-radius:var(--radius-md); background:var(--color-accent-soft); color:var(--color-accent); }
+  .update-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-2); margin-top:var(--space-3); }.update-footer>span { color:var(--color-text-subtle); font-size:var(--font-xs); }.update-footer .actions { margin-left:auto; }
+  @media(max-width:767px) { .update-notice { padding:var(--space-3); }.update-footer :global(.ui-button) { min-height:36px; padding-inline:var(--space-3); font-size:var(--font-sm); } }
 </style>

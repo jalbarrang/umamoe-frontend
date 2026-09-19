@@ -44,5 +44,5 @@
   .character-dialog :global(.dialog-panel > footer) { --color-accent:var(--selection-button); }
   .selected-count { color:var(--text-secondary); font-size:12px; white-space:nowrap; }
   @media(max-width:600px) { .selected-count { font-size:10px; } }
-  @media(pointer:coarse) { .character-dialog :global(.dialog-panel>header .icon-button),.character-dialog :global(.dialog-panel>header .trigger) { min-width:44px;min-height:44px; } }
+  @media(pointer: coarse) and (max-width: 1300px) { .character-dialog :global(.dialog-panel>header .icon-button),.character-dialog :global(.dialog-panel>header .trigger) { min-width:44px;min-height:44px; } }
 </style>

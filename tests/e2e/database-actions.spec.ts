@@ -12,6 +12,13 @@ test('Notifications dismiss independently after five seconds and support manual 
   await save.click();
   await expect(notices).toHaveCount(1);
   await expect(notices.first()).toContainText('Sign in to bookmark');
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
+    const bounds = await notices.first().boundingBox();
+    expect(bounds!.width).toBeLessThanOrEqual(340);
+    expect(bounds!.height).toBeLessThanOrEqual(56);
+    await notices.first().screenshot({ path: test.info().outputPath(`compact-notice-${theme}.png`) });
+  }
   await page.clock.fastForward(4000);
   await save.click();
   await expect(notices).toHaveCount(2);

@@ -117,7 +117,7 @@
 {#if tourLoadError}<Dialog open title="Tour unavailable" onclose={() => tourLoadError = false}><p>The guided tour could not be loaded. Reload this page, then use the help button to try again.</p><Button size="sm" variant="secondary" onclick={() => location.reload()}>Reload page</Button></Dialog>{/if}
 
 <style>
-  @media(pointer:coarse),(max-width:767px) { .account-action { min-width:var(--touch-target); min-height:var(--touch-target); } }
+  @media(pointer: coarse) and (max-width: 1300px),(max-width:767px) { .account-action { min-width:var(--touch-target); min-height:var(--touch-target); } }
   .app-viewport { width: 100%; min-width: 320px; flex: 1; display: flex; flex-direction: column; background: var(--color-canvas); container: app-viewport / inline-size; }
   .app-shell { flex: 1; display: grid; grid-template-rows: auto 1fr; background: var(--color-canvas); }
   .utility-bar { position: sticky; z-index: var(--z-header); top: 0; min-height: var(--utility-height); display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 6px 4px; border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }

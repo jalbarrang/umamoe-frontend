@@ -119,6 +119,6 @@
     .avatar,.avatar :global(.art) { width:62px; height:62px; flex-basis:62px; }
     .copy strong { font-size:11px; }
   }
-  @media(max-width:600px),(pointer:coarse){.search{min-height:var(--touch-target);padding-block:0;padding-right:0}.clear-search{width:var(--touch-target);height:var(--touch-target);flex-basis:44px}}
+  @media(max-width:600px),(pointer: coarse) and (max-width: 1300px){.search{min-height:var(--touch-target);padding-block:0;padding-right:0}.clear-search{width:var(--touch-target);height:var(--touch-target);flex-basis:44px}}
   @media(max-width:600px){.picker{gap:10px}}
 </style>

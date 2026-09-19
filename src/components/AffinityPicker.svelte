@@ -109,7 +109,7 @@
     .has-target .slot-chevron{display:none}.has-target .ace-actions :global(.ui-button[aria-label="Change target character"]){display:inline-flex;min-height:32px;padding-inline:6px;font-size:11px}
     .has-target .ace-actions :global(.ui-button[aria-label="Clear target character"]){width:32px;height:32px;min-height:32px}
   }
-  .legacy-actions{display:flex;align-items:center;gap:6px}.legacy-actions :global(.segments){padding:2px}.legacy-actions :global(.segments button){min-height:26px;padding:0 8px;font-size:11px}@media(pointer:coarse){.legacy-actions :global(.segments button){min-height:var(--touch-target)}}
+  .legacy-actions{display:flex;align-items:center;gap:6px}.legacy-actions :global(.segments){padding:2px}.legacy-actions :global(.segments button){min-height:26px;padding:0 8px;font-size:11px}@media(pointer: coarse) and (max-width: 1300px){.legacy-actions :global(.segments button){min-height:var(--touch-target)}}
   .target-only { grid-template-columns:minmax(0,1fr); }
   .target-only .tree-group--target { align-items:stretch; }.target-only .tree-label { min-height:24px; }
   .target-only .ace { --slot-color-rgb:var(--accent-primary-rgb); width:100%; height:auto; min-height:68px; flex-direction:row; justify-content:flex-start; gap:10px; padding:10px 12px; border:1px solid rgb(var(--slot-color-rgb)/.34); border-radius:var(--radius-md); background:var(--factor-field-bg); text-align:left; }

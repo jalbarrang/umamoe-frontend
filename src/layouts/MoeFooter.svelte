@@ -46,5 +46,5 @@
   .privacy-notice { margin:0; padding:0 16px 12px; color:var(--text-muted); font-size:12px; text-align:center; }
   @media(max-width:900px) { .footer-inner { grid-template-columns:1fr auto; grid-template-areas:'brand meta' 'links links'; gap:4px 16px; padding:14px 20px; }nav { gap:0 18px; } }
   @media(max-width:767px) { .site-footer { margin-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); } }
-  @media(pointer:coarse) { nav a,nav button,.footer-brand { min-height:var(--touch-target); } }
+  @media(pointer: coarse) and (max-width: 1300px) { nav a,nav button,.footer-brand { min-height:var(--touch-target); } }
 </style>

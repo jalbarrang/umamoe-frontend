@@ -53,5 +53,5 @@
   footer { display:flex; flex:0 0 auto; align-items:center; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid var(--dialog-soft-border); border-radius:0 0 var(--radius-lg) var(--radius-lg); background:var(--dialog-surface-bg); }
   footer :global(.ui-button) { min-height:var(--control-height); font-size:var(--font-sm); }
   @media (max-width:767px) { header { min-height:60px; padding:8px 12px; } .header-icon,.header-actions { min-height:var(--touch-target); } header :global(.icon-button) { width:var(--touch-target); height:var(--touch-target); } .content { padding:var(--dialog-mobile-content-padding,12px); } footer { padding:12px; } }
-  @media (pointer:coarse), (max-width:767px) { footer :global(.ui-button) { min-height:var(--touch-target); } }
+  @media (pointer: coarse) and (max-width: 1300px), (max-width:767px) { footer :global(.ui-button) { min-height:var(--touch-target); } }
 </style>

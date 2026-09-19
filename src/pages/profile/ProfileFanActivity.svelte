@@ -116,5 +116,5 @@
   .fan-surface { position:absolute; inset:0; }
   .chart-state { flex:1; display:grid; place-content:center; justify-items:center; gap:var(--space-2); min-height:250px; margin:0; padding:var(--space-3); color:var(--color-text-muted); font-size:var(--font-sm); text-align:center; }
   .chart-state p { margin:0; }
-  @media (pointer:coarse) { .year-picker { --control-height:var(--touch-target); } }
+  @media (pointer: coarse) and (max-width: 1300px) { .year-picker { --control-height:var(--touch-target); } }
 </style>

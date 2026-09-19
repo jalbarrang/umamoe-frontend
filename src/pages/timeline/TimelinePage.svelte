@@ -325,5 +325,5 @@
   @media(min-width:768px){.mobile-bottom-toolbar{bottom:0}.mobile-filter-sheet{bottom:58px}}@media(max-width:1280px){.timeline-count{display:none}.toolbar{flex-wrap:wrap;gap:8px}.view{margin-left:auto;gap:8px}.search{flex-basis:240px}}
   .mobile-bottom-toolbar{transition:transform 140ms,visibility 140ms}.mobile-bottom-toolbar.is-footer-visible{visibility:hidden;pointer-events:none;transform:translateY(100%)}
   @media(prefers-reduced-motion:reduce){.mobile-bottom-toolbar{transition:none}}
-  @media(max-width:768px){.timeline-tabs{width:100%;justify-content:stretch}.timeline-tabs :global(.tabs){width:100%}.timeline-tabs :global(.tab){min-width:0;flex:1}}@media(pointer:coarse){.view :global(.segments button){min-height:var(--touch-target)}.view :global(.segments){height:52px}.filter-options :global(.checkbox){min-height:var(--touch-target)}}
+  @media(max-width:768px){.timeline-tabs{width:100%;justify-content:stretch}.timeline-tabs :global(.tabs){width:100%}.timeline-tabs :global(.tab){min-width:0;flex:1}}@media(pointer: coarse) and (max-width: 1300px){.view :global(.segments button){min-height:var(--touch-target)}.view :global(.segments){height:52px}.filter-options :global(.checkbox){min-height:var(--touch-target)}}
 </style>

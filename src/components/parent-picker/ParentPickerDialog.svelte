@@ -243,7 +243,7 @@
   :global([data-theme='light']) .empty{color:var(--text-muted)}:global([data-theme='light']) .empty > :global(svg){color:var(--accent-primary);opacity:1}:global([data-theme='light']) .empty p{color:var(--text-secondary);opacity:1}
   :global([data-theme='light']) .signin-notice { background:rgb(var(--accent-primary-rgb)/.1); border-color:rgb(var(--accent-primary-rgb)/.25); color:#1e3a8a; }
   :global([data-theme='light']) .parent-picker :global(.tabs),:global([data-theme='light']) .filterbar,:global([data-theme='light']) .factor-filters{background:#f8fafc}
-  @media(max-width:600px),(pointer:coarse) {
+  @media(max-width:600px),(pointer: coarse) and (max-width: 1300px) {
     .partner-input :global(input),.partner-input > :global(.icon-button),.partner-lookup form > :global(.ui-button){height:var(--touch-target);min-height:var(--touch-target)}.partner-input > :global(.icon-button){width:var(--touch-target)}.partner-input :global(input){padding-right:44px}.partner-lookup{padding-inline:4px}
     .parent-picker{--control-height:var(--touch-target)}.parent-picker :global(.tabs button),.filter-actions :global(.ui-button){min-height:var(--touch-target);height:auto}
     .parent-search > :global(.icon-button){width:var(--touch-target);height:var(--touch-target)}.parent-search :global(input){padding-right:44px}

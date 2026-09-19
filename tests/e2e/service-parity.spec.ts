@@ -21,7 +21,24 @@ test('status details, build notification, and changelog work on desktop and mobi
   await page.route('**/version.json*', route => route.fulfill({ json: { version: 'beta-build.2.1' } }));
   await page.goto('/tools');
   await expect(page.getByText('Update available', { exact: true })).toBeVisible();
+  const notice = page.getByRole('region', { name: 'Update available', exact: true });
+  const originalViewport = page.viewportSize()!;
+  for (const width of [originalViewport.width, 320]) {
+    await page.setViewportSize({ width, height: originalViewport.height });
+    await page.getByRole('contentinfo').scrollIntoViewIfNeeded();
+    for (const theme of ['dark', 'light']) {
+      await page.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
+      await expect(notice.getByRole('button', { name: 'Reload', exact: true })).toBeVisible();
+      expect(await notice.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      const bounds = await notice.boundingBox();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      await notice.screenshot({ path: test.info().outputPath(`update-notice-${theme}-${width}.png`) });
+    }
+  }
+  await page.setViewportSize(originalViewport);
   await page.getByRole('button', { name: 'Later', exact: true }).click();
+  await expect(notice).toBeHidden();
   const status = page.getByRole('button', { name: 'Service status', exact: true });
   await status.scrollIntoViewIfNeeded(); await status.click();
   const details = page.getByRole('dialog', { name: 'Service status', exact: true });

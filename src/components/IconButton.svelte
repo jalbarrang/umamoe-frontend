@@ -50,6 +50,6 @@
   .icon-button.selected { border-color: var(--color-border); background: var(--color-accent-soft); color: var(--color-accent); }
   .icon-button:disabled { cursor: not-allowed; opacity: .45; }
   .icon-button--sm { width: 36px; height: 36px; border-radius: var(--radius-sm); }
-  @media (pointer: coarse) and (min-width:768px) { .icon-button--sm { width:var(--touch-target); height:var(--touch-target); } }
+  @media (pointer: coarse) and (max-width: 1300px) and (min-width:768px) { .icon-button--sm { width:var(--touch-target); height:var(--touch-target); } }
   @media (max-width:767px) { .icon-button--sm { width:28px; height:28px; } }
 </style>

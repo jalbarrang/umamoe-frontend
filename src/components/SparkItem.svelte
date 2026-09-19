@@ -36,7 +36,7 @@
   .compact .p2-marker { width: 12px; height: 12px; }
   .compact .p2-marker :global(svg) { width: 12px; height: 12px; }
   .spark>:global(.icon-button){width:14px;height:14px;padding:0;border:0;color:inherit;background:transparent;opacity:.4}.spark>:global(.icon-button:hover){opacity:1}.spark>:global(.icon-button svg){width:10px;height:10px}
-  @media(max-width:767px),(pointer:coarse){.spark>:global(.icon-button){min-width:var(--touch-target);min-height:var(--touch-target)}}
+  @media(max-width:767px),(pointer: coarse) and (max-width: 1300px){.spark>:global(.icon-button){min-width:var(--touch-target);min-height:var(--touch-target)}}
   :global([data-theme='light']) .chance { border-color: rgb(17 24 39 / .14); background: rgb(17 24 39 / .06); }
 
   @media (max-width: 767px) {

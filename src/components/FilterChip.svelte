@@ -18,5 +18,5 @@
   small { min-width: 20px; padding: 1px 5px; border-radius: var(--radius-pill); background: color-mix(in srgb, currentColor 12%, transparent); font-size: 10px; text-align: center; }
   .wrap:has(.remove) > button:first-child { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
   button.remove { width: 34px; padding: 0; justify-content: center; border-left: 0; border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
-  @media(pointer:coarse){button{min-height:var(--touch-target)}button.remove{width:var(--touch-target)}}
+  @media(pointer: coarse) and (max-width: 1300px){button{min-height:var(--touch-target)}button.remove{width:var(--touch-target)}}
 </style>

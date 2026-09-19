@@ -18,6 +18,10 @@ test('database pagination shows nearby pages, result ranges and direct page navi
     await expect(pagination.getByRole('button', { name: 'Page 5', exact: true })).toBeVisible();
   }
   const jump = pagination.getByRole('spinbutton', { name: 'Go to page' });
+  const jumpToggle = pagination.getByRole('button', { name: 'Jump to page', exact: true });
+  await expect(jump).toBeHidden();
+  await jumpToggle.click();
+  await expect(jump).toBeFocused();
   await jump.fill('417'); await jump.press('Enter');
   await expect(page.locator('.inheritance-card')).toContainText('Page 417 Trainer');
   await expect(pagination).toContainText('4,993–5,004 of 10,000 results');
@@ -25,19 +29,52 @@ test('database pagination shows nearby pages, result ranges and direct page navi
   await expect(page).toHaveURL(/page=418/);
   await pagination.getByRole('button', { name: 'Previous page', exact: true }).click();
   await expect(page).toHaveURL(/page=417/);
+  await jumpToggle.click();
   await jump.fill('834'); await pagination.getByRole('button', { name: 'Go', exact: true }).click();
   await expect(pagination).toContainText('9,997–10,000 of 10,000 results');
   await expect(pagination.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled();
+  await jumpToggle.click();
   await jump.fill('835'); await jump.press('Enter');
   expect(await jump.evaluate(element => (element as HTMLInputElement).validity.rangeOverflow)).toBe(true);
   await expect(page).toHaveURL(/page=834/);
-  await jump.fill('834');
+  await jump.press('Escape');
+  await expect(jump).toBeHidden();
+  await expect(jumpToggle).toBeFocused();
   await pagination.screenshot({ path: test.info().outputPath('database-pagination.png') });
   await page.setViewportSize({ width: 320, height: 640 });
+  await expect(pagination.getByText('Page 834')).toBeVisible();
+  await pagination.screenshot({ path: test.info().outputPath('database-pagination-320.png') });
+  await jumpToggle.click();
   await expect(jump).toBeVisible();
   expect(await pagination.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await pagination.screenshot({ path: test.info().outputPath('database-pagination-320.png') });
+  await jump.fill('2'); await jump.press('Enter');
+  await expect(page).toHaveURL(/page=2/);
+  await expect(jump).toBeHidden();
+});
+
+test('database pagination keeps small result sets in one centered control', async ({ page }) => {
+  await mockDatabase(page);
+  await page.route('**/search/query?*', route => {
+    const current = Number(new URL(route.request().url()).searchParams.get('page'));
+    return route.fulfill({ json: { items: [record()], total: 25, page: current, limit: 12, total_pages: 3 } });
+  });
+  await page.goto('/database?page=1');
+  const pagination = page.getByRole('navigation', { name: 'Pagination', exact: true });
+  await expect(pagination).toContainText('1–12 of 25 results');
+  await expect(pagination.getByRole('button', { name: 'Jump to page', exact: true })).toHaveCount(0);
+  await expect(pagination.getByRole('spinbutton')).toHaveCount(0);
+  await pagination.getByRole('button', { name: 'Page 2', exact: true }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(pagination).toContainText('13–24 of 25 results');
+  for (const width of [1440, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    const bounds = await pagination.boundingBox();
+    const current = await pagination.getByRole('button', { name: 'Page 2', exact: true }).boundingBox();
+    expect(Math.abs(current!.x + current!.width / 2 - (bounds!.x + bounds!.width / 2))).toBeLessThan(20);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await pagination.screenshot({ path: test.info().outputPath(`database-pagination-small-${width}.png`) });
+  }
 });
 
 test('database uses configured in-content slots through 1300px and registers only visible placements', async ({ page }) => {
