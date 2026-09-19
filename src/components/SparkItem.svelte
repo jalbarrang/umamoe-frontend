@@ -8,7 +8,7 @@
   const sourceLabel = $derived(source === 'main' ? 'Main parent' : source === 'parent' ? 'Parent' : source === 'p2' ? 'P2 legacy' : undefined);
 </script>
 
-<span class="spark spark--{tone}" class:compact class:highlightMain class:matched title={title ?? (sourceLabel ? `${name} · ${sourceLabel}` : name)} data-source={source} aria-label={`${level} ${countMode === 'stars' ? 'star' : 'occurrences of'} ${name}${chance ? `, ${chance}` : ''}${sourceLabel ? `, ${sourceLabel}` : ''}${mainStars ? `, main parent contribution ${mainStars} stars` : ''}${p2Stars ? `, P2 contribution ${p2Stars} stars` : ''}`}>
+<span class="spark spark--{tone}" class:compact class:highlightMain class:matched class:removable={Boolean(onremove)} title={title ?? (sourceLabel ? `${name} · ${sourceLabel}` : name)} data-source={source} aria-label={`${level} ${countMode === 'stars' ? 'star' : 'occurrences of'} ${name}${chance ? `, ${chance}` : ''}${sourceLabel ? `, ${sourceLabel}` : ''}${mainStars ? `, main parent contribution ${mainStars} stars` : ''}${p2Stars ? `, P2 contribution ${p2Stars} stars` : ''}`}>
   {#if portrait}<img class="source-portrait" src={portrait.image} alt={portrait.title} title={portrait.title} loading="lazy"/>{/if}
   <span class="level">{level}</span><span class="star" aria-hidden="true">{countMode === 'stars' ? '★' : '×'}</span><span class="name">{name}</span>
   {#if chance}<span class="chance">{chance}</span>{/if}
@@ -35,8 +35,8 @@
   .compact .star { font-size: 11px; }
   .compact .p2-marker { width: 12px; height: 12px; }
   .compact .p2-marker :global(svg) { width: 12px; height: 12px; }
-  .spark>:global(.icon-button){width:14px;height:14px;padding:0;border:0;color:inherit;background:transparent;opacity:.4}.spark>:global(.icon-button:hover){opacity:1}.spark>:global(.icon-button svg){width:10px;height:10px}
-  @media(max-width:767px),(pointer: coarse) and (max-width: 1300px){.spark>:global(.icon-button){min-width:var(--touch-target);min-height:var(--touch-target)}}
+  .spark.removable{padding:2px 2px 2px 6px;min-width:0}
+  .spark>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px;padding:0;border:0;border-left:1px solid rgb(var(--spark-rgb)/.3);border-radius:0 2px 2px 0;color:inherit;background:transparent;opacity:.7}.spark>:global(.icon-button:hover),.spark>:global(.icon-button:focus-visible){opacity:1;background:rgb(var(--spark-rgb)/.15)}.spark>:global(.icon-button svg){width:12px;height:12px}
   :global([data-theme='light']) .chance { border-color: rgb(17 24 39 / .14); background: rgb(17 24 39 / .06); }
 
   @media (max-width: 767px) {
@@ -46,5 +46,5 @@
     .spark:not(.compact) .p2-marker { width: 11px; height: 11px; }
     .spark:not(.compact) .p2-marker :global(svg) { width: 11px; height: 11px; }
   }
-  @media (max-width:767px) { .spark>:global(.icon-button) { min-width:24px; min-height:24px; } .source-portrait { width:16px; height:16px; } }
+  @media (max-width:767px) { .source-portrait { width:16px; height:16px; } }
 </style>

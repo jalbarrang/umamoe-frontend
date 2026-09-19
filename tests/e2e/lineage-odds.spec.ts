@@ -21,8 +21,8 @@ test('Lineage odds retain Angular source ordering, combined rolls and separate s
     await expect(table.getByRole('row').nth(3)).toContainText('93.60%');
   } else {
     await expect(table.getByRole('columnheader',{name:'Stats 3 star base chance'})).toContainText('90%');
-    await expect(table.getByRole('row').nth(1)).toContainText('Mejiro McQueen');
-    await expect(table.getByRole('row').nth(1)).toContainText('93.60%');
+    await expect(table.locator('tbody tr').first()).toContainText('Mejiro McQueen');
+    await expect(table.locator('tbody tr').first()).toContainText('93.60%');
   }
   await panel.screenshot({path:test.info().outputPath('base-odds.png')});
   await expect(page.getByLabel('Total affinity composition')).toHaveText('Total compositionP1 2+Shared 2+P2 2=6');
