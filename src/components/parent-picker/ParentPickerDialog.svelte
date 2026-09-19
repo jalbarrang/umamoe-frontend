@@ -6,7 +6,7 @@
   import FilterChip from '@/components/FilterChip.svelte';
   import { resolveVeteranFactors } from '@/lib/profile/profile-veterans';
   import { loadG1SaddleGroups } from '@/lib/catalog/race-catalog';
-  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, parentAffinity, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type ParentFactorFilter, type SelectableParent } from '@/lib/veterans/parent-picker';
+  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, parentAffinityDetails, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type ParentFactorFilter, type SelectableParent } from '@/lib/veterans/parent-picker';
   import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
   import { veteranAffinityRepository } from '@/lib/veterans/affinity-repository';
   import { authReady, authUser } from '@/services/auth/auth-state';
@@ -26,12 +26,14 @@
   import IconButton from '@/components/IconButton.svelte';
   import Icon from '@/components/Icon.svelte';
   import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
+  import SegmentedControl from '@/components/SegmentedControl.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import Tabs from '@/components/Tabs.svelte';
   import TextField from '@/components/TextField.svelte';
   interface Props { open?: boolean; targetId?: number; selectedAccountId?: string; sessionScope?: string; onselect: (parent: SelectableParent) => void; }
   let { open = $bindable(false), targetId, selectedAccountId = '', sessionScope, onselect }: Props = $props();
   const id = $props.id();
+  let sparkView = $state('combined');
   let pickerState = $state<ParentPickerState>({tab:'veterans',accountId:'',query:'',sort:'total',factors:[]});
   let factorDraft = $state<ParentFactorFilter>(), factorEditIndex = -1;
   function editFactor(index = -1) {
@@ -56,7 +58,8 @@
   const collection = $derived(mergeVeterans(veterans[pickerState.accountId] ?? [], ($veteranDrafts[scope] ?? []).map(record => deviceParent(record, pickerState.accountId))).map(veteran => accountParent(veteran, pickerState.accountId)));
   const current = $derived(pickerState.tab==='veterans' ? collection : pickerState.tab==='bookmarks' ? bookmarks : pickerState.tab==='manual' ? manuals.map(manualParent) : partners);
   const name = (parent: SelectableParent) => `${parentCharacter(parent,characters).name} ${parent.name??''}`;
-  const scores = $derived(new Map(current.map((parent)=>[parent.pickerId,parentAffinity(parent,targetId,engine,groups)])));
+  const affinities = $derived(new Map(current.map(parent=>[parent.pickerId,parentAffinityDetails(parent,targetId,engine,groups)])));
+  const scores = $derived(new Map([...affinities].map(([id,score])=>[id,score ? score.parentOne.total+score.race.p1Left+score.race.p1Right : 0])));
   const filtered = $derived(filterParents(current,pickerState,name,(parent)=>scores.get(parent.pickerId)??0));
   const loadKey = $derived(pickerState.tab==='veterans'?`account:${pickerState.accountId}`:pickerState.tab);
   const loading = $derived(busy[loadKey]);
@@ -143,7 +146,7 @@
   $effect(()=>{JSON.stringify(pickerState);renderLimit=16;if(sessionScope)parentPickerSessions.set(sessionScope,JSON.parse(JSON.stringify({...pickerState,factors:pickerState.factors.filter((factor)=>factor.factorId)})));});
 </script>
 
-<div class="parent-picker"><Dialog bind:open title="Select Parent" icon="veterans" maxWidth="1100px" height="var(--parent-picker-height)" maxHeight="var(--parent-picker-height)" mobileInset="16px" contentPadding="0" mobileContentPadding="0">
+<div class="parent-picker"><Dialog bind:open title="Select Parent" icon="veterans" maxWidth="1280px" height="var(--parent-picker-height)" maxHeight="var(--parent-picker-height)" mobileInset="16px" contentPadding="0" mobileContentPadding="0">
   <VeteranCollection compact empty={emptyCollection} onnavigate={() => open=false} onimport={() => { pickerState.tab='veterans'; }}>{#snippet children(dropZone, chooseFile)}<div class="picker-layout">
     <Tabs items={tabs} bind:value={pickerState.tab} label="Veteran picker sections" variant="underline"/>
     <div class="filterbar">
@@ -165,6 +168,7 @@
       <div class="spark-search">
         <Button variant="secondary" size="sm" icon="add" onclick={() => editFactor()}>Add Spark</Button>
       </div>
+      <div class="spark-display"><SegmentedControl label="Parent spark display" options={[{value:'split',label:'Split'},{value:'combined',label:'Combined'}]} bind:value={sparkView}/></div>
       {#if pickerState.factors.length}<div class="clear-sparks"><Button variant="ghost" size="sm" onclick={()=>pickerState.factors=[]}>Clear all</Button></div>{/if}
     </div>
       <div class="picker-results">
@@ -191,9 +195,9 @@
       {:else if pickerState.tab==='veterans'&&!filtered.length&&(pickerState.query||pickerState.factors.length)}<div class="empty"><Icon name="users" size={48}/><h3>No veterans match your filters</h3><Button variant="secondary" onclick={clearFilters}>Clear filters</Button></div>
       {:else if pickerState.tab==='bookmarks'&&!$authUser}<div class="empty"><Icon name="book" size={48}/><h3>Sign in to use bookmarks</h3><p>Bookmark veterans from the Inheritance Database to find them here quickly. Sign in using the button in the top navigation bar.</p></div>
       {:else}
-        {#if pickerState.tab==='saved'&&lookupResult}<h3 class="partner-heading"><Icon name="search" size={16}/>Lookup result</h3><ParentPickerRow parent={lookupResult} {characters} affinity={parentAffinity(lookupResult,targetId,engine,groups)} onselect={()=>lookupResult&&choose(lookupResult)}/>{/if}
+        {#if pickerState.tab==='saved'&&lookupResult}<h3 class="partner-heading"><Icon name="search" size={16}/>Lookup result</h3><ParentPickerRow parent={lookupResult} {characters} affinity={parentAffinityDetails(lookupResult,targetId,engine,groups)} combined={sparkView==='combined'} onselect={()=>lookupResult&&choose(lookupResult)}/>{/if}
         {#if pickerState.tab==='saved'&&partners.length}<h3 class="partner-heading"><Icon name="save" size={16}/>Saved partners</h3>{/if}
-        <div class="parent-list" role="list" aria-label="Available parents">{#each filtered.slice(0,renderLimit) as parent (parent.pickerId)}<div role="listitem"><ParentPickerRow {parent} {characters} affinity={scores.get(parent.pickerId)} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
+        <div class="parent-list" role="list" aria-label="Available parents">{#each filtered.slice(0,renderLimit) as parent (parent.pickerId)}<div role="listitem"><ParentPickerRow {parent} {characters} affinity={affinities.get(parent.pickerId)} combined={sparkView==='combined'} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
         {#if filtered.length>renderLimit}<Button variant="ghost" onclick={()=>renderLimit+=16}>Show more parents</Button>{/if}
         {#if !filtered.length&&!editing&&!(pickerState.tab==='saved'&&lookupResult&&!partners.length)}<div class="empty" class:empty-upload={pickerState.tab==='veterans' && !current.length}>
           {#if current.length}<Icon name="search" size={48}/><h3>No results</h3><Button variant="secondary" onclick={clearFilters}>Clear filters</Button>
@@ -209,8 +213,7 @@
 </Dialog></div>
 {#if factorDraft}<SparkFilterDialog filter={factorDraft} {characters} {...$factorCatalogState} onapply={applyFactor} onclose={() => factorDraft = undefined}/>{/if}
 <style>
-  .parent-picker { --parent-picker-height:min(760px,84dvh); --dialog-content-font:var(--font-sans); --control-height:34px; }
-  @media(max-width:600px) { .parent-picker { --parent-picker-height:92dvh; } }
+  .parent-picker { --parent-picker-height:min(1000px,94dvh); --dialog-content-font:var(--font-sans); --control-height:34px; }
   @media(max-width:480px) { .parent-picker { --parent-picker-height:96dvh; } }
   .parent-picker > :global(dialog > .dialog-panel > header) { min-height:48px; height:48px; align-items:center; padding:0 8px 0 20px; border-bottom-color:var(--border-subtle); }
   .parent-picker > :global(dialog > .dialog-panel > header h2) { font-size:.95rem; font-weight:700; }
@@ -236,9 +239,10 @@
   .parent-actions :global(.ui-button) { padding:0 10px; font-size:12px; }
   .result-count { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
   .active-filters { --spark-filter-height:28px; --control-height:var(--spark-filter-height); display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px var(--picker-inset); margin:0 calc(-1 * var(--picker-inset)) 10px; border-block:1px solid var(--border-subtle); background:var(--bg-primary); }
-  .clear-sparks { margin-left:auto; }.clear-sparks :global(.ui-button) { min-height:var(--control-height); padding:2px 6px; font-size:11px; }
+  .spark-display { margin-left:auto; }.spark-display :global(.segments) { padding:2px; height:var(--control-height); }.spark-display :global(.segments button) { min-height:0; padding:0 8px; font-size:11px; }
+  .clear-sparks :global(.ui-button) { min-height:var(--control-height); padding:2px 6px; font-size:11px; }
   .picker-body { --picker-inset:12px; min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:0 var(--picker-inset) 12px; }
-  .picker-results { min-width:0; }.parent-list { display:grid; gap:8px; min-width:0; }
+  .picker-results { min-width:0; }.parent-list { display:grid; gap:6px; min-width:0; }
   .selected-factor { --color-accent:var(--spark-white-text); --color-accent-soft:color-mix(in srgb,var(--color-accent) 10%,transparent); min-width:0; max-width:100%; }
   .selected-factor--blue { --color-accent:var(--accent-primary); }.selected-factor--pink { --color-accent:var(--color-pink); }.selected-factor--green { --color-accent:var(--accent-secondary); }
   .selected-factor :global(.wrap) { max-width:100%; }

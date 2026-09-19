@@ -66,6 +66,10 @@ test('legacy selector keeps full-width results with compact chips and a two-step
   }
   for (const width of isMobile?[320,390,768]:[600,850,851,1024,1440]) {
     await page.setViewportSize({width,height:900});
+    if(width===1440) {
+      const bounds=(await dialog.boundingBox())!;
+      expect(bounds.width).toBeGreaterThan(1100);expect(bounds.height).toBeGreaterThan(800);
+    }
     expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
     expect(await dialog.locator('.parent-row').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
     for(const size of await dialog.locator('.spark').evaluateAll(nodes=>nodes.map(el=>parseFloat(getComputedStyle(el).fontSize)))) expect(size).toBeGreaterThanOrEqual(10);
@@ -93,7 +97,7 @@ test('legacy selector keeps full-width results with compact chips and a two-step
     expect(bounds.height).toBeLessThanOrEqual(36);
     expect(bounds.height).toBe((await addSpark.boundingBox())!.height);
     expect(bounds.y).toBeGreaterThanOrEqual((await tools.boundingBox())!.y+(await tools.boundingBox())!.height);
-    expect(await dialog.locator('.active-filters').evaluate(el=>Array.from(el.children).map(child=>child.classList[0]))).toEqual(['selected-factor','spark-search','clear-sparks']);
+    expect(await dialog.locator('.active-filters').evaluate(el=>Array.from(el.children).map(child=>child.classList[0]))).toEqual(['selected-factor','spark-search','spark-display','clear-sparks']);
     expect(await dialog.locator('.active-filters').evaluate(el=>getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
     const band=(await dialog.locator('.active-filters').boundingBox())!;
     expect(band.x).toBe(body.x);expect(band.width).toBe(body.width);

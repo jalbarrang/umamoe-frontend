@@ -61,17 +61,25 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
   const dialog=page.getByRole('dialog',{name:'Select Parent',exact:true});
   await expect(dialog.locator('.parent-row')).toHaveCount(3);
   const rows=dialog.locator('.parent-row');
+  const display=dialog.getByRole('radiogroup',{name:'Parent spark display'});
+  await expect(display.getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
+  await expect(rows.first().locator('.factor-list .spark')).toHaveText(['9★Speed','3★Stamina']);
+  const combinedHeight=(await rows.first().boundingBox())!.height;
+  await display.getByRole('radio',{name:'Split',exact:true}).click();
+  expect((await rows.first().boundingBox())!.height).toBeGreaterThan(combinedHeight);
   for(const [index,expected] of [[0,['3 Speed','3 Stamina','1 Speed']],[1,['3 Speed','3 Stamina','1 Speed']],[2,['3 Speed','3 Stamina','1 Speed','1 Stamina']]] as const){
-    await expect(rows.nth(index).locator('.sparks .spark')).toHaveText(expected.map(text=>text.replace(' ','★')));
-    const portrait = (await rows.nth(index).locator('.identity .art').boundingBox())!;
-    const heading = (await rows.nth(index).locator('.heading').boundingBox())!;
+    await expect(rows.nth(index).locator('.factor-list .spark')).toHaveText(expected.map(text=>text.replace(' ','★')));
+    const portrait = (await rows.nth(index).locator('.summary-head .art').boundingBox())!;
+    const heading = (await rows.nth(index).locator('.identity').boundingBox())!;
     expect(heading.y).toBeGreaterThanOrEqual(portrait.y);
     expect(heading.y).toBeLessThan(portrait.y + portrait.height);
   }
-  await expect(rows.first().locator('.ancestor')).toHaveCount(1);
-  await expect(rows.first().locator('.ancestor .spark')).toHaveText(['3★Speed','2★Speed']);
-  await expect(rows.first().locator('.sparks .spark').first()).toHaveAttribute('title','Speed Lv.3');
-  await expect(rows.first().locator('.rarity svg')).toHaveCount(5);
+  await expect(rows.first().locator('.summary-parent')).toHaveCount(1);
+  await expect(rows.first().locator('.summary-parent .spark')).toHaveText(['3★Speed','2★Speed']);
+  await expect(rows.first().locator('.factor-list .spark').first()).toHaveAttribute('aria-label',/3 star Speed/);
+  await expect(rows.first().locator('.rank')).toBeVisible();
+  await display.getByRole('radio',{name:'Combined',exact:true}).click();
+  await expect(rows.first().locator('.parent-factors')).toHaveCount(0);
   await dialog.getByRole('button',{name:'Add Spark',exact:true}).click();
   const editor=page.getByRole('dialog',{name:'Add spark filter',exact:true});
   await expect(editor.getByRole('button',{name:'Blue stats',exact:true})).toBeFocused();
@@ -97,8 +105,8 @@ test('Veterans without an outfit ID retain the Angular name, portrait, search an
   const dialog=page.getByRole('dialog',{name:'Select Parent',exact:true});
   await dialog.getByRole('textbox',{name:'Search parents',exact:true}).fill('Mejiro McQueen');
   await expect(dialog.locator('.parent-row')).toHaveCount(1);
-  await expect(dialog.locator('.heading>strong')).toHaveText('Mejiro McQueen');
-  await expect(dialog.locator('.select-parent img')).toHaveAttribute('src','/game-assets/character_thumbs/chara_stand_1013_101301.webp');
+  await expect(dialog.locator('.summary-head h3')).toHaveText('Mejiro McQueen');
+  await expect(dialog.locator('.summary-head .art img')).toHaveAttribute('src','/game-assets/character_thumbs/chara_stand_1013_101301.webp');
   await dialog.getByRole('button',{name:'Select Mejiro McQueen',exact:true}).press('Enter');
   await expect(dialog).not.toBeVisible();
   await page.getByRole('radiogroup',{name:'Legacy spark display'}).getByRole('radio',{name:'Split',exact:true}).click();
@@ -156,7 +164,7 @@ test('Manual character selectors rank affinity against the target and main paren
 test('Veteran picker uses shared spark colors in both themes',async({page})=>{
   const dialog=await prepare(page,true);
   await dialog.getByRole('tab',{name:/Bookmarks/}).click();
-  const pink=dialog.locator('.sparks .spark--pink').first(),green=dialog.locator('.sparks .spark--green').first();
+  const pink=dialog.locator('.factor-list .spark--pink').first(),green=dialog.locator('.factor-list .spark--green').first();
   for(const theme of ['dark','light']) {
     await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
     await expect(pink).toHaveCSS('background-color','rgba(233, 30, 99, 0.15)');
@@ -454,7 +462,7 @@ test('selected legacy retains the original veteran summary without its stat stri
   await expect(summary.locator('.summary-head')).toBeVisible();
   await expect(summary.locator('.rank-score')).toBeVisible();
   await expect(summary.locator('.factor-list .spark').first()).toBeVisible();
-  await expect(summary.locator('.parent-row')).toHaveCount(2);
+  await expect(summary.locator('.summary-parent')).toHaveCount(2);
   await expect(summary.locator('.stats')).toHaveCount(0);
   await expect(page.getByRole('radiogroup', {name:'Legacy spark display'})).toBeVisible();
   await expect(page.getByRole('radiogroup', {name:'Legacy spark display'}).getByRole('radio',{name:'Combined',exact:true})).toBeChecked();
@@ -511,12 +519,12 @@ test('selected legacy retains the original veteran summary without its stat stri
   await expect(summary.locator('.affinity')).toHaveCount(0);
   const view = page.getByRole('radiogroup', {name:'Legacy spark display'});
   await view.getByRole('radio',{name:'Combined',exact:true}).click();
-  await expect(summary.locator('.parent-row')).toHaveCount(2);
+  await expect(summary.locator('.summary-parent')).toHaveCount(2);
   await expect(summary.locator('.parent-factors')).toHaveCount(0);
   await expect(summary.locator('.factor-list .spark--blue')).toHaveAttribute('aria-label','6 star Speed');
   await expect(summary.locator('.factor-list .spark--pink')).toHaveAttribute('aria-label','6 star Dirt');
   const headerBounds = (await summary.locator('.summary-head').boundingBox())!;
-  const parentBounds = await summary.locator('.parent-row').evaluateAll(rows=>rows.map(row=>{const box=row.getBoundingClientRect();return {x:box.x,y:box.y,bottom:box.bottom};}));
+  const parentBounds = await summary.locator('.summary-parent').evaluateAll(rows=>rows.map(row=>{const box=row.getBoundingClientRect();return {x:box.x,y:box.y,bottom:box.bottom};}));
   const sparkBounds = (await summary.locator('.factor-section').boundingBox())!;
   if ((await summary.boundingBox())!.width > 760) {
     expect(parentBounds[0].x-headerBounds.x-headerBounds.width).toBeLessThanOrEqual(12);

@@ -47,7 +47,7 @@
     {#if veteran.parents?.length}
       <div class="parent-rows" aria-label="Veteran parents">
         {#each veteran.parents as parent (parent.id)}
-          <section class="parent-row">
+          <section class="summary-parent">
             <div class="parent-id" class:affinity-first={!showStats}>
                <Artwork src={parent.image} alt={parent.name} size="xs" shape="circle"/>
                <div class="parent-copy"><strong>{parent.name}</strong><span class="parent-position parent-position--{parent.position.toLowerCase()}">{parent.position}</span></div>
@@ -80,14 +80,15 @@
   .factor-list, .parent-factors { min-width: 0; display: flex; flex-wrap: wrap; gap: 3px; }
   .factor-list { flex: 1; }
   .factor-list.grouped { display:flex; width:100%; gap:4px 8px; align-content:flex-start; align-items:flex-start; }
-  .factor-list.grouped :global(.spark-row){width:100%;max-width:100%}
+  .factor-list.grouped :global(.spark-row){max-width:100%}
+  .factor-list.grouped :global(.spark-row:has(.type--white)){width:100%}
   .factor-section.with-summary { flex-direction: column; align-items: stretch; }
   .factor-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
   .factor-heading > span { color: var(--color-text-muted); font-size: var(--font-xs); font-weight: 600; }
   .summary-affinity { display: flex; align-items: center; gap: var(--space-4); }
   .parent-rows { min-width: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border-subtle); }
-  .parent-row { min-width: 0; display: grid; grid-template-columns: minmax(176px, auto) minmax(0, 1fr); align-items: center; gap: 7px; padding: 5px 0; }
-  .parent-row + .parent-row { border-top: 1px solid var(--border-subtle); }
+  .summary-parent { min-width: 0; display: grid; grid-template-columns: minmax(176px, auto) minmax(0, 1fr); align-items: center; gap: 7px; padding: 5px 0; }
+  .summary-parent + .summary-parent { border-top: 1px solid var(--border-subtle); }
   .parent-id { min-width: 0; display: flex; align-items: center; gap: 5px; }
   .parent-id strong { max-width: 100px; overflow: hidden; color: var(--color-text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .parent-position { flex: 0 0 auto; padding: 2px 5px; border-radius: var(--radius-xs); font-size: 9px; font-weight: 800; }
@@ -100,12 +101,12 @@
     .veteran-summary { gap: 7px; padding: 7px; }
     .summary-head { gap: 7px; }
     .factor-section { align-items: flex-start; flex-direction: column; gap: 5px; }
-    .parent-row { grid-template-columns: minmax(158px, auto) minmax(0, 1fr); gap: 5px; }
+    .summary-parent { grid-template-columns: minmax(158px, auto) minmax(0, 1fr); gap: 5px; }
     .parent-id strong { max-width: min(140px, 42vw); }
   }
   @container (max-width: 430px) {
     .veteran-summary { padding: 4px; border-inline: 0; border-radius: 0; }
-    .parent-row { grid-template-columns: 1fr; }
+    .summary-parent { grid-template-columns: 1fr; }
     .factor-section { gap: 3px; }
     .rank-score > span { display: none; }
   }
@@ -115,6 +116,6 @@
   .combined-layout{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:5px 12px}
   .combined-layout .summary-head{flex:0 1 auto;max-width:100%;gap:6px}
   .combined-layout .parent-rows{display:contents}
-  .combined-layout .parent-row{flex:0 1 auto;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
+  .combined-layout .summary-parent{flex:0 1 auto;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
   .combined-layout .factor-section{order:1;flex:1 0 100%;align-items:flex-start;padding:5px 0 0;border-left:0;border-top:1px solid var(--border-subtle)}
 </style>

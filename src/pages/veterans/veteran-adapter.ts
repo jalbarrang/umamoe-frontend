@@ -5,9 +5,9 @@ import type { VeteranRecord } from '@/lib/veterans/generated/veteran-record';
 import type { VeteranUiRecord, VeteranSparkGroup } from '@/components/veteran-ui-types';
 import type { SparkTone, SparkSource } from '@/components/SparkItem.svelte';
 
-const scenarios: Record<number, string> = { 1: 'URA Finals', 2: 'Unity Cup', 3: 'Grand Concert', 4: 'Trackblazer', 5: 'Grand Masters', 6: 'Project L’Arc', 7: 'U.A.F.', 8: 'Great Food Festival', 9: 'Run! Mecha', 10: 'Twinkle Legends', 11: 'Design Your Island', 12: 'Yukoma Hot Springs', 13: 'Beyond Dreams' };
+export const scenarios: Record<number, string> = { 1: 'URA Finals', 2: 'Unity Cup', 3: 'Grand Concert', 4: 'Trackblazer', 5: 'Grand Masters', 6: 'Project L’Arc', 7: 'U.A.F.', 8: 'Great Food Festival', 9: 'Run! Mecha', 10: 'Twinkle Legends', 11: 'Design Your Island', 12: 'Yukoma Hot Springs', 13: 'Beyond Dreams' };
 function tone(type: number | undefined): SparkTone { return type === 0 ? 'blue' : type === 1 ? 'pink' : type === 5 ? 'green' : 'white'; }
-function sparkGroups(recordId: string, factors: VeteranRecord['factors'], source?: SparkSource): VeteranSparkGroup[] {
+export function sparkGroups(recordId: string, factors: { id:number; level:number }[], source?: SparkSource): VeteranSparkGroup[] {
   const groups = new Map<SparkTone, VeteranSparkGroup>();
   for (const [index, item] of factors.entries()) {
     const metadata = factorMetadata(item.id);
@@ -20,7 +20,7 @@ function sparkGroups(recordId: string, factors: VeteranRecord['factors'], source
 }
 function rawNumber(record: VeteranRecord, path: string): number | undefined { const raw = record.rawSource as Record<string, unknown> | undefined; const value = raw?.[path]; return typeof value === 'number' ? value : undefined; }
 
-export function combineVeteranFactors(factors: VeteranRecord['factors']): VeteranRecord['factors'] {
+export function combineVeteranFactors(factors: { id:number; level:number }[]): VeteranRecord['factors'] {
   const merged = new Map<number, VeteranRecord['factors'][number]>();
   for (const factor of factors) {
     const current = merged.get(factor.id);
