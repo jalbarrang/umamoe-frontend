@@ -1,8 +1,10 @@
 import { runtimeConfig } from '@/services/runtime-config';
+import { fuseAllowed, fuseScriptUrl, insertFuseScript } from './fuse-bootstrap';
 
 interface FuseTag {
-  que?: unknown[];
+  que?: Array<() => void>;
   registerZone?: (elementId: string) => void;
+  destroyZone?: (elementId: string) => void;
   pageInit?: (options?: { blockingFuseIds?: string[]; blockingTimeout?: number }) => void;
 }
 
@@ -16,86 +18,82 @@ declare global {
   interface Window { fusetag?: FuseTag; }
 }
 
-const scriptId = 'publift-fuse-js';
-const scriptUrl = 'https://cdn.fuseplatform.net/publift/tags/2/4302/fuse.js';
-const pending = new Map<string, string>();
+const pending = new Map<string, { element: HTMLElement; fuseId: string }>();
 const registered = new Map<string, HTMLElement>();
-let startTask: Promise<void> | undefined;
+let startTask: Promise<boolean> | undefined;
 let pageInitTimer: number | undefined;
+let initializedPath: string | undefined;
 
 export function fuseEnabled(): boolean {
-  if (typeof window === 'undefined' || !runtimeConfig.providersEnabled) return false;
-  try {
-    const params = new URLSearchParams(location.search);
-    for (const key of ['fuse', 'fuse_enabled', 'ads_enabled']) {
-      const value = params.get(key)?.toLowerCase();
-      if (value && ['true', '1', 'on', 'false', '0', 'off'].includes(value)) localStorage.setItem('umamoe-fuse-enabled-v1', String(['true', '1', 'on'].includes(value)));
-    }
-    return localStorage.getItem('umamoe-fuse-enabled-v1') !== 'false' && JSON.parse(localStorage.getItem('cookie-consent') ?? 'null')?.advertising !== false;
-  } catch { return true; }
+  return fuseAllowed(runtimeConfig.providersEnabled);
 }
 
 function apiReady(): boolean {
   return typeof window.fusetag?.registerZone === 'function' && typeof window.fusetag?.pageInit === 'function';
 }
 
-function waitForApi(timeoutMs = 2400): Promise<void> {
-  if (apiReady()) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const started = performance.now();
-    const timer = window.setInterval(() => {
-      if (apiReady()) { window.clearInterval(timer); resolve(); }
-      else if (performance.now() - started >= timeoutMs) { window.clearInterval(timer); reject(new Error('Publift Fuse API did not initialize.')); }
-    }, 40);
-  });
-}
-
-export function loadFuse(): Promise<void> {
-  if (!fuseEnabled()) return Promise.resolve();
+export function loadFuse(): Promise<boolean> {
+  if (!fuseEnabled()) return Promise.resolve(false);
+  if (apiReady()) return Promise.resolve(true);
   if (startTask) return startTask;
-  startTask = new Promise<void>((resolve, reject) => {
-    window.fusetag ??= { que: [] };
-    const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
-    if (existing) { void waitForApi().then(resolve, reject); return; }
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.async = true;
-    script.src = scriptUrl;
-    script.onload = () => { void waitForApi().then(resolve, reject); };
-    script.onerror = () => reject(new Error('Publift Fuse script failed to load.'));
-    document.head.append(script);
-  }).catch((error) => {
-    startTask = undefined;
-    console.warn(error);
+  const script = insertFuseScript(fuseScriptUrl);
+  startTask = new Promise<boolean>(resolve => {
+    if (script.dataset.state === 'error') { resolve(false); return; }
+    const ready = () => { if (apiReady()) resolve(true); };
+    window.fusetag?.que?.push(ready);
+    script.addEventListener('load', ready, { once: true });
+    script.addEventListener('error', () => resolve(false), { once: true });
+    ready();
   });
   return startTask;
 }
 
-function schedulePageInit(): void {
+function scheduleZones(): void {
   if (!fuseEnabled()) return;
   if (pageInitTimer !== undefined) window.clearTimeout(pageInitTimer);
   pageInitTimer = window.setTimeout(() => {
     pageInitTimer = undefined;
-    const blockingFuseIds = [...new Set(pending.values())];
-    for (const [elementId, fuseId] of pending) {
-      const element = document.getElementById(elementId);
-      if (!element?.isConnected || registered.get(elementId) === element) continue;
+    if (!fuseEnabled() || !apiReady()) return;
+    const used = new Set<string>();
+    const zones = [...pending].filter(([, { element, fuseId }]) => {
+      if (!element.isConnected || used.has(fuseId)) return false;
+      used.add(fuseId);
+      return true;
+    });
+    // A new page resets the auction; adding/resizing slots on that page does not.
+    if (initializedPath !== location.pathname) {
+      window.fusetag!.pageInit!({ blockingFuseIds: [...used], blockingTimeout: 2000 });
+      initializedPath = location.pathname;
+    }
+    for (const [elementId, { element, fuseId }] of zones) {
+      if (registered.get(elementId) === element) continue;
+      element.dataset.fuse = fuseId;
       window.fusetag?.registerZone?.(elementId);
       registered.set(elementId, element);
-      element.dataset.fuse = fuseId;
     }
-    window.fusetag?.pageInit?.(blockingFuseIds.length ? { blockingFuseIds, blockingTimeout: 2000 } : undefined);
   }, 30);
+}
+
+export function syncFusePage(): void {
+  void loadFuse().then(ready => { if (ready) scheduleZones(); });
 }
 
 export function registerFuseZone(elementId: string, fuseId: string): () => void {
   if (!fuseEnabled() || !elementId || !fuseId) return () => undefined;
-  pending.set(elementId, fuseId);
-  const begin = () => { void loadFuse().then(schedulePageInit); };
-  const idle = (window as Window & { requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback;
-  if (idle) idle.call(window, begin, { timeout: 1600 });
-  else globalThis.setTimeout(begin, 1);
-  return () => { pending.delete(elementId); registered.delete(elementId); };
+  const element = document.getElementById(elementId);
+  if (!element) return () => undefined;
+  pending.set(elementId, { element, fuseId });
+  syncFusePage();
+  return () => {
+    if (pending.get(elementId)?.element !== element) return;
+    pending.delete(elementId);
+    if (registered.get(elementId) === element) {
+      window.fusetag?.destroyZone?.(elementId);
+      registered.delete(elementId);
+      delete element.dataset.fuse;
+    }
+    if (pending.size) scheduleZones();
+  };
 }
 
 export function openFusePrivacyControls(): boolean {

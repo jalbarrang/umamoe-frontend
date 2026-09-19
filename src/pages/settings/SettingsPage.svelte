@@ -13,6 +13,7 @@
   import Icon from '@/components/Icon.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import SourcePage from '@/layouts/SourcePage.svelte';
+  import ContentAd from '@/layouts/ContentAd.svelte';
 
   let accounts = $state<LinkedAccount[]>([]);
   let identities = $state<AuthIdentity[]>([]);
@@ -183,7 +184,7 @@
 
 <svelte:head><title>Account Settings · uma.moe</title><meta name="robots" content="noindex"/></svelte:head>
 
-<SourcePage routeId="settings" title="Account Settings" width="normal">
+<SourcePage routeId="settings" title="Account Settings" width="wide">
   <div class="settings-page">
     <PageHeading title="Account Settings" description="Manage your linked game accounts and connected logins."/>
     {#if !$authReady}
@@ -221,6 +222,8 @@
           </div>
         </section>
 
+        <ContentAd routeId="settings"/>
+
         <section class="settings-card"><header class="card-header"><Icon name="connect" size={20}/><h2>Connected Logins</h2></header><div class="card-body">{#if loading.identities}<div class="loading-row" role="status">Loading…</div>{:else if loadErrors.identities}<Banner title="Connected logins unavailable" tone="danger">{loadErrors.identities}<Button variant="secondary" onclick={loadIdentities}>Retry connected logins</Button></Banner>{:else}<div class="identity-list">{#each identities as identity (`${identity.provider}:${identity.provider_id}`)}<div class="identity-row"><div class="identity-info"><Icon name={identity.provider === 'google' ? 'google' : 'discord'} size={18}/><strong>{providerLabel(identity.provider)}</strong>{#if identity.display_name}<span>{identity.display_name}</span>{/if}</div><Button variant="danger" size="sm" ariaLabel="Disconnect" disabled={identities.length <= 1} loading={busy[`disconnect:${identity.provider}`]} onclick={() => disconnectIdentity(identity)}><Icon name="close" size={14}/></Button></div>{/each}<div class="connect-buttons">{#if !identities.some((item) => item.provider === 'google')}<Button icon="google" variant="secondary" loading={busy['connect:google']} onclick={() => connect('google')}>Connect Google</Button>{/if}{#if !identities.some((item) => item.provider === 'discord')}<Button icon="discord" variant="secondary" loading={busy['connect:discord']} onclick={() => connect('discord')}>Connect Discord</Button>{/if}</div></div>{/if}</div></section>
 
         <section class="settings-card"><header class="card-header"><Icon name="tools" size={20}/><h2>API Keys</h2></header><div class="card-body">
@@ -238,9 +241,7 @@
 <style>
   .settings-page { min-height: 100%; }
   
-  .content-container { max-width: 900px; margin-inline: auto; }
-  
-  .content-container { display: grid; gap: 1.5rem; padding: 0 2rem 3rem; }
+  .content-container { min-width: 0; display: grid; gap: 1.5rem; padding: 0 var(--page-gutter-current) 3rem; }
   .settings-card { overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-secondary); }
   .card-header { min-height: 48px; display: flex; align-items: center; gap: .65rem; padding: .75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }.card-header :global(svg) { color: var(--accent-primary); }.card-header h2 { margin: 0; font-size: 1rem; line-height: 1.2; }
   .card-body { padding: 1.25rem 1.5rem; }.loading-row { display: flex; align-items: center; gap: .5rem; color: var(--text-muted); font-size: .85rem; }.page-loading { min-height: 240px; justify-content: center; }
@@ -263,7 +264,7 @@
   .new-key-display { padding: .75rem 1rem; margin-bottom: 1rem; border-radius: var(--radius-md); background: rgb(129 199 132 / .06); }.new-key-display > strong { display: flex; align-items: center; gap: .5rem; color: var(--accent-secondary); font-size: .85rem; }.new-key-display .token-display { margin-left: 0; }
   .usage-hint { margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-1); }.usage-hint > strong { color: var(--text-disabled); font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; }.usage-hint p { margin: .5rem 0; color: var(--text-muted); font-size: .8rem; }.usage-hint a { color: var(--accent-primary); }.usage-hint pre { overflow-x: auto; margin: 0; padding: .6rem .85rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-tertiary); }.usage-hint pre code { color: #a5d6a7; font-size: .8rem; }
   @media (max-width: 640px) {
-    .content-container { gap: 1rem; padding: 0 4px calc(1rem + var(--bottom-nav-height)); }.card-header { padding-inline: 8px; }.card-body { padding: .75rem 5px; }
+    .content-container { gap: 1rem; padding-bottom: calc(1rem + var(--bottom-nav-height)); }.card-header { padding-inline: 12px; }.card-body { padding: 12px; }
     .account-header { align-items: flex-start; flex-direction: column; }.account-actions { width: 100%; flex-wrap: wrap; }.account-actions :global(.ui-button) { flex: 1; }.form-row,.connect-buttons { align-items: stretch; flex-direction: column; }.form-row :global(.ui-button),.connect-buttons :global(.ui-button) { width: 100%; }.api-key-intro { align-items: stretch; flex-direction: column; }.api-docs-link { justify-content: center; }.api-key-row { padding-inline: 5px; }:global(.api-key-row > .ui-button > span:not(.button-spinner)) { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }.token-display,.token-note { margin-left: 0; }
   }
   @media (max-width: 640px) { .form-row input { flex:none;min-height:var(--touch-target); } }

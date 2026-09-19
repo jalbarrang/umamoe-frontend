@@ -35,3 +35,11 @@ it('keeps mobile year/today/anniversary rows and UTC rollover while placing ads 
   expect(rows.some(row => row.marker?.type === 'year' && row.marker.label === '2026')).toBe(true);
   expect(buildTimelineFeed([], [anniversary], timelineEndDate(events, true), new Date('2026-09-01T22:00:00Z')).every(row => row.marker)).toBe(true);
 });
+
+it('uses each configured timeline ad once and keeps placements near Today in a long feed', () => {
+  const events = Array.from({ length: 200 }, (_, index) => event(String(index), new Date(Date.UTC(2026, 0, 1 + index, 22)).toISOString()));
+  const now = events[150]!.date;
+  const ads = buildTimelineFeed(events, [], timelineEndDate(events, true), now).filter(row => row.adIndex);
+  expect(ads.map(row => row.adIndex)).toEqual([1, 2, 3, 4]);
+  expect(ads.every(row => Math.abs(row.date.getTime() - now.getTime()) <= 16 * 86_400_000)).toBe(true);
+});

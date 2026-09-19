@@ -20,6 +20,7 @@
   import Spinner from '@/components/Spinner.svelte';
   import ServiceNotices from './ServiceNotices.svelte';
   import { startAnalytics, trackPageView } from '@/services/analytics';
+  import { syncFusePage } from '@/services/ads/fuse-ads';
 
   interface Props { children: Snippet; }
   let { children }: Props = $props();
@@ -59,6 +60,7 @@
   onMount(() => { if (tourAudience() === 'new') void loadTour(); });
   onMount(startAnalytics);
   $effect(() => { trackPageView(router.route.pathname); });
+  $effect(() => { router.route.pathname; void tick().then(syncFusePage); });
   $effect(() => {
     const path = router.route.pathname;
     if ($pendingRoute) return;

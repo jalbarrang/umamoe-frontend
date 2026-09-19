@@ -389,9 +389,9 @@
 .workbench{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(520px,auto);align-items:stretch}
 .picker{min-width:0;position:relative;display:flex;flex-direction:column;justify-content:center;padding:8px 10px}
 .picker :global(.combo-panel){max-height:min(320px,46dvh)}
-.banner-option{width:100%;min-width:0;min-height:52px;display:grid;grid-template-columns:112px minmax(0,1fr) auto;align-items:center;gap:8px;padding-block:4px}
-.banner-art{display:grid;place-items:center}
-.banner-art img{width:112px;height:40px;object-fit:contain}
+.banner-option{width:100%;min-width:0;min-height:52px;display:grid;grid-template-columns:148px minmax(0,1fr) auto;align-items:center;gap:8px;padding-block:4px}
+.banner-art{display:grid;place-items:center;height:36px;border:1px solid var(--border-subtle);background:var(--surface-2)}
+.banner-art img{display:block;width:100%;height:100%;object-fit:contain}
 .banner-copy{min-width:0;display:grid;gap:3px}
 .banner-copy strong,.banner-copy time{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .banner-copy time{color:var(--text-secondary);font-size:10px}
@@ -439,7 +439,7 @@
 .anniversary-marker{min-height:28px;display:grid;grid-template-columns:minmax(24px,1fr) auto minmax(24px,1fr);align-items:center;gap:9px;padding:2px 12px;color:var(--text-secondary)}
 .anniversary-marker>span{height:1px;background:var(--border-secondary)}
 .anniversary-marker strong{display:flex;align-items:center;gap:5px;font-size:10px}
-.target-list{display:grid;gap:0}
+.target-list{container:planner-targets / inline-size;display:grid;gap:0}
 .disclaimer{display:flex;align-items:center;gap:6px;margin-top:10px!important;color:var(--text-secondary);font-size:9px}
 
   @media(max-width:1100px){
@@ -467,8 +467,8 @@
 .target-bulk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .bulk-title{grid-column:1/-1}
 .target-bulk :global(.field){grid-template-columns:minmax(0,1fr)}
-.banner-option{grid-template-columns:80px minmax(0,1fr) 18px;gap:6px}
-.banner-art img{width:80px}
+.banner-option{grid-template-columns:120px minmax(0,1fr) 18px;gap:6px}
+.banner-art{height:29px}
 .banner-action>span{display:none}
 .assumption-bar{grid-template-columns:1fr auto}
 .assumption-summary{grid-column:1/-1;grid-row:2;min-width:0;overflow-x:auto;scrollbar-width:none}

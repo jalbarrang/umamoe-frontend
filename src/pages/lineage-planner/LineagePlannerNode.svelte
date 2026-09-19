@@ -20,7 +20,7 @@
   function tone(type: number): 'blue'|'pink'|'green'|'white' { return type === 0 ? 'blue' : type === 1 ? 'pink' : type === 5 ? 'green' : 'white'; }
   function addSpark(value: string, level: number): void {
     const factor = factors.find((factor) => factor.value === value);
-    if (!factor || node.veteran) return;
+    if (!factor) return;
     onsparkschange?.([...node.sparks, { factorId: Number(value), name: factor.label, type: factor.type, level }]);
   }
 </script>
@@ -45,11 +45,11 @@
       <span class="race-action"><Button variant="ghost" size="sm" icon="trophy" ariaLabel={`Edit race wins for ${node.label}`} onclick={onraces}>Race wins{#if node.winSaddleIds.length} · {node.winSaddleIds.length}{/if}</Button></span>
     </div>{/if}
     {#if children}{@render children()}{/if}
-    {#if node.layer > 0 && node.layer < 3 && (node.sparks.length || !node.veteran)}
+    {#if node.layer > 0 && node.layer < 3}
       <section class="sparks" aria-label={`Sparks for ${node.label}`}>
         <header><strong>Sparks</strong><Button variant="ghost" size="sm" onclick={onmodechange}>{perRun ? 'Per Run' : 'Per Inh.'}</Button></header>
-        {#each sortedSparks as {spark,index}}<div class="spark-line"><SparkItem name={spark.name || decodeFactor(spark.factorId * 10 + spark.level).name} level={spark.level} tone={tone(spark.type)} chance={`${plannerSparkChance(spark, affinity, perRun).toFixed(2)}%`} compact/>{#if !node.veteran}<IconButton icon="close" size="sm" label={`Remove ${spark.name} from ${node.label}`} onclick={() => onsparkschange?.(node.sparks.filter((_, current) => current !== index))}/>{/if}</div>{:else}<small>No sparks on this character</small>{/each}
-        {#if !node.veteran}<SparkAddControl id={`spark-add-${node.position}`} label={node.label} options={factors} {...$factorCatalogState} onadd={addSpark}/>{/if}
+        {#each sortedSparks as {spark,index}}<div class="spark-line"><SparkItem name={spark.name || decodeFactor(spark.factorId * 10 + spark.level).name} level={spark.level} tone={tone(spark.type)} chance={`${plannerSparkChance(spark, affinity, perRun).toFixed(2)}%`} compact/><IconButton icon="close" size="sm" label={`Remove ${spark.name} from ${node.label}`} onclick={() => onsparkschange?.(node.sparks.filter((_, current) => current !== index))}/></div>{:else}<small>No sparks on this character</small>{/each}
+        <SparkAddControl id={`spark-add-${node.position}`} label={node.label} options={factors} {...$factorCatalogState} onadd={addSpark}/>
       </section>
     {/if}
   {:else}

@@ -46,7 +46,7 @@
     data-ad-sizes={sizes.join(',')}
     data-ad-behavior={railAlternative ? 'rail-alternative' : 'persistent'}
   >
-    <div class="ad-target" id={elementId} data-fuse={fuseId} data-ad-target={placement}>
+    <div class="ad-target" id={elementId} data-ad-target={placement}>
       {#if children}{@render children()}{:else if preview}<span><strong>Sponsored</strong><small>{placement} · {sizes.join(' / ')}</small></span>{/if}
     </div>
   </aside>

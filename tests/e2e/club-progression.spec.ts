@@ -162,6 +162,7 @@ test('a full club tooltip stays inside the viewport and lets every member be rea
     const tooltip = page.locator('[class^="chart-tooltip-"]:visible');
     await expect(tooltip).toHaveCount(1);
     const box = (await tooltip.boundingBox())!;
+    expect(box.width).toBeLessThanOrEqual(320); expect(box.height).toBeLessThanOrEqual(232);
     expect(box.x).toBeGreaterThanOrEqual(7); expect(box.x + box.width).toBeLessThanOrEqual(width - 7);
     expect(box.y).toBeGreaterThanOrEqual(7); expect(box.y + box.height).toBeLessThanOrEqual(533);
     expect(await tooltip.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
@@ -171,7 +172,7 @@ test('a full club tooltip stays inside the viewport and lets every member be rea
     await expect(tooltip.getByText(/^Trainer 1 with a longer name:/)).toBeInViewport();
     expect(await tooltip.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     await tooltip.screenshot({ path: test.info().outputPath(`member-tooltip-${width}.png`) });
-    await panel.getByRole('heading').click();
+    if (isMobile) await panel.getByRole('heading').tap(); else await panel.getByRole('heading').click();
     await expect(tooltip).toHaveCount(0);
   }
 });

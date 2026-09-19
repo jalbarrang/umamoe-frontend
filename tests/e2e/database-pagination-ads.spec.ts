@@ -86,11 +86,13 @@ test('database uses configured in-content slots through 1300px and registers onl
   } }));
   await page.route('https://cdn.fuseplatform.net/**/fuse.js', route => route.fulfill({ contentType: 'application/javascript', body: `
     window.adRegistrations = [];
+    window.adDestroyed = [];
+    window.adPages = [];
     window.fusetag = { registerZone(id) {
       const element = document.getElementById(id);
       window.adRegistrations.push({ id, fuse: element.dataset.fuse, width: element.getBoundingClientRect().width });
       element.textContent = 'Test advertisement';
-    }, pageInit() {} };
+    }, pageInit() { window.adPages.push(location.pathname); }, destroyZone(id) { window.adDestroyed.push(id); } };
   ` }));
   await page.goto('/database');
   const inline = page.locator('[data-ad-kind="inline"]');
@@ -112,4 +114,22 @@ test('database uses configured in-content slots through 1300px and registers onl
   }
   const registrations = await page.evaluate(() => (window as unknown as { adRegistrations: Array<{ width: number }> }).adRegistrations);
   expect(registrations.every(item => item.width > 0)).toBe(true);
+  expect(await page.evaluate(() => (window as unknown as { adPages: string[] }).adPages)).toEqual(['/database']);
+  expect(await page.evaluate(() => (window as unknown as { adDestroyed: string[] }).adDestroyed)).toEqual(expect.arrayContaining(['ad-database_interscroller_1', 'ad-database_interscroller_2', 'ad-database_sticky_vrec_right']));
+});
+
+test('Fuse starts in the document head once and respects advertising opt-outs before startup', async ({ page }) => {
+  let requests = 0;
+  await page.route('https://cdn.fuseplatform.net/**/fuse.js', route => { requests++; return route.fulfill({ contentType: 'application/javascript', body: 'window.fusetag = { que: [], registerZone() {}, destroyZone() {}, pageInit() {} };' }); });
+  const response = await page.goto('/tools');
+  const html = await response!.text();
+  expect(html.indexOf('publift-fuse-js')).toBeGreaterThan(0);
+  expect(html.indexOf('publift-fuse-js')).toBeLessThan(html.indexOf('type="module"'));
+  await expect(page.locator('head #publift-fuse-js')).toHaveCount(1);
+  await expect.poll(() => requests).toBe(1);
+  await page.evaluate(() => localStorage.setItem('cookie-consent', JSON.stringify({ advertising: false })));
+  await page.reload();
+  await expect(page.locator('[data-app-shell]')).toBeVisible();
+  await expect(page.locator('#publift-fuse-js')).toHaveCount(0);
+  expect(requests).toBe(1);
 });

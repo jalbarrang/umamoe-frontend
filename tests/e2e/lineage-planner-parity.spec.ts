@@ -123,6 +123,77 @@ test('Lineage node sparks are edited inline with source defaults and empty slots
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
 
+test('imported parent sparks remain editable and the populated lineage adapts to available width', async ({ page }) => {
+  await mockAffinity(page);
+  await page.addInitScript(() => localStorage.setItem('lineage-planner-state-v1', JSON.stringify([
+    { position: 'target', characterId: 100101, sparks: [], manualWinSaddleIds: [] },
+    ...['p1', 'p2', 'p1-1', 'p1-2', 'p2-1', 'p2-2'].map((position, index) => ({
+      position, characterId: [101301, 100601, 101101, 106701, 101101, 106701][index],
+      sparks: [{ factorId: 10, name: 'Speed', type: 0, level: 3 }, { factorId: 20, name: 'Stamina', type: 0, level: 2 }],
+      manualWinSaddleIds: [1], ...(index < 2 ? { veteran: { card_id: index === 0 ? 101301 : 100601, factor_id_array: [103, 202] } } : {})
+    }))
+  ])));
+  await page.goto('/tools/lineage-planner');
+  for (const parent of ['Parent 1', 'Parent 2']) {
+    const sparks = page.getByRole('region', { name: `Sparks for ${parent}`, exact: true });
+    await sparks.getByRole('button', { name: `Remove Speed from ${parent}`, exact: true }).click();
+    await sparks.getByRole('button', { name: 'Add Spark', exact: true }).click();
+    await sparks.getByRole('radio', { name: '1★', exact: true }).click();
+    await sparks.getByRole('combobox', { name: `Add spark to ${parent}`, exact: true }).fill('Speed');
+    await sparks.getByRole('option', { name: 'Speed', exact: true }).click();
+    await expect(sparks.locator('.spark').filter({ hasText: 'Speed' })).toHaveAttribute('aria-label', /^1 star Speed,/);
+  }
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('lineage-planner-state-v1')!));
+  for (const position of ['p1', 'p2']) {
+    const node = saved.find((node: { position: string }) => node.position === position);
+    expect(node.sparks.find((spark: { factorId: number }) => spark.factorId === 10).level).toBe(1);
+    expect(node.veteran.factor_id_array).toEqual([103, 202]);
+  }
+  await page.reload();
+  for (const parent of ['Parent 1', 'Parent 2']) await expect(page.getByRole('region', { name: `Sparks for ${parent}`, exact: true }).locator('.spark').filter({ hasText: 'Speed' })).toHaveAttribute('aria-label', /^1 star Speed,/);
+  for (const width of [1920, 1440, 1024, 850, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const tree = page.locator('.planner-shell');
+    const branches = page.locator('.parent-branch');
+    const first = await branches.nth(0).boundingBox(); const second = await branches.nth(1).boundingBox();
+    if ((await tree.boundingBox())!.width <= 1040) expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+    else expect(Math.abs(first!.y - second!.y)).toBeLessThan(2);
+    expect(await tree.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const bounds = await tree.boundingBox();
+    for (const badge of await page.locator('.gp-flow').all()) {
+      const box = (await badge.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(bounds!.x); expect(box.x + box.width).toBeLessThanOrEqual(bounds!.x + bounds!.width);
+    }
+    const odds = page.getByRole('region', { name: 'Spark Proc Odds', exact: true });
+    const table = odds.locator('table:visible');
+    await expect(table.locator('tbody td').first()).toContainText('%');
+    expect(await table.locator('tbody td').evaluateAll(cells => cells.every(cell => {
+      const range = document.createRange(); range.selectNodeContents(cell);
+      const text = range.getBoundingClientRect(); const box = cell.getBoundingClientRect();
+      return text.left >= box.left + 3 && text.right <= box.right - 3;
+    }))).toBe(true);
+    expect((await odds.locator('header').boundingBox())!.height).toBeLessThanOrEqual(62);
+    expect((await table.locator('thead').boundingBox())!.height).toBeLessThanOrEqual(62);
+    if ([1920, 850, 390].includes(width)) {
+      await tree.screenshot({ path: test.info().outputPath(`lineage-responsive-${width}.png`) });
+      await odds.screenshot({ path: test.info().outputPath(`lineage-odds-${width}.png`) });
+    }
+  }
+  const odds = page.getByRole('region', { name: 'Spark Proc Odds', exact: true });
+  await odds.getByRole('button', { name: 'Per Inh.', exact: true }).click();
+  await expect(odds.getByRole('button', { name: 'Per Run', exact: true })).toBeVisible();
+  for (const name of ['Per Source', 'Combined', 'Skill Sparks']) {
+    await odds.getByRole('tab', { name, exact: true }).click();
+    expect(await odds.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  }
+  await page.setViewportSize({ width: 850, height: 1000 });
+  await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
+  await odds.getByRole('tab', { name: 'Base Odds', exact: true }).click();
+  await odds.screenshot({ path: test.info().outputPath('lineage-odds-light.png'), animations: 'disabled' });
+});
+
 test('Lineage character resource errors remain in the dialog and retry without losing the tree', async ({page}) => {
   await mockAffinity(page);
   let fail = true;

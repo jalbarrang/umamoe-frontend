@@ -217,7 +217,7 @@ test('spark browsing keeps optional settings in one menu and retains range editi
   await page.screenshot({path:testInfo.outputPath('selected-spark-row.png')});
 });
 
-test('fifty white sparks per generation stay compact and remain searchable and filterable', async ({page},testInfo) => {
+test('fifty white sparks stay filterable on cards and details use a single scroll', async ({page},testInfo) => {
   const white=factorCatalog.filter(factor => ![0,1,5].includes(factor.type)).slice(0,50);
   const unique=factorCatalog.find(factor => factor.type === 5)!;
   const sparkIds=[103,1203,Number(unique.id)*10+3,...white.map(factor => Number(factor.id)*10+2)];
@@ -258,15 +258,16 @@ test('fifty white sparks per generation stay compact and remain searchable and f
   await card.getByRole('button',{name:'View Grass Wonder details',exact:true}).click();
   const detail=page.getByRole('dialog',{name:'Grass Wonder',exact:true});
   await expect(detail.locator('.spark-list .spark-token')).toHaveCount(53);
-  expect(await detail.locator('.spark-list').evaluate(el=>el.scrollHeight > el.clientHeight)).toBe(true);
-  await detail.getByRole('searchbox',{name:'Search inheritance sparks',exact:true}).fill(target.text);
-  await expect(detail.locator('.spark-list .spark-token')).toHaveCount(1);
-  await expect(detail.locator('.spark-list .spark-token')).toHaveAttribute('aria-label',target.text+': 6 stars total. Main 2, P1 2, P2 2.');
+  await expect(detail.getByRole('searchbox')).toHaveCount(0);
+  for (const region of ['.spark-list','.skill-list','.race-list']) {
+    expect(await detail.locator(region).evaluate(el=>el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+  }
+  await expect(detail.locator('.spark-list .spark-token').filter({hasText:target.text})).toHaveAttribute('aria-label',target.text+': 6 stars total. Main 2, P1 2, P2 2.');
   await detail.getByRole('radio',{name:'Satono Diamond Parent 1',exact:true}).check();
-  await expect(detail.locator('.spark-list .spark-token')).toHaveAttribute('aria-label',target.text+': 2 stars.');
-  await detail.getByRole('searchbox',{name:'Search inheritance sparks',exact:true}).fill('not a real spark');
-  await expect(detail.getByText('No matching sparks.',{exact:true})).toBeVisible();
-  // Native search inputs use Escape to clear their text first. Test dialog dismissal outside the input.
+  await expect(detail.locator('.spark-list .spark-token').filter({hasText:target.text})).toHaveAttribute('aria-label',target.text+': 2 stars.');
+  await detail.locator('.race-section').scrollIntoViewIfNeeded();
+  expect(await detail.locator('.dialog-panel > .content').evaluate(el=>el.scrollTop > 0)).toBe(true);
+  await detail.screenshot({path:testInfo.outputPath('details-single-scroll.png')});
   await detail.getByRole('button',{name:'Close dialog',exact:true}).focus();
   await page.keyboard.press('Escape');
   await expect(detail).not.toBeVisible();

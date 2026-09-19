@@ -44,7 +44,7 @@ test('Settings retains the Angular authentication guard', async ({ page }) => {
 test('Settings preserves linked-account, verification, identity, and API-key workflows', async ({ page }) => {
   const mutations = await mockSettings(page); await page.goto('/settings');
   for (const heading of ['Linked Game Accounts', 'Connected Logins', 'API Keys']) await expect(page.getByRole('heading', { name: heading })).toBeVisible();
-  await expect(page.getByText('Parity Trainer', { exact: true })).toBeVisible();
+  await expect(page.locator('.account-list').getByText('Parity Trainer', { exact: true })).toBeVisible();
   await expect(page.getByText('UMA-VERIFY', { exact: true })).toBeVisible();
   await expect(page.locator('.identity-list').getByText('Google', { exact: true })).toBeVisible();
   await expect(page.locator('.identity-list').getByText('Discord', { exact: true })).toBeVisible();
@@ -68,10 +68,25 @@ test('Settings preserves linked-account, verification, identity, and API-key wor
   expect(mutations.some((item) => item.path === '/api/auth/api-keys/key-1' && item.method === 'DELETE')).toBe(true);
 });
 
-test('populated Settings remains page-overflow safe at 390px', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await mockSettings(page); await page.goto('/settings');
+test('populated Settings shares the wide page layout and responsive ad placements', async ({ page }) => {
+  await mockSettings(page); await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'API Keys' })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  const frame = page.locator('[data-route-id="settings"]');
+  await expect(frame).toHaveAttribute('data-page-width', 'wide');
+  for (const width of [1536, 1301, 1300, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const heading = await page.getByRole('heading', { name: 'Account Settings', exact: true }).boundingBox();
+    const card = await page.locator('.settings-card').first().boundingBox();
+    expect(Math.abs(heading!.x - card!.x)).toBeLessThan(2);
+    if (width > 1300) { await expect(frame.locator('[data-ad-position="right-rail"]')).toBeVisible(); await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden(); }
+    else { await expect(frame.locator('[data-ad-position="right-rail"]')).toBeHidden(); await expect(frame.locator('[data-ad-kind="inline"]')).toBeVisible(); }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    if (width === 1536 || width === 390) await page.screenshot({ path: test.info().outputPath(`settings-layout-${width}.png`) });
+  }
+  await page.setViewportSize({ width: 1536, height: 1000 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
+  await page.screenshot({ path: test.info().outputPath('settings-layout-light.png'), animations: 'disabled' });
 });
 
 test('Settings copy handles browser denial, fallback focus, and one-time key recovery', async ({ page, isMobile }) => {

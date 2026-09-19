@@ -34,8 +34,8 @@
 </script>
 
 <article class="target" class:past data-target-id={target.id}>
-  <div class="target-title">
-    {#if target.imagePath}<img src={target.imagePath} alt=""/>{/if}
+  <div class="target-title" class:has-image={Boolean(target.imagePath)}>
+    {#if target.imagePath}<img src={target.imagePath} width="512" height="125" loading="lazy" alt=""/>{/if}
     <div><strong>{target.title}</strong><small class="date"><Icon name="calendar" size={13}/>{dateLabel(target.bannerStart)} – {dateLabel(target.bannerEnd ?? target.bannerStart)}</small>
       {#if projection}<div class="at-pull" aria-label={`At pull date: ${ticketLabel}`}><small>At pull</small><span title={ticketLabel}><img src={itemIconPath(ticketKind === 'support' ? 111 : 41)} width="18" height="18" alt=""/><b>{ticketCount}</b>{#if projection.ticketPulls}<em>→ {ticketCount - projection.ticketPulls}</em>{/if}</span>{#if target.bannerKind === 'support'}{#each ['rainbow', 'gold'] as kind}<span title={`${kind === 'rainbow' ? 'Rainbow' : 'Gold'} Uncap Crystals available at pull`}><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="18" height="18" alt=""/><b>{kind === 'rainbow' ? availableCrystals(projection.balanceBefore.rainbowFullCrystals, projection.balanceBefore.rainbowCrystals) : availableCrystals(projection.balanceBefore.goldFullCrystals, projection.balanceBefore.goldCrystals)}</b></span>{/each}{/if}</div>{/if}
     </div>
@@ -53,13 +53,14 @@
 <style>
   .target{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--border-subtle);background:var(--surface-1)}
   .target.past{color:var(--text-secondary)}
-  .target-title{min-width:0;display:flex;align-items:center;gap:10px;padding:10px}
-  .target-title>img{width:112px;height:48px;object-fit:cover}
+  .target-title{min-width:0;min-height:66px;display:grid;align-items:center;gap:11px;padding:7px 10px}
+  .target-title.has-image{grid-template-columns:148px minmax(0,1fr)}
+  .target-title>img{display:block;width:148px;height:48px;object-fit:contain;border:1px solid var(--border-subtle);border-radius:3px;background:var(--surface-2)}
   .target-title>div{min-width:0;display:grid;gap:4px}
-  .target-title strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .date{display:flex;align-items:center;gap:5px;color:var(--text-secondary);font-size:10px}
+  .target-title strong{font-size:.84rem;line-height:1.25;overflow-wrap:anywhere}
+  .date{display:flex;align-items:center;flex-wrap:wrap;gap:3px 5px;color:var(--text-secondary);font-size:10px}
   .date :global(svg){color:var(--accent-primary);flex:none}
-  .at-pull{display:flex;align-items:center;gap:5px;font-size:10px}
+  .at-pull{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:10px}
   .at-pull>small{text-transform:uppercase;color:var(--text-secondary);font-weight:700;font-size:9px}
   .at-pull>span{display:inline-flex;align-items:center;gap:3px;padding:1px 3px;border-radius:var(--radius-sm);background:var(--surface-2)}
   .at-pull img{object-fit:contain}.at-pull em{font-style:normal;color:var(--text-secondary)}
@@ -82,9 +83,14 @@
   .past-note{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--border-subtle);color:var(--text-secondary)}
   .past-note span{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.past-note small{font-size:10px}
   @media(max-width:1250px){.target-controls:has(.crystal-plan){flex-wrap:wrap;max-width:400px}.crystal-plan{order:1;width:100%}.crystal-controls{justify-content:space-between}}
+  @container planner-targets (max-width:1050px){
+    .target{grid-template-columns:minmax(0,1fr)}
+    .target-title.has-image{grid-template-columns:128px minmax(0,1fr)}.target-title>img{width:128px}
+    .target-controls,.target-controls:has(.crystal-plan){max-width:none;justify-content:flex-end;flex-wrap:wrap;border-left:0;border-top:1px solid var(--border-subtle)}
+  }
   @media(max-width:767px){
     .target{grid-template-columns:minmax(0,1fr);margin-bottom:8px;border:1px solid var(--border-primary);border-radius:var(--radius-md)}
-    .target-title{padding:8px 6px}.target-title>img{width:84px;height:40px}.target-title strong{white-space:normal}
+    .target-title{padding:7px 6px;gap:8px}.target-title.has-image{grid-template-columns:142px minmax(0,1fr)}.target-title>img{width:142px;height:55px;border:0;border-radius:5px}
     .target-controls,.target-controls:has(.crystal-plan){max-width:none;border-left:0;padding:6px;gap:6px}
     .pull-count{flex:1}.stepper{display:block}.stepper :global(.ui-button){display:none}.stepper :global(.field){--control-height:var(--touch-target)}
 
@@ -93,4 +99,5 @@
     .crystal-controls{flex-wrap:wrap}.crystal-control{flex:1;justify-content:space-between}
     .past-note{padding:8px 6px}.past-note span{display:grid;gap:3px}
   }
+  @media(max-width:420px){.target-title.has-image{grid-template-columns:126px minmax(0,1fr)}.target-title>img{width:126px;height:49px}}
 </style>

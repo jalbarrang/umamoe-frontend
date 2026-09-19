@@ -17,7 +17,6 @@
   import AptitudeGrid from '@/components/AptitudeGrid.svelte';
   import SkillChip from '@/components/SkillChip.svelte';
   import SparkItem from '@/components/SparkItem.svelte';
-  import TextField from '@/components/TextField.svelte';
   import RadioGroup from '@/components/RadioGroup.svelte';
   import { totalStats } from '@/lib/profile/profile-display';
   import Button from '@/components/Button.svelte';
@@ -29,7 +28,7 @@
     family: {root:LineageNodeData;branches:LineageBranch[]}; races: RaceHistoryEntry[];
     raceLoading: boolean; raceError: string; onplanner: () => void; onschedule: () => void;
   } = $props();
-  let skillSearch=$state(''), sparkSearch=$state(''), sparkSource=$state('family');
+  let sparkSource=$state('family');
   let supportCatalog=$state<readonly SupportCardCatalogEntry[]>([]);
   let supportError=$state('');
   const supportDeck=$derived(veteranSupportCards(veteran));
@@ -43,7 +42,6 @@
   const selectedFamilyId=$derived(sparkSource === 'family' ? undefined : sparkSource === 'main' ? family.root.id : family.branches.flatMap(branch => [branch.parent,...branch.grandparents]).find(node => node.id.split(':').pop() === sparkSource)?.id);
   const stats=$derived((summary.stats ?? []).filter(stat => stat.id !== 'total'));
   const skills=$derived(sortEncodedSkills(skillCatalog,encodedSkills(veteran)).map(id => ({id,...resolveEncodedSkill(skillCatalog,id)})));
-  const visibleSkills=$derived(skills.filter(item => (item.skill?.name ?? `Skill ${item.id}`).toLocaleLowerCase().includes(skillSearch.trim().toLocaleLowerCase())));
   const spTotal=$derived(skillPointTotal(skillCatalog,encodedSkills(veteran)));
   const ownSources=$derived([
     {value:'family',label:'Combined',description:'Own + P1 + P2'},
@@ -60,7 +58,7 @@
   const selectedSparkSource=$derived([...ownSources,...branchSources.flatMap(branch=>branch.options)].find(source=>source.value===sparkSource));
   const sourceNode=$derived(sparkSource === 'main' ? veteran : veteran.succession_chara_array?.find(node => String(node.position_id) === sparkSource));
   const sparks=$derived(sparkSource === 'family' ? veteranFactorTotals(veteran) : sourceNode ? resolveVeteranFactors(sourceNode) : []);
-  const visibleSparks=$derived(sparks.filter(factor => factor.name.toLocaleLowerCase().includes(sparkSearch.trim().toLocaleLowerCase())).sort((a,b) => ['blue','pink','green','white'].indexOf(a.tone)-['blue','pink','green','white'].indexOf(b.tone) || a.name.localeCompare(b.name)));
+  const sortedSparks=$derived(sparks.toSorted((a,b) => ['blue','pink','green','white'].indexOf(a.tone)-['blue','pink','green','white'].indexOf(b.tone) || a.name.localeCompare(b.name)));
   const contributions=$derived([veteran,...[10,20].map(position => veteran.succession_chara_array?.find(node => node.position_id === position))].map(node => {
     const levels=new Map<number,number>();
     for(const factor of node ? resolveVeteranFactors(node) : []) levels.set(factor.id,(levels.get(factor.id) ?? 0)+factor.level);
@@ -69,7 +67,7 @@
   const created=$derived(veteran.creation_time && Number.isFinite(Date.parse(veteran.creation_time)) ? new Date(veteran.creation_time).toLocaleDateString() : '');
   function inspectFamily(node:LineageNodeData) {
     sparkSource=node.role === 'main' ? 'main' : node.id.split(':').pop()!;
-    sparkSearch=''; sparkSection?.scrollIntoView({block:'start'}); sparkSection?.focus({preventScroll:true});
+    sparkSection?.scrollIntoView({block:'start'}); sparkSection?.focus({preventScroll:true});
   }
 </script>
 
@@ -110,30 +108,25 @@
       <div class="own-sources"><RadioGroup id={lineageId+'-spark-runner'} legend="Veteran" options={ownSources} bind:value={sparkSource} cards compact/></div>
       {#each branchSources as branch (branch.id)}<div class="branch-sources"><RadioGroup id={lineageId+'-spark-runner'} legend={branch.label} options={branch.options} bind:value={sparkSource} cards compact/></div>{/each}
     </div>
-    {#if sparks.length > 8 || sparkSearch}<TextField id="detail-spark-search" label="Search inheritance sparks" hideLabel type="search" prefixIcon="search" placeholder="Find a spark…" bind:value={sparkSearch}/>{/if}
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable lists must support keyboard scrolling.) -->
-    <div class="spark-list" role="region" aria-label="All inheritance sparks" tabindex="0">
+    <div class="spark-list" role="region" aria-label="All inheritance sparks">
       {#each ['blue','pink','green','white'] as tone}
-        {@const group=visibleSparks.filter(factor=>factor.tone === tone)}
+        {@const group=sortedSparks.filter(factor=>factor.tone === tone)}
         {#if group.length}<div class="spark-group" data-tone={tone} role="list" aria-label={tone+' sparks'}>{#each group as factor}
           {@const contribution=sparkSource === 'family' ? factor.name+': '+factor.level+' stars total. Main '+(contributions[0]?.get(factor.id) ?? 0)+', P1 '+(contributions[1]?.get(factor.id) ?? 0)+', P2 '+(contributions[2]?.get(factor.id) ?? 0)+'.' : factor.name+': '+factor.level+' stars.'}
           <span class="spark-token" role="listitem" aria-label={contribution} title={contribution}><SparkItem name={factor.name} level={factor.level} tone={factor.tone} title={contribution} mainStars={sparkSource === 'family' ? contributions[0]?.get(factor.id) ?? 0 : 0} compact/></span>
         {/each}</div>{/if}
       {/each}
-      {#if !visibleSparks.length}<p>{sparks.length ? 'No matching sparks.' : 'No sparks recorded for this source.'}</p>{/if}
+      {#if !sparks.length}<p>No sparks recorded for this source.</p>{/if}
     </div>
   </section>
   <section class="skills-section" aria-label="Learned skills">
     <header><h3>Learned skills <span>{skills.length}</span></h3></header>
-    {#if skills.length > 6}<TextField id="detail-skill-search" label="Search learned skills" hideLabel type="search" prefixIcon="search" placeholder="Find a learned skill…" bind:value={skillSearch}/>{/if}
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable lists must support keyboard scrolling.) -->
-    <div class="skill-list" role="region" aria-label="Learned skill list" tabindex="0">{#each visibleSkills as resolved}<span class="learned-skill" title={resolved.skill?.effect || resolved.skill?.description}><SkillChip name={resolved.skill?.name ?? 'Skill '+resolved.id} icon={skillImage(resolved.skill?.icon)} level={'Lv.'+resolved.level} rarity={skillRarity(resolved.skill,resolved.inherited)} compact/></span>{/each}{#if !visibleSkills.length}<p>{skills.length ? 'No matching skills.' : 'No learned skills recorded.'}</p>{/if}</div>
+    <div class="skill-list" role="region" aria-label="Learned skill list">{#each skills as resolved}<span class="learned-skill" title={resolved.skill?.effect || resolved.skill?.description}><SkillChip name={resolved.skill?.name ?? 'Skill '+resolved.id} icon={skillImage(resolved.skill?.icon)} level={'Lv.'+resolved.level} rarity={skillRarity(resolved.skill,resolved.inherited)} compact/></span>{/each}{#if !skills.length}<p>No learned skills recorded.</p>{/if}</div>
   </section>
   <section class="race-section" aria-label="Race history">
     <header><h3>Race History <span>{races.length || ''}</span></h3><Button variant="secondary" size="sm" icon="calendar" disabled={raceLoading} onclick={onschedule}>Full Schedule</Button></header>
     {#if raceError}<Banner title={raceError} tone="danger"/>{:else if raceLoading}<p>Resolving race history…</p>{:else if races.length}
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable lists must support keyboard scrolling.) -->
-      <div class="race-list" role="region" aria-label="Recorded races" tabindex="0">{#each races as race}<span class="race grade-{race.grade.toLowerCase()}"><b>{race.grade}</b><span>{race.shortName ?? race.name}</span></span>{/each}</div>
+      <div class="race-list" role="region" aria-label="Recorded races">{#each races as race}<span class="race grade-{race.grade.toLowerCase()}"><b>{race.grade}</b><span>{race.shortName ?? race.name}</span></span>{/each}</div>
     {:else}<p>No races recorded.</p>{/if}
   </section>
   {#if family.branches.length}<section class="family-section" aria-label="Family lineage">
@@ -167,9 +160,9 @@
   @container spark-details (max-width:310px) { .spark-sources { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }.own-sources { grid-column:1/-1; } }
   .source-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }.source-name span { color:var(--color-text-subtle); }
   .race-section { padding-top:10px; border-top:1px solid var(--border-subtle); }
-  .spark-list { display:grid; align-content:start; gap:5px; max-height:230px; overflow:auto; overscroll-behavior:contain; padding:1px; }.spark-group { min-width:0; display:flex; flex-wrap:wrap; gap:5px; }.spark-group[data-tone='blue'],.spark-group[data-tone='pink'],.spark-group[data-tone='green'] { display:contents; }.spark-list { display:flex; flex-wrap:wrap; }.spark-group[data-tone='white'] { flex-basis:100%; }.spark-token { min-width:0; max-width:100%; display:flex; }.spark-token :global(.spark) { min-height:24px; padding:4px 6px; border-radius:4px; border-color:rgb(var(--spark-rgb)/.3); font-size:12px; }.spark-token :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.25; }
-  .skill-list { min-width:0; display:flex; align-content:start; flex-wrap:wrap; gap:5px; max-height:230px; overflow:auto; overscroll-behavior:contain; padding:1px; }.learned-skill { display:flex; min-width:0; max-width:100%; }.learned-skill :global(.skill-chip) { min-height:25px; font-size:11px; }.learned-skill :global(.skill-chip img) { width:25px; height:25px; }.learned-skill :global(.skill-body) { min-height:25px; }.learned-skill :global(.skill-name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; }.learned-skill :global(.skill-level) { font-size:10px; }
-  .race-list { display:flex; flex-wrap:wrap; gap:5px; max-height:85px; overflow:auto; }.race { display:inline-flex; align-items:center; gap:5px; padding:4px 6px; border:1px solid var(--border-subtle); border-radius:4px; font-size:11px; }.race b { font-size:9px; color:var(--color-text-muted); }.grade-g1 b { color:var(--race-g1); }.grade-g2 b { color:var(--race-g2); }.grade-g3 b { color:var(--race-g3); }
+  .spark-list { display:flex; flex-wrap:wrap; align-content:start; gap:5px; padding:1px; }.spark-group { min-width:0; display:flex; flex-wrap:wrap; gap:5px; }.spark-group[data-tone='blue'],.spark-group[data-tone='pink'],.spark-group[data-tone='green'] { display:contents; }.spark-group[data-tone='white'] { flex-basis:100%; }.spark-token { min-width:0; max-width:100%; display:flex; }.spark-token :global(.spark) { min-height:24px; padding:4px 6px; border-radius:4px; border-color:rgb(var(--spark-rgb)/.3); font-size:12px; }.spark-token :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.25; }
+  .skill-list { min-width:0; display:flex; align-content:start; flex-wrap:wrap; gap:5px; padding:1px; }.learned-skill { display:flex; min-width:0; max-width:100%; }.learned-skill :global(.skill-chip) { min-height:25px; font-size:11px; }.learned-skill :global(.skill-chip img) { width:25px; height:25px; }.learned-skill :global(.skill-body) { min-height:25px; }.learned-skill :global(.skill-name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; }.learned-skill :global(.skill-level) { font-size:10px; }
+  .race-list { display:flex; flex-wrap:wrap; gap:5px; }.race { display:inline-flex; align-items:center; gap:5px; padding:4px 6px; border:1px solid var(--border-subtle); border-radius:4px; font-size:11px; }.race b { font-size:9px; color:var(--color-text-muted); }.grade-g1 b { color:var(--race-g1); }.grade-g2 b { color:var(--race-g2); }.grade-g3 b { color:var(--race-g3); }
   .family-section { min-width:0; display:grid; gap:6px; border-top:1px solid var(--border-subtle); padding-top:8px; }.family-section h3 :global(svg) { color:var(--color-accent); }
   footer { display:flex; flex-wrap:wrap; gap:6px 12px; padding-top:6px; border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:10px; }
   :focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
@@ -178,6 +171,6 @@
     .compact-overview { grid-template-columns:1fr; gap:12px; }
     .support-deck { grid-template-columns:repeat(2,minmax(0,1fr)); }.support-deck li { grid-template-columns:36px minmax(0,1fr); gap:3px 6px; padding:6px; }.support-deck :global(.art) { width:36px; height:36px; }.support-deck li>span { font-size:11px; }
     .support-rarity { width:16px; height:16px; }.support-lb { font-size:12px; }
-    .spark-token :global(.spark) { font-size:11px; }.spark-list,.skill-list { max-height:210px; }
+    .spark-token :global(.spark) { font-size:11px; }
   }
 </style>

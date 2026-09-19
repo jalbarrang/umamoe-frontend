@@ -34,22 +34,33 @@
     const observer = new ResizeObserver(() => chart?.resize());
     observer.observe(host);
     let dismissTimer: ReturnType<typeof setTimeout>;
-    const hideTooltip = () => { chart?.dispatchAction({ type: 'hideTip' }); chart?.dispatchAction({ type: 'downplay' }); };
+    let touchTooltip = false;
+    const hideTooltip = () => {
+      touchTooltip = false;
+      tooltipElement()?.dispatchEvent(new MouseEvent('mouseleave'));
+      chart?.dispatchAction({ type: 'hideTip' }); chart?.dispatchAction({ type: 'downplay' });
+    };
     const pointerDown = (event: PointerEvent) => {
       if (!dismissTouchTooltip) return;
       clearTimeout(dismissTimer);
-      if (!host.contains(event.target as Node) && !tooltipElement()?.contains(event.target as Node)) hideTooltip();
+      const insideTooltip = Boolean(tooltipElement()?.contains(event.target as Node));
+      touchTooltip = event.pointerType === 'touch' && insideTooltip && Boolean((option.tooltip as TooltipComponentOption | undefined)?.enterable);
+      if (!host.contains(event.target as Node) && !insideTooltip) hideTooltip();
     };
+    // Touch scrolling can synthesize a mouseleave; keep an entered tooltip open until an outside tap.
+    const leaveTooltip = (event: MouseEvent) => { if (touchTooltip && event.target === tooltipElement()) event.stopImmediatePropagation(); };
     const pointerUp = (event: PointerEvent) => {
       if (dismissTouchTooltip && event.pointerType === 'touch' && !(option.tooltip as TooltipComponentOption | undefined)?.enterable) {
         clearTimeout(dismissTimer); dismissTimer = setTimeout(hideTooltip, 2000);
       }
     };
     document.addEventListener('pointerdown', pointerDown, { passive: true });
+    document.addEventListener('mouseleave', leaveTooltip, true);
     host.addEventListener('pointerup', pointerUp, { passive: true });
     host.addEventListener('pointercancel', pointerUp, { passive: true });
     return () => {
       clearTimeout(dismissTimer); document.removeEventListener('pointerdown', pointerDown);
+      document.removeEventListener('mouseleave', leaveTooltip, true);
       host.removeEventListener('pointerup', pointerUp); host.removeEventListener('pointercancel', pointerUp);
       observer.disconnect(); chart?.dispose(); chart = undefined;
     };

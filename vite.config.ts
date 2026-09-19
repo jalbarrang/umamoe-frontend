@@ -4,6 +4,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { demoData } from './scripts/demo-data';
 import { environment as production } from './src/config/environment.prod';
 import { environment as beta } from './src/config/environment.beta';
+import { fuseAllowed, insertFuseScript } from './src/services/ads/fuse-bootstrap';
 
 const rootDirectory = fileURLToPath(new URL('.', import.meta.url));
 
@@ -14,7 +15,13 @@ export default defineConfig(async ({ mode }) => {
   return {
     root: rootDirectory,
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-    plugins: [svelte(), ...(mode === 'demo' ? [await demoData()] : [])],
+    plugins: [{
+      name: 'fuse-head-loader',
+      transformIndexHtml: (html: string) => html.replace('<!-- fuse-bootstrap -->',
+        mode === 'production' || mode === 'beta'
+          ? `<script>if((${fuseAllowed.toString()})(true))(${insertFuseScript.toString()})(${JSON.stringify(environment.fuse.scriptUrl)});</script>`
+          : '')
+    }, svelte(), ...(mode === 'demo' ? [await demoData()] : [])],
     optimizeDeps: {
       noDiscovery: true,
       include: ['exceljs'],

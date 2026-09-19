@@ -68,7 +68,7 @@
     return {
       animation:false,
       grid:{ left:8, right:8, top:24, bottom:52, containLabel:true },
-      xAxis:{ type:'category', name:'Day', nameLocation:'middle', nameGap:26, boundaryGap:false, data:points.map(point => point.label), nameTextStyle:{ color:text, fontSize:11 }, axisLabel:{ color:text, fontSize:11, hideOverlap:true, showMinLabel:true, showMaxLabel:true, alignMaxLabel:'right' }, axisLine:{ lineStyle:{ color:border } }, axisTick:{ show:false } },
+      xAxis:{ type:'category', name:'Day', nameLocation:'middle', nameGap:26, boundaryGap:false, data:points.map(point => point.label), nameTextStyle:{ color:text, fontSize:11 }, axisLabel:{ color:text, fontSize:11, showMinLabel:true, showMaxLabel:true, alignMaxLabel:'right' }, axisLine:{ lineStyle:{ color:border } }, axisTick:{ show:false } },
       yAxis:{ type:'value', name:'Fans', nameTextStyle:{ color:text, align:'left', fontSize:11 }, scale:true, splitNumber:4, axisLabel:{ color:text, fontSize:11, formatter:format }, splitLine:{ lineStyle:{ color:border, type:'dashed' } } },
       tooltip:{ trigger:'axis', confine:true, backgroundColor:color('--bg-secondary'), borderColor:border, textStyle:{ color:text, fontSize:12 }, formatter:tooltip },
       dataZoom:[

@@ -108,11 +108,16 @@ export function buildTimelineFeed(events: TimelineRecord[], anniversaries: Timel
   }
   const rowRank = (row: TimelineFeedRow) => row.marker?.type === 'anniversary' ? 2 : row.marker ? 0 : 1;
   rows.sort((a, b) => utcDay(a.date) - utcDay(b.date) || rowRank(a) - rowRank(b) || a.date.getTime() - b.date.getTime());
-  let eventsSeen = 0, ads = 0;
+  let eventsSeen = 0;
+  const adRows: TimelineFeedRow[] = [];
   for (const item of rows) {
     if (item.marker) continue;
     eventsSeen++;
-    if (eventsSeen >= 5 && (eventsSeen - 5) % 8 === 0) item.adIndex = ads++ % 4 + 1;
+    if (eventsSeen >= 5 && (eventsSeen - 5) % 8 === 0) adRows.push(item);
   }
+  // Keep the four configured placements near Today; never cycle the same slot IDs.
+  adRows.sort((a, b) => Math.abs(a.date.getTime() - now.getTime()) - Math.abs(b.date.getTime() - now.getTime()))
+    .slice(0, 4).sort((a, b) => a.date.getTime() - b.date.getTime())
+    .forEach((item, index) => { item.adIndex = index + 1; });
   return rows;
 }
