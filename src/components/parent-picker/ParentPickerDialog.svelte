@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { loadCharacterCatalog, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
-  import { factorOptions, watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
-  import ResourceStatus from '@/components/ResourceStatus.svelte';
+  import { watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
+  import SparkFilterDialog from './SparkFilterDialog.svelte';
+  import FilterChip from '@/components/FilterChip.svelte';
   import { resolveVeteranFactors } from '@/lib/profile/profile-veterans';
   import { loadG1SaddleGroups } from '@/lib/catalog/race-catalog';
-  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, parentAffinity, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type SelectableParent } from '@/lib/veterans/parent-picker';
+  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, parentAffinity, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type ParentFactorFilter, type SelectableParent } from '@/lib/veterans/parent-picker';
   import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
   import { veteranAffinityRepository } from '@/lib/veterans/affinity-repository';
   import { authReady, authUser } from '@/services/auth/auth-state';
@@ -21,12 +22,10 @@
   import ManualParentEditor from './ManualParentEditor.svelte';
   import Banner from '@/components/Banner.svelte';
   import Button from '@/components/Button.svelte';
-  import Combobox from '@/components/Combobox.svelte';
   import Dialog from '@/components/Dialog.svelte';
   import IconButton from '@/components/IconButton.svelte';
   import Icon from '@/components/Icon.svelte';
-  import SegmentedControl from '@/components/SegmentedControl.svelte';
-  import SelectField from '@/components/SelectField.svelte';
+  import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import Tabs from '@/components/Tabs.svelte';
   import TextField from '@/components/TextField.svelte';
@@ -34,6 +33,15 @@
   let { open = $bindable(false), targetId, selectedAccountId = '', sessionScope, onselect }: Props = $props();
   const id = $props.id();
   let pickerState = $state<ParentPickerState>({tab:'veterans',accountId:'',query:'',sort:'total',factors:[]});
+  let factorDraft = $state<ParentFactorFilter>(), factorEditIndex = -1;
+  function editFactor(index = -1) {
+    factorEditIndex = index;
+    factorDraft = index < 0 ? {factorId:0,scope:'combined',minLevel:1,maxLevel:9} : {...pickerState.factors[index]!};
+  }
+  function applyFactor(filter: ParentFactorFilter) {
+    pickerState.factors = factorEditIndex < 0 ? [...pickerState.factors,filter] : pickerState.factors.map((entry,index) => index === factorEditIndex ? filter : entry);
+    factorDraft = undefined;
+  }
   let characters = $state.raw(new Map<number,CharacterCatalogEntry>()); let engine = $state<VeteranAffinityEngine>(); let groups = $state.raw(new Map<number,number>());
   let selectableCharacters = $state.raw<CharacterCatalogEntry[]>([]);
   let catalogError = $state(''); 
@@ -43,7 +51,6 @@
   let partnerId = $state(''); let partnerPhase = $state<PartnerPhase>(); let lookupResult = $state<SelectableParent>(); let lookupError = $state(''); let lookupTimedOut = $state(false); let lookupController: AbortController | undefined;
   let renderLimit = $state(16); let accountGeneration=0; let partnerReloadPending=false; let live=true;
   const accountRequests = new Map<string, number>();
-  const allFactors = $derived(factorOptions().map((factor)=>({value:factor.id,label:factor.text})));
   const sortOptions = $derived([{value:'total',label:'Total'},...(targetId?[{value:'affinity',label:'Affinity'}]:[]),{value:'blue',label:'Blue ★'},{value:'pink',label:'Pink ★'},{value:'green',label:'Green ★'},{value:'name',label:'Name'}]);
   const scope = $derived(draftScope(pickerState.accountId, $authUser?.id));
   const collection = $derived(mergeVeterans(veterans[pickerState.accountId] ?? [], ($veteranDrafts[scope] ?? []).map(record => deviceParent(record, pickerState.accountId))).map(veteran => accountParent(veteran, pickerState.accountId)));
@@ -140,21 +147,27 @@
   <VeteranCollection compact empty={emptyCollection} onnavigate={() => open=false} onimport={() => { pickerState.tab='veterans'; }}>{#snippet children(dropZone, chooseFile)}<div class="picker-layout">
     <Tabs items={tabs} bind:value={pickerState.tab} label="Veteran picker sections" variant="underline"/>
     <div class="filterbar">
-      <div class="parent-search"><TextField id={`${id}-search`} label="Search parents" hideLabel placeholder="Search name..." prefixIcon="search" bind:value={pickerState.query}/>{#if pickerState.query}<IconButton icon="close" label="Clear parent search" onclick={()=>pickerState.query=''}/>{/if}</div>
-      <div class="parent-sort"><SelectField id={`${id}-sort`} label="Sort parents" hideLabel options={sortOptions} bind:value={pickerState.sort}/>
+      <div class="parent-search"><TextField id={id+'-search'} label="Search parents" hideLabel placeholder="Search veterans…" prefixIcon="search" bind:value={pickerState.query}/>{#if pickerState.query}<IconButton icon="close" label="Clear parent search" onclick={()=>pickerState.query=''}/>{/if}</div>
+      <span class="result-count" role="status">{filtered.length} {filtered.length===1?'result':'results'}</span>
+      <div class="parent-sort"><SelectFieldSlim id={id+'-sort'} label="Sort parents" hideLabel options={sortOptions} bind:value={pickerState.sort}/></div>
       <div class="parent-actions">{#if pickerState.tab==='veterans'}<IconButton icon="upload" label="Upload veteran JSON" onclick={chooseFile}/>{/if}
-      {#if pickerState.tab==='manual'&&!editing}<Button icon="add" size="sm" variant="secondary" disabled={!!manualReadError} onclick={()=>{editedEntry=undefined;editing=true;}}>Add</Button>{/if}</div></div>
-    </div>
-    <div class="factor-filters">
-      {#each pickerState.factors as factor,index}<div class="factor-filter">
-        {#if factor.factorId}{@const resolved = resolveVeteranFactors({factors:[factor.factorId*10+factor.minLevel]})[0]!}<div class="selected-factor selected-factor--{resolved.tone}"><span class="factor-name"><i></i>{resolved.name}</span><div class="factor-options"><SegmentedControl label={`Source for spark filter ${index+1}`} options={[{value:'any',label:'Any'},{value:'own',label:'Own'},{value:'p1',label:'P1'},{value:'p2',label:'P2'}]} bind:value={factor.scope}/><SegmentedControl label={`Minimum stars for spark filter ${index+1}`} options={[{value:'1',label:'★'},{value:'2',label:'★★'},{value:'3',label:'★★★'}]} value={String(factor.minLevel)} onchange={(value)=>factor.minLevel=Number(value)}/></div></div>
-        {:else}<Combobox minQueryLength={1} maxResults={20} id={`${id}-factor-${index}`} label={`Spark filter ${index+1}`} hideLabel placeholder="Search factors..." options={allFactors.filter((option)=>!pickerState.factors.some((row)=>row.factorId===Number(option.value)))} onchange={(value)=>factor.factorId=Number(value)}/>{/if}
-        <IconButton icon="close" label={`Remove spark filter ${index+1}`} onclick={()=>pickerState.factors=pickerState.factors.filter((_,i)=>index!==i)}/>
-      </div>{/each}
-      <div class="filter-actions"><Button variant="secondary" icon="add" onclick={()=>pickerState.factors=[...pickerState.factors,{factorId:0,scope:'any',minLevel:1}]}>Add Spark Filter</Button>{#if pickerState.query||pickerState.factors.length}<Button variant="ghost" onclick={clearFilters}>Clear filters</Button>{/if}</div>
-      {#if pickerState.factors.length}<ResourceStatus {...$factorCatalogState}/>{/if}
+        {#if pickerState.tab==='manual'&&!editing}<Button icon="add" size="sm" variant="secondary" disabled={!!manualReadError} onclick={()=>{editedEntry=undefined;editing=true;}}>Add</Button>{/if}</div>
     </div>
     <div class="picker-body" onscroll={(event)=>{const el=event.currentTarget;if(el.scrollHeight-el.scrollTop-el.clientHeight<360)renderLimit=Math.min(filtered.length,renderLimit+16);}}>
+    <div class="active-filters" aria-label="Spark filters">
+      {#each pickerState.factors as factor,index}
+        {@const resolved=resolveVeteranFactors({factors:[factor.factorId*10+factor.minLevel]})[0]!}
+        {@const max = factor.maxLevel ?? (factor.scope === 'combined' ? 9 : 3)}
+        <div class="selected-factor selected-factor--{resolved.tone}" role="group" aria-label={resolved.name+' spark filter '+(index+1)}>
+          <FilterChip label={resolved.name+' · '+({combined:'Combined',any:'Any slot',own:'Own',p1:'P1',p2:'P2'}[factor.scope])+' '+factor.minLevel+(max === factor.minLevel ? '' : '–'+max)+'★'} selected removable onclick={() => editFactor(index)} onremove={()=>pickerState.factors=pickerState.factors.filter((_,i)=>index!==i)}/>
+        </div>
+      {/each}
+      <div class="spark-search">
+        <Button variant="secondary" size="sm" icon="add" onclick={() => editFactor()}>Add Spark</Button>
+      </div>
+      {#if pickerState.factors.length}<div class="clear-sparks"><Button variant="ghost" size="sm" onclick={()=>pickerState.factors=[]}>Clear all</Button></div>{/if}
+    </div>
+      <div class="picker-results">
       {#if catalogError}<Banner tone="warning" title="Some resources are unavailable"><p>{catalogError}</p><Button variant="secondary" onclick={loadCatalogs}>Retry resources</Button></Banner>{/if}
       {#if pickerState.tab==='saved'}
         <section class="partner-lookup" aria-label="Look up practice partner">
@@ -190,11 +203,13 @@
           {:else}<Icon name="users" size={48}/><h3>{$authUser?'No saved partners yet':'No lookup result yet'}</h3><p>Enter a Trainer ID above to fetch someone's inheritance data.</p>{/if}
         </div>{/if}
       {/if}
+      </div>
     </div>
   </div>{/snippet}</VeteranCollection>
 </Dialog></div>
+{#if factorDraft}<SparkFilterDialog filter={factorDraft} {characters} {...$factorCatalogState} onapply={applyFactor} onclose={() => factorDraft = undefined}/>{/if}
 <style>
-  .parent-picker { --parent-picker-height:84dvh; --dialog-content-font:var(--font-sans); --control-height:30px; }
+  .parent-picker { --parent-picker-height:min(760px,84dvh); --dialog-content-font:var(--font-sans); --control-height:34px; }
   @media(max-width:600px) { .parent-picker { --parent-picker-height:92dvh; } }
   @media(max-width:480px) { .parent-picker { --parent-picker-height:96dvh; } }
   .parent-picker > :global(dialog > .dialog-panel > header) { min-height:48px; height:48px; align-items:center; padding:0 8px 0 20px; border-bottom-color:var(--border-subtle); }
@@ -208,25 +223,30 @@
   .parent-picker :global(.tabs button.active) { color:var(--accent-primary); background:rgb(var(--accent-primary-rgb)/.06); }
   .parent-picker :global(.tabs small) { min-width:20px; margin:0; padding:0 5px; border:1px solid rgb(var(--accent-primary-rgb)/.32); border-radius:var(--radius-pill); background:rgb(var(--accent-primary-rgb)/.18); color:var(--accent-primary); font-size:.68rem; font-weight:700; line-height:1.6; }
   .parent-picker :global(.tabs button.active small) { background:rgb(var(--accent-primary-rgb)/.28); border-color:rgb(var(--accent-primary-rgb)/.5); }
-  .filterbar { display:flex; align-items:center; gap:8px; padding:7px 16px; flex:none; border-bottom:1px solid var(--border-subtle); background:var(--surface-1); }
-  .parent-search { position:relative; min-width:0; flex:1; }.parent-search :global(input){font-size:.8rem;padding-right:34px}
-  .parent-search > :global(.icon-button) { position:absolute; top:0; right:0; min-width:30px; width:30px; height:30px; border:0; background:transparent; }
-  .parent-search :global(.prefix-icon) { left:10px; width:16px; height:16px; }.parent-search :global(input.has-prefix){padding-left:32px}
-  .parent-sort { display:grid; grid-template-columns:105px 66px; align-items:center; gap:6px; flex:none; }.parent-sort :global(.field){min-width:0}.parent-sort :global(.select-control){height:var(--control-height);font-size:.75rem}
-  .parent-actions{display:flex;align-items:center;justify-content:flex-end;min-width:0;height:var(--control-height)}.parent-actions :global(.icon-button){width:var(--control-height);height:var(--control-height)}.parent-actions :global(.icon-button svg){width:18px;height:18px}
-  .parent-sort :global(.ui-button){min-height:var(--control-height);height:var(--control-height);padding:0 10px;gap:5px;font-size:12px}.parent-sort :global(.ui-button svg){width:15px;height:15px}
-  .factor-filters { flex:none; padding:4px 16px 6px; border-bottom:1px solid var(--border-subtle); background:var(--surface-1); max-height:32dvh; overflow:auto; }
-  .factor-filter { display:flex; align-items:center; gap:6px; margin-bottom:5px; }.factor-filter > :global(.field){flex:1;min-width:0}
-  .selected-factor { --factor-color:158 158 158; min-width:0; flex:1; display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:6px 10px; border:1px solid rgb(var(--factor-color)/.3); border-radius:var(--radius-md); background:rgb(var(--factor-color)/.06); }
-  .selected-factor--blue{--factor-color:33 150 243}.selected-factor--pink{--factor-color:233 30 99}.selected-factor--green{--factor-color:76 175 80}
-  .factor-name { min-width:0; display:flex; align-items:center; gap:8px; flex:1; font-size:.75rem; font-weight:600; }.factor-name i{flex:none;width:8px;height:8px;border-radius:50%;background:rgb(var(--factor-color))}
-  .factor-options { display:flex; align-items:center; gap:6px; margin-left:auto; }.factor-options :global(.segments){padding:0;gap:0;background:var(--surface-1)}
-  .factor-options :global(.segments button){min-width:36px;min-height:36px;padding:2px 7px;border-radius:0;font-size:.65rem}.factor-options :global(.segments button.selected){background:rgb(var(--accent-primary-rgb)/.15);color:var(--accent-primary);box-shadow:none}
-  .filter-actions{display:flex;gap:6px}.filter-actions :global(.ui-button){min-height:22px;padding:3px 10px;font-family:Arial,sans-serif;font-size:.7rem;font-weight:500;color:var(--text-disabled)}
-  .filter-actions :global(.ui-button:first-child){justify-content:center;border-radius:var(--radius-pill);gap:4px}.filter-actions :global(.ui-button svg){width:13px;height:13px}
-  .picker-body { min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:8px 12px 16px; }.parent-list{min-width:0;display:grid;gap:6px}
+  .filterbar { display:flex; align-items:center; gap:8px; padding:10px 12px; flex:none; }
+  .parent-search { position:relative; min-width:0; flex:1; }
+  .parent-search :global(input) { padding-right:34px; }
+  .filterbar :global(input),.filterbar :global(.select-control) { font-size:12px; }
+  .parent-search > :global(.icon-button) { position:absolute; top:0; right:0; width:var(--control-height); height:var(--control-height); border:0; background:transparent; }
+  .parent-sort { flex:none; width:110px; }
+  .spark-search { flex:none; }
+  .spark-search :global(.ui-button) { min-height:var(--control-height); height:var(--control-height); padding:0 8px; border-radius:var(--radius-sm); font-size:11px; }
+  .spark-search :global(svg) { width:14px; height:14px; }
+  .parent-actions { display:flex; align-items:center; flex:none; }.parent-actions :global(.icon-button),.parent-actions :global(.ui-button) { min-height:var(--control-height); height:var(--control-height); }.parent-actions :global(.icon-button) { width:var(--control-height); }
+  .parent-actions :global(.ui-button) { padding:0 10px; font-size:12px; }
+  .result-count { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
+  .active-filters { --spark-filter-height:28px; --control-height:var(--spark-filter-height); display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px var(--picker-inset); margin:0 calc(-1 * var(--picker-inset)) 10px; border-block:1px solid var(--border-subtle); background:var(--bg-primary); }
+  .clear-sparks { margin-left:auto; }.clear-sparks :global(.ui-button) { min-height:var(--control-height); padding:2px 6px; font-size:11px; }
+  .picker-body { --picker-inset:12px; min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:0 var(--picker-inset) 12px; }
+  .picker-results { min-width:0; }.parent-list { display:grid; gap:8px; min-width:0; }
+  .selected-factor { --color-accent:var(--spark-white-text); --color-accent-soft:color-mix(in srgb,var(--color-accent) 10%,transparent); min-width:0; max-width:100%; }
+  .selected-factor--blue { --color-accent:var(--accent-primary); }.selected-factor--pink { --color-accent:var(--color-pink); }.selected-factor--green { --color-accent:var(--accent-secondary); }
+  .selected-factor :global(.wrap) { max-width:100%; }
+  .selected-factor :global(button) { min-width:0; min-height:var(--control-height); padding:3px 8px; font-size:11px; text-align:left; overflow-wrap:anywhere; }
+  .selected-factor :global(button:first-child) { border-radius:var(--radius-sm) 0 0 var(--radius-sm); }
+  .selected-factor :global(button.remove) { flex:none; width:var(--control-height); padding:0; border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
   .empty { display:flex; flex-direction:column; align-items:center; gap:10px; padding:60px 24px; text-align:center; color:var(--text-disabled); }
-  .picker-body:has(.empty-upload){display:flex;flex-direction:column}.empty-upload{flex:1;justify-content:flex-start;padding:12px}
+  .empty-upload{flex:1;justify-content:flex-start;padding:12px}
   .empty > :global(svg){opacity:.4}.empty h3{margin:0;font-size:.9rem;font-weight:600;line-height:1.5;color:inherit}.empty p{margin:0;font-size:.8rem;max-width:340px;line-height:1.5;opacity:.7}
   .partner-lookup{display:flex;flex-direction:column;gap:8px;padding:10px 8px;border-bottom:1px solid var(--border-subtle)}
   .partner-lookup h3{display:flex;align-items:center;gap:6px;margin:0 0 -2px;color:var(--text-disabled);font-size:.68rem;font-weight:600;line-height:1.5;letter-spacing:.07em;text-transform:uppercase}.partner-lookup h3 :global(svg){width:13px;height:13px;color:var(--accent-primary);opacity:.6}
@@ -242,24 +262,22 @@
   :global([data-theme='light']) .partner-input{background:white}:global([data-theme='light']) .partner-lookup h3{color:var(--text-muted)}:global([data-theme='light']) .partner-lookup .signin-notice{color:#1e3a8a;border-color:rgb(var(--accent-primary-rgb)/.25);background:rgb(var(--accent-primary-rgb)/.1)}
   :global([data-theme='light']) .empty{color:var(--text-muted)}:global([data-theme='light']) .empty > :global(svg){color:var(--accent-primary);opacity:1}:global([data-theme='light']) .empty p{color:var(--text-secondary);opacity:1}
   :global([data-theme='light']) .signin-notice { background:rgb(var(--accent-primary-rgb)/.1); border-color:rgb(var(--accent-primary-rgb)/.25); color:#1e3a8a; }
-  :global([data-theme='light']) .parent-picker :global(.tabs),:global([data-theme='light']) .filterbar,:global([data-theme='light']) .factor-filters{background:#f8fafc}
+
   @media(max-width:600px),(pointer: coarse) and (max-width: 1300px) {
     .partner-input :global(input),.partner-input > :global(.icon-button),.partner-lookup form > :global(.ui-button){height:var(--touch-target);min-height:var(--touch-target)}.partner-input > :global(.icon-button){width:var(--touch-target)}.partner-input :global(input){padding-right:44px}.partner-lookup{padding-inline:4px}
-    .parent-picker{--control-height:var(--touch-target)}.parent-picker :global(.tabs button),.filter-actions :global(.ui-button){min-height:var(--touch-target);height:auto}
+    .parent-picker{--control-height:var(--touch-target)}.parent-picker :global(.tabs button){min-height:var(--touch-target);height:auto}
     .parent-search > :global(.icon-button){width:var(--touch-target);height:var(--touch-target)}.parent-search :global(input){padding-right:44px}
-    .factor-options :global(.segments button){min-width:var(--touch-target);min-height:var(--touch-target);flex:1}.factor-options{flex-wrap:wrap;width:100%;margin:0}.factor-options :global(.segments){width:100%}
+    .active-filters{--spark-filter-height:32px}
   }
   @media(max-width:600px) {
-    .filter-actions :global(.ui-button:first-child){flex:1;border-radius:var(--radius-sm)}
     .parent-picker > :global(dialog > .dialog-panel > header){padding-left:12px}
-    .filterbar{gap:6px;padding:6px 8px}.parent-sort{grid-template-columns:92px 66px}
-    .factor-filters{padding:5px 8px 6px}.picker-body{padding:6px 6px calc(14px + env(safe-area-inset-bottom))}
+    .filterbar{gap:6px;padding:8px}.parent-sort{width:92px}.result-count{display:none}
+    .picker-body{--picker-inset:8px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
     .signin-notice{font-size:.7rem;padding:6px 10px}.parent-picker :global(.tabs button){padding-inline:4px;font-size:.7rem}
-    .factor-filter{align-items:flex-start}.factor-filter > :global(.icon-button){flex:none}.selected-factor{padding:6px;gap:6px}
   }
   @media(max-width:480px) {
     .parent-picker :global(.tabs button > svg){display:none}
-    .parent-picker :global(.tabs button){flex:1 0 auto;gap:4px}
+    .parent-picker :global(.tabs button){flex:1 1 0;gap:4px}
     .parent-picker :global(.tabs .tab-label){white-space:nowrap}
     .parent-picker :global(.tabs small){flex:none;min-width:16px;padding-inline:3px;font-size:10px}.parent-picker > :global(dialog > .dialog-panel > header h2){font-size:.84rem}
   }

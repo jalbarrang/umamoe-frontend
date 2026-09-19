@@ -15,10 +15,11 @@
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
   import type { VeteranQueryMatch } from '@/lib/profile/profile-veteran-query';
 
-  let { veteran, summary, skillCatalog, baseStats = false, mood = 0, selectedFactors = [], selectedSkills = [], queryMatches = [], statsOnly = false, expandedSection = 'skills', sparkSource = 'family', onfactor, onskill, ondetails }: {
+  let { veteran, summary, skillCatalog, baseStats = false, mood = 0, selectedFactors = [], selectedSkills = [], queryMatches = [], statsOnly = false, expandedSection = 'skills', sparkSource = 'family', legacyUrl, onfactor, onskill, ondetails }: {
     veteran: ProfileVeteran; summary: VeteranUiRecord; skillCatalog: Map<number,SkillCatalogEntry>;
     baseStats?: boolean; mood?: number; selectedFactors?: VeteranFactorFilter[]; selectedSkills?: number[]; statsOnly?: boolean;
     queryMatches?: VeteranQueryMatch[];
+    legacyUrl?: string;
     expandedSection?: 'sparks'|'skills'|'compact'; sparkSource?: 'family'|'parent'|'p1'|'p2';
     onfactor?: (filter: VeteranFactorFilter) => void; onskill?: (id:number) => void; ondetails?: () => void;
   } = $props();
@@ -81,7 +82,7 @@
     </section>{/if}
     <ProfileVeteranQueryMatches matches={queryMatches}/>
   </div>
-  <footer><span class="stat-total">{statTotal.toLocaleString(undefined,{maximumFractionDigits:1})} Total Stats</span><span class="sp-total" title="Base cost of learned skills including prerequisites, before hint discounts">{spTotal?.toLocaleString() ?? '—'} SP total</span>{#if veteran.fans != null}<span>{veteran.fans.toLocaleString()} fans</span>{:else if created}<span>{created}</span>{/if}{#if ondetails}<button class="text-action" onclick={openDetails}>Details <Icon name="arrow-right" size={12}/></button>{/if}</footer>
+  <footer><span class="stat-total">{statTotal.toLocaleString(undefined,{maximumFractionDigits:1})} Total Stats</span><span class="sp-total" title="Base cost of learned skills including prerequisites, before hint discounts">{spTotal?.toLocaleString() ?? '—'} SP total</span>{#if veteran.fans != null}<span>{veteran.fans.toLocaleString()} fans</span>{:else if created}<span>{created}</span>{/if}<span class="footer-actions">{#if legacyUrl}<a class="text-action" href={legacyUrl}><Icon name="database" size={12}/>Use as legacy</a>{/if}{#if ondetails}<button class="text-action" onclick={openDetails}>Details <Icon name="arrow-right" size={12}/></button>{/if}</span></footer>
 </article>
 
 
@@ -133,7 +134,8 @@
   .skill-filter :global(.skill-chip img) { width:22px; height:22px; }
   .skill-filter :global(.skill-body) { min-height:22px; }.skill-filter :global(.skill-name) { white-space:normal; overflow:visible; line-height:1.25; }
   footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; min-height:30px; margin-top:auto; padding:4px 12px; border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:10px; }
-  .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; margin-left:auto; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; cursor:pointer; }
+  .footer-actions { display:flex; align-items:center; gap:12px; margin-left:auto; }
+  .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; text-decoration:none; cursor:pointer; }
   small { color:var(--color-text-muted); font-size:10px; }button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }.card-open:focus-visible { outline-offset:-2px; }
   @container(max-width:330px) { .card-open { padding:8px; }.card-body { padding:8px; }}
   @media(pointer: coarse) and (max-width: 1300px) { .spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }

@@ -68,13 +68,14 @@ test('guest imports persist, reject a bad batch, and are available in both Datab
 test('empty picker shares the Veterans upload panel and keeps export and sign-in visible', async ({ page }, info) => {
   await resources(page); const dialog = await picker(page);
   const drop = dialog.locator('.empty-upload .drop'); await expect(drop).toBeVisible();
-  const target = await drop.boundingBox(), body = await dialog.locator('.picker-body').boundingBox();
+  const target = await drop.boundingBox(), body = await dialog.locator('.picker-results').boundingBox();
   const signIn = await dialog.getByRole('link', { name: 'Sign in', exact: true }).boundingBox();
   expect(Math.abs(target!.x + target!.width / 2 - body!.x - body!.width / 2)).toBeLessThan(2);
   expect(target!.y).toBeGreaterThan(body!.y + 35); expect(signIn!.y).toBeGreaterThanOrEqual(target!.y + target!.height);
   await expect(dialog.locator('.collection-controls')).not.toBeVisible();
   await expect(dialog.getByRole('textbox', { name:'Search parents', exact:true })).toBeVisible();
-  await expect(dialog.getByRole('button', { name:'Add Spark Filter' })).toBeVisible();
+  await expect(dialog.getByRole('button',{name:'Add Spark',exact:true})).toBeVisible();
+  await expect(dialog.locator('.active-filters input')).toHaveCount(0);
   await expect(dialog.getByRole('link', { name:'Get umadump', exact:true })).toHaveClass(/ui-button--primary/);
   await expect(dialog.getByRole('tab').locator('small')).toHaveText(['0','0','0','0']);
   for (const theme of ['dark','light']) {
@@ -87,7 +88,7 @@ test('empty picker shares the Veterans upload panel and keeps export and sign-in
       const tabs = dialog.getByRole('tablist', { name:'Veteran picker sections' });
       expect(await tabs.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
       for (const badge of await tabs.locator('small').all()) await expect(badge).toBeInViewport();
-      const bodyBounds = (await dialog.locator('.picker-body').boundingBox())!, uploadBounds = (await dialog.locator('.picker-upload').boundingBox())!;
+      const bodyBounds = (await dialog.locator('.picker-results').boundingBox())!, uploadBounds = (await dialog.locator('.picker-upload').boundingBox())!;
       expect(uploadBounds.y - bodyBounds.y).toBeLessThanOrEqual(24);
       const dialogBounds = (await dialog.boundingBox())!, footerBounds = (await dialog.locator('.signin-footer').boundingBox())!;
       expect(Math.abs(dialogBounds.y + dialogBounds.height - footerBounds.y - footerBounds.height)).toBeLessThanOrEqual(2);

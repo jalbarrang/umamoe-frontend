@@ -5,7 +5,8 @@
   import { activeWorkspace } from '@/lib/workspaces/workspace-state';
   import { router } from '@/routes/router';
   import { loadCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
-  import { mergeVeterans, veteranProfile } from '@/lib/veterans/veteran-profile';
+  import { mergeVeterans } from '@/lib/veterans/veteran-profile';
+  import { deviceParent } from '@/lib/veterans/parent-picker';
   import { draftScope, veteranDrafts, veteranLibraryRevision } from './veteran-library';
   import { profileRepository, type ProfileResponse, type TrainerProfile } from '@/pages/profile/profile-repository';
   import VeteranCollection from './VeteranCollection.svelte';
@@ -21,7 +22,7 @@
   let remote = $state<ProfileResponse>(), loading = $state(false), error = $state('');
   const accountId = $derived($authUser ? $activeWorkspace.accountId ?? '' : '');
   const scope = $derived(draftScope(accountId, $authUser?.id));
-  const veterans = $derived(mergeVeterans(remote?.veterans ?? [], ($veteranDrafts[scope] ?? []).map(veteranProfile)));
+  const veterans = $derived(mergeVeterans(remote?.veterans ?? [], ($veteranDrafts[scope] ?? []).map(record => deviceParent(record, accountId))));
   const trainer = $derived<TrainerProfile>(remote?.trainer ?? { account_id: accountId, name: accountId ? $activeWorkspace.label : 'This device', follower_num: null, own_follow_num: null, best_team_class: null, team_class: null, team_evaluation_point: null, rank_score: null, comment: null });
   let generation = 0, live = true;
   onMount(() => { void loadCharacters(); return () => { live = false; generation++; }; });

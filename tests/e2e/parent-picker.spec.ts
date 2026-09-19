@@ -63,20 +63,21 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
   const rows=dialog.locator('.parent-row');
   for(const [index,expected] of [[0,['3 Speed','3 Stamina','1 Speed']],[1,['3 Speed','3 Stamina','1 Speed']],[2,['3 Speed','3 Stamina','1 Speed','1 Stamina']]] as const){
     await expect(rows.nth(index).locator('.sparks .spark')).toHaveText(expected.map(text=>text.replace(' ','★')));
-    expect((await rows.nth(index).boundingBox())!.height).toBe(150);
+    const portrait = (await rows.nth(index).locator('.identity .art').boundingBox())!;
+    const heading = (await rows.nth(index).locator('.heading').boundingBox())!;
+    expect(heading.y).toBeGreaterThanOrEqual(portrait.y);
+    expect(heading.y).toBeLessThan(portrait.y + portrait.height);
   }
   await expect(rows.first().locator('.ancestor')).toHaveCount(1);
   await expect(rows.first().locator('.ancestor .spark')).toHaveText(['3★Speed','2★Speed']);
   await expect(rows.first().locator('.sparks .spark').first()).toHaveAttribute('title','Speed Lv.3');
   await expect(rows.first().locator('.rarity svg')).toHaveCount(5);
-  await dialog.getByRole('button',{name:'Add Spark Filter'}).click();
-  const factorSearch=dialog.getByRole('combobox',{name:'Spark filter 1',exact:true});
-  await factorSearch.focus();await expect(factorSearch).toHaveAttribute('aria-expanded','false');
-  await factorSearch.fill('   ');await expect(factorSearch).toHaveAttribute('aria-expanded','false');
-  await factorSearch.fill('Speed');await expect(factorSearch).toHaveAttribute('aria-expanded','true');
-  await factorSearch.clear();await expect(factorSearch).toHaveAttribute('aria-expanded','false');
-  await factorSearch.fill('Speed');await dialog.getByRole('option',{name:'Speed',exact:true}).click();
-  await dialog.getByRole('radiogroup',{name:'Source for spark filter 1'}).getByRole('radio',{name:'Own',exact:true}).click();
+  await dialog.getByRole('button',{name:'Add Spark',exact:true}).click();
+  const editor=page.getByRole('dialog',{name:'Add spark filter',exact:true});
+  await expect(editor.getByRole('button',{name:'Blue stats',exact:true})).toBeFocused();
+  await editor.getByRole('button',{name:'Add Speed spark',exact:true}).click();
+  await editor.getByRole('radio',{name:'Own',exact:true}).click();
+  await editor.getByRole('button',{name:'Add filter',exact:true}).click();
   await expect(rows).toHaveCount(3);
   await dialog.screenshot({path:test.info().outputPath('parent-rows.png')});
   await rows.nth(1).locator('.select-parent').focus();await page.keyboard.press('Enter');
@@ -100,6 +101,7 @@ test('Veterans without an outfit ID retain the Angular name, portrait, search an
   await expect(dialog.locator('.select-parent img')).toHaveAttribute('src','/game-assets/character_thumbs/chara_stand_1013_101301.webp');
   await dialog.getByRole('button',{name:'Select Mejiro McQueen',exact:true}).press('Enter');
   await expect(dialog).not.toBeVisible();
+  await page.getByRole('radiogroup',{name:'Legacy spark display'}).getByRole('radio',{name:'Split',exact:true}).click();
   await expect(page.locator('.tree-group--veteran .parent-factors .spark--blue')).toHaveCount(2);
   await page.locator('.affinity-tree').screenshot({path:test.info().outputPath('selected-veteran.png')});
   await expect.poll(()=>queries.at(-1)?.get('p2_main_chara_id')).toBe('1013');
@@ -151,16 +153,16 @@ test('Manual character selectors rank affinity against the target and main paren
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('vpd_manual_entries')!)[0])).toMatchObject({label:'Keep this draft',mainCardId:100601,p1CardId:101301});
 });
 
-test('Veteran factor colors resolve to Angular theme values in populated picker rows',async({page})=>{
+test('Veteran picker uses shared spark colors in both themes',async({page})=>{
   const dialog=await prepare(page,true);
   await dialog.getByRole('tab',{name:/Bookmarks/}).click();
   const pink=dialog.locator('.sparks .spark--pink').first(),green=dialog.locator('.sparks .spark--green').first();
   for(const theme of ['dark','light']) {
     await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
-    await expect(pink).toHaveCSS('background-color',theme==='dark'?'rgba(233, 30, 99, 0.1)':'rgba(190, 24, 93, 0.1)');
-    await expect(green).toHaveCSS('background-color',theme==='dark'?'rgba(76, 175, 80, 0.1)':'rgba(21, 128, 61, 0.1)');
-    await expect(pink).toHaveCSS('border-top-color',theme==='dark'?'rgba(233, 30, 99, 0.4)':'rgba(190, 24, 93, 0.32)');
-    await expect(green).toHaveCSS('color',theme==='dark'?'rgb(129, 199, 132)':'rgb(21, 128, 61)');
+    await expect(pink).toHaveCSS('background-color','rgba(233, 30, 99, 0.15)');
+    await expect(green).toHaveCSS('background-color','rgba(76, 175, 80, 0.15)');
+    await expect(pink).toHaveCSS('border-top-color','rgba(233, 30, 99, 0.5)');
+    await expect(green).toHaveCSS('color',theme==='dark'?'rgb(129, 199, 132)':'rgb(15, 118, 110)');
   }
 });
 
@@ -203,13 +205,18 @@ test('Select Parent uses linked accounts, scoped factors, bookmarks and restores
   await expect(dialog.getByRole('link',{name:'Get umadump',exact:true})).toHaveAttribute('href','https://werseter.github.io/umadump/');
   await dialog.screenshot({path:test.info().outputPath('veteran-upload-state.png')});
   await dialog.getByRole('radio',{name:'First account',exact:true}).click();
-  await dialog.getByRole('button',{name:'Add Spark Filter'}).click();
-  await dialog.getByRole('combobox',{name:'Spark filter 1',exact:true}).fill('Speed');await dialog.getByRole('option',{name:'Speed',exact:true}).click();
-  await dialog.getByRole('radiogroup',{name:'Source for spark filter 1'}).getByRole('radio',{name:'P2',exact:true}).click();
+  await dialog.getByRole('button',{name:'Add Spark',exact:true}).click();
+  const addFilter=page.getByRole('dialog',{name:'Add spark filter',exact:true});
+  await addFilter.getByRole('button',{name:'Add Speed spark',exact:true}).click();
+  await addFilter.getByRole('radio',{name:'P2',exact:true}).click();
+  await addFilter.getByRole('button',{name:'Add filter',exact:true}).click();
   await expect(dialog.locator('.parent-row')).toHaveCount(0);
-  await dialog.getByRole('radiogroup',{name:'Source for spark filter 1'}).getByRole('radio',{name:'P1',exact:true}).click();
+  await dialog.getByRole('button',{name:'Speed · P2 1–3★',exact:true}).click();
+  const editFilter=page.getByRole('dialog',{name:'Edit spark filter',exact:true});
+  await editFilter.getByRole('radio',{name:'P1',exact:true}).click();
+  await editFilter.getByRole('button',{name:'Save filter',exact:true}).click();
   await expect(dialog.locator('.parent-row')).toHaveCount(1);
-  for(const box of await dialog.locator('.factor-filter [role=radio]').evaluateAll((buttons)=>buttons.map((button)=>{const bounds=button.getBoundingClientRect();return {width:bounds.width,height:bounds.height};}))) {expect(box.width).toBeGreaterThan(25);expect(box.height).toBeGreaterThanOrEqual(page.viewportSize()!.width <= 767 ? 32 : 36);}
+  await expect(dialog.getByRole('button',{name:'Speed · P1 1–3★',exact:true})).toBeVisible();
   await page.screenshot({path:test.info().outputPath('parent-picker.png')});
   await dialog.locator('.select-parent').click();
   await expect(page.getByRole('button',{name:'Clear selected legacy'})).toBeVisible();
@@ -234,7 +241,7 @@ test('Manual parent entries retain Angular storage, editing, selection, cancella
   if(isMobile)await page.setViewportSize({width:320,height:844});
   const dialog=await prepare(page);
   await dialog.getByRole('tab',{name:/Manual/}).click();
-  expect((await dialog.getByRole('button',{name:'Add',exact:true}).boundingBox())!.height).toBeLessThanOrEqual(32);
+  expect((await dialog.getByRole('button',{name:'Add',exact:true}).boundingBox())!.height).toBeLessThanOrEqual((await dialog.getByRole('textbox',{name:'Search parents',exact:true}).boundingBox())!.height);
   await dialog.getByRole('button',{name:'Add',exact:true}).click();
   const main=dialog.getByRole('region',{name:'Parent 1',exact:true});
   const parentBounds=await main.boundingBox(),gp1Bounds=await dialog.getByRole('region',{name:'Grandparent 1',exact:true}).boundingBox(),gp2Bounds=await dialog.getByRole('region',{name:'Grandparent 2',exact:true}).boundingBox();

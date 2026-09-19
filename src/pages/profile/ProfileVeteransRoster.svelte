@@ -49,6 +49,7 @@
   import { profileRepository } from './profile-repository';
   import { loadG1SaddleGroups, loadRaceQueryValues, type RaceQueryValue } from '@/lib/catalog/race-catalog';
   import ProfileVeteranCard from './ProfileVeteranCard.svelte';
+  import { veteranDatabaseUrl } from '@/lib/veterans/veteran-links';
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
   import { profileVeteranAffinity } from '@/lib/profile/profile-veteran-metrics';
   import { compileVeteranQuery, veteranQueryRow } from '@/lib/profile/profile-veteran-query';
@@ -372,7 +373,7 @@
     {:else if viewMode==='grid'}
       <div class="veteran-grid" style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
         {#each displayed as item (item.veteran.trained_chara_id ?? item.veteran.id)}
-          <ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/>
+          <ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} legacyUrl={veteranDatabaseUrl(item.veteran, accountId, targetId)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/>
         {/each}
       </div>
     {:else}
@@ -521,7 +522,7 @@
 {/if}
 
 {#if detail}
-  <ProfileVeteranDialog veteran={detail} summary={veteranSummary(veteranDisplay(detail,characters))} {skillCatalog} family={lineage(detail)} bind:open={detailOpen}/>
+  <ProfileVeteranDialog veteran={detail} {accountId} summary={veteranSummary(veteranDisplay(detail,characters))} {skillCatalog} family={lineage(detail)} bind:open={detailOpen}/>
 {/if}
 <CharacterSelectDialog id="veteran-uma-rules" bind:open={umaOpen} options={targetOptions} loading={targetLoading} error={targetError} onretry={loadTargets} bind:selected={umaDraft} existing={((umaMode==='include' ? include : exclude)[umaScope]??[]).map(String)} mode={umaMode} multiple bind:sort={umaSort} onselect={selectUmas}/>
 <CharacterSelectDialog id="veteran-target-select" bind:open={targetOpen} options={targetOptions} loading={targetLoading} error={targetError} onretry={loadTargets} selected={targetId ? [String(targetId)] : []} bind:sort={targetSort} onselect={values=>selectTarget(values[0]??'')}/>

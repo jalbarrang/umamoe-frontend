@@ -3,7 +3,7 @@
   import Icon from './Icon.svelte';
   import Dialog from './Dialog.svelte';
   import Artwork from './Artwork.svelte';
-  import SelectField from './SelectField.svelte';
+  import SelectField, { type SelectOption } from './SelectField.svelte';
   import Banner from './Banner.svelte';
   import Button from './Button.svelte';
   import Spinner from './Spinner.svelte';
@@ -17,8 +17,8 @@
   let visibleLimit = $state(0);
   let open = $state(false);
   const effectiveLimit = $derived(compact ? Number.POSITIVE_INFINITY : visibleLimit || maxVisible);
-  const types = ['All','Speed','Stamina','Power','Guts','Wit','Friend'].map(value => ({ value, label:value === 'Wit' ? 'Wisdom' : value }));
-  const rarities = ['All','R','SR','SSR'].map(value => ({ value, label:value }));
+  const types: SelectOption[] = ['All','Speed','Stamina','Power','Guts','Wit','Friend'].map(value => ({ value, label:value === 'All' ? 'All types' : value === 'Wit' ? 'Wisdom' : value, ...(value === 'Friend' ? { icon:'user' as const } : value === 'All' ? {} : { image:`/assets/images/icon/stats/${value.toLowerCase()}.webp` }) }));
+  const rarities = ['All','R','SR','SSR'].map(value => ({ value, label:value === 'All' ? 'All rarities' : value, ...(value === 'All' ? {} : { image:`/game-assets/support-rarity/${value.toLowerCase()}.png` }) }));
   const filtered = $derived(options.filter((option) => {
     return matchesSupportSearch(option.searchText ?? `${option.id} ${option.title} ${option.character ?? ''}`, query) && (type === 'All' || option.type === type) && (rarity === 'All' || option.rarity === rarity);
   }));
@@ -38,7 +38,7 @@
     {#each filtered.slice(0, effectiveLimit) as option (option.id)}
       <button type="button" role="radio" aria-checked={value === option.id} class:selected={value === option.id} disabled={option.disabled} onclick={() => select(option.id)}>
         <Artwork src={option.image} fallbackSrc="/assets/images/placeholder-card.webp" alt="" kind="card"/>
-        <span class="card-copy"><strong>{option.title}</strong>{#if option.character && option.character.trim().toLowerCase() !== option.title.trim().toLowerCase()}<small>{option.character}</small>{/if}<span class="meta"><b>{option.type === 'Wit' ? 'Wisdom' : option.type}</b><b>{option.rarity}</b></span></span>
+        <span class="card-copy"><strong>{option.title}</strong>{#if option.character && option.character.trim().toLowerCase() !== option.title.trim().toLowerCase()}<small>{option.character}</small>{/if}<span class="meta"><img src={`/game-assets/support-rarity/${option.rarity.toLowerCase()}.png`} alt={option.rarity} title={option.rarity} width="24" height="24"/>{#if option.type === 'Friend'}<span role="img" aria-label="Friend support" title="Friend support"><Icon name="user" size={20}/></span>{:else}<img src={`/assets/images/icon/stats/${option.type.toLowerCase()}.webp`} alt={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} title={`${option.type === 'Wit' ? 'Wisdom' : option.type} support`} width="20" height="20"/>{/if}</span></span>
       </button>
     {:else}{#if !loading && !error}<p class="empty">No support cards match these filters.</p>{/if}{/each}
   </div>
@@ -89,12 +89,10 @@
   .card-copy { min-width:0; max-width:100%; display:flex; align-items:center; flex-direction:column; gap:4px; letter-spacing:.5px; }
   .card-copy strong { max-width:100%; color:var(--text-muted); font-size:9px; font-weight:400; line-height:1.25; overflow-wrap:anywhere; }
   .card-copy small { color:var(--text-secondary); font-size:12px; font-weight:500; line-height:1.3; }
-  .meta { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }.meta b { padding:1px 5px; border-radius:var(--radius-xs); background:rgb(33 150 243/.12); color:rgb(100 181 246/.8); font-size:10px; font-weight:600; letter-spacing:.3px; line-height:24px; text-transform:uppercase; }.meta b:last-child { background:rgb(255 193 7/.12); color:rgb(255 202 40/.8); }
+  .meta { display:flex; align-items:center; justify-content:center; gap:6px; color:var(--accent-primary); }.meta img { display:block; object-fit:contain; }.meta span { display:flex; }
   .empty { grid-column: 1 / -1; margin: 0; padding: 20px 8px; color: var(--color-text-muted); text-align: center; }
   .load-more { min-height:38px; border:1px solid var(--factor-field-border); border-radius:var(--radius-md); background:var(--factor-field-bg); color:var(--color-accent); cursor:pointer; font-size:var(--font-xs); font-weight:700; }.load-more small { margin-left:4px; color:var(--color-text-subtle); font-size:9px; font-weight:500; }
 
-  :global([data-theme='light']) .meta b { background:rgb(var(--accent-primary-rgb)/.12); color:var(--accent-primary); }
-  :global([data-theme='light']) .meta b:last-child { background:rgb(var(--accent-warning-rgb)/.14); color:var(--accent-warning); }
   @container support-cards (max-width:540px) { .cards { grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); }.cards button{padding:6px 3px 5px}.cards :global(.art){width:64px;height:64px}.card-copy strong{font-size:8px}.card-copy small{font-size:11px} }
   @media(max-width:600px){.compact-trigger{width:100%}.quick-filters{gap:6px}}
   @media(max-width:600px),(pointer: coarse) and (max-width: 1300px){.quick-filters{--control-height:var(--touch-target)}.search{min-height:var(--touch-target);padding-block:0;padding-right:0}.search button{width:var(--touch-target);height:var(--touch-target)}.load-more{min-height:var(--touch-target)}}

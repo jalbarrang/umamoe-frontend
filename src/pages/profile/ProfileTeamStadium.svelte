@@ -47,7 +47,7 @@
           </div>
 {/if}
 {#if skillError}<p role="status">{skillError}</p>{/if}
-{#if detail}<ProfileVeteranDialog veteran={detail} summary={summary(detail)} skillCatalog={skills} bind:open={detailOpen}/>{/if}
+{#if detail}<ProfileVeteranDialog veteran={detail} {accountId} summary={summary(detail)} skillCatalog={skills} bind:open={detailOpen}/>{/if}
 <style>
   .stadium-navigation { min-width:0; width:100%; }
   .stadium-navigation :global(.tab) { flex:1 1 0; min-width:0; padding-inline:6px; }

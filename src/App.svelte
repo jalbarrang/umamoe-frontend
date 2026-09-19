@@ -13,7 +13,7 @@
   }));
 </script>
 
-{#if import.meta.env.MODE === 'demo'}<aside style="padding:8px 16px;background:#664600;color:white;text-align:center" role="status">Demo preview · Sample data · <a style="color:inherit" href="/profile/123456789012">Demo profile</a></aside>{/if}
+{#if import.meta.env.MODE === 'demo'}{#await import('./pages/ui/DemoNotice.svelte') then module}<module.default/>{/await}{/if}
 
 {#if isDirectUiLabRoute}
   <Router/>

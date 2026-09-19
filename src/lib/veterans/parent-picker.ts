@@ -18,7 +18,7 @@ export interface SelectableParent extends ProfileVeteran {
   share_local_id?: string;
 }
 export type ParentSort = 'total' | 'affinity' | 'blue' | 'pink' | 'green' | 'name';
-export interface ParentFactorFilter { factorId: number; scope: 'any' | 'own' | 'p1' | 'p2'; minLevel: number; }
+export interface ParentFactorFilter { factorId: number; scope: 'combined' | 'any' | 'own' | 'p1' | 'p2'; minLevel: number; maxLevel?: number; }
 export interface ParentPickerState { tab: 'veterans' | 'bookmarks' | 'saved' | 'manual'; accountId: string; query: string; sort: ParentSort; factors: ParentFactorFilter[]; }
 // Angular's scoped picker state is in memory, not a new browser-storage contract.
 export const parentPickerSessions = new Map<string, ParentPickerState>();
@@ -83,7 +83,7 @@ export function parentFactors(node: ProfileVeteran | SuccessionChara) {
 export function scopedParentFactors(parent: ProfileVeteran, scope: ParentFactorFilter['scope']) {
   const ancestors = (parent.succession_chara_array ?? []).filter((node) => node.position_id === 10 || node.position_id === 20);
   if (scope === 'own') return parentFactors(parent);
-  if (scope === 'any') return [parent, ...ancestors].flatMap(parentFactors);
+  if (scope === 'any' || scope === 'combined') return [parent, ...ancestors].flatMap(parentFactors);
   return ancestors.filter((node) => node.position_id === (scope === 'p1' ? 10 : 20)).flatMap(parentFactors);
 }
 export function parentAffinity(parent: ProfileVeteran, targetId: number | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>): number {
@@ -131,7 +131,14 @@ export function filterParents(parents: SelectableParent[], state: Pick<ParentPic
     return scopedParentFactors(parent, parent.share_source === 'manual' ? 'own' : 'any')
       .filter((factor) => state.sort === 'total' ? factor.tone !== 'white' : factor.tone === state.sort).reduce((sum, factor) => sum + factor.level, 0);
   };
-  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && state.factors.every((filter) => !filter.factorId || scopedParentFactors(parent, filter.scope).some((factor) => factor.id === filter.factorId && factor.level >= filter.minLevel)))
+  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && state.factors.every((filter) => {
+    if (!filter.factorId) return true;
+    const factors = scopedParentFactors(parent, filter.scope).filter(factor => factor.id === filter.factorId);
+    const inRange = (level: number) => level >= filter.minLevel && level <= (filter.maxLevel ?? Infinity);
+    return filter.scope === 'combined'
+      ? inRange(factors.reduce((sum, factor) => sum + factor.level, 0))
+      : factors.some(factor => inRange(factor.level));
+  }))
     .map((parent) => ({ parent, score: state.sort === 'name' ? 0 : score(parent) }))
     .sort((left, right) => state.sort === 'name' ? name(left.parent).localeCompare(name(right.parent)) : right.score - left.score).map(({ parent }) => parent);
 }

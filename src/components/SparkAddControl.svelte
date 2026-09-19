@@ -35,7 +35,7 @@
         {/snippet}
       </Combobox>
       <SegmentedControl label={`New spark stars for ${label}`} options={[{value:'1',label:'1★'},{value:'2',label:'2★'},{value:'3',label:'3★'}]} bind:value={level}/>
-      <IconButton icon="close" size="sm" label={`Close spark editor for ${label}`} onclick={() => toggle(false)}/>
+      {#if !query}<IconButton icon="close" size="sm" label={`Close spark editor for ${label}`} onclick={() => toggle(false)}/>{/if}
     </div>
     <ResourceStatus {loading} {cached} {error}/>
   {:else}<Button variant="ghost" size="sm" icon="add" onclick={() => toggle(true)}>Add Spark</Button>{/if}

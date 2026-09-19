@@ -25,7 +25,7 @@
   let targetDialogOpen = $state(false), veteranDialogOpen = $state(false);
   let targetSort = $state<CharacterPickerSort>('default');
   const target = $derived(characters.find(character => character.id === targetId || Number(targetId) < 10000 && Math.floor(Number(character.id) / 100) === Number(targetId)));
-  function openTarget(): void { targetSort = 'default'; targetDialogOpen = true; }
+  function openTarget(): void { targetSort = characters.some(character => character.affinity !== undefined) ? 'affinity' : 'default'; targetDialogOpen = true; }
   function selectTarget(values: string[]): void { ontargetchange?.(values[0] ?? ''); targetDialogOpen = false; }
   async function selectLegacy(value: SelectableParent | undefined): Promise<void> {
     onveteranchange(value);

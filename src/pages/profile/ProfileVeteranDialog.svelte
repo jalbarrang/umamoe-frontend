@@ -5,15 +5,18 @@
   import type { SkillCatalogEntry } from '@/lib/catalog/skill-catalog';
   import { loadRaceHistory, type RaceHistoryEntry } from '@/lib/catalog/race-catalog';
   import Dialog from '@/components/Dialog.svelte';
+  import Button from '@/components/Button.svelte';
+  import { veteranDatabaseUrl } from '@/lib/veterans/veteran-links';
   import ProfileVeteranIdentity from './ProfileVeteranIdentity.svelte';
   import ProfileVeteranDetails from './ProfileVeteranDetails.svelte';
   import RaceResultsDialog from '@/pages/database/RaceResultsDialog.svelte';
 
-  let { veteran, summary, skillCatalog, family, open = $bindable(false) }: {
+  let { veteran, summary, skillCatalog, family, accountId, open = $bindable(false) }: {
     veteran: ProfileVeteran; summary: VeteranUiRecord; skillCatalog: Map<number, SkillCatalogEntry>;
-    family?: { root: LineageNodeData; branches: LineageBranch[] }; open?: boolean;
+    family?: { root: LineageNodeData; branches: LineageBranch[] }; accountId?: string; open?: boolean;
   } = $props();
   const id = $props.id();
+  const legacyUrl = $derived(veteranDatabaseUrl(veteran, accountId, summary.affinityTarget?.id));
   const lineage = $derived(family ?? { root: { id: summary.id, name: summary.name, image: summary.image, role: 'main' as const, roleLabel: 'Main', sparks: summary.sparks }, branches: [] });
   let races = $state<RaceHistoryEntry[]>([]), raceLoading = $state(false), raceError = $state(''), scheduleOpen = $state(false);
   $effect(() => {
@@ -37,5 +40,6 @@
   {#if open}{#key veteran}
     <ProfileVeteranDetails {veteran} {summary} {skillCatalog} family={lineage} {races} {raceLoading} {raceError} onplanner={openPlanner} onschedule={() => scheduleOpen = true}/>
   {/key}{/if}
+  {#snippet actions()}{#if legacyUrl}<Button href={legacyUrl} icon="database" onclick={() => open=false}>Use as legacy</Button>{/if}{/snippet}
 </Dialog>
 <RaceResultsDialog bind:open={scheduleOpen} charId={veteran.card_id ?? 0} charName={summary.name} charImage={summary.image} winSaddleIds={veteran.win_saddle_id_array ?? []} runRaceIds={veteran.race_results ?? []}/>

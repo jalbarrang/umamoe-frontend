@@ -35,15 +35,21 @@ export async function demoData(): Promise<Plugin> {
   await mockActivity(page, 43);
   await mockStatistics(page);
   await mockVeteranProfile(page);
+  const demoVeterans = [101101, 101301, 100601, 106701, 108801, 100701].map((card_id, index) => ({
+    ...veteran, id:`00000000-0000-4000-8000-${String(index+1).padStart(12,'0')}`, trainer_id:'123456789012', trained_chara_id:900+index, card_id,
+    factors:[103, 1203, 10010103, 2000102], speed:veteran.speed-index*10,
+    support_cards:[30028,30016,30003,30009,20023,30011],
+    support_card_list:[30028,30016,30003,30009,20023,30011].map((support_card_id,slot)=>({support_card_id,limit_break_count:[4,3,2,1,0,4][slot]}))
+  }));
+  await page.route('**/demo/veterans.json', route=>route.fulfill({json:demoVeterans}));
+  await page.route('**/api/v4/user/profile/veterans/*', route=>{
+    const selected=demoVeterans.find(item=>item.id===new URL(route.request().url()).pathname.split('/').at(-1));
+    return route.fulfill({status:selected?200:404,json:selected??{message:'Veteran not found'}});
+  });
   await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({ json: {
     ...profile,
     team_stadium: fullTeamStadium,
-    veterans: [101101, 101301, 100601, 106701, 108801, 100701].map((card_id, index) => ({
-      ...veteran, id: index + 1, trained_chara_id: 900 + index, card_id,
-      factors: [103, 1203, 10010103, 2000102], speed: veteran.speed - index * 10,
-      support_cards: [30028, 30016, 30003, 30009, 20023, 30011],
-      support_card_list: [30028, 30016, 30003, 30009, 20023, 30011].map((support_card_id, slot) => ({ support_card_id, limit_break_count:[4,3,2,1,0,4][slot] }))
-    })),
+    veterans: demoVeterans,
     support_card: { ...profile.support_card, support_card_id: 30028 },
     inheritance: {
       ...profile.inheritance, green_sparks: [10010103], white_sparks: [2000102],
@@ -114,4 +120,3 @@ export async function demoData(): Promise<Plugin> {
     }
   };
 }
-

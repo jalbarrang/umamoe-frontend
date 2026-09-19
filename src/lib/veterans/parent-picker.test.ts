@@ -1,7 +1,7 @@
 import { setupCatalogFixtures } from '../../../tests/fixtures/catalog-setup';
 setupCatalogFixtures();
 import { expect, it } from 'vitest';
-import { filterParents, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, type ManualParent } from './parent-picker';
+import { filterParents, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, type ManualParent, type ParentFactorFilter } from './parent-picker';
 import { VeteranAffinityEngine } from './affinity-engine';
 import { normalizeVeteranRecord } from './veteran-normalizer';
 import { parsePlannerTransfer } from '@/lib/lineage/planner';
@@ -41,6 +41,25 @@ it('retains Angular manual payloads and filters individual star levels in the co
   expect(normalizeVeteranRecord(parent).factors).toEqual([{id:10,level:1}]);
   parent.inheritance={blue_sparks:[104,303],pink_sparks:[],green_sparks:[],white_sparks:[],blue_stars_sum:7,pink_stars_sum:0,green_stars_sum:0,white_stars_sum:0};
   expect(parsePlannerTransfer({veteran:parent})?.payload.find((node)=>node.position==='p2')?.sparks.map((spark)=>[spark.factorId,spark.level])).toEqual([[10,1]]);
+});
+it('combines stars across Own, P1 and P2 while keeping per-slot requirements independent',()=>{
+  const parent=manualParent({...entry,ownSparkIds:[102,200012],p1SparkIds:[103,200011],p2SparkIds:[101,200013]});
+  parent.succession_chara_array!.push({position_id:11,card_id:100401,rank:0,rarity:null,talent_level:null,factor_id_array:[103]});
+  const filter=(factors:ParentFactorFilter[],query='')=>filterParents([parent],{query,sort:'name',factors},()=>entry.label,()=>0);
+  expect(filter([{factorId:10,scope:'combined',minLevel:6}])).toEqual([parent]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:7}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:5,maxLevel:6}])).toEqual([parent]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:6,maxLevel:6}])).toEqual([parent]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:1,maxLevel:5}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'own',minLevel:1,maxLevel:1}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'p1',minLevel:1,maxLevel:2}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'any',minLevel:1,maxLevel:2}])).toEqual([parent]);
+  expect(filter([{factorId:10,scope:'any',minLevel:4}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:6},{factorId:20001,scope:'combined',minLevel:6},{factorId:10,scope:'p1',minLevel:3}],'Parent')).toEqual([parent]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:6},{factorId:10,scope:'own',minLevel:3}])).toEqual([]);
+  expect(filter([{factorId:10,scope:'combined',minLevel:6}],'missing')).toEqual([]);
+  const nine=manualParent({...entry,ownSparkIds:[103],p1SparkIds:[103],p2SparkIds:[103]});
+  expect(filterParents([nine],{query:'',sort:'name',factors:[{factorId:10,scope:'combined',minLevel:9}]},()=>entry.label,()=>0)).toEqual([nine]);
 });
 it('uses the planner calculation including grouped G1 race bonuses',()=>{
   const engine=new VeteranAffinityEngine({chars:[1001,1002,1003,1004],aff2:Array(16).fill(2),aff3:Array(64).fill(3)});
