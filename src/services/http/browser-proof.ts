@@ -12,7 +12,7 @@ interface TurnstileApi {
     retry: 'never';
     'refresh-expired': 'never';
     callback: (token: string) => void;
-    'error-callback': () => void;
+    'error-callback': (code?: string) => boolean;
     'expired-callback': () => void;
     'timeout-callback': () => void;
     'unsupported-callback': () => void;
@@ -94,7 +94,11 @@ async function challengeToken(): Promise<string> {
         retry: 'never',
         'refresh-expired': 'never',
         callback: (token) => finish(token),
-        'error-callback': () => finish(undefined, new Error('Turnstile challenge failed.')),
+        'error-callback': (code) => {
+          finish(undefined, new Error(`Browser verification failed${code ? ` (${code})` : ''}. Retry verification. If it keeps failing, try a browser profile without extensions or another network.`));
+          // The verification notice handles this failure and provides an explicit retry.
+          return true;
+        },
         'expired-callback': () => finish(undefined, new Error('Turnstile challenge expired.')),
         'timeout-callback': () => finish(undefined, new Error('Turnstile challenge timed out.')),
         'unsupported-callback': () => finish(undefined, new Error('Browser verification is not supported in this browser.'))

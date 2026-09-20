@@ -34,13 +34,17 @@ it.each(['error-callback', 'expired-callback', 'timeout-callback', 'unsupported-
   let options!: Parameters<NonNullable<Window['turnstile']>['render']>[1];
   window.turnstile = {
     render: vi.fn((_container, value) => { options = value; return 'widget'; }),
-    execute: vi.fn(() => queueMicrotask(() => options[callbackName]())),
+    execute: vi.fn(() => queueMicrotask(() => {
+      if (callbackName === 'error-callback') expect(options[callbackName]('600010')).toBe(true);
+      else options[callbackName]();
+    })),
     remove: vi.fn()
   };
   const fetcher = vi.fn(async () => new Response(null, { headers: { 'X-Browser-Proof': 'recovered', 'X-Browser-Proof-TTL': '60' } }));
   vi.stubGlobal('fetch', fetcher);
   const { browserProofPort: port, browserVerification } = await import('./browser-proof');
   const task = port!.refresh(); await expect(task).rejects.toThrow();
+  if (callbackName === 'error-callback') expect(get(browserVerification).error).toContain('(600010). Retry verification.');
   expect(document.querySelector('[id^="cf-turnstile-api-proof-"]')).toBeNull();
   expect(window.turnstile.remove).toHaveBeenCalledOnce();
   expect(fetcher).not.toHaveBeenCalled();
