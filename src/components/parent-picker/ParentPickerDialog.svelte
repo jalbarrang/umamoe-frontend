@@ -49,7 +49,7 @@
   let characters = $state.raw(new Map<number,CharacterCatalogEntry>()); let engine = $state<VeteranAffinityEngine>(); let groups = $state.raw(new Map<number,number>());
   let selectableCharacters = $state.raw<CharacterCatalogEntry[]>([]);
   let catalogError = $state(''); 
-  let veterans = $state<Record<string,SelectableParent[]>>({}); let bookmarks = $state<SelectableParent[]>([]); let partners = $state<SelectableParent[]>([]);
+  let veterans = $state.raw<Record<string,SelectableParent[]>>({}); let bookmarks = $state.raw<SelectableParent[]>([]); let partners = $state.raw<SelectableParent[]>([]);
   let busy = $state<Record<string,boolean>>({}); let errors = $state<Record<string,string>>({}); let manuals = $state<ManualParent[]>([]); let manualReadError = $state('');
   let editing = $state(false); let editedEntry = $state<ManualParent>(); let manualError = $state('');
   let partnerId = $state(''); let partnerPhase = $state<PartnerPhase>(); let lookupResult = $state<SelectableParent>(); let lookupError = $state(''); let lookupTimedOut = $state(false); let lookupController: AbortController | undefined;
@@ -91,7 +91,7 @@
     const request=(accountRequests.get(account)??0)+1;accountRequests.set(account,request);
     const generation=accountGeneration;busy[key]=true;errors[key]='';
     const current=()=>live&&generation===accountGeneration&&accountRequests.get(account)===request;
-    try { const result=await profileRepository.load(account,refresh);if(current())veterans[account]=(result.veterans??[]).map((veteran)=>accountParent(veteran,account)); }
+    try { const result=await profileRepository.load(account,refresh);if(current())veterans={...veterans,[account]:(result.veterans??[]).map((veteran)=>accountParent(veteran,account))}; }
     catch(error){if(current())errors[key]=message(error);}
     finally{if(current())busy[key]=false;}
   }
@@ -251,7 +251,7 @@
   .spark-search { flex:none; }
   .spark-search :global(.ui-button) { min-height:var(--control-height); height:var(--control-height); padding:0 8px; border-radius:var(--radius-sm); font-size:11px; }
   .spark-search :global(svg) { width:14px; height:14px; }
-  .parent-actions { display:flex; align-items:center; flex:none; }.parent-actions :global(.icon-button),.parent-actions :global(.ui-button) { min-height:var(--control-height); height:var(--control-height); }.parent-actions :global(.icon-button) { width:var(--control-height); }
+  .parent-actions { display:flex; align-items:center; justify-content:flex-end; flex:0 0 64px; }.parent-actions :global(.icon-button),.parent-actions :global(.ui-button) { min-height:var(--control-height); height:var(--control-height); }.parent-actions :global(.icon-button) { width:var(--control-height); }
   .parent-actions :global(.ui-button) { padding:0 10px; font-size:12px; }
   .result-count { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
   .active-filters { --spark-filter-height:28px; --control-height:var(--spark-filter-height); display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px var(--picker-inset); margin:0 calc(-1 * var(--picker-inset)) 10px; border-block:1px solid var(--border-subtle); background:var(--bg-primary); }

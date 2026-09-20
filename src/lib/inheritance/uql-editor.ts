@@ -22,7 +22,7 @@ export class UqlEditorLanguage {
   constructor(private readonly _suggestions: UqlSuggestion[]) {
     this.rebuildHighlightLookups();
     this.rebuildFieldSuggestionPhraseIndex();
-    this.rebuildSuggestionSearchIndex();
+    for (const suggestion of this._suggestions) this.getSuggestionSearchEntry(suggestion);
   }
   private get suggestions(): UqlSuggestion[] {
     return this._suggestions;
@@ -682,9 +682,10 @@ export class UqlEditorLanguage {
     const contextualSuggestions = this.getContextualSuggestions(query, cursor);
     const token = this.getCompletionRangeForSuggestions(query, cursor, contextualSuggestions).token.toLowerCase();
     const normalizedToken = this.normalizeSuggestionToken(token);
+    const queryTerms = normalizedToken.match(/[a-z0-9\u00c0-\uffff]+/g) || [];
     const rankedSuggestions = normalizedToken
       ? contextualSuggestions
-          .map((suggestion) => ({ suggestion, rank: this.getSuggestionMatchRank(suggestion, normalizedToken) }))
+          .map((suggestion) => ({ suggestion, rank: this.getSuggestionMatchRank(suggestion, normalizedToken, queryTerms) }))
           .filter((entry): entry is { suggestion: UqlSuggestion; rank: number } => entry.rank !== null)
       : contextualSuggestions.map((suggestion) => ({ suggestion, rank: 0 }));
     const kindOrder: Record<string, number> = {
@@ -775,9 +776,6 @@ export class UqlEditorLanguage {
     }
     const contextualValueSuggestions = this.valueSuggestionsForPrefix(prefix);
     if (contextualValueSuggestions.length) return contextualValueSuggestions;
-    if (this.hasExpressionPrefixMatch(query, cursor)) {
-      return this.expressionStartSuggestions();
-    }
     return this.expressionStartSuggestions();
   }
 
@@ -992,28 +990,6 @@ export class UqlEditorLanguage {
     return token === '' || 'and'.startsWith(token) || 'or'.startsWith(token);
   }
 
-  private hasExpressionPrefixMatch(query: string, cursor: number): boolean {
-    const phraseRange = this.getCurrentPhraseRange(query, cursor);
-    const wordRange = this.getCurrentWordRange(query, cursor);
-    const rawPhraseToken = phraseRange.token.trim();
-    const phraseToken = /(?:=|!=|<>|<=|>=|<|>|\bhas\b|\bin\b|\blike\b|\bilike\b|\d|'|"|\))/.test(rawPhraseToken)
-      ? wordRange.token.toLowerCase()
-      : rawPhraseToken.toLowerCase();
-    if (!phraseToken) return false;
-    const normalizedToken = this.normalizeSuggestionToken(phraseToken);
-    return this._suggestions.some((suggestion) => {
-      if (
-        suggestion.kind !== 'field' &&
-        suggestion.kind !== 'keyword' &&
-        suggestion.kind !== 'function' &&
-        suggestion.kind !== 'snippet'
-      ) {
-        return false;
-      }
-      return this.getSuggestionMatchRank(suggestion, normalizedToken) !== null;
-    });
-  }
-
   private operatorSuggestionsForFieldType(fieldType?: UqlFieldType): UqlSuggestion[] {
     if (fieldType === 'directive') {
       return [{ label: '=', insertText: '= ', kind: 'operator', detail: 'Choose this editor context value' }];
@@ -1219,7 +1195,6 @@ export class UqlEditorLanguage {
     {
       normalizedLabel: string;
       normalizedInsertText: string;
-      normalizedSearchTokens: string[];
       searchTerms: string[];
       haystack: string;
     }
@@ -1228,11 +1203,6 @@ export class UqlEditorLanguage {
   private normalizeSuggestionToken(value: string | undefined | null): string {
     if (!value) return '';
     return value.toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-
-  private extractSuggestionTerms(value: string | undefined | null): string[] {
-    const normalized = this.normalizeSuggestionToken(value);
-    return normalized.match(/[a-z0-9\u00c0-\uffff]+/g) || [];
   }
 
   private matchesQueryTerms(candidateTerms: string[], queryTerms: string[], preserveOrder: boolean): boolean {
@@ -1256,12 +1226,11 @@ export class UqlEditorLanguage {
     return true;
   }
 
-  private getSuggestionMatchRank(suggestion: UqlSuggestion, normalizedToken: string): number | null {
+  private getSuggestionMatchRank(suggestion: UqlSuggestion, normalizedToken: string, queryTerms: string[]): number | null {
     if (!normalizedToken) return 0;
     const entry = this.getSuggestionSearchEntry(suggestion);
     if (entry.normalizedLabel.startsWith(normalizedToken) || entry.normalizedInsertText.startsWith(normalizedToken))
       return 0;
-    const queryTerms = this.extractSuggestionTerms(normalizedToken);
     if (queryTerms.length === 0) return null;
     if (normalizedToken.length >= 3 && entry.haystack.includes(normalizedToken)) return 1;
     if (this.matchesQueryTerms(entry.searchTerms, queryTerms, true)) return 2;
@@ -1269,22 +1238,17 @@ export class UqlEditorLanguage {
     return null;
   }
 
-  private rebuildSuggestionSearchIndex(): void {
-    for (const suggestion of this._suggestions) this.getSuggestionSearchEntry(suggestion);
-  }
-
   private getSuggestionSearchEntry(suggestion: UqlSuggestion) {
     let entry = this.suggestionSearchCache.get(suggestion);
     if (!entry) {
       const normalizedLabel = this.normalizeSuggestionToken(suggestion.label);
-      const normalizedInsertText = this.normalizeSuggestionToken(suggestion.insertText);
+      const normalizedInsertText = suggestion.insertText === suggestion.label ? normalizedLabel : this.normalizeSuggestionToken(suggestion.insertText);
       const normalizedSearch = this.normalizeSuggestionToken(suggestion.searchText || '');
       const normalizedDetail = this.normalizeSuggestionToken(suggestion.detail || '');
       const normalizedBackend = this.normalizeSuggestionToken(suggestion.backendValue || '');
       entry = {
         normalizedLabel,
         normalizedInsertText,
-        normalizedSearchTokens: normalizedSearch ? normalizedSearch.split(/\s+/).filter(Boolean) : [],
         searchTerms: `${normalizedLabel} ${normalizedInsertText} ${normalizedSearch} ${normalizedDetail} ${normalizedBackend}`.match(/[a-z0-9\u00c0-\uffff]+/g) || [],
         haystack: `${normalizedLabel} ${normalizedDetail} ${normalizedSearch} ${normalizedInsertText} ${normalizedBackend}`,
       };
@@ -1300,7 +1264,7 @@ export class UqlEditorLanguage {
       if (suggestion.kind !== 'field') continue;
       const raw = [suggestion.insertText, suggestion.label, ...(suggestion.matchPhrases || [])];
       const phrases: string[] = [];
-      for (const value of raw) {
+      for (const value of new Set(raw)) {
         if (!value) continue;
         const lower = value.toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
         if (!lower || seen.has(`${suggestion.fieldType || ''}|${lower}`)) continue;

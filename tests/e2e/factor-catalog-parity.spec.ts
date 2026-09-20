@@ -4,6 +4,7 @@ import factors from '../fixtures/resources/factors.json' with { type: 'json' };
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { startInteractionAudit, throttleAuditPage } from './fixtures/interaction-audit';
 
 const liveFactor = {id:'990002',text:'Live Recovery',type:3};
 const liveFactors = [...factors,liveFactor];
@@ -54,9 +55,12 @@ test('late catalog refresh updates an open manual editor and Veteran factor filt
   await expect(main.locator('.spark')).toHaveCount(1);
   await dialog.getByRole('button',{name:'Save Entry',exact:true}).click();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('vpd_manual_entries')!)[0].ownSparkIds)).toEqual([9900022]);
-  await dialog.getByRole('button',{name:'Add Spark Filter',exact:true}).click();
-  await dialog.getByRole('combobox',{name:'Spark filter 1',exact:true}).fill('Live Recovery');
-  await dialog.getByRole('option',{name:'Live Recovery',exact:true}).click();
+  await dialog.getByRole('button',{name:'Add Spark',exact:true}).click();
+  const filter=page.getByRole('dialog',{name:'Add spark filter',exact:true});
+  await filter.getByRole('button',{name:'Skill / race',exact:true}).click();
+  await filter.getByRole('searchbox',{name:'Search skills and races',exact:true}).fill('Live Recovery');
+  await filter.getByRole('button',{name:/Live Recovery/}).click();
+  await filter.getByRole('button',{name:'Add filter',exact:true}).click();
   await expect(dialog.locator('.parent-row')).toHaveCount(1);
   expect(requests).toBe(1);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -94,12 +98,14 @@ test('cached factors remain usable through failed refreshes and replace live in 
   const {viewport,isMobile,hasTouch,userAgent}=test.info().project.use;
   const profile=await mkdtemp(join(tmpdir(),'moe-factor-'));
   const context=await playwright[browserName].launchPersistentContext(profile,{baseURL,viewport,isMobile,hasTouch,userAgent});
+  const finishAudit=await startInteractionAudit(context,test.info());
   // Use Playwright's HTTP client for bundles to avoid serial WebKit/Windows socket delays.
   await context.route('**/app/**', async route => route.fulfill({response:await route.fetch({maxRetries:2})}));
   await mockAdvertising(context);
   await mockResources(context);
   await context.addInitScript(()=>{ localStorage.setItem('page-introduction-audience-v1','existing'); localStorage.setItem('lastSeenUpdateVersion','17'); });
   const page=await context.newPage(),errors:string[]=[];
+  await throttleAuditPage(page);
   page.on('pageerror',error=>errors.push(error.message));
   try {
   await mockAffinity(page); await mockVeteranProfile(page);
@@ -144,5 +150,5 @@ test('cached factors remain usable through failed refreshes and replace live in 
   await expect(page.getByRole('button',{name:/Live Recovery/})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect(errors).toEqual([]);
-  } finally { await context.close(); }
+  } finally { try { await finishAudit(); } finally { await context.close(); } }
 });

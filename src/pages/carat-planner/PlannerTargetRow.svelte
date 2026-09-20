@@ -1,3 +1,7 @@
+<script module lang="ts">
+  const dateFormatter = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+</script>
+
 <script lang="ts">
   import { itemIconPath } from '@/lib/catalog/item-icons';
   import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
@@ -27,7 +31,6 @@
   const ticketKind = $derived((findGacha(target, resources)?.ticket_currency ?? (target.bannerKind === 'support' ? 'support_ticket' : 'uma_ticket')) === 'support_ticket' ? 'support' : 'uma');
   const ticketCount = $derived(projection?.balanceBefore[ticketKind === 'support' ? 'supportTickets' : 'umaTickets'] ?? 0);
   const ticketLabel = $derived(`${ticketCount} ${ticketKind === 'support' ? 'support' : 'Trainee'} tickets available at pull; ${projection?.ticketPulls ? `${projection.ticketPulls} used and ${ticketCount - projection.ticketPulls} remaining` : 'none used'}`);
-  const dateFormatter = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   function dateLabel(value?: string): string { const date = new Date(`${value}T00:00:00Z`); return Number.isFinite(date.getTime()) ? dateFormatter.format(date) : 'Unknown'; }
   function setPulls(pulls: number): void { onupdate(value => value.plannedPulls = Math.max(0, Math.min(5000, Math.trunc(pulls) || 0))); }
 
@@ -51,7 +54,7 @@
 </article>
 
 <style>
-  .target{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--border-subtle);background:var(--surface-1)}
+  .target{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--border-subtle);background:var(--surface-1);content-visibility:auto;contain-intrinsic-block-size:auto 150px}
   .target.past{color:var(--text-secondary)}
   .target-title{min-width:0;min-height:66px;display:grid;align-items:center;gap:11px;padding:7px 10px}
   .target-title.has-image{grid-template-columns:148px minmax(0,1fr)}

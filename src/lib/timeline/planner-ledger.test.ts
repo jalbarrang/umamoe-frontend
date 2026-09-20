@@ -14,6 +14,12 @@ it('matches the complete ordered ledger and each pull balance captured from Angu
   // Each digest includes every dated entry, not just its total. Capture: the reference ledger.
   for (const item of plannerLedgerCases(createPlan())) {
     const projection = projectPlan(item.plan, item.data);
+    const dates = projection.targets.map(target => target.pullDate);
+    const prepared = buildPlannerLedger(item.plan, item.data, dates.at(-1) ?? item.plan.projectionStartDate, dates);
+    expect(projectPlan(item.plan, item.data, prepared), `${item.name}: prepared ledger`).toEqual(projection);
+    const changedPulls = structuredClone(item.plan);
+    for (const target of changedPulls.targets) target.plannedPulls += 10;
+    expect(projectPlan(changedPulls, item.data, prepared), `${item.name}: changed pulls`).toEqual(projectPlan(changedPulls, item.data));
     expect({ ledger: ledgerSummary(buildPlannerLedger(item.plan, item.data, item.through)), projection: {
       balances: projection.balances, unallocated: ledgerSummary(projection.unallocatedIncome),
       targets: projection.targets.map(target => ({ id: target.targetId, date: target.pullDate, balanceBefore: target.balanceBefore, fundedPulls: target.fundedPulls, rewardCaratsGained: target.rewardCaratsGained, income: ledgerSummary(target.income) }))

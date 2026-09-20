@@ -1,9 +1,13 @@
-<script lang="ts">
-  import { onMount } from 'svelte';
+<script module lang="ts">
   import * as echarts from 'echarts/core';
   import { BarChart, LineChart, PieChart } from 'echarts/charts';
   import { AriaComponent, AxisPointerComponent, DataZoomComponent, GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
   import { SVGRenderer } from 'echarts/renderers';
+  echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AxisPointerComponent, AriaComponent, SVGRenderer]);
+</script>
+
+<script lang="ts">
+  import { onMount } from 'svelte';
   import type { EChartsCoreOption, EChartsType } from 'echarts/core';
   import type { TooltipComponentOption } from 'echarts/components';
 
@@ -25,8 +29,6 @@
     const tooltip = option.tooltip as TooltipComponentOption | undefined;
     return tooltip ? { ...option, tooltip: { ...tooltip, className: [tooltipClass, tooltip.className].filter(Boolean).join(' '), appendToBody: true, confine: false, position: tooltip.position ?? viewportPosition } } : option;
   });
-
-  echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, MarkLineComponent, MarkAreaComponent, AxisPointerComponent, AriaComponent, SVGRenderer]);
 
   onMount(() => {
     chart = echarts.init(host, undefined, { renderer: 'svg' });

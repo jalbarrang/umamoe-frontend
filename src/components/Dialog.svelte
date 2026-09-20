@@ -9,6 +9,7 @@
   let element: HTMLDialogElement;
   let returnFocus: HTMLElement | undefined;
   let backdropPointerDown = false;
+  let mounted = $state(false);
   function restoreFocus() {
     if (element?.open) return;
     // Wait for native close processing before retrying a focus lost by WebKit.
@@ -28,6 +29,7 @@
   $effect(() => {
     if (!element) return;
     if (open && !element.open) {
+      mounted = true;
       returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
       element.showModal();
     }
@@ -48,7 +50,7 @@
   onpointercancel={() => backdropPointerDown = false}
   onclick={(event) => { if (backdropPointerDown && event.target === event.currentTarget) close(); backdropPointerDown = false; }}
 >
-  <DialogPanel {title} {description} {icon} {image} titleId={`${id}-title`} descriptionId={description ? `${id}-description` : undefined} {headerIdentity} {headerActions} {eyebrow} {actions} onclose={close}>{@render children()}</DialogPanel>
+  {#if open || mounted}<DialogPanel {title} {description} {icon} {image} titleId={`${id}-title`} descriptionId={description ? `${id}-description` : undefined} {headerIdentity} {headerActions} {eyebrow} {actions} onclose={close}>{@render children()}</DialogPanel>{/if}
 </dialog>
 <style>
   /* Native top-layer dialogs stretch between their insets with height:auto. */

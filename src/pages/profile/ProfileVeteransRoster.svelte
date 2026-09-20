@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import { onDestroy, onMount, tick } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { characterImagePath, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
@@ -91,14 +92,14 @@
   const styleOptions = [{value:'',label:'Any style'},{value:'1',label:'Front'},{value:'2',label:'Pace'},{value:'3',label:'Late'},{value:'4',label:'End'}];
   const factors = $derived(factorOptions());
 
-  let veterans = $state<ProfileVeteran[]>([]);
+  let veterans = $state.raw<ProfileVeteran[]>([]);
   let bounds = $state(computeVeteranStatBounds([]));
   let speedMin=$state(0),speedMax=$state(1500),staminaMin=$state(0),staminaMax=$state(1500),powerMin=$state(0),powerMax=$state(1500),gutsMin=$state(0),gutsMax=$state(1500),wizMin=$state(0),wizMax=$state(1500);
   const allDistances=distanceOptions.filter(option=>option.value).map(option=>option.value),allStyles=styleOptions.filter(option=>option.value).map(option=>option.value);
   const toggleChoice=(choices:string[],value:string)=>choices.includes(value) ? choices.filter(choice=>choice!==value) : [...choices,value].sort();
   let query=$state(''),distance=$state<string[]>([...allDistances]),style=$state<string[]>([...allStyles]),minTotal=$state(0),sortField=$state<CollectionSortField>('total'),sortDirection=$state<'asc'|'desc'>('desc');
   const sortDirectionOptions=$derived(sortField==='creation_time' ? [{value:'desc',label:'Newest first'},{value:'asc',label:'Oldest first'}] : [{value:'desc',label:'Highest first'},{value:'asc',label:'Lowest first'}]);
-  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),gridColumns=$state(2),visibleCount=$state(24);
+  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),gridColumns=$state(2),visibleCount=$state(6);
   let expandedSection=$state<'sparks'|'skills'|'compact'>('skills'),sparkSource=$state<'family'|'parent'|'p1'|'p2'>('family');
   let aptitudeFilters=$state<Partial<Record<AptitudeField,string>>>({}), selectedSkills=$state<number[]>([]), skillQuery=$state(''), skillCatalog=$state<Map<number,SkillCatalogEntry>>(new Map());
   let selectedFactors=$state<VeteranFactorFilter[]>([]),factorCategory=$state('all');
@@ -176,7 +177,7 @@
   let statView=$state('displayed'),cardMood=$state('0');
   let include=$state<Partial<Record<AncestorScope,number[]>>>({}),exclude=$state<Partial<Record<AncestorScope,number[]>>>({});
   let umaOpen=$state(false),umaScope=$state<AncestorScope>('parent'),umaMode=$state<'include'|'exclude'>('include'),umaDraft=$state<string[]>([]),umaSort=$state<CharacterPickerSort>('default');
-  let expanded=$state<Record<string,boolean>>({}),detail=$state<ProfileVeteran>(),detailOpen=$state(false);
+  let expanded=$state<Record<string,boolean>>({}),detail=$state.raw<ProfileVeteran>(),detailOpen=$state(false);
   const moodOptions = [{value:'2',label:'Great (+4%)'},{value:'1',label:'Good (+2%)'},{value:'0',label:'Normal'},{value:'-1',label:'Bad (−2%)'},{value:'-2',label:'Awful (−4%)'}];
   const scopeLabels = { p1:'P1 only',p2:'P2 only', any:'Any generation', family:'Veteran + parents', parent:'Veteran', grandparent:'Parents', greatgrandparent:'Grandparents' };
   let raceChoices=$state<RaceQueryValue[]>([]),raceQuery=$state(''),selectedRaceIds=$state<number[]>([]),raceSaddleIndex=$state<Map<number,number[]>>(new Map()),scheduleLoading=$state(false);
@@ -192,7 +193,7 @@
   function currentStats(): VeteranFilterState['stats'] { return {speed:[speedMin,speedMax],stamina:[staminaMin,staminaMax],power:[powerMin,powerMax],guts:[gutsMin,gutsMax],wiz:[wizMin,wizMax]}; }
   function filterState(): VeteranFilterState { return { query,distance:distance.length===allDistances.length?null:distance.map(Number),style:style.length===allStyles.length?null:style.map(Number),minTotal,stats:currentStats(),aptitudes:aptitudeFilters,skills:selectedSkills,include,exclude,factors:selectedFactors,raceIds:selectedRaceIds }; }
   const metricSort=$derived(sortField==='affinity' || sortField==='white_count' || sortField==='white_stars_sum' || sortField==='win_count' ? sortField : undefined);
-  const propertyFiltered = $derived(filterAndSortVeterans(veterans,filterState(),sortField==='affinity' || sortField==='white_count' || sortField==='white_stars_sum' || sortField==='win_count' ? 'total' : sortField,sortDirection,characters));
+  const propertyFiltered = $derived(filterAndSortVeterans(veterans,$state.snapshot(filterState()),sortField==='affinity' || sortField==='white_count' || sortField==='white_stars_sum' || sortField==='win_count' ? 'total' : sortField,sortDirection,characters));
   const filtered = $derived.by(() => {
     const result=propertyFiltered.filter(v => matchesSelectedRaces(v)
       && (!minSp || (spByVeteran.get(v) ?? -1) >= Number(minSp))
@@ -228,7 +229,7 @@
     if(initialized!==key){ bounds=computeVeteranStatBounds(next); resetStatRanges(bounds); initialized=key; }
   });
   $effect(() => { void Promise.all([loadSkillCatalog(), loadFactorArtwork()]).then(([catalog])=>skillCatalog=catalog).catch(()=>catalogError='Skill and race data could not be loaded. Reload the page to try again.'); });
-  $effect(() => { accountId; profile; query; distance; style; minTotal; sortField; sortDirection; targetId; minSp;maxSp;minAffinity;minWhites;scenarioFilter;appliedUql; speedMin; speedMax; staminaMin; staminaMax; powerMin; powerMax; gutsMin; gutsMax; wizMin; wizMax; aptitudeFilters; selectedSkills; selectedFactors; include; exclude; visibleCount=24; previewPage=1; });
+  $effect(() => { accountId; profile; query; distance; style; minTotal; sortField; sortDirection; targetId; minSp;maxSp;minAffinity;minWhites;scenarioFilter;appliedUql; speedMin; speedMax; staminaMin; staminaMax; powerMin; powerMax; gutsMin; gutsMax; wizMin; wizMax; aptitudeFilters; selectedSkills; selectedFactors; include; exclude; visibleCount=6; previewPage=1; });
 
   function statValue(field:StatField,end=false):number { const values:{[key:string]:number}={speedMin,speedMax,staminaMin,staminaMax,powerMin,powerMax,gutsMin,gutsMax,wizMin,wizMax}; return values[`${field}${end?'Max':'Min'}`] ?? 0; }
   function changeStat(field:StatField,start:number,end?:number):void { if(field==='speed'){speedMin=start;speedMax=end??start}else if(field==='stamina'){staminaMin=start;staminaMax=end??start}else if(field==='power'){powerMin=start;powerMax=end??start}else if(field==='guts'){gutsMin=start;gutsMax=end??start}else{wizMin=start;wizMax=end??start} }
@@ -412,7 +413,7 @@
       </div>
     {/if}
     {#if compact && filtered.length > 3}<div class="preview-pagination"><span aria-live="polite">Showing <strong>{(currentPreviewPage - 1) * 3 + 1}–{Math.min(currentPreviewPage * 3, filtered.length)}</strong> of {filtered.length} veterans</span><Pagination page={currentPreviewPage} pages={previewPages} label="Veterans preview pages" onchange={page => previewPage = page}/></div>{/if}
-    {#if !compact && displayed.length<filtered.length}<div class="more"><Button variant="secondary" onclick={()=>visibleCount+=24}>Show 24 more</Button><span>{displayed.length} of {filtered.length}</span></div>{/if}
+    {#if !compact && displayed.length<filtered.length}{#key visibleCount}<div class="more" use:loadWhenVisible={() => visibleCount += 6}><span>{displayed.length} of {filtered.length}</span></div>{/key}{/if}
       </div>
     </div>
   {/if}

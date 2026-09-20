@@ -54,14 +54,14 @@ test('Planner Rewards result stepper, search, breakdown, history and banner acti
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
 
-test('Planner Rewards includes later official news in its initial batch and loads dense lists without page overflow', async ({ page }) => {
+test('Planner Rewards loads dense lists automatically and searches later official news without page overflow', async ({ page }) => {
   await mockPlannerRewards(page);
   const extra=Array.from({length:85},(_,index)=>({id:'batch-'+index,label:'Batch reward '+index,currency:'free_jewels',amount:10,available_at:'2026-11-'+String(Math.floor(index/4)+1).padStart(2,'0'),default_enabled:true,...(index===45?{provenance:'global_news',source_url:'https://umamusume.com/news/batch'}:{})}));
   await page.route('**/resources/test/planner_rewards.json*',route=>route.fulfill({json:{...plannerRewardsData,rewards:[...plannerRewardsData.rewards,...extra]}}));
   await page.goto('/timeline?tab=carat-planner');await page.getByRole('button',{name:/Plan assumptions/}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   const panel=page.locator('.rewards-panel');
-  await expect(panel.getByText('Batch reward 45',{exact:true})).toHaveCount(1);
-  const initial=await panel.locator('article').count();expect(initial).toBeGreaterThan(40);expect(initial).toBeLessThan(95);
+  await expect(panel.locator('article').first()).toBeVisible();
+  const initial=await panel.locator('article').count();expect(initial).toBeGreaterThanOrEqual(12);expect(initial).toBeLessThanOrEqual(24);
   await panel.locator('.more').scrollIntoViewIfNeeded();
   await expect.poll(()=>panel.locator('article').count()).toBeGreaterThan(initial);
   const loaded=await panel.locator('article').count();
@@ -70,7 +70,9 @@ test('Planner Rewards includes later official news in its initial batch and load
   await panel.getByRole('searchbox').fill('nothing matches this');await expect(panel.locator('article')).toHaveCount(0);
   await expect(panel).toContainText('No upcoming rewards match this search.');await expect(panel.getByRole('button',{name:'Upcoming 0',exact:true})).toBeVisible();
   await panel.getByRole('button',{name:'Clear reward search'}).click();
-  await expect(panel.getByText('Batch reward 45',{exact:true})).toHaveCount(1);
   await expect(panel.locator('article')).toHaveCount(initial);
+  await panel.getByRole('searchbox').fill('Batch reward 45');
+  await expect(panel.getByText('Batch reward 45',{exact:true})).toHaveCount(1);
+  await expect(panel.locator('article')).toHaveCount(1);
   if(page.viewportSize()!.width<600){await page.setViewportSize({width:320,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(320);}
 });

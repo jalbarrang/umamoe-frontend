@@ -73,12 +73,12 @@ test('populated Settings shares the wide page layout and responsive ad placement
   await expect(page.getByRole('heading', { name: 'API Keys' })).toBeVisible();
   const frame = page.locator('[data-route-id="settings"]');
   await expect(frame).toHaveAttribute('data-page-width', 'wide');
-  for (const width of [1536, 1301, 1300, 768, 390, 320]) {
+  for (const width of [1920, 1700, 1699, 1536, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     const heading = await page.getByRole('heading', { name: 'Account Settings', exact: true }).boundingBox();
     const card = await page.locator('.settings-card').first().boundingBox();
     expect(Math.abs(heading!.x - card!.x)).toBeLessThan(2);
-    if (width > 1300) { await expect(frame.locator('[data-ad-position="right-rail"]')).toBeVisible(); await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden(); }
+    if (width >= 1700) { await expect(frame.locator('[data-ad-position="right-rail"]')).toBeVisible(); await expect(frame.locator('[data-ad-kind="inline"]')).toBeHidden(); }
     else { await expect(frame.locator('[data-ad-position="right-rail"]')).toBeHidden(); await expect(frame.locator('[data-ad-kind="inline"]')).toBeVisible(); }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     if (width === 1536 || width === 390) await page.screenshot({ path: test.info().outputPath(`settings-layout-${width}.png`) });

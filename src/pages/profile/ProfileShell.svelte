@@ -40,7 +40,7 @@
     const copied = await copyText(id);
     toasts = [...toasts, { id:crypto.randomUUID(), title:copied ? `Trainer ID copied: ${id}` : 'Failed to copy Trainer ID', tone:copied ? 'success' as const : 'danger' as const }].slice(-3);
   }
-  let profile = $state<ProfileResponse>();
+  let profile = $state.raw<ProfileResponse>();
   let characters = $state<Map<number, CharacterCatalogEntry>>(new Map());
   let loading = $state(true);
   let error = $state('');

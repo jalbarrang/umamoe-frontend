@@ -97,7 +97,7 @@ test('legacy selector keeps full-width results with compact chips and a two-step
     expect(bounds.height).toBeLessThanOrEqual(36);
     expect(bounds.height).toBe((await addSpark.boundingBox())!.height);
     expect(bounds.y).toBeGreaterThanOrEqual((await tools.boundingBox())!.y+(await tools.boundingBox())!.height);
-    expect(await dialog.locator('.active-filters').evaluate(el=>Array.from(el.children).map(child=>child.classList[0]))).toEqual(['selected-factor','spark-search','spark-display','clear-sparks']);
+    expect(await dialog.locator('.active-filters').evaluate(el=>Array.from(el.children).map(child=>child.classList[0]))).toEqual(['spark-filter-groups','spark-search','spark-display','clear-sparks']);
     expect(await dialog.locator('.active-filters').evaluate(el=>getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
     const band=(await dialog.locator('.active-filters').boundingBox())!;
     expect(band.x).toBe(body.x);expect(band.width).toBe(body.width);

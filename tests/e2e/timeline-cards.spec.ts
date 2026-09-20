@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures/test';
 import { cardTypes, mockTimelineCards } from './fixtures/timeline-cards';
+import { loadVisibleTimelineEvents } from './fixtures/timeline-details';
 
 test('Timeline cards use readable typography, fluid media, event colors and unclipped competitive previews in both themes', async ({ page, isMobile }) => {
   await mockTimelineCards(page);
@@ -8,16 +9,17 @@ test('Timeline cards use readable typography, fluid media, event colors and uncl
     await page.goto('/timeline');
     if (await page.locator('html').getAttribute('data-theme') !== theme) await page.getByRole('button', { name: 'Toggle theme' }).click();
     await expect(page.locator('#timeline-event-detail-banner')).toBeVisible();
-    if (!isMobile) await page.getByRole('button', { name: /Show \d+ more events/ }).click();
+    if (!isMobile) await loadVisibleTimelineEvents(page);
     const accents = [theme === 'dark' ? '100, 181, 246' : '37, 99, 235', '186, 104, 200', '255, 183, 77', '255, 183, 77', '186, 104, 200', '233, 30, 99', '77, 182, 172', '77, 182, 172', '149, 117, 205', theme === 'dark' ? '100, 181, 246' : '37, 99, 235', '77, 208, 225', '229, 115, 115', '255, 183, 77', '129, 199, 132'];
     for (const [index, type] of cardTypes.entries()) {
       const card = page.locator(`[data-event-id="card-${type}"]`);
       await expect(card).toBeAttached();
+      await card.scrollIntoViewIfNeeded();
       await expect(card.locator('.metadata')).toHaveCSS('color', `rgb(${accents[index]})`);
-      await expect(card.locator('.metadata')).toHaveCSS('font-size', '11px');
+      await expect(card.locator('.metadata')).toHaveCSS('font-size', isMobile ? '9px' : '10.5px');
       await expect(card.locator('.metadata svg')).toHaveCount(1);
       await expect(card.locator('h3')).toHaveCSS('font-size', '14px');
-      await expect(card.locator('h3')).toHaveCSS('line-height', '19px');
+      await expect(card.locator('h3')).toHaveCSS('line-height', '14px');
       await expect(card.locator('h3')).toHaveCSS('-webkit-line-clamp', '2');
       await expect(card.locator('.schedule time')).toHaveCSS('font-size', '11px');
       const media = (await card.locator('.event-media').boundingBox())!;
@@ -48,7 +50,8 @@ test('Timeline cards use readable typography, fluid media, event colors and uncl
     }
     const missingBanner = page.locator('[data-event-id="broken-media"]');
     await missingBanner.scrollIntoViewIfNeeded();
-    await expect(missingBanner.locator('.event-media')).toHaveCount(0);
+    await expect(missingBanner.getByRole('img', { name: 'Artwork unavailable' })).toBeVisible();
+    await expect(missingBanner.locator('.event-media img')).toHaveCount(0);
     const sourceBanner = page.locator('[data-event-id="news-event-campaign-994"]');
     await sourceBanner.scrollIntoViewIfNeeded();
     await expect(sourceBanner.locator('.event-media img')).toHaveAttribute('src', 'https://example.test/source-banner.webp');

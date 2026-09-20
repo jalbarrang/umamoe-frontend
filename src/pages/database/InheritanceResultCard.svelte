@@ -1,5 +1,7 @@
 <script module lang="ts">
   const chanceFormat = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const updatedDateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const updatedTimeFormat = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 </script>
 
 <script lang="ts">
@@ -87,7 +89,7 @@
   const hasP2Sparks = $derived(Boolean(partner?.factors.length || partner?.parents.some((parent) => (parent.positionId === 10 || parent.positionId === 20) && parent.factors.length)));
   const scenario = $derived(scenarios.find((scenario) => scenario.id === record.scenarioId));
   const updatedDate = $derived(new Date(record.lastUpdated ?? ''));
-  const updatedLabel = $derived(Number.isNaN(updatedDate.getTime()) ? '' : `${updatedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${updatedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`);
+  const updatedLabel = $derived(Number.isNaN(updatedDate.getTime()) ? '' : `${updatedDateFormat.format(updatedDate)} at ${updatedTimeFormat.format(updatedDate)}`);
   function chance(factor: InheritanceFactor): string | undefined {
     if (!factor.sources.length || (targetId && !affinityEngine?.ready)) return undefined;
     const metrics = sparkMetrics(factor.sources.map((source) => ({ spark: { type: factor.type, level: source.level }, affinity: affinity.source(source) })), sparkPerRun);

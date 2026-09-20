@@ -19,7 +19,7 @@
 
   let trainerId = $state(''), browseError = $state('');
   let characters = $state<Map<number, CharacterCatalogEntry>>(new Map()), catalogError = $state('');
-  let remote = $state<ProfileResponse>(), loading = $state(false), error = $state('');
+  let remote = $state.raw<ProfileResponse>(), loading = $state(false), error = $state('');
   const accountId = $derived($authUser ? $activeWorkspace.accountId ?? '' : '');
   const scope = $derived(draftScope(accountId, $authUser?.id));
   const veterans = $derived(mergeVeterans(remote?.veterans ?? [], ($veteranDrafts[scope] ?? []).map(record => deviceParent(record, accountId))));

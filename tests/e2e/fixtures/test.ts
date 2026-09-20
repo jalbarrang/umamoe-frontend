@@ -1,5 +1,7 @@
 import { test as base, expect, type Locator } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { mockAdvertising, mockResources } from './api';
+import { auditInteractions, throttleAuditPage } from './interaction-audit';
 export { expect } from '@playwright/test';
 export type { Page, Locator } from '@playwright/test';
 
@@ -20,8 +22,27 @@ export async function setSliderValue(slider: Locator, value: number): Promise<vo
   }, value);
 }
 
-export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boolean }>({
+export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boolean; interactionAudit: void }>({
   allowPageLoadFailure: [false, { option: true }],
+  interactionAudit: [async ({ context }, use, info) => {
+    if (process.env.PERF_AUDIT) await auditInteractions(context, info, use);
+    else await use();
+  }, { auto: true }],
+  page: async ({ page }, use, info) => {
+    await throttleAuditPage(page);
+    const profiler = process.env.PERF_PROFILE ? await page.context().newCDPSession(page) : undefined;
+    if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Profiler.start'); }
+    try { await use(page); } finally {
+      // Flush the final presented input before Playwright closes the page.
+      if (process.env.PERF_AUDIT && !page.isClosed()) await page.waitForTimeout(250);
+      if (profiler && !page.isClosed()) {
+        const { profile } = await profiler.send('Profiler.stop');
+        const path = info.outputPath('cpu.cpuprofile');
+        await writeFile(path, JSON.stringify(profile));
+        await info.attach('cpu-profile', { path, contentType: 'application/json' });
+      }
+    }
+  },
   runtimeErrors: [async ({ context, allowPageLoadFailure }, use) => {
     await mockAdvertising(context);
     await context.route('https://status.uma.moe/api/v1/endpoints/statuses', route => route.fulfill({ json: [{ name: 'API', group: 'uma.moe', results: [{ success: true }] }] }));

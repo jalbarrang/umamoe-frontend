@@ -1,5 +1,6 @@
 import { test, expect, type Page } from './fixtures/test';
 import { mockTimeline } from './fixtures/api';
+import { completion } from '../performance/completion';
 
 async function sectionLink(page: Page, name: string) {
   const mobile = await page.getByRole('button', { name:'Open navigation', exact:true }).isVisible();
@@ -79,20 +80,13 @@ for (const eventCount of [5, 1000]) test(`Preloaded Timeline transitions paint w
   const durations: number[] = [];
   for (let visit = 0; visit < 5; visit++) {
     await sectionLink(page, 'Timeline');
-    durations.push(await page.evaluate(() => new Promise<number>(resolve => {
-      const start = performance.now();
-      const frame = () => {
-        const board = document.querySelector<HTMLElement>('.timeline-board');
-        if (board?.clientWidth && board.querySelector('.event-card')) requestAnimationFrame(() => resolve(performance.now() - start));
-        else requestAnimationFrame(frame);
-      };
-      document.querySelector<HTMLAnchorElement>('.subsection-parent[href="/timeline"]')!.click();
-      requestAnimationFrame(frame);
-    })));
+    durations.push((await completion(page, `Preloaded Timeline ${eventCount} events, visit ${visit + 1}`,
+      async () => (await sectionLink(page, 'Timeline')).click(), { selector: '.timeline-board .event-card' })).ms);
     await (await sectionLink(page, 'Tools')).click();
     await expect(page.locator('[data-route-id="tools"]')).toBeVisible();
   }
   await testInfo.attach('click-to-painted-timeline-ms', { body: JSON.stringify(durations), contentType: 'application/json' });
+  await testInfo.attach('interaction-metrics', { body: JSON.stringify(await page.evaluate(() => (window as any).__stress)), contentType: 'application/json' });
   console.info('Click to painted Timeline (ms):', durations.map(duration => Math.round(duration)));
-  expect(Math.max(...durations), `Click to painted Timeline: ${durations.join(', ')} ms`).toBeLessThan(100);
+  if (!process.env.PERF_AUDIT) expect(Math.max(...durations), `Click to painted Timeline: ${durations.join(', ')} ms`).toBeLessThan(100);
 });

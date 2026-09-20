@@ -46,11 +46,12 @@
     <Button variant={viewMode==='list' ? 'primary' : 'secondary'} size="sm" icon="menu" ariaLabel="List view" ariaPressed={viewMode==='list'} onclick={()=>viewMode='list'}/>
     <Button variant="secondary" size="sm" icon="download" ariaLabel="Export race history" onclick={exportHistory} disabled={!entries.length}>Export</Button>
   {/snippet}
-  {#if loading}<p class="state">Loading race history…</p>
+  {#if open}{#if loading}<p class="state">Loading race history…</p>
   {:else if error}<Banner title="Race history unavailable" tone="danger"><p>{error}</p><Button variant="secondary" size="sm" onclick={() => retry++}>Retry race history</Button></Banner>
   {:else if !entries.length}<p class="state">No race history is available for this Veteran.</p>
   {:else if viewMode === 'grid'}<div class="calendar"><RaceSchedule years={schedule} label={`${charName} race history`}/></div>
   {:else}<div class="race-list">{#each entries as entry (`${entry.year}:${entry.month}:${entry.half}:${entry.raceInstanceId}`)}<article><time>{entry.yearLabel}<small>{entry.turnLabel}</small></time><span class:won={entry.won} class:second={entry.position === 2} class:third={entry.position === 3} class="position"><Icon name="trophy" size={14}/>{entry.position}{entry.position === 1 ? 'st' : entry.position === 2 ? 'nd' : entry.position === 3 ? 'rd' : 'th'}</span><RaceBadge race={entry} compact/><strong>{entry.name}</strong></article>{/each}</div>{/if}
+  {/if}
 </Dialog>
 </div>
 

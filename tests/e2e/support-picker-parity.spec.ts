@@ -4,6 +4,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { startInteractionAudit, throttleAuditPage } from './fixtures/interaction-audit';
 
 async function openPicker(page: Page, navigate = true) {
   if (navigate) await page.goto('/database', { waitUntil:'domcontentloaded' });
@@ -61,12 +62,14 @@ test('persistent resources render before the manifest, survive navigation, and r
   // A short directory also avoids Windows CacheStorage's nested-path limit.
   const profile=await mkdtemp(join(tmpdir(),'moe-cache-'));
   const context=await playwright[browserName].launchPersistentContext(profile,{baseURL,viewport,isMobile,hasTouch,userAgent});
+  const finishAudit=await startInteractionAudit(context,test.info());
   // Use Playwright's HTTP client for bundles to avoid serial WebKit/Windows socket delays.
   await context.route('**/app/**', async route => route.fulfill({response:await route.fetch({maxRetries:2})}));
   await mockAdvertising(context);
   await mockResources(context);
   await context.addInitScript(() => { localStorage.setItem('page-introduction-audience-v1', 'existing'); localStorage.setItem('lastSeenUpdateVersion', '17'); });
   const page=await context.newPage(),errors:string[]=[];
+  await throttleAuditPage(page);
   page.on('pageerror',error=>errors.push(error.message));
   try {
   await mockDatabase(page); await mockAffinity(page); await page.goto('/tools');
@@ -135,5 +138,5 @@ test('persistent resources render before the manifest, survive navigation, and r
   expect(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('svelte-')))).toBe(false);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
   expect(errors).toEqual([]);
-  } finally { await context.close(); }
+  } finally { try { await finishAudit(); } finally { await context.close(); } }
 });

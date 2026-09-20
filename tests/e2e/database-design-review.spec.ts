@@ -91,6 +91,10 @@ test('Database review controls share sizing, empty numbers and toggle state with
   await expect(page.locator('.support-quick .compact-visual img')).toHaveCSS('object-fit','contain');
   await page.locator('.support-quick').screenshot({path:test.info().outputPath('selected-support.png')});
   const changeSupport = page.getByRole('button',{name:'Change support card',exact:true});
+  if(isMobile) for (const id of ['main','characters']) {
+    const toggle = page.locator(`[data-filter-group="${id}"] .group-title`);
+    if(await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+  }
   for (const theme of ['dark','light']) {
     await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
     const background = theme === 'dark' ? 'rgb(20, 20, 20)' : 'rgb(247, 249, 252)';
@@ -117,7 +121,6 @@ test('Database review controls share sizing, empty numbers and toggle state with
   const trackBox=(await track.boundingBox())!;
   await track.click({position:{x:trackBox.width-1,y:trackBox.height/2}});await expect(slider).toHaveValue('4');
   await track.click({position:{x:1,y:trackBox.height/2}});await expect(slider).toHaveValue('0');
-  if (isMobile) await page.locator('[data-filter-group="characters"] .group-title').click();
   await page.locator('.filter-row--allow').first().click();
   const picker=page.getByRole('dialog',{name:'Include Characters',exact:true});
   await expect(picker.getByRole('searchbox',{name:'Search characters'})).toBeVisible();
@@ -161,6 +164,7 @@ test('Database review controls share sizing, empty numbers and toggle state with
   }
   await page.evaluate(() => document.documentElement.dataset.theme = 'dark');
   await page.keyboard.press('Escape');await expect(share).not.toBeVisible();
+  await page.locator('.inheritance-card').first().scrollIntoViewIfNeeded();
   const combinedMain = page.locator('.inheritance-card').first().locator('.spark').filter({has:page.locator('.contribution.main')}).first();
   await expect(combinedMain.locator('.contribution.main')).toBeVisible();
   expect(await combinedMain.evaluate(el => getComputedStyle(el.querySelector('.level')!).color === getComputedStyle(el.querySelector('.star')!).color)).toBe(true);
@@ -171,7 +175,7 @@ test('Database review controls share sizing, empty numbers and toggle state with
   const result=page.locator('.inheritance-card').first();
   await expect(result.locator('.spark .source-portrait').first()).toBeVisible();
   await expect(result.locator('.factor-source').first()).toHaveCSS('outline-style','none');
-  await expect(result.locator('.factor-source[data-owner="main"] .spark').first()).toHaveCSS('border-top-color','rgb(217, 147, 131)');
+  await expect(result.locator('.factor-source[data-owner="main"] .spark--blue').first()).toHaveCSS('border-top-color','rgba(33, 150, 243, 0.5)');
   await expect(result.locator('.factor-source[data-owner="main"] .level').first()).toHaveCSS('color','rgb(217, 147, 131)');
   await expect(result.locator('.source-portrait').first()).toHaveCSS('border-top-width','0px');
   await expect(result.locator('.spark').first()).not.toHaveClass(/subtle/);

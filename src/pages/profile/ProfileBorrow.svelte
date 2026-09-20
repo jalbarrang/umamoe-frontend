@@ -21,7 +21,7 @@
   let affinityEngine = $state<VeteranAffinityEngine>();
   let affinityError = $state('');
   let raceGroups = $state<ReadonlyMap<number, number>>(new Map());
-  let borrowCopies = $state<{ profile: ProfileResponse; count: number }>();
+  let borrowCopies = $state.raw<{ profile: ProfileResponse; count: number }>();
   let toasts = $state<Toast[]>([]);
   let inheritanceActionBusy = $state(false);
   let inheritanceNotice = $state('');

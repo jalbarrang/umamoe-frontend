@@ -170,9 +170,11 @@
   let bookmarkBusyIds = $state<string[]>([]);
   let clearBookmarksArmed = $state(false);
   let toasts = $state<Toast[]>([]);
-  let selectedParent = $state<SelectableParent>();
+  let selectedParent = $state.raw<SelectableParent>();
   const legacyRestoreKey = $derived(JSON.stringify(compactState.vet));
   let uqlParents = $state.raw<SelectableParent[]>([]);
+  const uqlLegacyParents = $derived(selectedParent && !uqlParents.some(parent => parent.pickerId === selectedParent?.pickerId && parent.id === selectedParent?.id)
+    ? [selectedParent, ...uqlParents.filter(parent => parent.pickerId !== selectedParent?.pickerId)] : uqlParents);
   let uqlLegacyLoading = $state(false);
   let uqlLegacyError = $state('');
   let uqlLegacyScope = $state('');
@@ -631,7 +633,7 @@
     let cancelled = false;
     void withPageRequest(async () => {
       await new Promise<void>(resolve => {
-        const timer = setTimeout(resolve, immediate ? 0 : 320);
+        const timer = setTimeout(resolve, immediate ? 0 : 150);
         cancelSearchTimer = () => { cancelled = true; clearTimeout(timer); resolve(); };
       });
       if (cancelled) return;
@@ -765,7 +767,7 @@
         {#await import('./DatabaseUqlEditor.svelte')}
           <Spinner label="Loading UQL editor…"/>
         {:then editor}
-          <editor.default bind:value={filters.uql} validation={uqlValidation} {characters} {supports} catalog={uqlCatalog} loading={uqlCatalogLoading} legacyParents={selectedParent ? [selectedParent, ...uqlParents.filter(parent => parent.pickerId !== selectedParent?.pickerId)] : uqlParents} onpicklegacy={() => uqlLegacyPickerOpen = true} onclear={clearFilters}/>
+          <editor.default bind:value={filters.uql} validation={uqlValidation} {characters} {supports} catalog={uqlCatalog} loading={uqlCatalogLoading} legacyParents={uqlLegacyParents} onpicklegacy={() => uqlLegacyPickerOpen = true} onclear={clearFilters}/>
         {:catch}
           <Banner tone="warning" title="UQL suggestions unavailable">You can still edit and run your query below. <Button size="sm" variant="secondary" onclick={() => { persist(); location.reload(); }}>Retry editor</Button></Banner>
           <div class="uql-fallback">

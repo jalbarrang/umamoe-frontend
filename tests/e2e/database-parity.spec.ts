@@ -410,6 +410,8 @@ test('Database synchronizes result display controls and exposes source affinity 
   await expect(first.getByTitle('Focus primary parent sparks; click again to clear')).toHaveAttribute('aria-pressed', 'false');
 
   await first.getByRole('button', { name: 'Per Inh.', exact: true }).click();
+  await cards.last().scrollIntoViewIfNeeded();
+  await expect(cards.last().getByRole('button', { name: 'Per Run', exact: true })).toBeVisible();
   await expect(cards.getByRole('button', { name: 'Per Run', exact: true })).toHaveCount(2);
   await first.getByRole('button', { name: '★ Stars', exact: true }).click();
   await expect(cards.getByRole('button', { name: '× Occurrences', exact: true })).toHaveCount(2);

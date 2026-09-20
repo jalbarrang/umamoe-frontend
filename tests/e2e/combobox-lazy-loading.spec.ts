@@ -1,0 +1,27 @@
+import { test, expect } from './fixtures/test';
+import { mockDatabase } from './fixtures/api';
+import { stressCatalogs } from '../performance/data';
+
+test('large factor menus load automatically and search their complete catalog', async ({ page, isMobile }) => {
+  await mockDatabase(page);
+  await stressCatalogs(page);
+  await page.goto('/database');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  if (isMobile) await page.getByRole('button', { name: 'Spark Filters', exact: true }).click();
+  await page.getByRole('button', { name: 'Add White Factor', exact: true }).click();
+  const input = page.locator('#white-factors-factor-0');
+  await input.click();
+  const menu = page.getByRole('listbox', { name: 'Factor suggestions', exact: true });
+  await expect(menu.getByRole('option')).toHaveCount(40);
+  await menu.evaluate(element => element.scrollTop = element.scrollHeight);
+  await expect(menu.getByRole('option')).toHaveCount(80);
+  await input.press('Escape');
+  await input.click();
+  await expect(menu.getByRole('option')).toHaveCount(40);
+  await input.fill('Stress Factor 1199');
+  await expect(menu.getByRole('option')).toHaveCount(1);
+  await input.press('ArrowDown');
+  await input.press('Enter');
+  await expect(input).toHaveValue('Stress Factor 1199');
+  await expect(menu).toBeHidden();
+});

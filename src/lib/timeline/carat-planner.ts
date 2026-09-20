@@ -415,7 +415,7 @@ export function plannerPickupGoals(target: PlannerTarget, fallbackPickupId?: num
   return source.map(goal => ({ pickupId: goal.pickupId, desiredCopies: Math.max(1, number(goal.desiredCopies, target.bannerKind === 'support' ? 5 : 20)) }));
 }
 
-export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataBundle = 150): PlanProjection {
+export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataBundle = 150, preparedLedger?: PlannerLedgerEntry[]): PlanProjection {
   const bundle = typeof costOrBundle === 'number' ? undefined : costOrBundle;
   const defaultJewelCost = typeof costOrBundle === 'number' ? Math.max(1, costOrBundle) : Math.max(1, Number(costOrBundle.core.jewel_cost_per_pull) || 150);
   const projectionStart = utcDay(plan.projectionStartDate) ?? 0;
@@ -425,7 +425,7 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
   const campaignPulls = freePullsByTarget(plan, bundle, ordered);
   const current: PlannerBalances = balances(plan.balances);
   const pullDates = ordered.map(target => resolvePlannerPullDate(target));
-  const ledger = buildPlannerLedger(plan, bundle, pullDates.at(-1) ?? plan.projectionStartDate, pullDates);
+  const ledger = preparedLedger ?? buildPlannerLedger(plan, bundle, pullDates.at(-1) ?? plan.projectionStartDate, pullDates);
   let ledgerIndex = 0;
   const targets: TargetProjection[] = [];
   let totalShortfallJewels = 0;

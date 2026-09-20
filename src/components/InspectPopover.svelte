@@ -7,6 +7,7 @@
   let control: HTMLButtonElement;
   let panel: HTMLDivElement;
   let open = $state(false);
+  let mounted = $state(false);
   let hoverOpened = false;
   let left = $state(0);
   let top = $state(0);
@@ -38,7 +39,7 @@
 <svelte:window onresize={positionPanel} onscroll={positionPanel} onkeydown={escape}/>
 <div class="inspect" class:open role="group" aria-label={label} onpointerenter={() => hover(true)} onpointerleave={() => hover(false)}>
   <button bind:this={control} type="button" class="trigger" aria-label={label} aria-expanded={open} aria-haspopup="dialog" popovertarget={id} onclick={activate}>{@render trigger()}</button>
-  <div bind:this={panel} {id} popover="auto" class="popover" role="dialog" aria-label={label} style:left="{left}px" style:top="{top}px" ontoggle={(event) => { open = event.newState === 'open'; if (!open) hoverOpened = false; onopenchange?.(open); }}><button type="button" class="close" aria-label={`Close ${label}`} onclick={close}><Icon name="close" size={14}/></button>{@render children()}</div>
+  <div bind:this={panel} {id} popover="auto" class="popover" role="dialog" aria-label={label} style:left="{left}px" style:top="{top}px" onbeforetoggle={(event) => { if (event.newState === 'open') mounted = true; }} ontoggle={(event) => { open = event.newState === 'open'; if (!open) hoverOpened = false; onopenchange?.(open); }}>{#if mounted}<button type="button" class="close" aria-label={`Close ${label}`} onclick={close}><Icon name="close" size={14}/></button>{@render children()}{/if}</div>
 </div>
 
 <style>

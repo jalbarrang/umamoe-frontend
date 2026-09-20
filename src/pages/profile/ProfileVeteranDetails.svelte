@@ -136,6 +136,7 @@
   {#if veteran.fans != null || created || veteran.team_rating != null}<footer>{#if veteran.fans != null}<span>{veteran.fans.toLocaleString()} fans</span>{/if}{#if veteran.team_rating != null}<span>Team rating {veteran.team_rating.toLocaleString()}</span>{/if}{#if created}<span>Trained {created}</span>{/if}</footer>{/if}
 </div>
 <style>
+  .veteran-details > section { content-visibility:auto;contain-intrinsic-block-size:auto 180px; }
   .veteran-details { min-width:0; display:grid; gap:10px; }
   h3 { display:flex; align-items:center; gap:5px; margin:0; font-size:13px; font-weight:600; color:var(--color-text); }h3>span { color:var(--text-secondary); font-size:11px; font-weight:400; }
   p { margin:0; color:var(--color-text-muted); font-size:11px; line-height:1.5; }header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }

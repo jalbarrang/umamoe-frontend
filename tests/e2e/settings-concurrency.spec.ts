@@ -42,7 +42,7 @@ test('Settings removal failures preserve rows, retries refresh server data, and 
   await expect(account).toBeVisible(); await expect(account.getByRole('button', { name: 'Unlink', exact: true })).toBeEnabled();
   rejectRemoval = false;
   await account.getByRole('button', { name: 'Unlink', exact: true }).click();
-  await expect(page.getByText('Refreshed trainer', { exact: true })).toBeVisible();
+  await expect(page.locator('#settings-content').getByText('Refreshed trainer', { exact: true })).toBeVisible();
   await expect(page.locator('.banner--danger')).toHaveCount(0);
   rejectRemoval = true;
   const google = page.locator('.identity-row').filter({ hasText: 'Google owner' });
@@ -87,7 +87,7 @@ test('Settings cards load independently and an older key response cannot overwri
   });
   try {
     await page.goto('/settings');
-    await expect(page.getByText('Ready trainer', { exact: true })).toBeVisible();
+    await expect(page.locator('#settings-content').getByText('Ready trainer', { exact: true })).toBeVisible();
     const keyCard = page.locator('.settings-card').filter({ has: page.getByRole('heading', { name: 'API Keys', exact: true }) });
     await expect(keyCard.getByRole('status')).toHaveText('Loading…');
     await expect(keyCard.getByText('No API keys yet.')).toHaveCount(0);

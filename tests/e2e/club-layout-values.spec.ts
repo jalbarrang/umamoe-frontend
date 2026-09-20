@@ -4,6 +4,16 @@ import { clubExportFixture } from './fixtures/club-exports';
 
 test.use({ locale:'en-US', timezoneId:'UTC' });
 
+async function loadMembers(page: Page, selector: string, total: number) {
+  await expect.poll(() => page.locator(selector).count()).toBeGreaterThanOrEqual(Math.min(total,12));
+  while (await page.locator(selector).count() < total) {
+    const before = await page.locator(selector).count();
+    await page.locator('.members-more').scrollIntoViewIfNeeded();
+    await expect.poll(() => page.locator(selector).count()).toBeGreaterThan(before);
+  }
+  await expect(page.locator(selector)).toHaveCount(total);
+}
+
 test('Mobile member table keeps compact columns and expands the remaining metrics', async ({ page }) => {
   await page.clock.setFixedTime('2026-09-06T12:00:00Z');
   await mockCommunity(page);
@@ -78,7 +88,7 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
     await page.route('**/api/v4/circles?*', route => route.fulfill({json:fixture.response}));
     await page.addInitScript(config => localStorage.setItem('circle_details_config',JSON.stringify(config)), fixture.config);
     await page.goto('/circles/7?year=2026&month=9');
-    await expect(page.locator('.member-card')).toHaveCount(fixture.response.members.length);
+    await loadMembers(page,'.member-card',fixture.response.members.length);
     await expect(page.locator('.club-chart')).toHaveCount(1);
     if (scenario === 'empty club') await expect(page.getByText('No members match your search.', {exact:true})).toBeVisible();
     if (scenario === 'missing fields') {
@@ -114,7 +124,7 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
           }
         }
         await page.getByRole('button',{name:'Show member rows',exact:true}).click();
-        await expect(page.locator('tbody tr')).toHaveCount(fixture.response.members.length);
+        await loadMembers(page,'tbody tr',fixture.response.members.length);
         if (width < 768) await fits(page);
         await page.getByRole('button',{name:'Show member cards',exact:true}).click();
       }

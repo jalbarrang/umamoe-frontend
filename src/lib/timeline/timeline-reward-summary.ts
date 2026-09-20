@@ -160,10 +160,16 @@ function rewardItem(
   };
 }
 
+const fallbackCache = new WeakMap<PlannerRewardResource, WeakMap<readonly TimelineRewardFallbackEvent[], PlannerRewardResource>>();
+
 export function withTimelineRewardFallbacks(
   resource: PlannerRewardResource,
   timelineEvents: readonly TimelineRewardFallbackEvent[],
 ): PlannerRewardResource {
+  let snapshots = fallbackCache.get(resource);
+  if (!snapshots) fallbackCache.set(resource, snapshots = new WeakMap());
+  const cached = snapshots.get(timelineEvents);
+  if (cached) return cached;
   const eventsWithCarats = new Set<string>();
   for (const bundle of plannerRewardBundles(resource.rewards ?? [])) {
     if (!bundle.eventId) continue;
@@ -199,9 +205,11 @@ export function withTimelineRewardFallbacks(
     timelineEvents,
   );
 
-  return fallbackRewards.length || recurringRewards.length
+  const filled = fallbackRewards.length || recurringRewards.length
     ? { ...resource, rewards: [...(resource.rewards ?? []), ...fallbackRewards, ...recurringRewards] }
     : resource;
+  snapshots.set(timelineEvents, filled);
+  return filled;
 }
 
 function expectedRecurringRewards(

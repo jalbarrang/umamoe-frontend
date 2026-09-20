@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures/test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { detailGachas, detailRewards, mockTimelineDetails } from './fixtures/timeline-details';
+import { detailGachas, detailRewards, mockTimelineDetails, loadVisibleTimelineEvents } from './fixtures/timeline-details';
 
 test('Timeline details preserve pickups, rates, rewards, sources, predictions and planner state', async ({ page, isMobile }) => {
   await mockTimelineDetails(page);
@@ -58,7 +58,7 @@ test('Timeline reward-only details retain race facts, placement ranges and selec
   await expect(dialog.getByText('500–2,500')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Add to planner' })).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Close dialog' }).click();
-  if (!isMobile) await page.getByRole('button', { name: 'Show 2 more events' }).click();
+  if (!isMobile) await loadVisibleTimelineEvents(page);
   await page.getByRole('button', { name: 'Open details for Summer story', exact: true }).click();
   dialog = page.getByRole('dialog', { name: 'Summer story', exact: true });
   await expect(dialog.getByLabel('2,010 Carats')).toBeVisible();
@@ -67,7 +67,7 @@ test('Timeline reward-only details retain race facts, placement ranges and selec
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0].enabledRewardEventIds)).toContain('detail-story');
   await dialog.getByRole('button', { name: 'Close dialog' }).click();
   await page.reload();
-  if (!isMobile) await page.getByRole('button', { name: 'Show 2 more events' }).click();
+  if (!isMobile) await loadVisibleTimelineEvents(page);
   await page.getByRole('button', { name: 'Open details for Summer story', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Remove from planner' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Remove from planner' }).click();

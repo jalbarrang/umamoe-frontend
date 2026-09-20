@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/test';
 import { mockTimeline } from './fixtures/api';
+import { loadVisibleTimelineEvents } from './fixtures/timeline-details';
 
 test('Timeline keeps compact artwork cards and Carat Planner preserves banner alignment', async ({ page, isMobile }, info) => {
   await mockTimeline(page);
@@ -69,12 +70,10 @@ test('Timeline preserves grouped-event expansion, marker order, spacing and the 
     await expect(page.getByRole('button', { name: 'Search & filters', exact: true })).toBeFocused();
   } else {
     await expect(page.getByRole('button', { name: 'Compact gaps', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(lane.locator('.event-card')).toHaveCount(3);
-    expect(await lane.locator('[id^="timeline-event-"]').evaluateAll(nodes => nodes.map(node => node.id))).toEqual(['timeline-event-group-4', 'timeline-event-group-3', 'timeline-event-group-1']);
-    await lane.getByRole('button', { name: 'Show 2 more events' }).click();
+    expect(await lane.locator('[id^="timeline-event-"]').evaluateAll(nodes => nodes.slice(0,3).map(node => node.id))).toEqual(['timeline-event-group-4', 'timeline-event-group-3', 'timeline-event-group-1']);
+    await loadVisibleTimelineEvents(page);
     await expect(lane.locator('.event-card')).toHaveCount(5);
-    await lane.getByRole('button', { name: 'Show fewer events' }).click();
-    await expect(lane.locator('.event-card')).toHaveCount(3);
+    await expect(lane.getByRole('button', { name: /Show .*events/ })).toHaveCount(0);
     await page.getByRole('button', { name: 'Compact gaps', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Compact gaps', exact: true })).toHaveAttribute('aria-pressed', 'false');
     await page.getByRole('radio', { name: 'Vertical', exact: true }).click();
@@ -149,7 +148,7 @@ test('Timeline wheel preserves tall stacks, trackpad scrolling and browser zoom'
   await page.goto('/timeline');
   const board = page.locator('.timeline-board');
   const lane = page.locator('[data-lane-key="2026-09-01"]');
-  await lane.getByRole('button', { name: 'Show 3 more events' }).click();
+  await loadVisibleTimelineEvents(page);
   await board.evaluate(node => node.scrollTo({ top: 0, behavior: 'instant' }));
   await lane.locator('.event-card').first().hover();
   const before = await board.evaluate(node => ({ left: node.scrollLeft, top: node.scrollTop }));

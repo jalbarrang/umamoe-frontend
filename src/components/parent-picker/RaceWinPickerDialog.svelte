@@ -12,7 +12,7 @@
   const id = $props.id();
   let draft = $state<number[]>([]);
   let query = $state('');
-  let races = $state<RaceScheduleYear[]>([]);
+  let races = $state.raw<RaceScheduleYear[]>([]);
   let saddles = $state(new Map<number, number[]>());
   let loading = $state(false);
   let error = $state('');

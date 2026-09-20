@@ -78,10 +78,14 @@ test('Profile and Database share inheritance card styling in both themes', async
     await page.goto('/database?trainer_id=' + accountId);
     const database = page.locator('.inheritance-card').first();
     await expect(database).toBeVisible();
+    await database.scrollIntoViewIfNeeded();
+    await expect(database.locator('.spark').first()).toBeVisible();
     const expected = await Promise.all(['.record-stats', '.spark', '.trainer-copy', '.plan-action'].map(selector => appearance(database.locator(selector).first())));
     await page.goto('/profile/' + accountId);
     const borrow = page.locator('.inheritance-card');
     await expect(borrow).toBeVisible();
+    await borrow.scrollIntoViewIfNeeded();
+    await expect(borrow.locator('.spark').first()).toBeVisible();
     for (const [index, selector] of ['.record-stats', '.spark', '.trainer-copy', '.plan-action'].entries()) {
       expect(await appearance(borrow.locator(selector).first())).toEqual(expected[index]);
     }

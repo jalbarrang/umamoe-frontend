@@ -5,7 +5,7 @@
   import { onMount, untrack } from 'svelte';
   import { searchParams } from 'sv-router';
   import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
-  import { activePlan, availableCrystals, clonePlanCollection, createPlan, enabledPlannerTargets, findPlannerEvent, importPlanCollection, importSharedPlan, withoutPlannerResourceDates, plannerTargetEvents, sanitizePlan, synchronizePlannerTargets, projectPlan, setTimelineEvent, type CaratPlan, type CaratPlanCollection, type PlannerDataBundle, type PlannerTarget } from '@/lib/timeline/carat-planner';
+  import { activePlan, availableCrystals, buildPlannerLedger, clonePlanCollection, createPlan, enabledPlannerTargets, findPlannerEvent, importPlanCollection, importSharedPlan, withoutPlannerResourceDates, plannerTargetEvents, resolvePlannerPullDate, sanitizePlan, synchronizePlannerTargets, projectPlan, setTimelineEvent, type CaratPlan, type CaratPlanCollection, type PlannerDataBundle, type PlannerTarget } from '@/lib/timeline/carat-planner';
   import { compactPlannerCollectionResourceState } from '@/lib/timeline/planner-resource-state';
   import { reconcileIncomePreset } from '@/lib/timeline/planner-income-presets';
   import { activeIncomeAssumptionCount, buildPlannerIncomeGroups, enabledIncomeTotalLabel } from './planner-income-view';
@@ -54,7 +54,22 @@
   const effectiveRewards = $derived(withTimelineRewardFallbacks(rewardResource, events));
   const incomeGroups = $derived(buildPlannerIncomeGroups(resources.income.rules, resources.rewards.competitive_variants ?? [], events, resources.rewards.global_reward_comparison));
   const rewardSummaries = $derived(buildTimelineRewardSummaries(rewardResource, events));
-  const plan = $derived(synchronizePlannerTargets(activePlan(collection), events, resources.gachas)); const projection = $derived(projectPlan(plan, { ...resources, rewards: effectiveRewards, timelineEvents: events })); const projectionByTarget = $derived(new Map(projection.targets.map((item) => [item.targetId, item])));
+  const plan = $derived(synchronizePlannerTargets(activePlan(collection), events, resources.gachas));
+  // Pull counts, goals and current balances spend income; they do not rebuild it.
+  const ledgerKey = $derived(JSON.stringify([
+    plan.projectionStartDate, plan.enabledIncomeRuleIds, plan.enabledRewardIds, plan.disabledRewardIds,
+    plan.disabledEventIds, plan.scenarioSelections, plan.variableRewardSelections, plan.customIncome,
+    enabledPlannerTargets(plan).map(target => resolvePlannerPullDate(target)).filter(date => date >= plan.projectionStartDate).sort()
+  ]));
+  const incomeResource = $derived(resources.income);
+  const coreResource = $derived(resources.core);
+  const ledger = $derived.by(() => {
+    const dates = JSON.parse(ledgerKey).at(-1) as string[];
+    const bundle = { core: coreResource, income: incomeResource, rewards: effectiveRewards, timelineEvents: events };
+    return untrack(() => buildPlannerLedger(plan, bundle, dates.at(-1) ?? plan.projectionStartDate, dates));
+  });
+  const projection = $derived(projectPlan(plan, { ...resources, rewards: effectiveRewards, timelineEvents: events }, ledger));
+  const projectionByTarget = $derived(new Map(projection.targets.map((item) => [item.targetId, item])));
   let draftName = $state<{ planId: string; savedName: string; value: string }>();
   const displayedName = $derived(draftName?.planId === plan.id && draftName.savedName === plan.name ? draftName.value : plan.name);
   const targetEvents = $derived(plannerTargetEvents(activePlan(collection), events));
@@ -63,7 +78,9 @@
   const pullItems = $derived(plannerPullPlanItems(plan, events));
   const addedEventIds = $derived(new Set([...activeTargets.map(target => target.eventId), ...plan.enabledRewardEventIds.filter(id => !plan.disabledEventIds.includes(id))]));
   const eventsById = $derived(new Map(events.map(event => [event.id, event])));
-  const bannerOptions = $derived(filterPlannerBanners(events, eventSearch, plan.projectionStartDate).map(event => ({ value: event.id, label: timelineDisplayTitle(event), disabled: addedEventIds.has(event.id) || event.plannerRewardAvailable && (resourcesLoading || Boolean(resourcesError)) })));
+  const projectionStart = $derived(plan.projectionStartDate);
+  const matchingBanners = $derived(filterPlannerBanners(events, eventSearch, projectionStart));
+  const bannerOptions = $derived(matchingBanners.map(event => ({ value: event.id, label: timelineDisplayTitle(event), disabled: addedEventIds.has(event.id) || event.plannerRewardAvailable && (resourcesLoading || Boolean(resourcesError)) })));
   const globalPullTiming = $derived.by(() => {
     const timings = new Set(activeTargets.map(target => target.pullTiming));
     const timing = activeTargets[0]?.pullTiming;

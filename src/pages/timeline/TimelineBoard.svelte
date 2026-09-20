@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick, untrack, type Snippet } from 'svelte';
   import Icon from '@/components/Icon.svelte';
-  import Button from '@/components/Button.svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import AdRegion from '@/layouts/AdRegion.svelte';
   import { buildTimelineFeed, LANE_STEP, LANE_WIDTH, timelineDateKey, timelineMonths, timelinePosition, type TimelineAnniversary, type TimelineLane, type TimelineMarker } from '@/lib/timeline/timeline-layout';
   import type { TimelineRecord } from './timeline-repository';
@@ -14,9 +14,10 @@
   const weekdayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
   let board = $state<HTMLElement>();
   let feed = $state<HTMLElement>();
-  let expanded = $state<string[]>([]);
+  let laneLimits = $state.raw<Record<string, number>>({});
   let scrollLeft = $state(0), scrollTop = $state(0), viewportWidth = $state(1500), viewportHeight = $state(800), pageY = $state(0), feedTop = $state(0);
   let measured = $state.raw<Record<string, number>>({});
+  let pendingHeights: Record<string, number> = {}, measurementFrame = 0;
   let measuredLaneHeight = $state(0);
   let initialized = $state(false);
   let imagesReady = $state(false);
@@ -37,9 +38,9 @@
   function verticalWindow(monthIndex: number) {
     const offsets = monthLaneOffsets[monthIndex]!;
     const top = scrollTop - monthOffsets[monthIndex]! - 56;
-    const start = offsets.findIndex(offset => offset > Math.max(0, top - 350));
+    const start = offsets.findIndex(offset => offset > Math.max(0, top - 195));
     const first = start < 0 ? Math.max(0, offsets.length - 2) : Math.max(0, start - 1);
-    const end = offsets.findIndex(offset => offset > top + viewportHeight + 350);
+    const end = offsets.findIndex(offset => offset > top + viewportHeight + 195);
     const last = end < 0 ? offsets.length - 1 : end;
     return { first, last, before: offsets[first]!, after: offsets.at(-1)! - offsets[last]! };
   }
@@ -54,11 +55,12 @@
   });
   const lastMonth = $derived.by(() => { const index = monthOffsets.findIndex(offset => offset > scrollTop + viewportHeight + 500); return index < 0 ? months.groups.length : index; });
   const width = $derived((lanes.at(-1)?.position ?? 0) + LANE_WIDTH + 48);
-  const visibleLanes = $derived(lanes.filter(lane => lane.position + LANE_WIDTH >= scrollLeft - LANE_STEP && lane.position <= scrollLeft + viewportWidth + LANE_STEP));
+  const visibleLanes = $derived(lanes.filter(lane => lane.position + LANE_WIDTH >= scrollLeft - 150 && lane.position <= scrollLeft + viewportWidth + 150));
   const todayPosition = $derived(timelinePosition(lanes, now));
+  const todayLane = $derived(lanes.reduce<TimelineLane | undefined>((best, lane) => !best || Math.abs(lane.date.getTime() - now.getTime()) < Math.abs(best.date.getTime() - now.getTime()) ? lane : best, undefined));
   const showToday = $derived(Boolean(lanes.length && now >= lanes[0]!.date && now <= lanes.at(-1)!.date));
   const trackHeight = $derived(Math.max(360, measuredLaneHeight, ...lanes.map(lane => {
-    const count = expanded.includes(lane.key) ? lane.events.length : Math.min(3, lane.events.length);
+    const count = Math.min(laneLimits[lane.key] ?? 3, lane.events.length);
     return 96 + lane.markers.reduce((sum, marker) => sum + (marker.image ? 108 : 42), 0) + count * 220 + Math.max(0, count - 1) * 9 + (lane.events.length > 3 ? 38 : 0);
   })));
   const rows = $derived(buildTimelineFeed(events, anniversaries, end, now));
@@ -89,27 +91,31 @@
       viewportWidth = board.clientWidth;
       board.parentElement?.style.setProperty('--timeline-viewport-top', `${board.getBoundingClientRect().top}px`);
     }
-    viewportHeight = innerHeight;
+    viewportHeight = mobile ? innerHeight : board?.clientHeight ?? innerHeight;
     if (feed) feedTop = feed.getBoundingClientRect().top + scrollY;
     updateViewport();
   }
   function scheduleViewport() { if (active && !frame) frame = requestAnimationFrame(() => { frame = 0; updateViewport(); }); }
   function measureRow(node: HTMLElement, key: string) {
-    let pending = 0;
     const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return;
+      if (!active || !entry) return;
       const height = Math.ceil(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height);
-      cancelAnimationFrame(pending); pending = requestAnimationFrame(() => {
-      if (!active) return;
-      if (height > 0 && Math.abs((measured[key] ?? 0) - height) > 2) measured = { ...measured, [key]: height };
-    }); });
+      if (height <= 0 || Math.abs((measured[key] ?? 0) - height) <= 2) return;
+      pendingHeights[key] = height;
+      // All rows resize together when changing direction. Recalculate offsets once.
+      if (!measurementFrame) measurementFrame = requestAnimationFrame(() => {
+        measurementFrame = 0;
+        if (active) measured = { ...measured, ...pendingHeights };
+        pendingHeights = {};
+      });
+    });
     observer.observe(node);
-    return { update(next: string) { key = next; }, destroy() { observer.disconnect(); cancelAnimationFrame(pending); } };
+    return { update(next: string) { delete pendingHeights[key]; key = next; }, destroy() { observer.disconnect(); delete pendingHeights[key]; } };
   }
   function measureLane(node: HTMLElement) {
     let pending = 0;
-    const observer = new ResizeObserver(() => { cancelAnimationFrame(pending); pending = requestAnimationFrame(() => {
-      if (active) measuredLaneHeight = Math.max(measuredLaneHeight, Math.ceil(node.getBoundingClientRect().height));
+    const observer = new ResizeObserver(([entry]) => { const height = entry?.borderBoxSize[0]?.blockSize ?? entry?.contentRect.height ?? 0; cancelAnimationFrame(pending); pending = requestAnimationFrame(() => {
+      if (active) measuredLaneHeight = Math.max(measuredLaneHeight, Math.ceil(height));
     }); });
     observer.observe(node);
     return { destroy() { observer.disconnect(); cancelAnimationFrame(pending); } };
@@ -125,8 +131,7 @@
       window.scrollTo({ top: Math.max(0, feedTop + offsets[index]! + (offsets[index + 1]! - offsets[index]!) / 2 - innerHeight / 2), behavior: smooth ? behavior() : 'instant' });
     } else if (view === 'horizontal') board?.scrollTo({ left: Math.max(0, todayPosition + LANE_WIDTH / 2 - viewportWidth / 2), behavior: smooth ? behavior() : 'instant' });
     else {
-      const closest = lanes.reduce<TimelineLane | undefined>((best, lane) => !best || Math.abs(lane.date.getTime() - now.getTime()) < Math.abs(best.date.getTime() - now.getTime()) ? lane : best, undefined);
-      if (closest) await scrollToLane(closest.key, smooth);
+      if (todayLane) await scrollToLane(todayLane.key, smooth);
     }
     updateViewport();
   }
@@ -162,12 +167,15 @@
     cancelAnimationFrame(momentum); dragging = false; drag = undefined;
     if (next === 'vertical') savedHorizontal = board.scrollLeft; else savedVertical = board.scrollTop;
     // Render the saved window before scrolling, so a temporary short DOM cannot clamp it.
-    scrollLeft = next === 'horizontal' ? savedHorizontal : 0;
-    scrollTop = next === 'vertical' ? savedVertical : 0;
+    scrollLeft = next === 'horizontal' ? savedHorizontal || Math.max(0, todayPosition + LANE_WIDTH / 2 - viewportWidth / 2) : 0;
+    const monthIndex = months.groups.findIndex(month => month.key === todayLane?.key.slice(0, 7));
+    const laneIndex = months.groups[monthIndex]?.lanes.findIndex(lane => lane.key === todayLane?.key) ?? -1;
+    const todayTop = monthIndex >= 0 && laneIndex >= 0 ? monthOffsets[monthIndex]! + monthLaneOffsets[monthIndex]![laneIndex]! : 0;
+    scrollTop = next === 'vertical' ? savedVertical || todayTop : 0;
     await tick();
     viewportWidth = board.clientWidth;
     await tick();
-    board.scrollTo({ left: next === 'horizontal' ? savedHorizontal : 0, top: next === 'vertical' ? savedVertical : 0, behavior: 'instant' });
+    board.scrollTo({ left: scrollLeft, top: scrollTop, behavior: 'instant' });
     if (!(next === 'horizontal' ? savedHorizontal : savedVertical)) await scrollToToday(false);
     updateViewport();
   }
@@ -246,7 +254,7 @@
   });
   onMount(() => {
     initialized = true;
-    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(momentum); };
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(momentum); cancelAnimationFrame(measurementFrame); };
   });
 </script>
 
@@ -288,8 +296,8 @@
               <div class="lane-meta">{#if lane.events.length}<span>{lane.events.length} {lane.events.length === 1 ? 'event' : 'events'}</span>{/if}{#if lane.gapDays > 1}<span class="lane-gap">{lane.gapDays}d later</span>{/if}</div>
             </header>
             {#each lane.markers as marker}{@render markerView(marker)}{/each}
-            <div class="lane-events">{#each expanded.includes(lane.key) ? lane.events : lane.events.slice(0, 3) as event (event.id)}{@render card(event, imagesReady)}{/each}</div>
-            {#if lane.events.length > 3}<div class="lane-overflow"><Button variant="secondary" size="sm" ariaExpanded={expanded.includes(lane.key)} ariaLabel={expanded.includes(lane.key) ? 'Show fewer events' : `Show ${lane.events.length - 3} more events`} onclick={() => expanded = expanded.includes(lane.key) ? expanded.filter(key => key !== lane.key) : [...expanded, lane.key]}>{expanded.includes(lane.key) ? 'Show fewer' : `+${lane.events.length - 3} events`}</Button></div>{/if}
+            <div class="lane-events">{#each lane.events.slice(0, laneLimits[lane.key] ?? 3) as event (event.id)}{@render card(event, imagesReady)}{/each}</div>
+            {#if lane.events.length > (laneLimits[lane.key] ?? 3)}{#key laneLimits[lane.key]}<div class="lane-overflow" aria-hidden="true" use:loadWhenVisible={() => laneLimits = { ...laneLimits, [lane.key]: (laneLimits[lane.key] ?? 3) + 3 }}></div>{/key}{/if}
           </section>
         {/each}
       </div>
@@ -318,9 +326,9 @@
 <style>
   .timeline-board{min-width:0;color:var(--text-primary)}.desktop{width:100%;height:0;min-height:240px;flex:1 1 0px;overflow:auto;overscroll-behavior-x:contain;background:var(--color-canvas);scrollbar-color:var(--border-secondary) transparent;scrollbar-width:thin}.desktop:focus-visible{outline:1px solid var(--accent-primary);outline-offset:-1px}.desktop{cursor:grab;overflow-anchor:none}.dragging{cursor:grabbing;user-select:none}.timeline-track{position:relative;min-width:100%;height:100%;padding-bottom:18px}
   .month-span{position:absolute;inset-block:0;pointer-events:none;border-left:1px solid rgb(var(--accent-primary-rgb)/.15);background:transparent}.month-span:nth-child(even){background:rgb(var(--accent-primary-rgb)/.025)}.timeline-rail{position:absolute;top:52px;left:0;right:0;height:1px;background:var(--border-secondary)}
-  .date-lane{position:absolute;z-index:2;top:0;display:flex;flex-direction:column;padding-bottom:16px;isolation:isolate}.lane-header{height:72px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px 16px}.lane-header::before{position:absolute;content:'';top:54px;left:50%;height:18px;width:1px;background:var(--border-secondary)}.lane-header::after{position:absolute;content:'';top:49px;left:calc(50% - 3px);width:7px;height:7px;border:2px solid var(--accent-primary);border-radius:50%;background:var(--color-canvas)}.lane-header time{color:var(--text-primary);font-size:13px;line-height:18px;font-weight:650;white-space:nowrap}.lane-meta{display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:11px;line-height:14px}.lane-gap{font-size:10px}.lane-meta span+span::before{content:'·';margin-right:8px}.lane-events{display:grid;gap:10px;order:2}.lane-overflow{order:3;margin-top:8px}.lane-overflow :global(.ui-button){width:100%;min-height:32px;font-size:11px}
+  .date-lane{position:absolute;z-index:2;top:0;display:flex;flex-direction:column;padding-bottom:16px;isolation:isolate}.lane-header{height:72px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px 16px}.lane-header::before{position:absolute;content:'';top:54px;left:50%;height:18px;width:1px;background:var(--border-secondary)}.lane-header::after{position:absolute;content:'';top:49px;left:calc(50% - 3px);width:7px;height:7px;border:2px solid var(--accent-primary);border-radius:50%;background:var(--color-canvas)}.lane-header time{color:var(--text-primary);font-size:13px;line-height:18px;font-weight:650;white-space:nowrap}.lane-meta{display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:11px;line-height:14px}.lane-gap{font-size:10px}.lane-meta span+span::before{content:'·';margin-right:8px}.lane-events{display:grid;gap:10px;order:2}.lane-overflow{order:3;height:1px;margin-top:8px}
   .lane-marker{margin:3px 0 8px;overflow:hidden;border:1px solid var(--border-subtle);border-radius:4px;background:var(--surface-1);order:1}.lane-marker.is-anniversary{margin-top:7px;order:4}.marker-banner{display:block;width:100%;height:auto;aspect-ratio:512/125;object-fit:contain;background:var(--bg-primary);border-bottom:1px solid var(--border-subtle)}.marker-label{display:flex;min-height:28px;padding:4px 7px;align-items:center;gap:5px;color:var(--text-secondary);font-size:10px;font-weight:650}.marker-label :global(svg){color:var(--accent-primary)}.horizontal .timeline-today-marker{position:absolute;top:52px;bottom:0;width:1px;pointer-events:none;background:var(--timeline-today-color,var(--accent-error))}.horizontal .timeline-today-marker>span{position:absolute;top:-10px;left:8px;padding:2px 5px;border:1px solid currentColor;border-radius:4px;background:var(--surface-overlay);color:var(--timeline-today-color,var(--accent-error));font-size:9px;font-weight:700}
   .vertical{overflow-x:hidden;scroll-padding-top:56px;scrollbar-gutter:stable}.vertical-timeline{width:100%;margin-inline:auto;padding:0 24px 28px}.vertical-month{padding-bottom:12px}.month-header{position:sticky;z-index:12;top:0;display:flex;align-items:center;justify-content:space-between;min-height:56px;gap:16px;background:var(--bg-primary);border-bottom:1px solid var(--border-primary)}.month-header h2{margin:0;color:var(--text-primary);font-size:18px;font-weight:700}.month-header>span{color:var(--text-secondary);font-size:12px}.vertical-date{position:relative;display:grid;grid-template-columns:88px minmax(0,1fr);padding:16px 0;gap:24px;}.vertical-date::after{position:absolute;content:'';inset-block:0;left:98px;width:1px;background:var(--border-primary)}.vertical-date::before{position:absolute;z-index:1;content:'';top:30px;left:94px;width:9px;height:9px;border:2px solid var(--accent-primary);border-radius:50%;background:var(--bg-primary)}.vertical-date.is-today::before{border-color:var(--timeline-today-color,var(--accent-error))}.vertical-date>header{display:flex;min-width:0;flex-direction:column;gap:4px;align-self:start;text-align:right}.vertical-date time{display:flex;align-items:baseline;justify-content:flex-end;gap:6px;color:var(--text-primary)}.vertical-date time strong{font-size:26px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums}.vertical-date time span{font-size:12px}.vertical-date>header>span{font-size:11px;color:var(--text-secondary)}.vertical-events{display:grid;min-width:0;grid-template-columns:repeat(auto-fill,minmax(0,min(100%,280px)));align-items:start;gap:12px}.vertical-events .lane-marker{margin:0;order:initial}.vertical-events .marker-label{min-height:44px;font-size:13px;padding:8px 12px}
   .mobile-feed{position:relative;width:100%;padding:12px 10px 24px 28px;background:var(--color-canvas)}.spine{position:absolute;inset-block:0;left:15px;width:1px;background:var(--border-secondary)}.feed-row{position:relative}.feed-item{position:relative;padding-bottom:10px;min-width:0}.dot{position:absolute;top:14px;left:-17px;width:8px;height:8px;border:2px solid var(--accent-primary);border-radius:50%;background:var(--surface-overlay)}.feed-item[data-event-type='support_card_banner'] .dot,.feed-item[data-event-type='champions_meeting'] .dot{border-color:var(--accent-purple)}.feed-item[data-event-type='paid_banner'] .dot,.feed-item[data-event-type='story_event'] .dot{border-color:var(--accent-warning)}.feed-item[data-event-type='campaign'] .dot{border-color:var(--accent-secondary)}.feed-date{position:sticky;z-index:8;top:0;display:flex;align-items:center;gap:6px;height:30px;margin:0 -2px 6px;padding:0 3px;border-bottom:1px solid var(--border-primary);background:var(--bg-secondary);font-size:11px;font-variant-numeric:tabular-nums}.feed-date time{font-weight:680}.feed-date>span{color:var(--text-muted)}.feed-date small{margin-left:auto;color:var(--text-muted);font-size:9px}.feed-events{display:grid;gap:7px}.mobile-feed .lane-marker{margin:0;min-height:52px;border-color:var(--border-primary);border-radius:5px}.mobile-feed .marker-label{min-height:50px;padding:8px 10px;gap:8px;font-size:12px}.feed-ad{--page-gutter-current:2px;--ad-inline-mobile-height:50px;--ad-leaderboard-height:50px;margin:2px 0 14px}.feed-ad :global(.ad-region){width:100%;margin-inline:0}
-  @media(pointer: coarse) and (max-width: 1300px){.lane-overflow :global(.ui-button){min-height:var(--touch-target)}}@media(max-width:360px){.mobile-feed{padding-right:8px}}
+  @media(max-width:360px){.mobile-feed{padding-right:8px}}
 </style>

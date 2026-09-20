@@ -1,5 +1,6 @@
 <script lang="ts">
   import ContentAd from '@/layouts/ContentAd.svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import { copyText } from '@/lib/clipboard';
   import { onMount, untrack } from 'svelte';
   import { router } from '@/routes/router';
@@ -29,7 +30,7 @@
   let year = $state(initialPeriod.year);
   let month = $state(initialPeriod.month);
   let now = $state(Date.now());
-  let details = $state<ClubDetails>();
+  let details = $state.raw<ClubDetails>();
   let loading = $state(true);
   let refreshing = $state(false);
   let error = $state('');
@@ -52,6 +53,8 @@
   const dataStatus = $derived(details ? clubDataStatus({ liveFans: details.circle.live_points, lastUpdated: details.circle.last_updated, lastLiveUpdate: details.circle.last_live_update }, details.members, { year, month, currentMonth: isCurrentMonth }, now) : undefined);
   const allMembers = $derived(details ? calculateMemberMetrics(details.members, { year, month, currentMonth: isCurrentMonth, includePrior: config.includePriorClubData, leaderViewerId: details.circle.leader_viewer_id }).sort((a, b) => Number(b.active) - Number(a.active) || (a.active ? memberMetric(b, config) - memberMetric(a, config) : b.fanCount - a.fanCount)) : []);
   const members = $derived(allMembers.filter((member) => !search.trim() || `${member.name} ${member.viewerId}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
+  let memberLimit = $state(12);
+  $effect(() => { members; listMode; memberLimit = 12; });
   const history = $derived(details ? clubProgression(details.members, year, month) : []);
   const computedMonthlyFans = $derived(allMembers.reduce((sum, member) => sum + (member.active ? member.monthlyGain : 0), 0));
   const monthlyFans = $derived(isCurrentMonth ? details?.circle.monthly_point ?? computedMonthlyFans : isLastMonth ? details?.circle.last_month_point ?? computedMonthlyFans : computedMonthlyFans);
@@ -166,7 +169,7 @@
           </div>
         </div>
         <section class="members-section" aria-label="Club members">
-          {#if listMode === 'grid'}<div class="members-grid">{#each members as member, index}<article class="member-card" class:inactive={!member.active} style:--placement-color={member.active ? ['#ffd700', '#90a4ae', '#cd7f32'][index] : undefined}>
+          {#if listMode === 'grid'}<div class="members-grid">{#each members.slice(0,memberLimit) as member, index}<article class="member-card" class:inactive={!member.active} style:--placement-color={member.active ? ['#ffd700', '#90a4ae', '#cd7f32'][index] : undefined}>
             <header><span class="member-rank">#{index + 1}</span><div class="name-block"><a href={`/profile/${member.viewerId}`} target="_blank" rel="noopener noreferrer">{member.name}<Icon name="external" size={12}/></a><button type="button" class="member-id" onclick={() => copyTrainer(member)}>ID {member.viewerId}<Icon name="copy" size={12}/></button></div>{#if !member.active}<span>Left</span>{:else}<small class="role-badge" data-role={member.role}>{member.role}</small>{/if}</header>
             {#if config.showTotalFans && primary.key !== 'fanCount'}<div class="total-fans"><span>Total Fans</span><strong>{number(member.fanCount)}</strong></div>{/if}
             <div class="primary-metric"><span>{primary.label}</span><strong class:positive={primary.key !== 'fanCount' && memberMetric(member, config) > 0} class:negative={memberMetric(member, config) < 0}>{primary.key === 'fanCount' ? number(memberMetric(member, config)) : signed(memberMetric(member, config))}{#if config.includePriorClubData && member.hasPriorClubData}<sup title={`Includes ${number(member.priorClubGain)} from prior club`}>*</sup>{/if}</strong></div>
@@ -174,7 +177,7 @@
           </article>{/each}</div>
           {:else}<div class="member-table-scroll"><table>
             <thead><tr><th class="table-rank">#</th><th>Trainer</th>{#if config.showRole}<th class="desktop-cell">Role</th>{/if}<th class="member-primary">{primary.label}</th>{#each extraMetrics as metric, metricIndex}<th class="member-extra" class:mobile-summary={metricIndex === 0}>{metric.label}</th>{/each}{#if config.showLastUpdated}<th class="desktop-cell">Updated</th>{/if}</tr></thead>
-            <tbody>{#each members as member, index}
+            <tbody>{#each members.slice(0,memberLimit) as member, index}
               <tr class:inactive={!member.active}>
                 <td class="table-rank">{index + 1}</td>
                 <td class="member-identity"><div class="member-name-row"><a href={'/profile/' + member.viewerId} title={member.name} target="_blank" rel="noopener noreferrer">{member.name}</a><button class="member-expand" type="button" aria-label={(expandedMembers.includes(member.viewerId) ? 'Hide' : 'Show') + ' stats for ' + member.name} aria-expanded={expandedMembers.includes(member.viewerId)} aria-controls={'club-member-details-' + member.viewerId} onclick={() => expandedMembers = expandedMembers.includes(member.viewerId) ? expandedMembers.filter(id => id !== member.viewerId) : [...expandedMembers, member.viewerId]}><Icon name="chevron" size={14}/></button></div><div class="identity-tools"><button class="member-id" onclick={() => copyTrainer(member)}>ID {member.viewerId}</button>{#if !member.active}<small>Left</small>{/if}</div></td>
@@ -186,6 +189,7 @@
               {#if expandedMembers.includes(member.viewerId)}<tr class="member-details" id={'club-member-details-' + member.viewerId}><td colspan={3 + Number(extraMetrics.length > 0)}><div class="member-detail-heading"><strong>{member.name}</strong><button class="member-id" onclick={() => copyTrainer(member)}>ID {member.viewerId}<Icon name="copy" size={12}/></button>{#if !member.active}<small>Left club</small>{/if}</div><dl class="member-stats">{#if config.showRole}<div><dt>Role</dt><dd>{member.role}</dd></div>{/if}{#each extraMetrics.slice(1) as metric}<div><dt>{metric.label}</dt><dd class:positive={metric.key !== 'fanCount' && member[metric.key] > 0} class:negative={member[metric.key] < 0}>{number(member[metric.key])}</dd></div>{/each}{#if config.showLastUpdated}<div><dt>Updated</dt><dd>{updated(member.lastUpdated)}</dd></div>{/if}</dl></td></tr>{/if}
             {/each}</tbody>
           </table></div>{/if}
+          {#if members.length > memberLimit}{#key memberLimit}<div class="members-more" aria-hidden="true" use:loadWhenVisible={() => memberLimit += 12}></div>{/key}{/if}
           {#if !members.length}<p class="no-members">No members match your search.</p>{/if}
         </section>
       {/if}

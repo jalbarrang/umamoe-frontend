@@ -63,6 +63,8 @@ describe('Angular Timeline detail parity', () => {
     expect(summaries.get('legend')).toMatchObject({ mode: 'per_opponent', previewLabel: 'All clears' });
     expect(summaries.get('legend')!.previewItems[0]?.countLabel).toBe('300');
     const filled = withTimelineRewardFallbacks(resource, events);
+    expect(withTimelineRewardFallbacks(resource, events)).toBe(filled);
+    expect(withTimelineRewardFallbacks({ ...resource, rewards: [] }, events).rewards.some(reward => reward.id === 'published')).toBe(false);
     expect(withTimelineRewardFallbacks(filled, events)).toEqual(filled);
     expect(summaries.get('fixed')!.items[0]?.iconPath).toContain('item_icon_00043');
   });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import Icon from '@/components/Icon.svelte';
   import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
   import NumberStepper from '@/components/NumberStepper.svelte';
@@ -170,6 +171,8 @@
   });
   const normalMatches = $derived(selectedCategoryKeys.includes('special') ? matchingFactors.filter((factor) => factor.categoryKey !== 'special-upgraded') : matchingFactors);
   const upgradedMatches = $derived(selectedCategoryKeys.includes('special') ? matchingFactors.filter((factor) => factor.categoryKey === 'special-upgraded') : []);
+  let visibleCount = $state(40);
+  $effect(() => { matchingFactors; visibleCount = 40; });
 
   function toggleCategory(key: string): void {
     if (selectedCategoryKeys.includes(key)) selectedCategoryKeys = selectedCategoryKeys.filter((entry) => entry !== key && !(key === 'special' && entry === 'special-upgraded'));
@@ -241,16 +244,17 @@
         {#if matchingFactors.length}
           <div class="factor-result-groups">
             <div class="factor-results">
-              {#each normalMatches as factor (factor.id)}
+              {#each normalMatches.slice(0,visibleCount) as factor (factor.id)}
                 {@render factorResult(factor)}
               {/each}
             </div>
+            {#if normalMatches.length > visibleCount}{#key visibleCount}<div aria-hidden="true" use:loadWhenVisible={() => visibleCount += 40}></div>{/key}{/if}
             {#if upgradedMatches.length}
               <section class="upgraded-result-section"><div class="result-section-divider"><span>Upgraded</span></div><div class="factor-results">
-                {#each upgradedMatches as factor (factor.id)}
+                {#each upgradedMatches.slice(0,visibleCount) as factor (factor.id)}
                   {@render factorResult(factor)}
                 {/each}
-              </div></section>
+              </div>{#if upgradedMatches.length > visibleCount}{#key visibleCount}<div aria-hidden="true" use:loadWhenVisible={() => visibleCount += 40}></div>{/key}{/if}</section>
             {/if}
           </div>
         {:else}<div class="empty-browser-state"><Icon name="search" size={17}/><span>No white factors match these types and search terms.</span></div>{/if}

@@ -551,13 +551,8 @@ function fitTone(score: number): 'strong' | 'medium' | 'weak' {
   return 'weak';
 }
 
-function formatShortDate(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC'
-  });
-}
+const shortDateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+function formatShortDate(date: Date): string { return shortDateFormatter.format(date); }
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);

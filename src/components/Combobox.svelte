@@ -25,7 +25,7 @@
     optionContent?: Snippet<[ComboboxOption]>;
     onchange?: (value: string) => void;
   }
-  let { id, label, options, value = $bindable(''), query = $bindable(''), placeholder = 'Search…', help, disabled = false, hideLabel = false, maxResults = Infinity, minQueryLength = 0, popupAnchor, filter = true, action = false, batchSize = Infinity, emptyText = 'No matching options', clearLabel = 'Clear search', prefixIcon, optionContent, onchange }: Props = $props();
+  let { id, label, options, value = $bindable(''), query = $bindable(''), placeholder = 'Search…', help, disabled = false, hideLabel = false, maxResults = Infinity, minQueryLength = 0, popupAnchor, filter = true, action = false, batchSize = 40, emptyText = 'No matching options', clearLabel = 'Clear search', prefixIcon, optionContent, onchange }: Props = $props();
 
   let root: HTMLDivElement;
   let input: HTMLInputElement;
@@ -80,7 +80,7 @@
       if (open && activeIndex === requested && root?.isConnected) root.querySelectorAll('[role="option"]')[requested]?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     });
   });
-  function close() { open = false; editing = false; if (!action) query = selected?.label ?? ''; }
+  function close() { open = false; editing = false; renderCount = 0; if (!action) query = selected?.label ?? ''; }
   function choose(option: ComboboxOption) {
     if (option.disabled) return;
     value = action ? '' : option.value;
@@ -89,6 +89,7 @@
     input.focus();
     editing = false;
     open = false;
+    renderCount = 0;
   }
   function move(direction: 1 | -1) {
     if (!filtered.length) return;

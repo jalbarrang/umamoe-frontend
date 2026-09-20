@@ -1,3 +1,8 @@
+<script module lang="ts">
+  const fullDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+</script>
+
 <script lang="ts">
   import type { CaratPlan, PlannerRewardResource } from '@/lib/timeline/carat-planner';
   import { cycleRewardOption, rewardBannerPlanned, rewardGroupActive, rewardGroupSelectable, updateRewardGroup, type PlannerRewardGroup } from '@/lib/timeline/planner-reward-groups';
@@ -22,10 +27,10 @@
   ].filter(item => item.searchText.includes(search.trim().toLowerCase())));
   const upcomingCount = $derived(items.filter(item => !item.isPast).length), pastCount = $derived(items.length - upcomingCount);
   const matching = $derived(items.filter(item => item.isPast === showPast).sort((a, b) => a.availableAt && b.availableAt ? (showPast ? -1 : 1) * a.availableAt.localeCompare(b.availableAt) || a.id.localeCompare(b.id) : a.availableAt ? -1 : b.availableAt ? 1 : a.id.localeCompare(b.id)));
-  const limit = $derived(renderLimit || Math.max(40, matching.findLastIndex(item => item.group?.rewards.some(reward => reward.provenance === 'global_news')) + 1));
+  const limit = $derived(renderLimit || 12);
   const visible = $derived(matching.slice(0, limit));
-  function loadMore() { renderLimit = Math.min(matching.length, limit + 40); }
-  const date = (value: string, year = true) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', ...(year ? { year: 'numeric' as const } : {}), timeZone: 'UTC' }).format(new Date(value + 'T00:00:00Z')) : '';
+  function loadMore() { renderLimit = Math.min(matching.length, limit + 12); }
+  const date = (value: string, year = true) => value ? (year ? fullDate : shortDate).format(new Date(value + 'T00:00:00Z')) : '';
   function dateLabel(group: PlannerRewardGroup): string {
     return group.availableUntil && group.availableUntil !== group.availableAt ? date(group.availableAt, false) + ' – ' + date(group.availableUntil) : date(group.availableAt);
   }

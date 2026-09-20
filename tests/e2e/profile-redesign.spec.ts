@@ -25,7 +25,7 @@ test('Profile keeps light filters and complete veteran information, with a stand
   expect(borrow!.y).toBeGreaterThanOrEqual(activity!.y + activity!.height);
   await expect(page.getByRole('button', { name:'Previous distance', exact:true })).toBeDisabled();
   await expect(page.getByRole('button', { name:'Next distance', exact:true })).toBeDisabled();
-  expect(await page.locator('.content-container').evaluate(el => [...el.children].map(section => section.querySelector('h2,h3')?.textContent))).toEqual(['Fan activity', 'All-Time Stats', 'Current borrow', 'Current Circle', 'Circle History', 'Team Stadium', 'Veterans']);
+  expect(await page.locator('.content-container').evaluate(el => [...el.children].filter(section => !section.matches('.ad-region')).map(section => section.querySelector('h2,h3')?.textContent))).toEqual(['Fan activity', 'All-Time Stats', 'Current borrow', 'Current Circle', 'Circle History', 'Team Stadium', 'Veterans']);
   const activityBounds = await page.locator('.activity-row').boundingBox();
   const chartBounds = await page.getByRole('figure', { name:'Fan activity' }).boundingBox();
   const rollingBounds = await page.getByRole('region', { name:'Rolling Gains' }).boundingBox();
@@ -67,9 +67,10 @@ test('Profile keeps light filters and complete veteran information, with a stand
   const collection = page.locator('.profile-collection');
   await expect(collection.locator('.veteran-card')).toHaveCount(3);
   const card = collection.locator('.veteran-card').first();
+  await card.scrollIntoViewIfNeeded();
   await expect(card.locator('.stats>div')).toHaveCount(5);
   await expect(card.locator('.skill-chip')).toHaveCount(2);
-  await expect(card.getByRole('region', { name:'Family spark totals', exact: true })).toBeVisible();
+  await expect(card.getByRole('region', { name:'Veteran sparks', exact: true })).toBeVisible();
   await expect(card.locator('.affinity-parent')).toHaveCount(2);
   const cards = await collection.locator('.veteran-card').evaluateAll(nodes => nodes.map(node => {
     const box = node.getBoundingClientRect(), footer = node.querySelector('footer')!.getBoundingClientRect();
@@ -83,7 +84,7 @@ test('Profile keeps light filters and complete veteran information, with a stand
   await expect(collection.getByLabel('Search veterans')).toBeVisible();
   await collection.screenshot({ path: testInfo.outputPath('svelte-profile-collection.png') });
   const pagination = collection.getByRole('navigation', { name:'Veterans preview pages' });
-  await expect(pagination.getByRole('button', { name:'2', exact:true })).toBeVisible();
+  await expect(pagination.getByRole('button', { name:'Page 2', exact:true })).toBeVisible();
   await expect(pagination).not.toContainText('…');
   const browserAction = await collection.getByRole('link', { name:'Open browser' }).boundingBox();
   const collectionBounds = await collection.boundingBox();

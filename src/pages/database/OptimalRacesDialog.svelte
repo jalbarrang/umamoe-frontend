@@ -1,17 +1,19 @@
 <script lang="ts">
+  import { MediaQuery } from 'svelte/reactivity';
   import Dialog from '@/components/Dialog.svelte';
   import RaceSchedule from '@/components/RaceSchedule.svelte';
   import { optimalRaceSchedule, type OptimalRaceRecommendation } from '@/lib/catalog/race-catalog';
   interface Props { open?: boolean; recommendations: OptimalRaceRecommendation[]; }
   let { open = $bindable(false), recommendations }: Props = $props();
   const schedule = $derived(optimalRaceSchedule(recommendations));
+  const mobile = new MediaQuery('(max-width:768px)');
 </script>
 
 <div class="optimal-races-dialog">
 <Dialog bind:open title="Optimal Races" icon="trophy" description="Win these G1s with the parent you are building to maximize future race affinity." maxWidth="1320px" contentPadding="0" mobileContentPadding="0">
   {#snippet headerActions()}<div class="legend"><span><strong>+6</strong> both parents</span><span><strong>+3</strong> one parent</span></div>{/snippet}
-  <div class="calendar">
-    <div class="desktop-schedule"><RaceSchedule years={schedule} label="Optimal G1 races"/></div>
+  {#if open}<div class="calendar">
+    {#if !mobile.current}<div class="desktop-schedule"><RaceSchedule years={schedule} label="Optimal G1 races"/></div>{:else}
     <div class="mobile-schedule">
       {#each schedule.filter((year) => year.slots.length) as year (year.id)}
         <section class="year year--{year.id}">
@@ -28,8 +30,8 @@
           {/each}
         </section>
       {/each}
-    </div>
-  </div>
+    </div>{/if}
+  </div>{/if}
   <p class="note">Race affinity is awarded when this new parent later appears above the matching P1/P2 legacies.</p>
 </Dialog>
 </div>

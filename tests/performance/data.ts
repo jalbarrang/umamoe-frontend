@@ -23,6 +23,7 @@ export async function stressData(page: Page) {
     const item = record(String(123456789012 + i));
     item.trainer_name = `Stress trainer ${i + 1}`;
     item.inheritance.inheritance_id = i + 1;
+    item.inheritance.main_win_saddles = [16, 20];
     item.inheritance.main_white_factors = whites.slice(0, 40).map((f, n) => Number(f.id) * 10 + (n + i) % 3 + 1);
     item.inheritance.left_white_factors = whites.slice(20, 50).map(f => Number(f.id) * 10 + 2);
     item.inheritance.right_white_factors = whites.slice(30).map(f => Number(f.id) * 10 + 3);

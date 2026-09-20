@@ -1,5 +1,21 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { mockTimeline } from './api.ts';
+
+export async function loadVisibleTimelineEvents(page: Page) {
+  while (await page.locator('.lane-overflow').count()) {
+    const key = await page.locator('.lane-overflow').first().locator('..').getAttribute('data-lane-key');
+    const lane = page.locator(`[data-lane-key="${key}"]`);
+    const before = await lane.evaluate(element => {
+      const sentinel = element.querySelector('.lane-overflow');
+      if (!sentinel) return null;
+      const count = element.querySelectorAll('.event-card').length;
+      sentinel.scrollIntoView({block:'end',behavior:'instant'});
+      return count;
+    });
+    if (before === null) continue;
+    await expect.poll(() => lane.locator('.event-card').count()).toBeGreaterThan(before);
+  }
+}
 
 const prediction = { kind: 'extrapolated', acceleration_rate: .78, schedule_adjustment_days: 2, anchor_global_date: '2026-08-01T00:00:00Z', anchor_jp_date: '2023-08-01T00:00:00Z', calendar_likelihood: { month_character_banner_count: 3, month_character_banner_count_probability: .7, weekday: 'thursday', weekday_probability: .8, day_of_month: 10, day_of_month_probability: .8, previous_character_gap_days: 10, previous_character_gap_probability: .6, next_character_gap_days: 10, next_character_gap_probability: .6, score: .7 } };
 const dates = { global_release_date: '2026-09-10T00:00:00Z', jp_release_date: '2023-09-10T00:00:00Z', estimated_end_date: '2026-09-20T00:00:00Z' };

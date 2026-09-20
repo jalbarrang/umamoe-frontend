@@ -1,5 +1,6 @@
 import { expect, test, setSliderValue } from './fixtures/test';
 import { mockVeteranProfile as mockProfile, profile, veteran } from './fixtures/api';
+import { completion } from '../performance/completion';
 
 test('standalone Veterans exposes search, removable spark chips and compact veteran details', async ({ page }, testInfo) => {
   await mockProfile(page);
@@ -225,10 +226,10 @@ test('Veteran details retain support deck, stats, aptitudes, races, sparks, skil
 
 
 test('Spark operators stay centered and switch a large collection promptly', async ({page,isMobile}) => {
-  test.skip(isMobile, 'Desktop collection interaction timing');
   await mockProfile(page);
   await page.route('**/api/v4/user/profile/123456789012', route=>route.fulfill({json:{...profile,veterans:Array.from({length:1000},(_,i)=>({...veteran,id:i+1,trained_chara_id:i+1,factors:i%2 ? [103] : [103,203]}))}}));
   await page.goto('/veterans/123456789012');
+  if(isMobile) await page.getByRole('button',{name:'Filters',exact:true}).click();
   await page.getByRole('button',{name:'Blue stats',exact:true}).click();
   await page.getByRole('button',{name:'Add Speed spark',exact:true}).click();
   await page.getByRole('button',{name:'Blue stats',exact:true}).click();
@@ -239,12 +240,16 @@ test('Spark operators stay centered and switch a large collection promptly', asy
   expect(box.x+box.width/2).toBeCloseTo(card.x+card.width/2,0);
   const timings=[];
   for(const name of ['OR','AND','OR']) {
-    const elapsed=await join.getByRole('radio',{name,exact:true}).evaluate(async (button:HTMLElement)=>{
-      const start=performance.now();button.click();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));return performance.now()-start;
-    });
-    timings.push(Math.round(elapsed));
+    const measured=await completion(page,`1000-veteran ${name}`,()=>join.getByRole('radio',{name,exact:true}).click(),{selector:'[aria-label="Rule 2 operator"] [aria-checked="true"]',text:name});
+    timings.push(measured.ms);
     await expect(join.getByRole('radio',{name,exact:true})).toHaveAttribute('aria-checked','true');
-    expect(elapsed).toBeLessThan(500);
   }
   console.log('1000-veteran AND/OR switches (ms):',timings);
+  await test.info().attach('interaction-metrics',{body:JSON.stringify(await page.evaluate(()=>(window as any).__stress)),contentType:'application/json'});
+  if(isMobile) await page.getByRole('dialog',{name:'Filter veterans'}).getByRole('button',{name:/^Show .* veterans$/}).click();
+  await expect(page.getByRole('button',{name:/Show \d+ more/})).toHaveCount(0);
+  const before=await page.locator('.veteran-card').count();
+  expect(before).toBeLessThan(24);
+  await page.locator('.more').last().scrollIntoViewIfNeeded();
+  await expect.poll(()=>page.locator('.veteran-card').count()).toBeGreaterThan(before);
 });

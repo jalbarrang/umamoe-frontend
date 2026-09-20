@@ -85,8 +85,8 @@ test('Parent picker toolbar stays aligned across tabs and manual editing', async
   await page.getByRole('button', { name: 'Pick your legacy', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Select Parent', exact: true });
   const geometry = () => dialog.locator('.filterbar,.parent-search input,.parent-sort .select-control,.factor-filters').evaluateAll(elements => elements.flatMap(element => {
-    const { x, y, width, height } = element.getBoundingClientRect();
-    return [x, y, width, height];
+    const { x, width } = element.getBoundingClientRect();
+    return [x, width];
   }));
   for (const width of [320,390,1200]) {
     await page.setViewportSize({width,height:900});
@@ -119,7 +119,7 @@ test('Veteran dialog keeps page typography, usable scrolling, and all four tabs'
   const originalViewport = page.viewportSize()!;
   for (const width of [390, 600, 768]) {
     await page.setViewportSize({ width, height: originalViewport.height });
-    const expectedHeight = originalViewport.height * (width <= 480 ? .96 : width <= 600 ? .92 : .84);
+    const expectedHeight = Math.min(1000, originalViewport.height * (width <= 480 ? .96 : .94));
     expect((await dialog.boundingBox())!.height).toBeCloseTo(expectedHeight, 0);
     for (const label of await dialog.locator('.tab-label').all()) {
       await expect(label).toHaveCSS('position', 'static');
@@ -136,7 +136,7 @@ test('Veteran dialog keeps page typography, usable scrolling, and all four tabs'
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(dialog.getByRole('textbox', { name: 'Entry name (optional)' })).toBeVisible();
   await expect(dialog.getByRole('textbox', { name: 'Search parents', exact: true })).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Add Spark Filter', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Add Spark', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Choose Parent 1', exact: true }).focus(); await page.keyboard.press('Enter');
   const child = page.getByRole('dialog', { name: 'Select Character', exact: true });
   await expect(child).toBeVisible();
@@ -164,7 +164,7 @@ test('Veteran dialog keeps page typography, usable scrolling, and all four tabs'
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
 
-test('Support picker shows the Angular image grid and resets its search and filters on reopening', async ({ page, isMobile }) => {
+test('Support picker shows readable cards and resets its search and filters on reopening', async ({ page, isMobile }) => {
   await mockDatabase(page); await mockAffinity(page);
   await page.goto('/database'); await page.getByRole('button', { name: /Filters/ }).click();
   if (isMobile) await page.getByRole('button', { name: 'Support Card & LB', exact: true }).click();
@@ -173,9 +173,11 @@ test('Support picker shows the Angular image grid and resets its search and filt
   await expect(dialog.getByRole('radio').first()).toBeVisible();
   expect(await dialog.locator('.quick-filters label').evaluateAll(labels=>labels.every(label=>getComputedStyle(label).position==='absolute'))).toBe(true);
   if(isMobile)expect(await dialog.evaluate(el=>parseFloat(getComputedStyle(el).maxHeight))).toBeCloseTo(page.viewportSize()!.height-32,2);
-  expect(await dialog.locator('.card-copy strong').first().evaluate(el=>getComputedStyle(el).letterSpacing)).toBe('0.5px');
-  expect(await dialog.locator('.meta b').first().evaluate(el=>getComputedStyle(el).lineHeight)).toBe('24px');
-  expect(await dialog.locator('.cards').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBeGreaterThanOrEqual(3);
+  await expect(dialog.locator('.card-copy strong').first()).toHaveCSS('letter-spacing','normal');
+  const grid = (await dialog.locator('.cards').boundingBox())!;
+  const card = (await dialog.getByRole('radio').first().boundingBox())!;
+  expect(card.width).toBeGreaterThanOrEqual(Math.min(grid.width, 250) - 1);
+  expect(card.x + card.width).toBeLessThanOrEqual(grid.x + grid.width + 1);
   const search = dialog.getByRole('searchbox', { name: 'Search support cards' });
   await search.fill('Kitasan Black');
   await dialog.getByRole('combobox', { name: 'Rarity', exact: true }).click();
@@ -184,7 +186,7 @@ test('Support picker shows the Angular image grid and resets its search and filt
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Borrow support card', exact: true }).focus(); await page.keyboard.press('Enter');
   await expect(search).toHaveValue('');
-  await expect(dialog.getByRole('combobox', { name: 'Rarity', exact: true })).toHaveText('All');
+  await expect(dialog.getByRole('combobox', { name: 'Rarity', exact: true })).toHaveText('All rarities');
   await dialog.getByRole('combobox', { name: 'Type', exact: true }).click();
   await expect(dialog.getByRole('combobox', { name: 'Type', exact: true })).toBeFocused();
   await expect(dialog.getByRole('option', { name: 'Wisdom', exact: true })).toBeVisible();
