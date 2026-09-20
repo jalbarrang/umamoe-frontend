@@ -24,7 +24,12 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
         container.querySelector('.' + name + '-button').onclick = () => { container.classList.add('closed'); clearInterval(refresh); };
         document.body.append(container);
         // Publift's scrolling widget keeps a scroll handler which reads its wrapper.
-        window.addEventListener('scroll', () => document.querySelector('.' + name).style.marginTop = '0px');
+        window.addEventListener('scroll', () => {
+          const widget = document.querySelector('.' + name);
+          const frame = widget.querySelector('iframe');
+          const offset = Math.min(scrollY, Math.max(0, Number(frame?.height || 0) - 126));
+          widget.querySelector('.fuse-slot-sticky').style.marginTop = -offset + 'px';
+        });
         window.refreshFooter = (width, height) => {
           const frame = document.createElement('iframe');
           frame.title = 'Test advertisement';
@@ -33,7 +38,7 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
           frame.style.cssText = 'border:0;vertical-align:bottom';
           frame.srcdoc = '<body style="margin:0;background:#183342;color:white;display:grid;place-items:center;height:100vh;font:16px system-ui">Advertisement</body>';
           container.querySelector('.fuse-slot > div').replaceChildren(frame);
-          container.querySelector('.fuse-slot-sticky').style.marginTop = '-36px';
+          container.querySelector('.' + name).style.alignItems = height > 126 ? 'baseline' : 'end';
           container.style.display = 'block';
           window.footerRefreshes++;
         };
@@ -52,19 +57,22 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
   const footer = page.locator('.uma-footer-ad');
   const close = page.getByRole('button', { name: 'Close footer ad', exact: true });
   const frame = footer.locator('iframe');
-  const checkGeometry = async (width: number, height: number) => {
+  const checkGeometry = async (width: number, height: number, offset = 0) => {
     await expect(frame).toHaveAttribute('width', String(width));
+    await expect(footer).toHaveCSS('height', `${Math.min(height, 126)}px`);
     const ad = (await frame.boundingBox())!;
     const wrapper = (await footer.boundingBox())!;
     const button = (await close.boundingBox())!;
     expect(ad.width).toBe(width);
     expect(ad.height).toBe(height);
     expect(wrapper.width).toBe(width);
-    expect(wrapper.height).toBe(height);
-    expect(ad.y + ad.height).toBeCloseTo(page.viewportSize()!.height, 0);
+    expect(wrapper.height).toBe(Math.min(height, 126));
+    expect(wrapper.y + wrapper.height).toBeCloseTo(page.viewportSize()!.height, 0);
+    expect(ad.y).toBeCloseTo(wrapper.y - offset, 0);
     expect(ad.x + ad.width / 2).toBeCloseTo(page.viewportSize()!.width / 2, 0);
-    expect(button.x + button.width).toBeCloseTo(ad.x + ad.width, 0);
-    expect(button.y + button.height).toBeCloseTo(ad.y, 0);
+    expect(button.x + button.width).toBeCloseTo(ad.x + ad.width - 4, 0);
+    expect(button.y).toBeCloseTo(wrapper.y + 4, 0);
+    await close.click({ trial: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   };
   await expect(close).toBeVisible();
@@ -79,6 +87,24 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
   expect(await page.evaluate(() => (window as any).adPages)).toBe(1);
   await page.clock.fastForward(30_000);
   await checkGeometry(isMobile ? 300 : 970, isMobile ? 100 : 250);
+  // A tall creative scrolls inside the fixed publisher window, with the X stationary.
+  await page.evaluate(() => {
+    document.body.style.minHeight = '300vh';
+    (window as any).refreshFooter(innerWidth < 768 ? 320 : 970, 250);
+    window.scrollTo(0, 70);
+  });
+  await expect(footer.locator('.fuse-slot-sticky')).toHaveCSS('margin-top', '-70px');
+  await checkGeometry(isMobile ? 320 : 970, 250, 70);
+  // Content above the window is clipped instead of obscuring the page.
+  expect(await footer.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y - 1));
+  })).toBe(false);
+  // A refresh to a short banner must still fit even if the provider retains its scroll offset.
+  await page.evaluate(() => (window as any).refreshFooter(innerWidth < 768 ? 320 : 728, 90));
+  await checkGeometry(isMobile ? 320 : 728, 90);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(footer.locator('.fuse-slot-sticky')).toHaveCSS('margin-top', '0px');
   await page.evaluate(() => (window as any).refreshFooter(innerWidth < 768 ? 320 : 728, 90));
   await checkGeometry(isMobile ? 320 : 728, 90);
   const background = await close.evaluate(element => getComputedStyle(element).backgroundColor);

@@ -8,6 +8,12 @@
   onMount(() => {
     if (!fuseEnabled()) return;
     const destroyed = new WeakSet<HTMLElement>();
+    const frames = new Set<HTMLIFrameElement>();
+    const sizes = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) entry.target.closest<HTMLElement>(containers)?.style.setProperty('--footer-creative-height', `${entry.contentRect.height}px`);
+      }
+    });
     const dismissed = () => document.documentElement.classList.contains('footer-ad-dismissed');
     const destroy = (container: Element) => {
       // Let Publift stop rotation/refresh and restore any page offsets before destroying the zone.
@@ -26,6 +32,8 @@
           return;
         }
         container.classList.add('uma-footer-ad');
+        const frame = container.querySelector('iframe');
+        if (frame && !frames.has(frame)) { frames.add(frame); sizes.observe(frame); }
         if (container.querySelector('.footer-ad-close')) return;
         const close = document.createElement('button');
         close.type = 'button';
@@ -40,17 +48,19 @@
         };
         container.append(close);
       });
+      for (const frame of frames) {
+        if (!frame.isConnected) { sizes.unobserve(frame); frames.delete(frame); }
+      }
     };
     const observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
     sync();
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); sizes.disconnect(); };
   });
 </script>
 
 <style>
-  /* The iframe's native dimensions size the wrapper, including on provider refresh.
-     Override publisher geometry, without touching the creative inside its iframe. */
+  /* Fit the creative's width while retaining the publisher's scrolling viewport. */
   :global(.uma-footer-ad) {
     position: fixed !important;
     inset: auto auto 0 50% !important;
@@ -73,17 +83,21 @@
   :global(.uma-footer-ad .fuse-slot-sticky),
   :global(.uma-footer-ad .fuse-slot) {
     width: max-content !important;
-    height: auto !important;
     min-width: 0 !important;
     min-height: 0 !important;
     max-width: none !important;
     max-height: none !important;
-    margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
-    transform: none !important;
     transition: none !important;
+  }
+  :global(.uma-footer-ad > .publift-widget-sticky_footer) { height: auto !important; }
+  :global(.uma-footer-ad > .publift-widget-scrolling_sticky_footer) {
+    /* Keep the configured window height for tall creatives; shrink to short banners.
+       Publift moves .fuse-slot-sticky with margin-top as the page scrolls. */
+    max-height: var(--footer-creative-height, none) !important;
+    overflow: hidden !important;
   }
   :global(.uma-footer-ad iframe) { vertical-align: bottom; }
   :global(.uma-footer-ad > [class$='-container-background']),
@@ -92,15 +106,16 @@
   :global(html.footer-ad-dismissed :is(.publift-widget-sticky_footer-container, .publift-widget-scrolling_sticky_footer-container)) { display: none !important; }
   :global(.footer-ad-close) {
     position: absolute;
-    right: 0;
-    bottom: 100%;
+    top: 4px;
+    right: 4px;
+    z-index: 1;
     display: grid;
     place-items: center;
     width: 32px;
     height: 32px;
     padding: 0;
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--radius-md);
     background: var(--surface-overlay);
     color: var(--text-secondary);
     font-size: 24px;
