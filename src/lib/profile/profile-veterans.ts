@@ -144,6 +144,15 @@ export function filterAndSortVeterans(
   characters: Map<number, CharacterCatalogEntry>
 ): ProfileVeteran[] {
   const query = filters.query.trim().toLocaleLowerCase();
+  // Database semantics: OR joins alternatives; AND starts another required group.
+  const groups: VeteranFactorFilter[][]=[];
+  for(const filter of filters.factors) {
+    if(filter.operator === 'or' && groups.length) groups[groups.length-1]!.push(filter);
+    else groups.push([filter]);
+  }
+  const key=(filter:VeteranFactorFilter) => [filter.factorId,filter.scope,filter.minLevel,filter.maxLevel ?? '',filter.mode ?? 'minimum'].join('|');
+  const requiredCounts=new Map<string,number>();
+  for(const group of groups) if(group.length === 1) requiredCounts.set(key(group[0]!), (requiredCounts.get(key(group[0]!)) ?? 0)+1);
   const result = veterans.filter((veteran) => {
     if (query && !(characters.get(veteran.card_id ?? -1)?.name ?? `Character ${veteran.card_id ?? ''}`).toLocaleLowerCase().includes(query)) return false;
     if (filters.distance != null && (Array.isArray(filters.distance) ? !filters.distance.includes(veteran.distance_type ?? -1) : veteran.distance_type !== filters.distance)) return false;
@@ -165,17 +174,11 @@ export function filterAndSortVeterans(
       if (!matchesAncestorIds(veteran, scope, filters.include[scope] ?? [], false)) return false;
       if (!matchesAncestorIds(veteran, scope, filters.exclude[scope] ?? [], true)) return false;
     }
-    // Database semantics: OR joins alternatives; AND starts another required group.
-    const groups: VeteranFactorFilter[][]=[];
-    for(const filter of filters.factors) {
-      if(filter.operator === 'or' && groups.length) groups[groups.length-1]!.push(filter);
-      else groups.push([filter]);
-    }
-    const key=(filter:VeteranFactorFilter) => [filter.factorId,filter.scope,filter.minLevel,filter.maxLevel ?? '',filter.mode ?? 'minimum'].join('|');
-    const requiredCounts=new Map<string,number>();
-    for(const group of groups) if(group.length === 1) requiredCounts.set(key(group[0]!), (requiredCounts.get(key(group[0]!)) ?? 0)+1);
+    const factorsByScope = new Map<FactorScope, ResolvedVeteranFactor[]>();
     if(!groups.every(group => group.some(filter => {
-      const factors=veteranFactors(veteran,filter.scope).filter(factor => factor.id === filter.factorId);
+      let scoped = factorsByScope.get(filter.scope);
+      if (!scoped) { scoped = veteranFactors(veteran,filter.scope); factorsByScope.set(filter.scope,scoped); }
+      const factors=scoped.filter(factor => factor.id === filter.factorId);
       const maximum=filter.mode === 'exact' ? filter.minLevel : filter.maxLevel ?? Infinity;
       if(filter.mode === 'total') {
         const stars=factors.reduce((sum,factor) => sum+factor.level,0);

@@ -318,3 +318,22 @@ test('switching Statistics versions ignores an older in-flight response', async 
     await expect(page.getByText('of 999 training samples', { exact: true })).toHaveCount(0);
   } finally { release(); }
 });
+
+
+test('Statistics uses the standard frame, grouped tabs and a centered right rail', async ({page,isMobile})=>{
+  test.skip(isMobile, 'Desktop rail layout');
+  await page.setViewportSize({width:1920,height:1080});
+  await mockStatistics(page);
+  await page.goto('/tools/statistics');
+  await expect(page.getByRole('tablist',{name:'Statistics sections'})).not.toHaveClass(/underline|pills/);
+  const rail=page.locator('[data-ad-placement="statistics_sticky_vrec_right"]');
+  await expect(rail).toBeVisible();
+  await expect(rail.locator('[data-fuse]')).toHaveAttribute('data-fuse','stadiumstat_sticky_vrec_rhs');
+  const columns=await page.locator('.overview-grid').first().evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').map(Number.parseFloat));
+  expect(columns).toHaveLength(3);
+  expect(columns[0]).toBeLessThan(columns[1]);
+  expect(columns[2]).toBeLessThan(columns[1]);
+  const box=(await rail.boundingBox())!;
+  expect(box.y+box.height/2).toBeCloseTo(540,0);
+  await page.screenshot({path:test.info().outputPath('statistics-standard-frame.png'),fullPage:true});
+});

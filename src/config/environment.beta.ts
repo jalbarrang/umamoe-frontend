@@ -105,7 +105,7 @@ export const environment = {
       tools_interscroller_4: 'leaderboard_incontent_4',
       statistics_content_top: '',
       statistics_sticky_vrec_left: '',
-      statistics_sticky_vrec_right: '',
+      statistics_sticky_vrec_right: 'stadiumstat_sticky_vrec_rhs',
       statistics_interscroller_1: 'stadiumstat_incontent_1',
       statistics_interscroller_2: 'stadiumstat_incontent_2',
       statistics_interscroller_3: 'stadiumstat_incontent_3',

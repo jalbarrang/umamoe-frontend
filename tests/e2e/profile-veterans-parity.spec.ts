@@ -222,3 +222,29 @@ test('Veteran details retain support deck, stats, aptitudes, races, sparks, skil
   await expect(page.getByRole('heading', { name:'Race History',exact:true })).toBeVisible();
   await expect(page.getByRole('dialog').last().getByLabel(/February Stakes, G1/).filter({ visible:true })).toBeVisible();
 });
+
+
+test('Spark operators stay centered and switch a large collection promptly', async ({page,isMobile}) => {
+  test.skip(isMobile, 'Desktop collection interaction timing');
+  await mockProfile(page);
+  await page.route('**/api/v4/user/profile/123456789012', route=>route.fulfill({json:{...profile,veterans:Array.from({length:1000},(_,i)=>({...veteran,id:i+1,trained_chara_id:i+1,factors:i%2 ? [103] : [103,203]}))}}));
+  await page.goto('/veterans/123456789012');
+  await page.getByRole('button',{name:'Blue stats',exact:true}).click();
+  await page.getByRole('button',{name:'Add Speed spark',exact:true}).click();
+  await page.getByRole('button',{name:'Blue stats',exact:true}).click();
+  await page.getByRole('button',{name:'Add Stamina spark',exact:true}).click();
+  const join=page.getByRole('radiogroup',{name:'Rule 2 operator'});
+  const card=(await page.locator('.requirement').first().boundingBox())!;
+  const box=(await join.boundingBox())!;
+  expect(box.x+box.width/2).toBeCloseTo(card.x+card.width/2,0);
+  const timings=[];
+  for(const name of ['OR','AND','OR']) {
+    const elapsed=await join.getByRole('radio',{name,exact:true}).evaluate(async (button:HTMLElement)=>{
+      const start=performance.now();button.click();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));return performance.now()-start;
+    });
+    timings.push(Math.round(elapsed));
+    await expect(join.getByRole('radio',{name,exact:true})).toHaveAttribute('aria-checked','true');
+    expect(elapsed).toBeLessThan(500);
+  }
+  console.log('1000-veteran AND/OR switches (ms):',timings);
+});

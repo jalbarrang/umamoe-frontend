@@ -283,9 +283,9 @@ test('Database exposes the Angular Race History action without another API servi
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Race History' })).toBeVisible();
   await expect(page.getByRole('dialog').getByLabel(/February Stakes, G1/).first()).toBeVisible();
-  await page.getByTitle('List view').click();
+  await page.getByRole('button', { name: 'List view', exact: true }).click();
   await expect(page.getByText('1st').first()).toBeVisible();
-  const list = await page.getByTitle('List view').boundingBox();
+  const list = await page.getByRole('button', { name: 'List view', exact: true }).boundingBox();
   await page.mouse.move(list!.x + list!.width / 2, list!.y + list!.height / 2);
   await page.mouse.down();
   await page.mouse.move(2, 2);

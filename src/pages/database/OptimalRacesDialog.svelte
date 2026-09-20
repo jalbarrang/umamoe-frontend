@@ -9,7 +9,7 @@
 
 <div class="optimal-races-dialog">
 <Dialog bind:open title="Optimal Races" icon="trophy" description="Win these G1s with the parent you are building to maximize future race affinity." maxWidth="1320px" contentPadding="0" mobileContentPadding="0">
-  <div class="legend"><span><strong>+6</strong> both parents</span><span><strong>+3</strong> one parent</span></div>
+  {#snippet headerActions()}<div class="legend"><span><strong>+6</strong> both parents</span><span><strong>+3</strong> one parent</span></div>{/snippet}
   <div class="calendar">
     <div class="desktop-schedule"><RaceSchedule years={schedule} label="Optimal G1 races"/></div>
     <div class="mobile-schedule">
@@ -35,10 +35,11 @@
 </div>
 
 <style>
+  .optimal-races-dialog :global(.dialog-panel>header){min-height:56px;padding:8px 12px;align-items:center}.optimal-races-dialog :global(.heading){padding:0}.optimal-races-dialog :global(.heading h2){font-size:14px}
   .optimal-races-dialog :global(dialog),.optimal-races-dialog :global(.dialog-panel){max-height:90dvh}
   .optimal-races-dialog :global(.dialog-panel>.content){display:flex;flex-direction:column;overflow:hidden}
   .optimal-races-dialog :global(.header-icon){width:38px;height:38px;flex-basis:38px;border-radius:10px;color:#ffca28;background:rgb(255 202 40/.1);border:1px solid rgb(255 202 40/.24)}
-  .legend{display:flex;flex:0 0 auto;flex-wrap:wrap;gap:7px 18px;padding:10px 18px;border-bottom:1px solid var(--border-subtle);background:rgb(var(--on-surface-rgb)/.025);color:var(--text-muted);font-size:.7rem}.legend strong{color:#ffca28;font-family:var(--font-mono)}
+  .legend{display:flex;flex:0 0 auto;flex-wrap:wrap;gap:7px 18px;padding:0;color:var(--text-muted);font-size:.7rem}.legend strong{color:#ffca28;font-family:var(--font-mono)}
   .calendar{flex:1 1 auto;min-height:0;padding:12px 16px 16px;overflow:auto;overscroll-behavior:contain}.desktop-schedule{min-width:1040px}.mobile-schedule{display:none}
   .note{flex:0 0 auto;margin:0;padding:11px 18px 14px;border-top:1px solid var(--border-subtle);color:var(--text-muted);font-size:.66rem;line-height:1.4}
   .year{display:grid;gap:3px}.year h3{margin:0;padding:4px 7px;border-radius:5px;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}.year--junior h3{color:#90caf9;background:rgb(33 150 243/.14)}.year--classic h3{color:#f5c83a;background:rgb(245 200 58/.12)}.year--senior h3{color:var(--accent-secondary);background:rgb(102 187 106/.12)}
@@ -47,6 +48,6 @@
   .race-meta{min-width:0;display:grid;gap:1px}.race-meta time{color:var(--text-secondary);font-size:8px;font-weight:700;line-height:1.25}.race-meta>span{color:var(--text-muted);font-size:9px;line-height:1.15}
   .affinity{display:grid;justify-items:center;gap:1px}.affinity strong{color:var(--accent-secondary);font-family:var(--font-mono);font-size:12px;line-height:1.1}.affinity span{color:var(--text-muted);font-size:7px;font-weight:700;white-space:nowrap}
   @media(max-width:768px){.desktop-schedule{display:none}.mobile-schedule{display:grid;gap:6px}.calendar{overflow-x:hidden}}
-  @media(max-width:520px){.optimal-races-dialog :global(dialog),.optimal-races-dialog :global(.dialog-panel){max-height:min(84dvh,660px)}.optimal-races-dialog :global(.dialog-panel>header){gap:8px;padding:8px}.optimal-races-dialog :global(.header-icon),.optimal-races-dialog :global(.heading p){display:none}.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px;padding:5px 8px;font-size:.61rem}.calendar{padding:5px 7px 7px}.note{display:none}}
+  @media(max-width:520px){.optimal-races-dialog :global(dialog),.optimal-races-dialog :global(.dialog-panel){max-height:min(84dvh,660px)}.optimal-races-dialog :global(.dialog-panel>header){gap:8px;padding:8px}.optimal-races-dialog :global(.header-icon),.optimal-races-dialog :global(.heading p){display:none}.legend{display:grid;gap:4px;font-size:.61rem}.calendar{padding:5px 7px 7px}.note{display:none}}
   @media(max-width:360px){.race{grid-template-columns:64px minmax(0,1fr) 34px}.art{width:64px;height:32px}}
 </style>

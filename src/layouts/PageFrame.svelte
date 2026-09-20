@@ -94,7 +94,7 @@
     position: sticky;
     top: max(
       calc(var(--page-viewport-top, 0px) + var(--utility-height) + var(--space-4)),
-      calc(var(--page-viewport-top, 0px) + var(--utility-height) + (var(--page-viewport-height, 100dvh) - var(--utility-height) - var(--ad-rail-height)) / 2)
+      calc(var(--page-viewport-top, 0px) + (var(--page-viewport-height, 100dvh) - var(--ad-rail-height)) / 2)
     );
   }
   .ad-rail--left { grid-area: left-ad; }

@@ -19,6 +19,7 @@ test('Direction changes keep a large timeline bounded and preserve scroll positi
     await expect(board.locator('.vertical-date.is-today')).toBeInViewport();
     timings.push(Math.round(performance.now() - start));
     expect(await board.locator('.event-card').count()).toBeLessThan(100);
+    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(280);
     await page.getByRole('radio', { name: 'Horizontal', exact: true }).click();
     await expect.poll(() => board.evaluate(node => node.scrollLeft)).toBeCloseTo(x, 0);
     expect(await board.locator('.event-card').count()).toBeLessThan(40);
@@ -30,6 +31,7 @@ test('Direction changes keep a large timeline bounded and preserve scroll positi
   await expect(page.locator('#timeline-event-large-1199')).toBeAttached();
   const y = await board.evaluate(async node => { await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); return node.scrollTop; });
   expect(await board.locator('.event-card').count()).toBeLessThan(100);
+    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(280);
   await page.getByRole('radio', { name: 'Horizontal', exact: true }).click();
   await page.getByRole('radio', { name: 'Vertical', exact: true }).click();
   await expect.poll(() => board.evaluate(node => node.scrollTop)).toBeCloseTo(y, 0);
@@ -59,6 +61,7 @@ test('Timeline drag moves both axes without opening cards; pickups link to GameT
     const rail = page.locator('[data-ad-placement="timeline_sticky_vrec_right"]');
     await expect(rail).toBeVisible();
     const railBox = (await rail.boundingBox())!;
+    expect(railBox.y + railBox.height / 2).toBeCloseTo(page.viewportSize()!.height / 2, 0);
     await page.setViewportSize({ width: 1800, height: 600 });
     const box = (await card.locator('.open-action').boundingBox())!;
     const before = await board.evaluate(node => ({ x: node.scrollLeft, y: node.scrollTop }));
@@ -73,6 +76,8 @@ test('Timeline drag moves both axes without opening cards; pickups link to GameT
     await page.setViewportSize({ width: 1800, height: 1000 });
     await expect(rail).toBeVisible();
     expect((await rail.boundingBox())!.x).toBe(railBox.x);
+    const centered = (await rail.boundingBox())!;
+    expect(centered.y + centered.height / 2).toBeCloseTo(page.viewportSize()!.height / 2, 0);
     await expect(page.locator('.month-span > span')).toHaveCount(0);
   }
   await page.getByRole('button', { name: isMobile ? 'Search & filters' : 'Filters', exact: true }).click();
