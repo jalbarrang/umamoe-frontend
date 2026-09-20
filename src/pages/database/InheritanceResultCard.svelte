@@ -137,7 +137,8 @@
         {#if onbookmark}<button class="save-action" type="button" aria-label={bookmarked ? 'Saved' : 'Save'} class:active={bookmarked} onclick={() => onbookmark?.(record)} disabled={actionBusy} title={bookmarked ? 'Remove bookmark' : 'Bookmark this record'}><Icon name="star" size={15}/><span>{bookmarked ? 'Saved' : 'Save'}</span></button>{/if}
       </div>
     </div>
-    <div class="record-stats" class:with-cross-race={affinity.crossRace > 0} aria-label="Inheritance summary">
+    <div class="record-stats" aria-label="Inheritance summary">
+      <div class="summary-metrics">
       {#if affinity.total !== null}<InspectPopover label="Total affinity breakdown">
         {#snippet trigger()}<span class="stat affinity"><strong>{affinity.total?.toLocaleString()}</strong><span>Affinity</span></span>{/snippet}
         <div class="affinity-breakdown"><strong>Total affinity: {affinity.total}</strong>{#if affinity.base !== null}<span>Base: {affinity.base} + Race: {affinity.race}</span>{:else}<span>Stored record score; local affinity data is not available yet.</span>{/if}{#if affinity.crossRace}<span>Includes P1–P2 races: {affinity.crossRace}</span>{/if}</div>
@@ -145,8 +146,11 @@
       {#if affinity.crossRace}<div class="stat cross-race" title="Race affinity from G1 wins shared by P1 and P2; counted once in the total"><strong>{affinity.crossRace.toLocaleString()}</strong><span>P1–P2 Race</span></div>{/if}
       {#if record.winCount !== undefined}<div class="stat wins"><strong>{record.winCount.toLocaleString()}</strong><span>G1 Wins</span></div>{/if}
       {#if record.whiteCount !== undefined}<div class="stat whites"><strong>{record.whiteCount.toLocaleString()}</strong><span>White Skills</span></div>{/if}
+      </div>
+      {#if scenario || record.rarity || record.rankScore}<div class="summary-meta">
       {#if scenario}<div class="scenario-mark"><svg viewBox={scenario.viewBox} role="img" aria-label={scenario.label}><title>{scenario.label}</title><image href={scenario.image} width={scenario.width} height={scenario.height}/></svg></div>{/if}
       {#if record.rarity || record.rankScore}<div class="rank-score">{#if record.rarity}<RankBadge rarity={record.rarity} size="md"/>{/if}{#if record.rankScore}<div class="stat score"><strong>{record.rankScore.toLocaleString()}</strong><span>Score</span></div>{/if}</div>{/if}
+      </div>{/if}
     </div>
   </header>
 
@@ -256,6 +260,7 @@
   .record-actions button:disabled { cursor: wait; opacity: .45; }
   .record-actions .action-mobile { display: none; }
   .record-stats { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: .6rem 1.25rem; padding: .55rem .8rem; border: 1px solid var(--entry-stats-border); border-radius: var(--radius-md); background: var(--entry-stats-bg); }
+  .summary-metrics, .summary-meta { display:contents; }
   .stat { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: .15rem; line-height: 1; }
   .stat strong { font-size: clamp(1.05rem, 2.4cqw, 1.4rem); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1; }
   .stat span { color: var(--text-muted); font-size: .65rem; font-weight: 600; letter-spacing: .04em; line-height: 1; text-transform: uppercase; }
@@ -309,39 +314,29 @@
     .limit-break { justify-content: center; font-size: 18px; }
   }
   @container inheritance-card (max-width: 480px) {
-    .trainer-copy { width: 100%; }.trainer-copy strong { flex: 1; max-width: none; text-align: left; }.trainer-copy>span { flex: 0 0 auto; margin-left: auto; }.record-actions button { min-width: 44px; min-height: 44px; gap: 3px; padding-inline: 3px; font-size: .6rem; }.record-actions .action-desktop { display: none; }.record-actions .action-mobile { display: inline; }
-    .record-stats { flex-wrap: nowrap; gap: clamp(4px,1.8cqw,8px); padding: 7px .5rem; }.rank-score { margin-left: auto; padding-left: 7px; gap: 4px; }.rank-score :global(.rank) { width: 30px; height: 30px; }.stat strong { font-size: .95rem; }.stat span { font-size: .52rem; white-space: nowrap; }.scenario-mark { padding-left: 7px; }.scenario-mark svg { width: 64px; height: 36px; }.trainer-copy { min-height: 44px; }
+    .record-header { gap:6px; }
+    .record-toolbar { display:flex; gap:5px; }
+    .trainer-copy { width:100%; min-height:30px; gap:6px; padding:4px 7px; }
+    .trainer-copy strong { flex:1; min-width:0; max-width:none; text-align:left; font-size:12px; }
+    .trainer-copy > span { flex:none; margin:0; padding:0; font-size:10px; white-space:nowrap; }
+    .trainer-copy > span :global(svg) { width:12px; height:12px; }
+    .record-actions { width:100%; flex-wrap:nowrap; gap:0; margin:0; border:1px solid var(--factor-field-border); border-radius:6px; background:var(--factor-field-bg); }
+    .record-actions button { flex:1; min-width:0; min-height:36px; flex-direction:column; gap:2px; padding:3px 1px; border:0; border-radius:4px; background:transparent; font-size:9px; line-height:1; }
+    .record-actions button:hover { background:rgb(var(--on-surface-rgb) / .08); transform:none; }
+    .record-actions .action-desktop { display:none; }.record-actions .action-mobile { display:inline; }
+    .record-stats { display:flex; flex-direction:column; align-items:stretch; gap:5px; padding:7px; }
+    .summary-metrics { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); align-items:center; gap:6px; }
+    .summary-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:4px; border-top:1px solid var(--border-subtle); }
+    .record-stats :global(.trigger) { min-height:24px; min-width:24px; }
+    .stat strong { font-size:14px; }.stat span { font-size:8px; white-space:nowrap; }
+    .scenario-mark { padding:0; border:0; }.scenario-mark svg { width:64px; height:32px; }
+    .rank-score { margin-left:auto; padding:0; gap:4px; border:0; }.rank-score :global(.rank) { width:26px; height:26px; }
     .inheritance-body { margin-top: 8px; padding-top: 8px; }.lineage-main :global(.art) { width: 58px; height: 58px; }.lineage-grandparent :global(.art) { width: 44px; height: 44px; }.spark-arrays { gap: 5px; }.spark-row { gap: 4px; }.record-footer { justify-content: center; }.footer-meta { justify-content: center; }
-    .record-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .scenario-mark { grid-row: 2; grid-column: 1 / span 2; padding-left: 0; border-left: 0; }
-    .rank-score { grid-row: 2; grid-column: 3 / span 2; }
     .support-card-section { gap: .2rem; margin-left: .4rem; padding: 0 0 0 .45rem; }
     .limit-break { font-size: 12px; }
   }
   @media (max-width:767px) {
     .inheritance-card { padding:8px; }
-    .record-header { gap:6px; }
-    .record-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px; }
-    .trainer-copy { width:fit-content; max-width:100%; min-height:30px; flex-direction:row; align-items:center; gap:6px; padding:3px 6px; }
-    .trainer-copy strong { flex:0 1 auto; min-width:0; max-width:100%; font-size:11px; }
-    .trainer-copy > span { flex:none; height:auto; margin:0; padding:0; font-size:9px; white-space:nowrap; }
-    .trainer-copy > span :global(svg) { width:10px; height:10px; }
-    .record-alert { grid-column:1/-1; justify-self:start; }
-    .record-actions { grid-column:2; grid-row:1; width:auto; flex-wrap:nowrap; gap:0; margin:0; border:1px solid var(--factor-field-border); border-radius:6px; background:var(--factor-field-bg); }
-    .record-toolbar .record-actions button { flex:0 0 28px; width:28px; min-width:28px; height:28px; min-height:28px; padding:0; border:0; border-radius:4px; background:transparent; }
-    .record-toolbar .record-actions button:hover { background:rgb(var(--on-surface-rgb) / .08); transform:none; }
-    .record-toolbar .record-actions .save-action { color:var(--color-gold); }
-    .record-toolbar .record-actions .save-action.active { background:rgb(255 193 7 / .12); }
-    .record-toolbar .record-actions button span { display:none; }
-    .record-actions button :global(svg) { width:18px; height:18px; }
-    .record-stats { gap:8px; padding:5px 7px; }
-    .stat strong { font-size:14px; }
-    .stat span { font-size:8px; }
-    .record-stats :global(.trigger) { min-height:24px; min-width:24px; }
-    .scenario-mark, .rank-score { padding-left:8px; }
-    .scenario-mark svg { width:64px; height:36px; }
-    .rank-score { gap:4px; }
-    .rank-score :global(.rank) { width:26px; height:26px; }
     .inheritance-body { gap:6px; margin-top:8px; padding-top:8px; }
     .character-panel { display:grid; grid-template-columns:minmax(0,1fr); padding:6px; gap:0; border:1px solid var(--border-subtle); border-radius:6px; background:rgb(var(--on-surface-rgb) / .035); }
     .character-panel:has(.support-card-section) { grid-template-columns:minmax(0,3fr) minmax(0,1fr); }

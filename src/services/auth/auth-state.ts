@@ -33,18 +33,18 @@ export async function beginLogin(provider: 'google' | 'discord'): Promise<void> 
 }
 
 export async function completeLogin(token: string): Promise<AuthUser> {
+  authReady.set(false);
   setAuthToken(token);
   try {
     const user = await authRepository.me();
     authUser.set(user);
     const accounts = await authRepository.linkedAccounts().catch(() => []);
     setAccountWorkspaces(accounts.filter(account => account.verification_status === 'verified').map((account) => ({ accountId: account.account_id, label: account.trainer_name || account.account_id })));
-    authReady.set(true);
     return user;
   } catch (error) {
     if (error instanceof HttpError && [401, 403, 404].includes(error.status)) clearAuthToken();
     throw error;
-  }
+  } finally { authReady.set(true); }
 }
 
 export function logout(): void {

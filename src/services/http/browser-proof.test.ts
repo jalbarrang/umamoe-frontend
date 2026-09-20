@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 vi.mock('../runtime-config', () => ({ runtimeConfig: { providersEnabled: true, siteKey: 'test-site-key' } }));
-afterEach(() => { delete window.turnstile; document.querySelectorAll('[id^="cf-turnstile"],dialog').forEach(node => node.remove()); vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetModules(); });
+afterEach(() => { delete window.turnstile; document.querySelectorAll('[id^="cf-turnstile"],dialog').forEach(node => node.remove()); vi.restoreAllMocks(); localStorage.clear(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetModules(); });
 it('uses configured beta verification, shares a challenge, exchanges and caches proof without cookies', async () => {
   let callback!: (token: string) => void;
   const dialog = document.createElement('dialog'); dialog.open = true; document.body.append(dialog);
@@ -28,6 +28,40 @@ it('times out a blocked script once and retries only when explicitly requested',
   const retry = expect(port!.refresh(true)).rejects.toThrow('could not load');
   expect(document.getElementById('cf-turnstile-api')).not.toBeNull();
   document.getElementById('cf-turnstile-api')!.dispatchEvent(new Event('error')); await retry;
+});
+
+it('reuses server proof after reload, observes other tabs and respects expiry and rejection', async () => {
+  vi.useFakeTimers();
+  const { browserProofPort: first } = await import('./browser-proof');
+  first!.capture('server-proof', 60);
+  vi.resetModules();
+  const { browserProofPort: reloaded } = await import('./browser-proof');
+  expect(reloaded!.getCached()).toBe('server-proof');
+  reloaded!.prime();
+  expect(document.getElementById('cf-turnstile-api')).toBeNull();
+  first!.capture('newer-proof', 60);
+  reloaded!.invalidate('server-proof');
+  expect(reloaded!.getCached()).toBe('newer-proof');
+  await vi.advanceTimersByTimeAsync(55_000);
+  expect(reloaded!.getCached()).toBeUndefined();
+  first!.capture('replacement', 60);
+  reloaded!.invalidate('replacement');
+  expect(first!.getCached()).toBeUndefined();
+});
+
+it('rejects malformed stored proofs and supports browsers with storage disabled', async () => {
+  const { browserProofPort: port } = await import('./browser-proof');
+  localStorage.setItem('uma-browser-proof-v1', '{');
+  expect(port!.getCached()).toBeUndefined();
+  localStorage.setItem('uma-browser-proof-v1', JSON.stringify({ token: 42, expiresAt: 'tomorrow' }));
+  expect(port!.getCached()).toBeUndefined();
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+  vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('blocked'); });
+  port!.capture('memory-proof', 60);
+  expect(port!.getCached()).toBe('memory-proof');
+  port!.invalidate('memory-proof');
+  expect(port!.getCached()).toBeUndefined();
 });
 
 it.each(['error-callback', 'expired-callback', 'timeout-callback', 'unsupported-callback'] as const)('cleans up %s and recovers through explicit verification', async callbackName => {

@@ -1,6 +1,51 @@
 import { expect, test } from './fixtures/test';
 import { profile, homeStats } from './fixtures/api';
 
+test('sign-in keeps the verified session and shows initials while the avatar loads', async ({ page }) => {
+  let releaseIdentity!: () => void;
+  let identity = new Promise<void>(resolve => { releaseIdentity = resolve; });
+  let releaseAvatar!: () => void;
+  const avatar = new Promise<void>(resolve => { releaseAvatar = resolve; });
+  let identityRequests = 0;
+  let documents = 0;
+  page.on('request', request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
+  await page.route('**/api/auth/me', async route => {
+    identityRequests++;
+    await identity;
+    await route.fulfill({ json: { id: 'owner', display_name: 'Parity User', avatar_url: '/slow-avatar.svg' } });
+  });
+  await page.route('**/api/auth/accounts', route => route.fulfill({ json: [] }));
+  await page.route('**/api/stats', route => route.fulfill({ json: homeStats }));
+  await page.route('**/slow-avatar.svg', async route => {
+    await avatar;
+    await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><rect width="28" height="28" fill="blue"/></svg>' });
+  });
+  try {
+    await page.goto('/signin?token=callback-session', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Checking sign-in', { exact: true })).toBeAttached();
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
+    releaseIdentity();
+    await expect(page).toHaveURL(/\/$/);
+    const account = page.getByRole('button', { name: 'Account menu for Parity User', exact: true });
+    await expect(account).toBeVisible();
+    await expect(account.locator('.account-avatar')).toHaveText('PU');
+    await expect(account.locator('img')).toBeHidden();
+    expect(documents).toBe(1);
+    expect(identityRequests).toBe(1);
+    await account.click();
+    await expect(page.getByRole('menu', { name: 'Your account' })).toBeVisible();
+    releaseAvatar();
+    await expect(account.locator('img')).toBeVisible();
+    identity = new Promise<void>(resolve => { releaseIdentity = resolve; });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Checking sign-in', { exact: true })).toBeAttached();
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
+    releaseIdentity();
+    await expect(account).toBeVisible();
+    expect(identityRequests).toBe(2);
+  } finally { releaseIdentity(); releaseAvatar(); }
+});
+
 test('OAuth redirects to any app page replace an old token and recover from temporary verification failures', async ({ page }) => {
   let unavailable = true;
   const tokens: string[] = [];
@@ -67,6 +112,9 @@ test('sign-in callback preserves the token contract and clears rejected sessions
   expect(await page.evaluate(() => localStorage.getItem('auth_token'))).toBeNull();
   await page.getByRole('link', { name: 'Return to sign in.' }).click();
   await expect(page).toHaveURL(/\/login$/);
+  await page.goto('/signin');
+  await expect(page.getByText('Sign-in failed', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
 test('signed-in account menu opens the active profile, settings and sign out', async ({ page }, testInfo) => {
@@ -94,6 +142,8 @@ test('signed-in account menu opens the active profile, settings and sign out', a
   await page.route('**/api/stats', route => route.fulfill({ json: homeStats }));
   await page.goto('/tools');
   const trigger = page.getByRole('button', { name: 'Account menu for Account Tester', exact: true });
+  await expect(trigger.locator('.account-avatar')).toHaveText('AT');
+  await expect(trigger.locator('img')).toBeHidden();
   await trigger.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Your account', exact: true });
   const mine = menu.getByRole('menuitem', { name: 'My profile', exact: true });

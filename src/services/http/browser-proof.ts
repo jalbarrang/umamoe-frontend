@@ -36,6 +36,23 @@ export const browserVerification = writable({ pending: false, error: '' });
 let cached: { token: string; expiresAt: number } | undefined;
 let refreshTask: Promise<string> | undefined;
 let scriptTask: Promise<TurnstileApi> | undefined;
+const proofStorageKey = 'uma-browser-proof-v1';
+
+function readProof() {
+  try {
+    const raw = localStorage.getItem(proofStorageKey);
+    const value = raw ? JSON.parse(raw) : undefined;
+    cached = value && typeof value.token === 'string' && value.token.trim() && Number.isFinite(value.expiresAt)
+      ? { token: value.token, expiresAt: value.expiresAt } : undefined;
+  } catch { /* Storage may be unavailable; retain the in-memory proof. */ }
+  return cached;
+}
+
+function saveProof(token: string, ttlSeconds: number) {
+  cached = { token, expiresAt: Date.now() + ttlSeconds * 1000 };
+  // Persist only our reusable server proof, never the single-use Turnstile token.
+  try { localStorage.setItem(proofStorageKey, JSON.stringify(cached)); } catch { /* Memory fallback. */ }
+}
 
 function loadTurnstile(): Promise<TurnstileApi> {
   if (window.turnstile) return Promise.resolve(window.turnstile);
@@ -114,7 +131,7 @@ async function exchange(): Promise<string> {
   const token = response.headers.get(proofHeader)?.trim() ?? '';
   const ttl = Number(response.headers.get(ttlHeader) ?? 0);
   if (!response.ok || !token || !Number.isFinite(ttl) || ttl <= 0) throw new Error(`Browser proof exchange failed (${response.status}).`);
-  cached = { token, expiresAt: Date.now() + ttl * 1000 };
+  saveProof(token, ttl);
   return token;
 }
 
@@ -122,6 +139,7 @@ const port: BrowserProofPort = {
   proofHeader,
   ttlHeader,
   getCached() {
+    readProof();
     if (!cached || cached.expiresAt - Date.now() <= 5000) return undefined;
     return cached.token;
   },
@@ -138,9 +156,15 @@ const port: BrowserProofPort = {
     return refreshTask;
   },
   capture(token, ttlSeconds) {
-    if (token && Number.isFinite(ttlSeconds) && ttlSeconds > 0) cached = { token, expiresAt: Date.now() + ttlSeconds * 1000 };
+    if (token && Number.isFinite(ttlSeconds) && ttlSeconds > 0) saveProof(token, ttlSeconds);
   },
-  invalidate(token) { if (!token || cached?.token === token) cached = undefined; }
+  invalidate(token) {
+    readProof();
+    if (!token || cached?.token === token) {
+      cached = undefined;
+      try { localStorage.removeItem(proofStorageKey); } catch { /* Memory fallback. */ }
+    }
+  }
 };
 
 export const browserProofPort: BrowserProofPort | undefined = enabled ? port : undefined;

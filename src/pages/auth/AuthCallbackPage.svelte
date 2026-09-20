@@ -3,6 +3,7 @@
   import Banner from '@/components/Banner.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import { completeLogin } from '@/services/auth/auth-state';
+  import { router } from '@/routes/router';
   import Button from '@/components/Button.svelte';
   import { onMount } from 'svelte';
   let error = $state('');
@@ -11,12 +12,12 @@
     error = '';
     if (!token) { error = 'The provider did not return a session token.'; return; }
     void completeLogin(token).then(() => {
-      let destination = '/';
+      let destination: '/' | '/veterans' = '/';
       try {
         if (sessionStorage.getItem('auth_return_to') === '/veterans') destination = '/veterans';
         sessionStorage.removeItem('auth_return_to');
       } catch { /* Fall back to Home when session storage is unavailable. */ }
-      window.location.replace(destination);
+      return router.navigate(destination, { replace: true });
     }).catch((reason) => { error = reason instanceof Error ? reason.message : 'The session could not be verified.'; });
   }
   onMount(() => {

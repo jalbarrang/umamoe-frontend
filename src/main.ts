@@ -8,7 +8,7 @@ import './styles/global.css';
 initializeTheme();
 initializeWorkspace();
 // The callback owns session verification; an old stored session must not race it.
-if (location.pathname !== '/signin') void initializeAuth();
+if (location.pathname !== '/signin' || !new URLSearchParams(location.search).get('token')) void initializeAuth();
 
 const target = document.getElementById('app');
 if (!target) throw new Error('The application mount point is missing.');

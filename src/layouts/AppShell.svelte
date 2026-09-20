@@ -6,10 +6,9 @@
   import { router, pendingRoute } from '@/routes/router';
   import { navigationForPath, routeDefinitionForPath } from '@/routes/route-manifest';
   import { theme, toggleTheme } from '@/stores/theme';
-  import { authUser, logout } from '@/services/auth/auth-state';
+  import { authUser, authReady, logout } from '@/services/auth/auth-state';
   import { activeWorkspace, workspaces } from '@/lib/workspaces/workspace-state';
   import Menu, { type MenuItem } from '@/components/Menu.svelte';
-  import Artwork from '@/components/Artwork.svelte';
   import Dialog from '@/components/Dialog.svelte';
   import Button from '@/components/Button.svelte';
   import Icon from '@/components/Icon.svelte';
@@ -26,6 +25,7 @@
   interface Props { children: Snippet; }
   let { children }: Props = $props();
   let menuOpen = $state(false);
+  let loadedAvatar = $state('');
   let utilityBar: HTMLElement;
   let mobileMenu: HTMLElement;
   let menuTop = $state(60);
@@ -88,10 +88,11 @@
         {#if $authUser}
           <div class="signed-in-account">
             <Menu label={`Account menu for ${accountName}`} menuLabel="Your account" iconOnly items={accountItems} onselect={id => { if (id === 'logout') logout(); }}>
-              {#snippet trigger()}<span class="account-avatar" aria-hidden="true">{#if $authUser.avatar_url}<Artwork src={$authUser.avatar_url} alt="" size="xs" shape="circle" loading="eager"/>{:else}{accountInitials}{/if}<span class="account-status"></span></span>{/snippet}
+              {#snippet trigger()}<span class="account-avatar" aria-hidden="true">{accountInitials}{#if $authUser.avatar_url}<img src={$authUser.avatar_url} alt="" class:ready={loadedAvatar === $authUser.avatar_url} loading="eager" decoding="async" onload={event => loadedAvatar = event.currentTarget.getAttribute('src') ?? ''} onerror={() => loadedAvatar = ''}/>{/if}<span class="account-status"></span></span>{/snippet}
               {#snippet header()}<div class="account-identity"><small>Signed in as</small><strong>{accountName}</strong>{#if ownProfile}<span>{ownProfile.label}</span>{/if}</div>{/snippet}
             </Menu>
           </div>
+        {:else if !$authReady}<span class="account-action"><Spinner size={18} label="Checking sign-in"/></span>
         {:else}<a class="account-action" href="/login" aria-label="Sign in"><Icon name="user" size={18}/></a>{/if}
       </div>
     </header>
@@ -142,6 +143,7 @@
   .account-action:hover { background: var(--surface-2); color: var(--color-text); }
   .signed-in-account :global(.trigger) { border-color:rgb(var(--accent-primary-rgb)/.4); background:rgb(var(--accent-primary-rgb)/.08); }
   .account-avatar { position:relative; display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:rgb(var(--accent-primary-rgb)/.15); color:var(--accent-primary); font-size:11px; font-weight:700; }
+  .account-avatar img { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; visibility:hidden; }.account-avatar img.ready { visibility:visible; }
   .account-status { position:absolute; right:-1px; bottom:-1px; width:8px; height:8px; border:2px solid var(--navbar-bg); border-radius:50%; background:var(--accent-success); }
   .account-identity { display:grid; gap:3px; max-width:240px; overflow-wrap:anywhere; }
   .account-identity strong { font-size:var(--font-sm); }.account-identity small,.account-identity>span { color:var(--text-secondary); font-size:11px; }

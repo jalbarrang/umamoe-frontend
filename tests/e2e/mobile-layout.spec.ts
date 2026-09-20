@@ -1,5 +1,5 @@
 import { test, expect, type Page } from './fixtures/test';
-import { accountId, mockDatabase, mockTimeline, mockStatistics, mockCommunity, mockProfilePresentation, mockActivity, mockAffinity, mockVeteranProfile, mockOwnerProfile, mockResources, mockAdvertising, veteran } from './fixtures/api';
+import { accountId, mockDatabase, mockTimeline, mockStatistics, mockCommunity, mockProfilePresentation, mockActivity, mockAffinity, mockVeteranProfile, mockOwnerProfile, mockResources, mockAdvertising, veteran, record } from './fixtures/api';
 import skills from '../fixtures/resources/skills.json' with { type: 'json' };
 
 const pages: Array<{ name: string; path: string; setup: (page: Page) => Promise<unknown>; ready: string }> = [
@@ -92,12 +92,18 @@ test('mobile layout: dense veteran chips stay compact and resolve catalog names'
   await expect(card.locator('.skill-filter.matched')).toHaveCount(1);
 });
 
-async function openLegacyPicker(page: Page) {
+async function openLegacyPicker(page: Page, withTarget = false) {
   await mockDatabase(page); await mockAffinity(page);
   await mockOwnerProfile(page, []); await mockVeteranProfile(page);
   await page.goto('/database');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   await page.getByRole('radio', { name: 'Advanced', exact: true }).click();
+  if (withTarget) {
+    await page.getByRole('button', { name: 'Pick target character', exact: true }).click();
+    const characters = page.getByRole('dialog', { name: 'Select Character', exact: true });
+    await characters.getByRole('searchbox', { name: 'Search characters' }).fill('Mejiro McQueen');
+    await characters.getByRole('radio').first().click();
+  }
   await page.getByRole('button', { name: 'Pick your legacy', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Select Parent', exact: true });
   await expect(dialog).toBeVisible();
@@ -121,4 +127,58 @@ test('mobile layout: legacy picker', async ({ page, browser, baseURL, isMobile, 
       await page.screenshot({ path: info.outputPath(`legacy-${name}.png`), scale: 'css' });
     }
   } finally { await mouseContext.close(); }
+});
+
+test('mobile layout: parent pairs and database headers stay ordered at narrow widths', async ({ page }, info) => {
+  const dialog = await openLegacyPicker(page, true);
+  await expect(dialog.locator('.parent-id .affinity')).toHaveCount(2);
+  for (const width of [320, 393, 412]) {
+    await page.setViewportSize({ width, height: 851 });
+    const row = dialog.locator('.parent-row').first();
+    const parents = row.locator('.summary-parent');
+    await expect(parents).toHaveCount(2);
+    const main = (await row.locator('.summary-head').boundingBox())!;
+    const p1 = (await parents.nth(0).boundingBox())!;
+    const p2 = (await parents.nth(1).boundingBox())!;
+    expect(p1.y).toBeGreaterThanOrEqual(main.y + main.height);
+    expect(p2.y).toBe(p1.y);
+    expect(p2.x).toBeGreaterThan(p1.x);
+    expect(Math.abs(p1.width - p2.width)).toBeLessThan(1);
+    expect(await row.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await dialog.screenshot({ path: info.outputPath(`parent-pair-${width}.png`), scale: 'css' });
+  }
+  await dialog.getByRole('button', { name: 'Select Grass Wonder', exact: true }).tap();
+  await expect(dialog).toBeHidden();
+
+  const item = record();
+  item.trainer_name = 'MaybeAnt@Kitasan';
+  item.inheritance.main_win_saddles = [30, 100, 101];
+  await page.route('**/search/query?*', route => route.fulfill({ json: { items: [item], total: 1, page: 0, limit: 12, total_pages: 1 } }));
+  await page.reload();
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).click();
+  await page.getByRole('button', { name: 'Pick your legacy', exact: true }).click();
+  const updatedResults = page.waitForResponse(response => response.url().includes('/search/query?'));
+  await dialog.getByRole('button', { name: 'Select Grass Wonder', exact: true }).tap();
+  await updatedResults;
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  const card = page.locator('.inheritance-card').first();
+  await expect(card).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Optimal Races', exact: true })).toBeVisible();
+  await expect(card.locator('.cross-race')).toBeVisible();
+  for (const width of [320, 393, 412]) {
+    await page.setViewportSize({ width, height: 851 });
+    await card.scrollIntoViewIfNeeded();
+    const trainer = (await card.locator('.trainer-copy').boundingBox())!;
+    const actions = (await card.locator('.record-actions').boundingBox())!;
+    const metrics = (await card.locator('.summary-metrics').boundingBox())!;
+    const meta = (await card.locator('.summary-meta').boundingBox())!;
+    expect(actions.y).toBeGreaterThanOrEqual(trainer.y + trainer.height);
+    expect(metrics.y).toBeGreaterThanOrEqual(actions.y + actions.height);
+    expect(meta.y).toBeGreaterThanOrEqual(metrics.y + metrics.height);
+    expect(await card.locator('.record-header').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await card.screenshot({ path: info.outputPath(`database-card-${width}.png`), scale: 'css' });
+  }
+  await card.getByRole('button', { name: 'Races', exact: true }).tap();
+  await expect(page.getByRole('dialog', { name: 'Race History' })).toBeVisible();
 });
