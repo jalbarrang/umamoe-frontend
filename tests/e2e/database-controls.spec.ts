@@ -246,6 +246,8 @@ test('character choices preserve released variants and resolve same-role conflic
 test('a failed character resource stays inside the picker and can be retried without resetting filters', async ({ page }) => {
   const fail = (route: import('@playwright/test').Route) => route.fulfill({status:503,json:{error:'Catalog offline'}});
   await page.route('**/resources/*/character.json*', fail);
+  // This case exercises a cold catalog failure, not a working persisted fallback.
+  await page.addInitScript(() => localStorage.removeItem('umamoe_resource_meta_v1:character'));
   await page.reload();
   await page.getByRole('button', {name:/Filters/}).click();
   await page.getByRole('radio', {name:'Advanced',exact:true}).click();

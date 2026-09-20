@@ -11,6 +11,7 @@ type ManifestEntry = string | { name?: string; path?: string; current_path?: str
 interface PlannerManifest { files?: Record<string, ManifestEntry> | ManifestEntry[]; artifacts?: Record<string, ManifestEntry> | ManifestEntry[]; resources?: Record<string, ManifestEntry> | ManifestEntry[]; }
 
 const cache = new QueryCache();
+const normalizedRewards = new WeakMap<PlannerRewardResource, PlannerRewardResource>();
 const manifestPath = '/resources/planner/manifest.json';
 const gachaById = new Map<number, PlannerGachaEntry>();
 const gachaByEvent = new Map<string, PlannerGachaEntry>();
@@ -180,13 +181,17 @@ export const plannerResourceRepository = {
   core(refresh = false): Promise<PlannerCoreResource> { return artifact<PlannerCoreResource>('planner_core.json', refresh); },
   async rewards(refresh = false): Promise<PlannerRewardResource> {
     const rewards = await artifact<PlannerRewardResource>('planner_rewards.json', refresh);
-    return applyGlobalRewardPrecedence({
+    const cached = normalizedRewards.get(rewards);
+    if (cached) return cached;
+    const normalized = applyGlobalRewardPrecedence({
       ...rewards,
       rewards: Array.isArray(rewards?.rewards) ? rewards.rewards : [],
       event_benefits: Array.isArray(rewards?.event_benefits) ? rewards.event_benefits : [],
       free_pull_campaigns: Array.isArray(rewards?.free_pull_campaigns) ? rewards.free_pull_campaigns : [],
       competitive_variants: Array.isArray(rewards?.competitive_variants) ? rewards.competitive_variants : []
     });
+    normalizedRewards.set(rewards, normalized);
+    return normalized;
   },
   async initial(refresh = false): Promise<PlannerDataBundle> {
     if (refresh) { gachaGeneration++; gachaById.clear(); gachaByEvent.clear(); }

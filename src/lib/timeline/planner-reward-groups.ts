@@ -37,13 +37,13 @@ function rewardSource(group: GroupRows): { sourceUrl?: string; sourceLabel?: str
   const labels: Record<string, string> = { global_master: 'Global game data', global_news: 'Official Global news', global_social: 'Official Global social', jp_master: 'JP game data', jp_master_catalog: 'JP game data', jp_master_snapshot: 'JP game data', jp_news: 'JP news archive', jp_fallback: 'JP news archive', configured: 'Planner configuration' };
   return { sourceLabel: candidates.map(item => labels[item.provenance ?? '']).find(Boolean) };
 }
-function selectedRows(rewards: PlannerRewardEntry[], plan?: CaratPlan): PlannerRewardEntry[] {
+function selectedRows(rewards: PlannerRewardEntry[], plan?: Pick<CaratPlan, 'scenarioSelections' | 'variableRewardSelections'>): PlannerRewardEntry[] {
   return rewards.map(reward => {
     const group = conditionalRewardScenarioGroup(reward), selection = group ? plan?.scenarioSelections[group] : undefined;
     return group && conditionalRewardScenarioSelectionMatches(reward, selection) ? { ...reward, amount: selectedConditionalRewardAmount(reward, selection) } : reward;
   });
 }
-function rewardBreakdown(rewards: PlannerRewardEntry[], plan?: CaratPlan): string {
+function rewardBreakdown(rewards: PlannerRewardEntry[], plan?: Pick<CaratPlan, 'scenarioSelections' | 'variableRewardSelections'>): string {
   const labels: Partial<Record<PlannerCurrency, string>> = { uma_ticket: 'Uma ticket', support_ticket: 'Support ticket', rainbow_crystal: 'Rainbow shard', gold_crystal: 'Gold shard', rainbow_full_crystal: 'Rainbow Uncap Crystal', gold_full_crystal: 'Gold Uncap Crystal' };
   const lines = plannerRewardBundles(selectedRows(rewards, plan)).flatMap(bundle => {
     const carats = (bundle.totals.get('free_jewels') ?? 0) + (bundle.totals.get('paid_jewels') ?? 0);
@@ -57,7 +57,7 @@ function rewardBreakdown(rewards: PlannerRewardEntry[], plan?: CaratPlan): strin
   if (rewards.some(item => /bingo rewards/i.test(item.label))) notes.push('Finite Bingo sheets are included. Repeatable sheets have no fixed maximum and are excluded.');
   return ['Reward breakdown', ...new Set(lines), ...notes].join('\n');
 }
-function groupBenefits(group: GroupRows, options: PlannerRewardOption[], selection: PlannerRewardOption, plan?: CaratPlan): PlannerRewardBenefitView[] {
+function groupBenefits(group: GroupRows, options: PlannerRewardOption[], selection: PlannerRewardOption, plan?: Pick<CaratPlan, 'scenarioSelections' | 'variableRewardSelections'>): PlannerRewardBenefitView[] {
   const benefits: PlannerRewardBenefitView[] = group.eventBenefits.filter(item => item.kind === 'free_pulls').map(item => {
     const amount = Number.isFinite(item.amount) ? Math.max(0, Number(item.amount)) : undefined;
     const qualifier = item.confidence === 'schedule_partitioned' ? item.source_url ? 'schedule-derived free' : 'predicted free' : item.confidence === 'schedule_derived' ? 'predicted free' : 'free';
@@ -83,7 +83,7 @@ function groupBenefits(group: GroupRows, options: PlannerRewardOption[], selecti
   else if (!benefits.length && group.rewards.some(reward => !Number.isFinite(reward.amount))) benefits.push({ id: 'reward-details', kind: 'other', text: 'Reward details' });
   return benefits.sort((a, b) => benefitOrder(a.kind) - benefitOrder(b.kind));
 }
-export function buildPlannerRewardGroups(rewards: readonly PlannerRewardEntry[], eventBenefits: readonly PlannerEventBenefit[], competitiveVariants: readonly PlannerCompetitiveRewardVariant[], campaigns: readonly PlannerFreePullCampaign[], events: readonly TimelineRecord[], start: string, today = new Date().toISOString().slice(0, 10), plan?: CaratPlan): PlannerRewardGroup[] {
+export function buildPlannerRewardGroups(rewards: readonly PlannerRewardEntry[], eventBenefits: readonly PlannerEventBenefit[], competitiveVariants: readonly PlannerCompetitiveRewardVariant[], campaigns: readonly PlannerFreePullCampaign[], events: readonly TimelineRecord[], start: string, today = new Date().toISOString().slice(0, 10), plan?: Pick<CaratPlan, 'scenarioSelections' | 'variableRewardSelections'>): PlannerRewardGroup[] {
   const grouped = new Map<string, GroupRows>();
   const obtain = (id: string, eventId?: string) => { const group = grouped.get(id) ?? { eventId, rewards: [], competitiveVariants: [], eventBenefits: [] }; grouped.set(id, group); return group; };
   for (const reward of rewards) obtain(reward.event_id ? 'event:' + reward.event_id : 'reward:' + reward.available_at + ':' + plannerRewardBundleId(reward), reward.event_id).rewards.push(reward);

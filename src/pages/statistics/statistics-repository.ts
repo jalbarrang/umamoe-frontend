@@ -13,6 +13,7 @@ export interface StatisticsCatalogEntry { id: string; title: string; tags: strin
 export type { CharacterStatistics, DistributionItem, GlobalStatistics, MetricGroup, StatDistribution, StatisticsDataset, StatisticsScope } from '@/lib/statistics/statistics-types';
 
 const cache = new QueryCache();
+resourceRepository.onUpdate(name => { if (['character', 'character_names', 'support-cards-db', 'skills'].includes(name)) cache.invalidate('statistics:catalog'); });
 
 function path(value: string): string {
   return /^https?:\/\//i.test(value) || value.startsWith('/') ? value : `/${value}`;
@@ -24,23 +25,25 @@ function compressed(dataset: StatisticsDataset): boolean {
 
 export const statisticsRepository = {
   async catalog(): Promise<{ characters: StatisticsCatalogEntry[]; supports: StatisticsCatalogEntry[]; skills: StatisticsCatalogEntry[] }> {
-    const [characters, names, supports, skills] = await Promise.all([
-      resourceRepository.load<CharacterCatalogEntry[]>('character'),
-      resourceRepository.load<CharacterNames>('character_names'),
-      loadLiveSupportCards(),
-      resourceRepository.load('skills', false, data => {
-        if (!Array.isArray(data)) throw new Error('Invalid skill resource.');
-        return data.map(normalizeSkill).filter(skill => Number.isFinite(skill.skill_id) && skill.skill_id > 0);
-      })
-    ]);
-    return {
-      characters: characters.map(character => {
-        const id = String(character.id), localized = names[String(Math.floor(Number(id) / 100))];
-        return { id, title: localized?.name || character.name, detail: localized?.skins?.[id.slice(-2)] || character.subtitle, image: characterImagePath(Number(id)), tags: [] };
-      }),
-      supports: supports.map(card => ({ id: card.id, title: card.name, image: supportCardImagePath(card.id), tags: [card.type === 'group' ? 'Group' : supportTypeName(card.type), card.rarity === 3 ? 'SSR' : card.rarity === 2 ? 'SR' : 'R'] })),
-      skills: skills.map(skill => ({ id: String(skill.skill_id), title: skill.name, image: skillImage(skill.icon), tags: [] }))
-    };
+    return cache.get('statistics:catalog', 60 * 60_000, async () => {
+      const [characters, names, supports, skills] = await Promise.all([
+        resourceRepository.load<CharacterCatalogEntry[]>('character'),
+        resourceRepository.load<CharacterNames>('character_names'),
+        loadLiveSupportCards(),
+        resourceRepository.load('skills', false, data => {
+          if (!Array.isArray(data)) throw new Error('Invalid skill resource.');
+          return data.map(normalizeSkill).filter(skill => Number.isFinite(skill.skill_id) && skill.skill_id > 0);
+        })
+      ]);
+      return {
+        characters: characters.map(character => {
+          const id = String(character.id), localized = names[String(Math.floor(Number(id) / 100))];
+          return { id, title: localized?.name || character.name, detail: localized?.skins?.[id.slice(-2)] || character.subtitle, image: characterImagePath(Number(id)), tags: [] };
+        }),
+        supports: supports.map(card => ({ id: card.id, title: card.name, image: supportCardImagePath(card.id), tags: [card.type === 'group' ? 'Group' : supportTypeName(card.type), card.rarity === 3 ? 'SSR' : card.rarity === 2 ? 'SR' : 'R'] })),
+        skills: skills.map(skill => ({ id: String(skill.skill_id), title: skill.name, image: skillImage(skill.icon), tags: [] }))
+      };
+    });
   },
 
   datasets(refresh = false): Promise<StatisticsDataset[]> {

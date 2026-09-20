@@ -70,10 +70,10 @@
   let search = $state('');
   let currentSearchIndex = $state(-1);
   let visibleTypes = $state<FilterType[]>(filterOptions.map((option) => option.type));
-  let collection = $state(get(plannerCollection));
+  let collection = $state.raw(get(plannerCollection));
   let initialized = $state(false);
   let calculation = $state<TimelineCalculation | null>(null);
-  let catalog = $state<TimelinePickupCatalog>({ characters: {}, supports: new Map() });
+  let catalog = $state.raw<TimelinePickupCatalog>({ characters: {}, supports: new Map() });
   let rewardResource = $state.raw<PlannerRewardResource>({ rewards: [] });
   let rewardsLoading = $state(false);
   let rewardsError = $state('');

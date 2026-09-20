@@ -127,7 +127,7 @@
   let hiddenSparksOpen = $state(false);
   let hiddenSparkFactorIds = $state<number[]>([]);
   let filters = $state<InheritanceSearchFilters>(emptyInheritanceFilters());
-  let inheritance = $state<InheritanceSearchResult>({ records: [], total: 0, page: 0, pageSize, totalPages: 0 });
+  let inheritance = $state.raw<InheritanceSearchResult>({ records: [], total: 0, page: 0, pageSize, totalPages: 0 });
   let inheritanceLoading = $state(false);
   let inheritanceError = $state('');
   let page = $state(1);
@@ -162,7 +162,7 @@
   let trainerSubmission = $state('');
   let submissionBusy = $state(false);
   let submissionTouched = $state(false);
-  let bookmarks = $state<InheritanceSearchResult['records']>([]);
+  let bookmarks = $state.raw<InheritanceSearchResult['records']>([]);
   let bookmarksLoading = $state(false);
   let bookmarksError = $state('');
   let bookmarkFilter = $state<'all' | 'unchanged' | 'modified'>('all');

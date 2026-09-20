@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import { loadCharacterCatalog, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
   import { watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
   import SparkFilterDialog from './SparkFilterDialog.svelte';
@@ -159,7 +160,7 @@
       <div class="parent-actions">{#if pickerState.tab==='veterans'}<IconButton icon="upload" label="Upload veteran JSON" onclick={chooseFile}/>{/if}
         {#if pickerState.tab==='manual'&&!editing}<Button icon="add" size="sm" variant="secondary" disabled={!!manualReadError} onclick={()=>{editedEntry=undefined;editing=true;}}>Add</Button>{/if}</div>
     </div>
-    <div class="picker-body" onscroll={(event)=>{const el=event.currentTarget;if(el.scrollHeight-el.scrollTop-el.clientHeight<360)renderLimit=Math.min(filtered.length,renderLimit+16);}}>
+    <div class="picker-body">
     <div class="active-filters" aria-label="Spark filters">
       {#if factorGroups.length}<div class="spark-filter-groups">
         {#each factorGroups as group (group.tone)}
@@ -208,8 +209,8 @@
       {:else}
         {#if pickerState.tab==='saved'&&lookupResult}<h3 class="partner-heading"><Icon name="search" size={16}/>Lookup result</h3><ParentPickerRow parent={lookupResult} {characters} affinity={parentAffinityDetails(lookupResult,targetId,engine,groups)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>lookupResult&&choose(lookupResult)}/>{/if}
         {#if pickerState.tab==='saved'&&partners.length}<h3 class="partner-heading"><Icon name="save" size={16}/>Saved partners</h3>{/if}
-        <div class="parent-list" role="list" aria-label="Available parents">{#each filtered.slice(0,renderLimit) as parent (parent.pickerId)}<div role="listitem"><ParentPickerRow {parent} {characters} affinity={affinities.get(parent.pickerId)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
-        {#if filtered.length>renderLimit}<Button variant="ghost" onclick={()=>renderLimit+=16}>Show more parents</Button>{/if}
+        <div class="parent-list" role="list" aria-label="Available parents" onfocusin={event => { if (event.currentTarget.lastElementChild?.contains(event.target as Node)) renderLimit = Math.min(filtered.length, renderLimit + 16); }}>{#each filtered.slice(0,renderLimit) as parent (parent.pickerId)}<div role="listitem"><ParentPickerRow {parent} {characters} affinity={affinities.get(parent.pickerId)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
+        {#if filtered.length>renderLimit}{#key renderLimit}<div style="height:1px" aria-hidden="true" use:loadWhenVisible={() => renderLimit += 16}></div>{/key}{/if}
         {#if !filtered.length&&!editing&&!(pickerState.tab==='saved'&&lookupResult&&!partners.length)}<div class="empty" class:empty-upload={pickerState.tab==='veterans' && !current.length}>
           {#if current.length}<Icon name="search" size={48}/><h3>No results</h3><Button variant="secondary" onclick={clearFilters}>Clear filters</Button>
           {:else if pickerState.tab==='veterans'}{@render dropZone()}

@@ -20,10 +20,13 @@ it('resolves relative protected artifacts, caches parsed successes, and recovers
 it('refreshes rewards when their manifest hash changes without replacing saved choices', async () => {
   vi.useFakeTimers(); let version = 'one';
   http.mockImplementation(async url => Response.json(url.includes('manifest') ? { files: { 'planner_rewards.json': { path: 'planner_rewards.json', sha256: version } } } : { rewards: [{ id: version, amount: 100 }] }));
-  await repository.rewards(); const listener = vi.fn(); const stop = repository.watchRewards(listener);
+  const first = await repository.rewards();
+  expect(await repository.rewards()).toBe(first);
+  const listener = vi.fn(); const stop = repository.watchRewards(listener);
   try {
     version = 'two'; await vi.advanceTimersByTimeAsync(60_000);
     expect(listener).toHaveBeenCalledOnce(); expect(listener.mock.calls[0]![0].rewards[0].id).toBe('two');
+    expect(listener.mock.calls[0]![0]).not.toBe(first);
     expect(http).toHaveBeenCalledWith('/resources/planner/planner_rewards.json?v=two', expect.anything());
     stop(); const count = http.mock.calls.length; await vi.advanceTimersByTimeAsync(60_000); expect(http).toHaveBeenCalledTimes(count);
   } finally { stop(); }

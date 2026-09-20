@@ -7,6 +7,7 @@
   import CharacterSortMenu from './CharacterSortMenu.svelte';
   import Icon from './Icon.svelte';
   import type { CharacterPickerOption } from './picker-types';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
 
   type Mode = 'target' | 'include' | 'exclude';
   export type CharacterPickerSort = 'default' | 'name' | 'affinity';
@@ -28,7 +29,7 @@
     onselect?: (selected: string[]) => void;
   }
 
-  let { label = 'Select character', options, loading = false, error = '', onretry, selected = $bindable([]), existing = [], mode = 'target', multiple = false, maxVisible = Number.POSITIVE_INFINITY, sort = $bindable<CharacterPickerSort>('default'), showSort = true, showSelectionCount = true, searchPlaceholder = 'Search by name...', onselect }: Props = $props();
+  let { label = 'Select character', options, loading = false, error = '', onretry, selected = $bindable([]), existing = [], mode = 'target', multiple = false, maxVisible = 36, sort = $bindable<CharacterPickerSort>('default'), showSort = true, showSelectionCount = true, searchPlaceholder = 'Search by name...', onselect }: Props = $props();
   let query = $state('');
   const id = $props.id();
   let visibleLimit = $state(0);
@@ -57,7 +58,7 @@
   </div>
   {#if error}<Banner title="Character data unavailable" tone="danger"><p>{error}</p>{#if onretry}<Button variant="secondary" onclick={onretry}>Retry character data</Button>{/if}</Banner>{/if}
   {#if loading}<Spinner label="Loading characters…"/>{/if}
-  <div class="character-grid" role={multiple ? 'group' : 'radiogroup'} aria-label={label}>
+  <div class="character-grid" role={multiple ? 'group' : 'radiogroup'} aria-label={label} onfocusin={event => { if (event.target === event.currentTarget.lastElementChild && filtered.length > effectiveLimit) visibleLimit = effectiveLimit + maxVisible; }}>
     {#each visible as option, index (option.id)}
       {@const isSelected = selected.includes(option.id) || existing.includes(option.id)}
       <button type="button" class:selected={isSelected} aria-label={option.name} aria-describedby={`${id}-${option.id}-description`} aria-pressed={multiple ? isSelected : undefined} role={multiple ? undefined : 'radio'} aria-checked={multiple ? undefined : isSelected} disabled={option.disabled} onclick={() => toggle(option.id)}>
@@ -69,7 +70,7 @@
       {#if !loading && !error}<p class="empty">{query ? `No characters match “${query}”.` : 'No characters available.'}</p>{/if}
     {/each}
   </div>
-  {#if filtered.length > effectiveLimit}<button class="load-more" type="button" onclick={() => visibleLimit = effectiveLimit + maxVisible}>Show {Math.min(maxVisible, filtered.length - effectiveLimit)} more <small>{filtered.length - effectiveLimit} remaining</small></button>{/if}
+  {#if filtered.length > effectiveLimit}{#key effectiveLimit}<div class="lazy-more" aria-hidden="true" use:loadWhenVisible={() => visibleLimit = effectiveLimit + maxVisible}></div>{/key}{/if}
 </section>
 
 <style>
@@ -82,7 +83,7 @@
   input { min-width: 0; width: 100%; padding:4px 0; border: 0; outline: 0; background: transparent; color: var(--dialog-input-text); font-family:inherit; font-size:14px; }
   input::placeholder { color:var(--dialog-placeholder); opacity:1; }
   .selection-count, .remaining { color: var(--color-text-subtle); font-size: 9px; white-space: nowrap; }
-  .load-more { min-height: 38px; border: 1px solid var(--dialog-border); border-radius: var(--radius-md); background: var(--dialog-muted-bg); color: var(--color-accent); cursor: pointer; font-size: var(--font-xs); font-weight: 700; }.load-more small { margin-left:4px; color:var(--color-text-subtle); font-size:9px; font-weight:500; }
+  .lazy-more { height: 1px; }
   .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; }
   .character-grid button { position: relative; min-width: 0; min-height: 104px; display: flex; align-items: center; flex-direction: column; gap: 5px; padding: 8px 4px 6px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-1); color: var(--color-text); cursor: pointer; text-align: center; transition:background-color var(--duration-fast),border-color var(--duration-fast),transform var(--duration-fast); }
   .character-grid button:hover:not(:disabled) { border-color: rgb(var(--picker-accent-rgb)/.3); background: var(--dialog-card-hover-bg,var(--dialog-muted-bg)); }

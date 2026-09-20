@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import { router } from '@/routes/router';
   import type { NavigationItem, NavigationVariant } from './navigation-types';
 
   interface Props {
@@ -41,6 +42,12 @@
     onnavigate?.();
   }
 
+  function preloadTouch(event: PointerEvent) {
+    if (event.pointerType !== 'touch') return;
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-preload]');
+    if (link) void router.preload(link.pathname as Parameters<typeof router.preload>[0]).catch(() => {});
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || !Object.values(openItems).some(Boolean)) return;
     openItems = {};
@@ -55,7 +62,7 @@
 
 <svelte:window onpointerdown={handleOutsidePointer}/>
 
-<nav bind:this={navigationElement} use:measureNavigation class="navigation-tree" class:sheet={variant === 'sheet'} aria-label={label}>
+<nav bind:this={navigationElement} use:measureNavigation class="navigation-tree" class:sheet={variant === 'sheet'} aria-label={label} onpointerdown={preloadTouch}>
   {#each items as item (item.id)}
     <div class="navigation-item" class:has-children={Boolean(item.children?.length)} class:open={openItems[item.id]} class:current={item.current}>
       <div class="navigation-parent">

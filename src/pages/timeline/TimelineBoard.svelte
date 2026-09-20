@@ -16,7 +16,7 @@
   let feed = $state<HTMLElement>();
   let expanded = $state<string[]>([]);
   let scrollLeft = $state(0), scrollTop = $state(0), viewportWidth = $state(1500), viewportHeight = $state(800), pageY = $state(0), feedTop = $state(0);
-  let measured = $state<Record<string, number>>({});
+  let measured = $state.raw<Record<string, number>>({});
   let measuredLaneHeight = $state(0);
   let initialized = $state(false);
   let imagesReady = $state(false);
@@ -29,9 +29,23 @@
   const months = $derived(timelineMonths(lanes, compact));
   const columns = $derived(Math.max(1, Math.floor((viewportWidth - 160 + 12) / 292)));
   const laneHeight = (lane: TimelineLane) => 32 + Math.ceil((lane.events.length + lane.markers.length) / columns) * 195;
+  const monthLaneOffsets = $derived(months.groups.map(month => {
+    const offsets = [0];
+    for (const lane of month.lanes) offsets.push(offsets.at(-1)! + (measured[`d:${viewportWidth}:${lane.key}`] ?? laneHeight(lane)));
+    return offsets;
+  }));
+  function verticalWindow(monthIndex: number) {
+    const offsets = monthLaneOffsets[monthIndex]!;
+    const top = scrollTop - monthOffsets[monthIndex]! - 56;
+    const start = offsets.findIndex(offset => offset > Math.max(0, top - 350));
+    const first = start < 0 ? Math.max(0, offsets.length - 2) : Math.max(0, start - 1);
+    const end = offsets.findIndex(offset => offset > top + viewportHeight + 350);
+    const last = end < 0 ? offsets.length - 1 : end;
+    return { first, last, before: offsets[first]!, after: offsets.at(-1)! - offsets[last]! };
+  }
   const monthOffsets = $derived.by(() => {
     const result = [0];
-    for (const month of months.groups) result.push(result.at(-1)! + (measured[`v:${viewportWidth}:${month.key}`] ?? 68 + month.lanes.reduce((sum, lane) => sum + laneHeight(lane), 0)));
+    for (const offsets of monthLaneOffsets) result.push(result.at(-1)! + 68 + offsets.at(-1)!);
     return result;
   });
   const firstMonth = $derived.by(() => {
@@ -82,9 +96,11 @@
   function scheduleViewport() { if (active && !frame) frame = requestAnimationFrame(() => { frame = 0; updateViewport(); }); }
   function measureRow(node: HTMLElement, key: string) {
     let pending = 0;
-    const observer = new ResizeObserver(() => { cancelAnimationFrame(pending); pending = requestAnimationFrame(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const height = Math.ceil(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height);
+      cancelAnimationFrame(pending); pending = requestAnimationFrame(() => {
       if (!active) return;
-      const height = Math.ceil(node.getBoundingClientRect().height);
       if (height > 0 && Math.abs((measured[key] ?? 0) - height) > 2) measured = { ...measured, [key]: height };
     }); });
     observer.observe(node);
@@ -125,12 +141,12 @@
       const month = months.groups[index];
       if (!month) return;
       // Mount the destination month before aligning its date, without rendering the full history.
-      board.scrollTo({ top: monthOffsets[index]!, behavior: 'instant' });
+      board.scrollTo({ top: monthOffsets[index]! + monthLaneOffsets[index]![month.lanes.findIndex(lane => lane.key === key)]!, behavior: 'instant' });
       updateViewport();
       await tick();
       // Cache mounted heights before a jump can unmount the preceding month.
       // Otherwise its estimated spacer moves the target after it has been aligned.
-      measured = { ...measured, ...Object.fromEntries([...board.querySelectorAll<HTMLElement>('[data-month-key]')].map(node => [`v:${viewportWidth}:${node.dataset.monthKey}`, Math.ceil(node.getBoundingClientRect().height)])) };
+      measured = { ...measured, ...Object.fromEntries([...board.querySelectorAll<HTMLElement>('[data-lane-key]')].map(node => [`d:${viewportWidth}:${node.dataset.laneKey}`, Math.ceil(node.getBoundingClientRect().height)])) };
       await tick();
       const target = board.querySelector<HTMLElement>(`[data-lane-key="${key}"]`);
       if (target) board.scrollBy({ top: target.getBoundingClientRect().top - board.getBoundingClientRect().top - 56, behavior: smooth ? behavior() : 'instant' });
@@ -280,14 +296,17 @@
     {:else}
       <div class="vertical-timeline">
         <div aria-hidden="true" style:height={`${monthOffsets[firstMonth] ?? 0}px`}></div>
-        {#each months.groups.slice(firstMonth, lastMonth) as month (month.key)}
-          <section class="vertical-month" data-month-key={month.key} use:measureRow={`v:${viewportWidth}:${month.key}`}><header class="month-header"><h2>{month.label}</h2>{#if month.count}<span>{month.count} {month.count === 1 ? 'event' : 'events'}</span>{/if}</header>
-            {#each month.lanes as lane (lane.key)}
-              <section class="vertical-date" class:is-today={lane.key === timelineDateKey(now)} data-lane-key={lane.key}>
+        {#each months.groups.slice(firstMonth, lastMonth) as month, index (month.key)}
+          {@const window = verticalWindow(firstMonth + index)}
+          <section class="vertical-month" data-month-key={month.key}><header class="month-header"><h2>{month.label}</h2>{#if month.count}<span>{month.count} {month.count === 1 ? 'event' : 'events'}</span>{/if}</header>
+            <div aria-hidden="true" style:height={`${window.before}px`}></div>
+            {#each month.lanes.slice(window.first, window.last) as lane (lane.key)}
+              <section use:measureRow={`d:${viewportWidth}:${lane.key}`} class="vertical-date" class:is-today={lane.key === timelineDateKey(now)} data-lane-key={lane.key}>
                 <header><time datetime={lane.key} title={lane.label}><strong>{lane.date.getUTCDate()}</strong><span>{weekdayFormatter.format(lane.date)}</span></time>{#if lane.events.length}<span>{lane.events.length} {lane.events.length === 1 ? 'event' : 'events'}</span>{/if}</header>
                 <div class="vertical-events">{#each lane.markers as marker}{@render markerView(marker)}{/each}{#each lane.events as event (event.id)}{@render card(event, imagesReady)}{/each}</div>
               </section>
             {/each}
+            <div aria-hidden="true" style:height={`${window.after}px`}></div>
           </section>
         {/each}
         <div aria-hidden="true" style:height={`${Math.max(0, monthOffsets.at(-1)! - (monthOffsets[lastMonth] ?? 0))}px`}></div>

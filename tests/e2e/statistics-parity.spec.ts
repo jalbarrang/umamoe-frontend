@@ -273,7 +273,7 @@ test('rankings search the complete dataset, sort, expand and recover from no mat
   const ranking = page.getByRole('list', { name: 'Most Used Skills', exact: true });
   await expect(ranking.getByRole('listitem')).toHaveCount(20);
   await expect(ranking.getByRole('listitem').first()).toContainText('Ability 26');
-  await page.getByRole('button', { name: 'Show more', exact: true }).click();
+  await ranking.getByRole('listitem').last().scrollIntoViewIfNeeded();
   await expect(ranking.getByRole('listitem')).toHaveCount(26);
   await page.getByLabel('Sort Most Used Skills').selectOption('name');
   await expect(ranking.getByRole('listitem').first()).toContainText('Ability 01');
@@ -285,7 +285,8 @@ test('rankings search the complete dataset, sort, expand and recover from no mat
   await search.fill('no matching skill');
   await expect(page.getByText('No matches found', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
-  await expect(ranking.getByRole('listitem')).toHaveCount(20);
+  await expect.poll(() => ranking.getByRole('listitem').count()).toBeGreaterThanOrEqual(20);
+  await expect(ranking.getByRole('listitem').first()).toContainText('Ability 01');
 });
 test('switching Statistics versions ignores an older in-flight response', async ({ page }) => {
   await mockStatistics(page);

@@ -312,10 +312,18 @@ function loginMilestoneCarats(day: number): number {
   return day % 1_000 === 0 ? 1_500 : 150;
 }
 
+const summaryCache = new WeakMap<object, WeakMap<object, ReadonlyMap<string, TimelineRewardSummary>>>();
+const classicFinals = classicChampionsFinalOutcomes();
+
 export function buildTimelineRewardSummaries(
   resource: Pick<PlannerRewardResource, 'rewards' | 'event_benefits' | 'free_pull_campaigns' | 'competitive_variants'>,
   timelineEvents: readonly TimelineRewardFallbackEvent[] = [],
-): Map<string, TimelineRewardSummary> {
+): ReadonlyMap<string, TimelineRewardSummary> {
+  // Both routes consume immutable resource snapshots; navigation can reuse the same summaries.
+  let snapshots = summaryCache.get(resource);
+  if (!snapshots) summaryCache.set(resource, snapshots = new WeakMap());
+  const cached = snapshots.get(timelineEvents);
+  if (cached) return cached;
   resource = withTimelineRewardFallbacks(resource as PlannerRewardResource, timelineEvents);
   const totals = new Map<string, MutableRewardSummary>();
   const summaryFor = (eventId: string): MutableRewardSummary => {
@@ -428,7 +436,7 @@ export function buildTimelineRewardSummaries(
     if (total.competition === 'champions_meeting') {
       // CM reward sets are server-authored and absent from most master snapshots.
       // Prefer the published Global finals table over empty master outcome rows.
-      total.variableOutcomes = classicChampionsFinalOutcomes();
+      total.variableOutcomes = classicFinals;
     }
     const tickets = total.umaTickets + total.supportTickets;
     const selectors = [...total.selectorItems.values()].reduce((sum, item) => sum + item.amount, 0);
@@ -533,6 +541,7 @@ export function buildTimelineRewardSummaries(
       });
     }
   }
+  snapshots.set(timelineEvents, summaries);
   return summaries;
 }
 

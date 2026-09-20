@@ -6,6 +6,7 @@
   import Button from '@/components/Button.svelte';
   import Icon from '@/components/Icon.svelte';
   import Tooltip from '@/components/Tooltip.svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   interface Props { id: string; title: string; description: string; items: Array<ChartDatum & { detail?: string }>; searchable?: boolean; query?: string; searchLabel?: string; limit?: number; onselect?: (id: string) => void; onmore?: () => void; moreLabel?: string; }
   let { id, title, description, items, searchable = false, query = $bindable(''), searchLabel = 'Search by name or ID', limit = 20, onselect, onmore, moreLabel = 'Explore all' }: Props = $props();
   let sort = $state('usage');
@@ -56,7 +57,7 @@
           </li>
         {/each}
       </ol>
-      {#if searchable}<div class="ranking-footer"><span>{Math.min(shown, matching.length)} of {matching.length} results</span>{#if shown < matching.length}<Button variant="secondary" size="sm" onclick={() => shown += limit}>Show more</Button>{/if}</div>{/if}
+      {#if searchable}{#key shown}<div class="ranking-footer" use:loadWhenVisible={() => { if (shown < matching.length) shown += limit; }}><span>{Math.min(shown, matching.length)} of {matching.length} results</span></div>{/key}{/if}
     {:else}
       <div class="ranking-empty"><Icon name={query ? 'search' : 'chart'} size={26}/><strong>{query ? 'No matches found' : 'No data available'}</strong><p>{query ? 'Try a different name or ID.' : 'Try a broader selection or a different dataset.'}</p>{#if query}<Button variant="ghost" size="sm" onclick={() => query = ''}>Clear search</Button>{/if}</div>
     {/if}

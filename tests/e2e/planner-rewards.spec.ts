@@ -59,10 +59,10 @@ test('Planner Rewards includes later official news in its initial batch and load
   const extra=Array.from({length:85},(_,index)=>({id:'batch-'+index,label:'Batch reward '+index,currency:'free_jewels',amount:10,available_at:'2026-11-'+String(Math.floor(index/4)+1).padStart(2,'0'),default_enabled:true,...(index===45?{provenance:'global_news',source_url:'https://umamusume.com/news/batch'}:{})}));
   await page.route('**/resources/test/planner_rewards.json*',route=>route.fulfill({json:{...plannerRewardsData,rewards:[...plannerRewardsData.rewards,...extra]}}));
   await page.goto('/timeline?tab=carat-planner');await page.getByRole('button',{name:/Plan assumptions/}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
-  const panel=page.locator('.rewards-panel'),viewport=panel.locator('.reward-viewport');
+  const panel=page.locator('.rewards-panel');
   await expect(panel.getByText('Batch reward 45',{exact:true})).toHaveCount(1);
   const initial=await panel.locator('article').count();expect(initial).toBeGreaterThan(40);expect(initial).toBeLessThan(95);
-  await viewport.evaluate(element=>{element.scrollTop=element.scrollHeight;});
+  await panel.locator('.more').scrollIntoViewIfNeeded();
   await expect.poll(()=>panel.locator('article').count()).toBeGreaterThan(initial);
   const loaded=await panel.locator('article').count();
   await page.getByRole('tab',{name:'Balance',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();

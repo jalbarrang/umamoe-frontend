@@ -8,6 +8,7 @@
   import Icon from '@/components/Icon.svelte';
   import InspectPopover from '@/components/InspectPopover.svelte';
   import TextField from '@/components/TextField.svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
 
   interface Props {
     plan: CaratPlan; resources: PlannerRewardResource; groups: PlannerRewardGroup[]; campaignViews: PlannerCampaign[];
@@ -42,10 +43,6 @@
   function campaignLabel(campaign: PlannerCampaign, stock: boolean) {
     return stock && campaign.stockDestination ? campaign.totalPulls.toLocaleString('en-US') + ' pulls on ' + campaign.stockDestination.title : campaign.allocations.map(item => item.pulls.toLocaleString('en-US') + ' pulls on ' + item.title).join(' · ');
   }
-  function loadOnScroll(event: Event) {
-    const element = event.currentTarget as HTMLElement;
-    if (element.scrollHeight - element.scrollTop - element.clientHeight <= 240) loadMore();
-  }
 </script>
 
 <div class="rewards-panel">
@@ -57,7 +54,7 @@
       <Button variant={showPast ? 'secondary' : 'ghost'} size="sm" ariaPressed={showPast} onclick={() => showPast = true}>Past <span>{pastCount}</span></Button>
     </div>
   </header>
-  <div class="reward-viewport" aria-label={showPast ? 'Past event rewards, newest first' : 'Current and upcoming event rewards, earliest first'} onscroll={loadOnScroll}>
+  <div class="reward-viewport" aria-label={showPast ? 'Past event rewards, newest first' : 'Current and upcoming event rewards, earliest first'} onfocusin={event => { if (event.currentTarget.querySelector('article:last-of-type')?.contains(event.target as Node)) loadMore(); }}>
     {#each visible as item (item.id)}
       {#if item.campaign}
         {@const campaign = item.campaign}
@@ -104,7 +101,7 @@
         </article>
       {/if}
     {:else}<p class="empty">{#if search.trim()}No {showPast ? 'past' : 'upcoming'} rewards match this search.{:else}{showPast ? 'No historical rewards are available.' : 'No usable rewards are scheduled from the plan start date.'}{/if}</p>{/each}
-    {#if visible.length < matching.length}<div class="more"><Button variant="secondary" size="sm" onclick={loadMore}>Load more rewards</Button><small>{visible.length} of {matching.length}</small></div>{/if}
+    {#if visible.length < matching.length}{#key limit}<div class="more" use:loadWhenVisible={loadMore}><small>{visible.length} of {matching.length}</small></div>{/key}{/if}
   </div>
 </div>
 

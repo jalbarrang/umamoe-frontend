@@ -54,6 +54,8 @@ describe('Angular Timeline detail parity', () => {
     const events = [event({ id: 'story', eventType: 'story_event' }), event({ id: 'cm', eventType: 'champions_meeting' }), event({ id: 'legend', eventType: 'legend_race', pickupCardIds: [101301, 100601] })];
     const resource = { rewards: [{ id: 'published', event_id: 'fixed', label: 'Gift', currency: 'free_jewels' as const, amount: 900, available_at: '2026-09-10' }], free_pull_campaigns: [{ id: 'campaign', label: 'Free pulls', total_pulls: 10, default_allocations: [{ event_id: 'fixed', pulls: 10 }] }], event_benefits: [{ id: 'duplicate', event_id: 'fixed', campaign_id: 'campaign', kind: 'free_pulls', label: 'Managed', amount: 10, available_at: '2026-09-10', planner_effect: 'free_pulls' }] };
     const summaries = buildTimelineRewardSummaries(resource, events);
+    expect(buildTimelineRewardSummaries(resource, events)).toBe(summaries);
+    expect(buildTimelineRewardSummaries({ ...resource }, [...events])).toEqual(summaries);
     expect(summaries.get('fixed')).toMatchObject({ carats: 900, freePulls: 10, mode: 'fixed' });
     expect(summaries.get('story')).toMatchObject({ carats: 2010, mode: 'fixed' });
     expect(summaries.get('cm')).toMatchObject({ mode: 'placement', previewLabel: 'Finals' });

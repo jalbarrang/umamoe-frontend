@@ -43,7 +43,7 @@
   .balance-panel{display:grid;grid-template-columns:minmax(150px,.65fr) repeat(4,minmax(160px,1fr));align-items:end;gap:10px;min-width:0}
   fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;min-width:0;margin:0;padding:0;border:0}
   legend{margin:0 0 3px;padding:0;color:var(--text-secondary);font-size:10px;font-weight:650}
-  @container planner-setup (max-width:1100px){.balance-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.balance-panel>:global(.field){grid-column:1/-1}}
+  @container planner-setup (max-width:1300px){.balance-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.balance-panel>:global(.field){grid-column:1/-1}}
   @media(max-width:767px){.balance-panel{--control-height:var(--touch-target);padding-inline:2px}}
-  @media(max-width:420px){.balance-panel{grid-template-columns:minmax(0,1fr)}}
+  @container planner-setup (max-width:600px){.balance-panel{grid-template-columns:minmax(0,1fr)}}
 </style>

@@ -14,6 +14,9 @@ export const pendingRoute = writable<string | null>(null);
 
 function preloadPageData({ pathname }: { pathname: string }): void {
   if (pathname === '/timeline') void import('@/pages/timeline/timeline-repository').then(({ timelineRepository }) => timelineRepository.load()).catch(() => {});
+  if (pathname === '/tools/statistics') void import('@/pages/statistics/statistics-repository').then(async ({ statisticsRepository }) => {
+    await Promise.all([statisticsRepository.catalog(), statisticsRepository.datasets().then(datasets => datasets[0] && statisticsRepository.global(datasets[0]))]);
+  }).catch(() => {});
 }
 
 // sv-router leaves its outer promise pending when a lazy import rejects.

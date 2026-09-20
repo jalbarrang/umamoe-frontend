@@ -22,6 +22,7 @@
     "check:budgets": "node scripts/check-performance-budgets.mjs",
     "preview": "vite preview --configLoader runner",
     "test:e2e": "playwright test",
+    "benchmark:mobile": "vite build --configLoader runner --mode beta && playwright test --config playwright.performance.config.ts",
     "generate:assets": "node scripts/prepare-assets.mjs"
   },
   "keywords": [

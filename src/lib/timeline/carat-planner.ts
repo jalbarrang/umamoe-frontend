@@ -1,4 +1,4 @@
-import { plannerRewardAvailabilityWindow } from './planner-reward-availability';
+import { plannerRewardAvailabilityWindow, timelineEventIndex } from './planner-reward-availability';
 import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 import { parseResourceDate } from './timeline-prediction-types';
 import { calculateMultiPickupProbability } from './planner-pull-probability';
@@ -189,7 +189,7 @@ export function bannerKind(event: Pick<TimelineRecord, 'eventType'>): PlannerTar
 export type PlannerGachaEvent = Pick<TimelineRecord, 'id' | 'title' | 'eventType'> & Partial<Pick<TimelineRecord, 'date' | 'estimatedEndDate' | 'gachaId' | 'gachaIds' | 'gachaType' | 'pickupCardIds'>>;
 function normalizedEventId(id: string): string { return id.trim().replaceAll('_', '-').replace(/-+/g, '-').toLowerCase(); }
 export function findPlannerEvent(id: string, events: readonly TimelineRecord[]): TimelineRecord | undefined {
-  return events.find(event => event.id === id) ?? events.find(event => normalizedEventId(event.id) === normalizedEventId(id));
+  return timelineEventIndex(events).get(id) ?? events.find(event => normalizedEventId(event.id) === normalizedEventId(id));
 }
 export function plannerTargetEvents(plan: CaratPlan, events: readonly TimelineRecord[]): PlannerGachaEvent[] {
   return enabledPlannerTargets(plan).filter(target => target.bannerKind === 'character' || target.bannerKind === 'support').map(target => {

@@ -50,9 +50,10 @@
   let gachaRequestKey = '';
   let resourceRequest = 0; let gachaRequest = 0; let destroyed = false;
   let resourcesReady = $state(false); let resourceVersion = $state(0); let refreshGachas = false;
-  const effectiveRewards = $derived(withTimelineRewardFallbacks(resources.rewards, events));
+  const rewardResource = $derived(resources.rewards);
+  const effectiveRewards = $derived(withTimelineRewardFallbacks(rewardResource, events));
   const incomeGroups = $derived(buildPlannerIncomeGroups(resources.income.rules, resources.rewards.competitive_variants ?? [], events, resources.rewards.global_reward_comparison));
-  const rewardSummaries = $derived(buildTimelineRewardSummaries(resources.rewards, events));
+  const rewardSummaries = $derived(buildTimelineRewardSummaries(rewardResource, events));
   const plan = $derived(synchronizePlannerTargets(activePlan(collection), events, resources.gachas)); const projection = $derived(projectPlan(plan, { ...resources, rewards: effectiveRewards, timelineEvents: events })); const projectionByTarget = $derived(new Map(projection.targets.map((item) => [item.targetId, item])));
   let draftName = $state<{ planId: string; savedName: string; value: string }>();
   const displayedName = $derived(draftName?.planId === plan.id && draftName.savedName === plan.name ? draftName.value : plan.name);
@@ -73,7 +74,10 @@
     ...collection.plans.map(item => ({ id:'plan:'+item.id, label:item.name, checked:item.id === plan.id, icon:item.id === plan.id ? 'check' as const : 'book' as const })),
     { id:'create', label:'Add plan', icon:'add', separator:true }
   ]);
-  const rewardGroups = $derived(buildPlannerRewardGroups(effectiveRewards.rewards, effectiveRewards.event_benefits ?? [], effectiveRewards.competitive_variants ?? [], effectiveRewards.free_pull_campaigns ?? [], events, plan.projectionStartDate, undefined, plan));
+  // Pull counts and balances do not change reward descriptions or available outcomes.
+  const rewardStart = $derived(plan.projectionStartDate);
+  const rewardSelections = $derived(JSON.stringify({ scenarioSelections: plan.scenarioSelections, variableRewardSelections: plan.variableRewardSelections }));
+  const rewardGroups = $derived(buildPlannerRewardGroups(effectiveRewards.rewards, effectiveRewards.event_benefits ?? [], effectiveRewards.competitive_variants ?? [], effectiveRewards.free_pull_campaigns ?? [], events, rewardStart, undefined, JSON.parse(rewardSelections)));
   const rewardCampaigns = $derived(buildPlannerCampaigns(effectiveRewards.free_pull_campaigns ?? [], events, plan.projectionStartDate));
   const rewardSummary = $derived(plannerRewardSummary(plan, rewardGroups, rewardCampaigns));
   const incomeCount = $derived(activeIncomeAssumptionCount(plan, resources.income.rules));
