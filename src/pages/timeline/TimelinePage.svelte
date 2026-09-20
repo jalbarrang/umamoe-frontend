@@ -10,6 +10,7 @@
   import IconButton from '@/components/IconButton.svelte';
   import { buildTimelineLanes, timelineEndDate, type TimelineAnniversary } from '@/lib/timeline/timeline-layout';
   import AppPage from '@/layouts/AppPage.svelte';
+  import AdRegion from '@/layouts/AdRegion.svelte';
   import Button from '@/components/Button.svelte';
   import Banner from '@/components/Banner.svelte';
   import Checkbox from '@/components/Checkbox.svelte';
@@ -31,20 +32,20 @@
   import { timelineCardContext, timelineCardRaceLines } from '@/lib/timeline/timeline-race-facts';
 
   const filterOptions = [
-    { type: 'character_banner', label: 'Characters' },
-    { type: 'support_card_banner', label: 'Support cards' },
-    { type: 'paid_banner', label: 'Paid banners' },
-    { type: 'story_event', label: 'Story events' },
-    { type: 'campaign', label: 'Campaigns' },
-    { type: 'champions_meeting', label: 'Champions Meeting' },
-    { type: 'legend_race', label: 'Legend Races' },
-    { type: 'league_of_heroes', label: 'League of Heroes' },
-    { type: 'masters_challenge', label: 'Masters Challenge' },
-    { type: 'trainer_skills_test', label: 'Trainer Skills Test' },
-    { type: 'factor_research', label: 'Factor Research' },
-    { type: 'strongest_team', label: 'Strongest Team' },
-    { type: 'racing_carnival', label: 'Racing Carnival' },
-    { type: 'scenario_release', label: 'Training scenarios' }
+    { type: 'character_banner', label: 'Characters', color: 'var(--accent-primary)' },
+    { type: 'support_card_banner', label: 'Support cards', color: '#ba68c8' },
+    { type: 'paid_banner', label: 'Paid banners', color: '#ffb74d' },
+    { type: 'story_event', label: 'Story events', color: '#ffb74d' },
+    { type: 'campaign', label: 'Campaigns', color: '#4db6ac' },
+    { type: 'champions_meeting', label: 'Champions Meeting', color: '#ba68c8' },
+    { type: 'legend_race', label: 'Legend Races', color: '#e91e63' },
+    { type: 'league_of_heroes', label: 'League of Heroes', color: '#4db6ac' },
+    { type: 'masters_challenge', label: 'Masters Challenge', color: '#9575cd' },
+    { type: 'trainer_skills_test', label: 'Trainer Skills Test', color: 'var(--accent-primary)' },
+    { type: 'factor_research', label: 'Factor Research', color: '#4dd0e1' },
+    { type: 'strongest_team', label: 'Strongest Team', color: '#e57373' },
+    { type: 'racing_carnival', label: 'Racing Carnival', color: '#ffb74d' },
+    { type: 'scenario_release', label: 'Training scenarios', color: '#81c784' }
   ] as const;
   const filterIcons = ['user', 'cards', 'paid', 'book', 'gift', 'trophy', 'race', 'users', 'star', 'book', 'tune', 'users', 'race', 'home'] as const;
   type FilterType = typeof filterOptions[number]['type'];
@@ -288,7 +289,7 @@
     <aside bind:this={filterPanel} popover="manual" class="filter-popover" class:mobile-filter-sheet={mobile} aria-label={mobile ? 'Search & filters' : 'Visible event types'}>
       <header><strong>{mobile ? 'Search & filters' : 'Visible event types'}</strong><div><Button variant="secondary" size="sm" onclick={() => { visibleTypes = visibleTypes.length ? [] : filterOptions.map(option => option.type); currentSearchIndex = -1; }}>{visibleTypes.length ? 'Unselect all' : 'Select all'}</Button><IconButton icon="close" label="Close filters" onclick={() => setFilters(false)}/></div></header>
       {#if mobile}<div class="search" data-timeline-control="search"><TextField id="timeline-mobile-search" label="Search timeline pickups" hideLabel prefixIcon="search" type="search" placeholder="Search pickups…" bind:value={search} oninput={() => currentSearchIndex = -1}/></div>{/if}
-      <div class="filter-options">{#each filterOptions as option, index}<div class="filter-option"><Checkbox id={`timeline-filter-${option.type}`} label={option.label} icon={mobile ? undefined : filterIcons[index]} checked={visibleTypes.includes(option.type)} onchange={() => toggleType(option.type)}/></div>{/each}</div>
+      <div class="filter-options">{#each filterOptions as option, index}<div class="filter-option" style:--color-accent={option.color}><Checkbox id={`timeline-filter-${option.type}`} label={option.label} icon={mobile ? undefined : filterIcons[index]} checked={visibleTypes.includes(option.type)} onchange={() => toggleType(option.type)}/></div>{/each}</div>
     </aside>
     {#if error}<div class="timeline-error"><Banner title="Timeline could not be loaded" tone="danger"><p>{error}</p><Button variant="secondary" size="sm" icon="refresh" onclick={() => void load(true)}>Try again</Button></Banner></div>{/if}
     {#if loading}<div class="timeline-loading" aria-busy="true">
@@ -297,9 +298,12 @@
     </div>
     {:else if !filtered.length && !error && search.trim()}<EmptyState icon="timeline" title="No events match" description="Enable another event type or clear the search."/>
     {:else if !error}
+      <div class="timeline-viewport">
       <TimelineBoard bind:this={timelineBoard} active={tab === 'timeline'} lanes={dateLanes} events={filtered} {anniversaries} end={endDate} {now} {mobile} {view} compact={compactGaps}>
         {#snippet card(event: TimelineRecord, loadImages: boolean)}<div id={`timeline-event-${event.id}`}><TimelineEventCard event={cardView(event)} {mobile} {loadImages} planned={plannedIds.includes(event.id)} onplan={plan} onopen={openDetails}/></div>{/snippet}
       </TimelineBoard>
+      {#if !mobile && tab === 'timeline'}<div class="timeline-right-rail" data-ad-position="right"><AdRegion placement="timeline_sticky_vrec_right" kind="rail" sizes={['160x600']} active/></div>{/if}
+      </div>
     {/if}
     </section>
   {/if}
@@ -319,10 +323,11 @@
 <style>
   .timeline-tabs{display:flex;align-items:center;gap:8px;justify-content:flex-end}.timeline-tabs :global(.tabs){min-width:226px}.timeline-content{position:relative;min-width:0}.timeline-content:not(.mobile){display:flex;flex-direction:column;flex:1 1 0px;min-height:0}.timeline-content[hidden]{display:none}
   @media(max-width:1280px){.timeline-tabs :global(.tab){min-width:82px;padding-inline:9px}}
+  .timeline-viewport{position:relative;display:flex;flex-direction:column;flex:1 1 0;min-height:0;min-width:0}.timeline-content:not(.mobile) .timeline-viewport{container:timeline-viewport / size}.mobile .timeline-viewport{display:block}.timeline-right-rail{display:none;position:absolute;right:8px;top:8px;z-index:var(--z-rail)}@container app-viewport (min-width:1700px){@container timeline-viewport (min-height:616px){.timeline-right-rail{display:block}}}
   .toolbar-shell{border-block:1px solid var(--border-primary)}.toolbar{--control-height:44px;display:flex;align-items:center;gap:12px;min-width:0;width:min(100%,var(--page-content-wide));margin-inline:auto;padding:10px var(--page-gutter-current)}
   .search{min-width:0;display:flex;flex:1;align-items:center;gap:6px;position:relative}.search :global(.field){flex:1}.search>span{position:absolute;right:9px;color:var(--text-muted);font-size:11px;white-space:nowrap;pointer-events:none}.search:has(>span) :global(input){padding-right:85px}.search-navigation{display:flex;gap:4px}.timeline-count{margin-right:auto;color:var(--text-muted);font-size:11px;white-space:nowrap}
   .view{display:flex;align-items:center;gap:10px;flex:none}.view [data-timeline-control="spacing"]{padding-inline:4px}.view :global(.ui-button){white-space:nowrap}
-  .filter-popover{position:fixed;z-index:100;inset:210px 16px auto auto;margin:0;width:min(460px,calc(100vw - 24px));padding:10px;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--surface-overlay);color:var(--text-primary);box-shadow:0 10px 28px rgb(0 0 0/.22);max-height:calc(100dvh - 230px);overflow:auto}.filter-popover header{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:38px;color:var(--text-secondary);font-size:12px}.filter-popover header>div{display:flex;align-items:center;gap:4px}.filter-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}.filter-option{min-width:0}
+  .filter-popover{position:fixed;z-index:100;inset:210px 16px auto auto;margin:0;width:min(400px,calc(100vw - 24px));padding:10px;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--surface-overlay);color:var(--text-primary);box-shadow:0 10px 28px rgb(0 0 0/.22);max-height:calc(100dvh - 230px);overflow:auto}.filter-popover header{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:38px;color:var(--text-secondary);font-size:12px}.filter-popover header>div{display:flex;align-items:center;gap:4px}.filter-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}.filter-option{min-width:0}.filter-option :global(.checkbox){min-height:32px;grid-template-columns:18px minmax(0,1fr);gap:7px}.filter-option :global(.box){width:18px;height:18px}.filter-option :global(strong){font-size:11px}.filter-option :global(strong.with-icon){gap:5px}.filter-option :global(.copy svg){color:var(--color-accent)}
   .mobile{padding-bottom:62px}.mobile-bottom-toolbar{position:fixed;z-index:75;inset:auto 0 calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));height:58px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:6px 8px;background:var(--surface-overlay);border-top:1px solid var(--border-primary)}.mobile-bottom-toolbar :global(.ui-button){width:100%;min-height:44px}.filter-backdrop{position:fixed;z-index:78;inset:0;border:0;background:rgb(0 0 0/.42)}.mobile-filter-sheet{inset:auto 0 calc(58px + var(--bottom-nav-height) + env(safe-area-inset-bottom));width:100%;max-height:min(66dvh,560px);border-radius:0;border-inline:0;padding:10px 12px 14px}.mobile-filter-sheet .search{margin:6px 0 10px}.mobile-filter-sheet .search :global(input){height:44px;font-size:12px}.mobile-filter-sheet .filter-options{gap:3px 10px}.mobile-filter-sheet .filter-options :global(.checkbox){min-height:44px}
   .timeline-error{padding:20px var(--page-gutter-current)}.timeline-loading{min-height:320px;padding:24px var(--page-gutter-current);overflow:hidden}.loading-caption{display:flex;align-items:center;gap:10px;margin-bottom:24px;color:var(--text-secondary);font-size:13px}.loading-preview{display:grid;grid-template-columns:repeat(3,minmax(240px,320px));gap:16px}.loading-lane{display:grid;gap:18px}.skeleton-date,.skeleton-line{background:var(--border-primary)}.skeleton-media{background:var(--surface-2)}.skeleton-date{height:16px;width:45%;margin:auto;border-radius:4px}.skeleton-card{height:167px;border:1px solid var(--border-primary);border-radius:var(--radius-md);overflow:hidden;background:var(--surface-1)}.skeleton-media{height:56px;border-bottom:1px solid var(--border-subtle)}.skeleton-line{height:12px;width:75%;margin:16px 10px;border-radius:3px}.skeleton-line.short{width:48%}.mobile .loading-preview{grid-template-columns:minmax(0,1fr)}.mobile .loading-lane{gap:10px}.mobile .skeleton-date{margin-left:0}.loading{min-height:320px;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--text-secondary)}
   @media(min-width:768px){.mobile-bottom-toolbar{bottom:0}.mobile-filter-sheet{bottom:58px}}@media(max-width:1280px){.timeline-count{display:none}.toolbar{flex-wrap:wrap;gap:8px}.view{margin-left:auto;gap:8px}.search{flex-basis:240px}}

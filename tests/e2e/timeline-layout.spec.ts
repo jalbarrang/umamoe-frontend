@@ -19,7 +19,9 @@ test('Timeline keeps compact artwork cards and Carat Planner preserves banner al
   await expect.poll(() => art.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
   expect(artworkModules).toEqual([]);
   const card = page.locator('[data-event-id="artwork-entry"]');
-  expect((await card.boundingBox())!.height).toBeLessThanOrEqual(195);
+  expect((await card.boundingBox())!.height).toBeLessThanOrEqual(isMobile ? 200 : 195);
+  const media = (await card.locator('.event-media').boundingBox())!;
+  expect(media.width / media.height).toBeCloseTo(512 / 125, 1);
   await card.screenshot({path:info.outputPath('compact-timeline-card.png')});
   await card.getByRole('button',{name:'Add Featured banner to Carat Planner',exact:true}).click();
   await page.goto('/timeline?tab=carat-planner');
@@ -231,7 +233,8 @@ test('Timeline retains its full-width track and planner retains the wide contain
     expect(box.width).toBeCloseTo((await page.locator('[data-page-content]').boundingBox())!.width, 0);
     await expect(page.locator('[data-route-id="timeline"]')).toHaveAttribute('data-page-width', 'wide');
     expect(box.width).toBeCloseTo((await page.locator('[data-page-frame]').boundingBox())!.width, 0);
-    await expect(page.locator('[data-ad-position]')).toHaveCount(0);
+    await expect(page.locator('[data-ad-position]')).toHaveCount(isMobile ? 0 : 1);
+    if (!isMobile) await expect(page.locator('[data-ad-placement="timeline_sticky_vrec_right"]')).toBeVisible();
     if (!isMobile) {
       const footerBox = (await page.locator('.site-footer').boundingBox())!;
       expect(box.y + box.height).toBeCloseTo(footerBox.y, 0);

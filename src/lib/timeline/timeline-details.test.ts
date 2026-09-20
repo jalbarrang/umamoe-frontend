@@ -69,5 +69,8 @@ describe('Angular Timeline detail parity', () => {
     const pickups = timelinePickups(event({ eventType: 'legend_race', pickupCardIds: [101301], relatedCharacters: ['Mejiro McQueen', '/assets/images/character_stand/chara_stand_100601.webp'] }), { characters: { '1013': { name: 'Mejiro McQueen' }, '1006': { name: 'Oguri Cap' } }, supports: new Map() });
     expect(pickups.map(p => [p.id, p.name, p.subLabel])).toEqual([['101301', 'Mejiro McQueen', 'Legend Race participant'], ['100601', 'Oguri Cap', 'Legend Race participant']]);
     expect(pickups[0]?.image).toBe('/game-assets/character_thumbs/chara_stand_1013_101301.webp');
+    expect(pickups[0]?.gametoraUrl).toBe('https://gametora.com/umamusume/characters/101301-mejiro-mcqueen');
+    const support = timelinePickups(event({ eventType: 'support_card_banner', pickupCardIds: [20005], relatedSupportCards: ['T.M. Opera O'] }), { characters: {}, supports: new Map() });
+    expect(support[0]?.gametoraUrl).toBe('https://gametora.com/umamusume/supports/20005-tm-opera-o');
   });
 });

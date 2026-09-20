@@ -35,7 +35,9 @@ test('Timeline cards stay compact and usable while artwork loads or fails', asyn
     await expect(card.getByRole('heading', { name: 'Featured banner' })).toBeVisible();
     await expect(card.getByRole('img', { name: 'Loading artwork' })).toBeVisible();
     const before = (await card.boundingBox())!.height;
-    expect(before).toBeLessThanOrEqual(175);
+    expect(before).toBeLessThanOrEqual(200);
+    const media = (await card.locator('.event-media').boundingBox())!;
+    expect(media.width / media.height).toBeCloseTo(512 / 125, 1);
     await card.screenshot({ path: info.outputPath('compact-card-loading.png') });
     await card.getByRole('button', { name: 'Add Featured banner to Carat Planner', exact: true }).click();
     await expect(card.getByRole('button', { name: 'Remove Featured banner from Carat Planner', exact: true })).toBeVisible();

@@ -54,8 +54,29 @@
     };
     const observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
+    const positions = new WeakMap<HTMLElement, { x: number; y: number }>();
+    const scrollTimeline = (event: Event) => {
+      const board = event.target;
+      if (!(board instanceof HTMLElement) || !board.matches('.timeline-board.desktop')) return;
+      const previous = positions.get(board);
+      positions.set(board, { x: board.scrollLeft, y: board.scrollTop });
+      if (!previous || dismissed()) return;
+      const dx = board.scrollLeft - previous.x, dy = board.scrollTop - previous.y;
+      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+      document.querySelectorAll<HTMLElement>('.uma-footer-ad > .publift-widget-scrolling_sticky_footer').forEach(widget => {
+        const slot = widget.querySelector<HTMLElement>('.fuse-slot-sticky');
+        const frame = widget.querySelector('iframe');
+        if (!slot || !frame) return;
+        const range = Math.max(0, frame.offsetHeight - widget.clientHeight);
+        if (!range) return;
+        // Match the publisher's gradual reveal while the timeline scrolls inside the page.
+        const offset = -(parseFloat(getComputedStyle(slot).marginTop) || 0);
+        slot.style.marginTop = `${-Math.max(0, Math.min(range, offset + delta * range / (2 * innerHeight)))}px`;
+      });
+    };
+    document.addEventListener('scroll', scrollTimeline, true);
     sync();
-    return () => { observer.disconnect(); sizes.disconnect(); };
+    return () => { observer.disconnect(); sizes.disconnect(); document.removeEventListener('scroll', scrollTimeline, true); };
   });
 </script>
 
@@ -123,6 +144,12 @@
     cursor: pointer;
   }
   :global(.footer-ad-close:hover) { background: var(--surface-2); color: var(--text-primary); }
+  :global(html:has(.timeline-content.mobile:not([hidden]) .mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) {
+    bottom: calc(58px + var(--bottom-nav-height) + env(safe-area-inset-bottom)) !important;
+  }
+  @media (min-width: 768px) {
+    :global(html:has(.timeline-content.mobile:not([hidden]) .mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) { bottom: 58px !important; }
+  }
   @media (pointer: coarse) {
     :global(.footer-ad-close) { width: 44px; height: 44px; }
   }

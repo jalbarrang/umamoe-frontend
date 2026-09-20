@@ -9,6 +9,10 @@ test('Planner rate-up goals preserve copies, crystal details and shared odds acr
   await target.locator('.pickup-summary').click();
   const selected = target.locator('.selected-goal');
   await expect(selected).toHaveCount(2);
+  expect(await target.locator('.pickup-art img').evaluateAll(images => images.every(image => {
+    const box = image.getBoundingClientRect(), frame = image.parentElement!.getBoundingClientRect();
+    return box.width <= frame.width && box.height <= frame.height && getComputedStyle(image).objectFit === 'contain';
+  }))).toBe(true);
   const first = selected.filter({ has: page.locator('[aria-label="3 desired copies"]') });
   await expect(first).toContainText('Kitasan Black');
   const kitasan = target.locator('.selected-goal[data-pickup-id="30028"]');

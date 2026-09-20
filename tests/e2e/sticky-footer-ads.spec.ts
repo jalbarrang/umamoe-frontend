@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/test';
-import { mockDatabase } from './fixtures/api';
+import { mockDatabase, mockTimeline } from './fixtures/api';
 
 test('footer follows creative refreshes, survives navigation, and stays closed until a fresh load', async ({ page, isMobile }) => {
   await mockDatabase(page);
@@ -132,4 +132,40 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
   await page.reload();
   await expect(close).toBeVisible();
   expect(await page.evaluate(() => (window as any).adPages)).toBe(1);
+  await mockTimeline(page, false);
+  await page.goto('/timeline');
+  await expect(close).toBeVisible();
+  if (isMobile) {
+    const toolbar = page.getByRole('navigation', { name: 'Timeline actions' });
+    await page.getByRole('button', { name: 'Search & filters', exact: true }).evaluate((button: HTMLButtonElement) => button.click());
+    for (const width of [390, 1024]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.evaluate(() => scrollTo(0, 200));
+      await expect(toolbar).toBeVisible();
+      await expect.poll(async () => {
+        const ad = (await footer.boundingBox())!, bar = (await toolbar.boundingBox())!;
+        return Math.abs(ad.y + ad.height - bar.y);
+      }).toBeLessThan(1);
+    }
+  } else {
+    const board = page.locator('.timeline-board.desktop');
+    await expect(board).toBeVisible();
+    await page.clock.runFor(200);
+    await board.evaluate(node => node.scrollLeft = 0);
+    await page.clock.runFor(64);
+    await page.evaluate(() => (window as any).refreshFooter(970, 250));
+    await board.evaluate(node => node.scrollLeft += 1);
+    await page.clock.runFor(32);
+    const before = await footer.locator('.fuse-slot-sticky').evaluate(node => parseFloat(getComputedStyle(node).marginTop));
+    await board.evaluate(node => node.scrollLeft += 500);
+    await expect.poll(async () => {
+      await page.clock.runFor(32);
+      return footer.locator('.fuse-slot-sticky').evaluate(node => parseFloat(getComputedStyle(node).marginTop));
+    }).toBeLessThan(before);
+    const after = await footer.locator('.fuse-slot-sticky').evaluate(node => parseFloat(getComputedStyle(node).marginTop));
+    expect(after).toBeLessThan(before);
+    expect(after).toBeGreaterThanOrEqual(-124);
+    await expect(footer).toHaveCSS('height', '126px');
+    await expect(close).toBeVisible();
+  }
 });

@@ -16,6 +16,7 @@ export interface TimelinePickup {
   kind: 'character' | 'support';
   subLabel?: string;
   searchTerms?: string[];
+  gametoraUrl?: string;
 }
 
 export interface TimelineEventData {
