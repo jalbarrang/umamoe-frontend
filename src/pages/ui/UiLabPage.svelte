@@ -8,6 +8,7 @@
   import Spinner from '@/components/Spinner.svelte';
   import { previews } from './catalog';
 
+  const layoutPreview = new URLSearchParams(location.search).get('example') === 'page-layout';
   const initial = previews.find(item => item.id === location.hash.slice(1));
   let library = $state<'uma' | 'hakuraku'>(initial?.library ?? 'uma');
   let group = $state(initial?.group ?? 'Controls');
@@ -26,12 +27,15 @@
 
 <svelte:head><title>UI components · uma.moe</title><meta name="robots" content="noindex, nofollow"/></svelte:head>
 
+{#if layoutPreview}
+  {#await import('./PageLayoutPreview.svelte')}<Spinner/>{:then module}<module.default/>{:catch}<p role="alert">Could not load the layout preview.</p>{/await}
+{:else}
 <div data-ui-lab-shell>
   <header class="toolbar"><a href="/" aria-label="Back to uma.moe"><LogoMark size={26}/><strong>uma.moe <span>/ UI</span></strong></a><SegmentedControl label="Theme" options={[{value:'dark',label:'Dark'},{value:'light',label:'Light'}]} value={$theme} onchange={value => setTheme(value as Theme)}/></header>
   <PageFrame routeId="ui-lab" featureId="ui-system" pageTitle="UI components" width="wide" adsEnabled={false} labelledby="ui-title">
     <main>
       <div class="intro"><div><h1 id="ui-title">UI components</h1><p>Current app components, with sample data. Changes here come from the same files used across the site.</p></div><span>{count} components</span></div>
-      <div class="libraries"><Tabs id="library-tabs" label="Component library" controls="library-content" value={library} onchange={selectLibrary} items={[{id:'uma',label:'uma.moe'},{id:'hakuraku',label:'Hakuraku'}]}/></div>
+      <div class="libraries"><Tabs variant="pills" id="library-tabs" label="Component library" controls="library-content" value={library} onchange={selectLibrary} items={[{id:'uma',label:'uma.moe'},{id:'hakuraku',label:'Hakuraku'}]}/></div>
       <div class="layout">
         <aside><TextField id="component-search" type="search" label="Find a component" placeholder="Search components…" bind:value={query}/><nav aria-label="Component groups">{#each groups as name}<button class:active={!query && group === name} aria-current={!query && group === name ? 'page' : undefined} onclick={() => { group = name; query = ''; }}>{name}<span>{previews.filter(item => item.library === library && item.group === name).length}</span></button>{/each}</nav><p>{library === 'hakuraku' ? 'Veterans and statistics now share the Svelte components used in uma.moe.' : 'Shared controls, feedback, and game displays.'}</p></aside>
         <div id="library-content" role="tabpanel" aria-labelledby={`library-tabs-${library}`}>
@@ -42,6 +46,7 @@
     </main>
   </PageFrame>
 </div>
+{/if}
 
 <style>
   .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;border-bottom:1px solid var(--border-primary);background:var(--surface-1)}.toolbar>a{display:flex;align-items:center;gap:10px;color:var(--text-primary);text-decoration:none}.toolbar strong{font-size:14px}.toolbar strong span{color:var(--text-muted);font-weight:400}

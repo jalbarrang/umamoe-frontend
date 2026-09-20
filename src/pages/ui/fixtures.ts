@@ -1,3 +1,4 @@
+import type { OptimalRaceRecommendation } from '@/lib/catalog/race-catalog';
 import type { VeteranUiRecord } from '@/components/veteran-ui-types';
 import type { LineageBranch, LineageNodeData } from '@/components/lineage-types';
 import type { RaceScheduleYear } from '@/components/race-types';
@@ -91,5 +92,9 @@ export const supportCardOptions = [
 export const timelineEvent = {
     id: 'timeline-support-2022-30137', eventType: 'support_card_banner', title: 'Story Event Support Card Scout', typeLabel: 'Support Card Scout', dateLabel: 'Aug 29 – Sep 11', context: 'Global', image: timelineBanner, rerun: true, canPlan: true,
     rewards: [{ id: 'carats', label: 'Carats', amount: '×1,500', icon: caratIcon }],
-    pickups: [{ id: 'support', name: 'Kitasan Black support card', image: kitasanBlackSupportImage, kind: 'support' as const }, { id: 'mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, kind: 'character' as const }]
+    pickups: [{ id: 'support', name: 'Kitasan Black support card', image: kitasanBlackSupportImage, gametoraUrl: 'https://gametora.com/umamusume/supports/30028-kitasan-black', kind: 'support' as const }, { id: 'mcqueen', name: 'Mejiro McQueen', image: mejiroMcQueenImage, gametoraUrl: 'https://gametora.com/umamusume/characters/101301-mejiro-mcqueen', kind: 'character' as const }]
   };
+export const optimalRaces: OptimalRaceRecommendation[] = [
+  { groupId: 1, saddleId: 16, raceInstanceId: 1, name: 'Satsuki Sho', shortName: 'Satsuki Sho', scheduleLabel: 'Classic Apr Early', year: 'classic', month: 4, half: 1, image: raceImageG1, grade: 'G1', overlapsP1: true, overlapsP2: true, overlapCount: 2, affinityGain: 6 },
+  { groupId: 2, saddleId: 20, raceInstanceId: 2, name: 'Arima Kinen', shortName: 'Arima Kinen', scheduleLabel: 'Senior Dec Late', year: 'senior', month: 12, half: 2, image: raceImageG1, grade: 'G1', overlapsP1: true, overlapsP2: false, overlapCount: 1, affinityGain: 3 }
+];

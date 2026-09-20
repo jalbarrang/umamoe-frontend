@@ -55,7 +55,7 @@
     {#if $browserVerification.error}
       <Banner title="Browser verification" tone="warning"><p>{$browserVerification.error}</p><Button size="sm" disabled={$browserVerification.pending} onclick={verify}>Retry verification</Button></Banner>
     {:else if verified}
-      <Banner title="Browser verified" tone="success"><p>You can retry your request.</p><Button size="sm" variant="ghost" onclick={() => verified = false}>Dismiss</Button></Banner>
+      <Banner title="Browser verified" tone="success" dismissible ondismiss={() => verified = false}><p>You can retry your request.</p></Banner>
     {/if}
   </aside>
 {/if}

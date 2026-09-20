@@ -5,6 +5,8 @@
   import Dialog from '@/components/Dialog.svelte';
   import VeteranSummary from '@/components/VeteranSummary.svelte';
   import ProfileVeteranCard from '@/pages/profile/ProfileVeteranCard.svelte';
+  import ProfileVeteranSparkMatcher from '@/pages/profile/ProfileVeteranSparkMatcher.svelte';
+  import type { VeteranFactorFilter } from '@/lib/profile/profile-veterans';
   import type { ProfileVeteran } from '@/pages/profile/profile-repository';
   import StatisticsFilterControls from '@/pages/statistics/StatisticsFilterControls.svelte';
   import StatisticsRanking from '@/pages/statistics/StatisticsRanking.svelte';
@@ -18,6 +20,10 @@
   const allScenarios = ['1','2','3','4'], allClasses = ['1','2','3','4','5','6'], allDistances = ['1','2','3','4','5'];
   let selectedScenarios = $state([...allScenarios]), selectedClasses = $state([...allClasses]), selectedDistances = $state([...allDistances]);
   let filtersOpen = $state(false);
+  const sparkDefaults: VeteranFactorFilter[] = [{factorId:10,minLevel:1,scope:'any',mode:'total'},{factorId:20,minLevel:1,scope:'any',mode:'total',operator:'and'}];
+  let sparkRules = $state(structuredClone(sparkDefaults));
+  const scopeLabels = {parent:'Main',grandparent:'Parents',greatgrandparent:'Grandparents',family:'Main + parents',any:'Any generation',p1:'P1',p2:'P2'};
+  const characters = new Map([[101301,{id:'101301',name:'Mejiro McQueen',image:mejiroMcQueenImage}],[100601,{id:'100601',name:'Oguri Cap',image:oguriCapImage}]]);
   const selectedSamples = $derived(selectedScenarios.length * selectedClasses.length * selectedDistances.length * 10000);
   function reset() { selectedScenarios = [...allScenarios]; selectedClasses = [...allClasses]; selectedDistances = [...allDistances]; }
   const veteran: ProfileVeteran = { id:1, member_id:null, card_id:101301, distance_type:4, running_style:2, speed:1542, stamina:1312, power:1184, guts:702, wiz:1138, rank_score:29412, rarity:5, fans:980453, factors:[103,1203], succession_chara_array:[{position_id:10,card_id:100601,rank:1,rarity:1,talent_level:1,factor_id_array:[103]},{position_id:20,card_id:106701,rank:1,rarity:1,talent_level:1,factor_id_array:[1203]}] };
@@ -25,6 +31,7 @@
 </script>
 
 {#if ids.includes('veteran-card')}<DemoBlock id="veteran-card"><div class="preview-narrow"><ProfileVeteranCard {veteran} summary={veteranFixture} skillCatalog={new Map()}/></div></DemoBlock>{/if}
+{#if ids.includes('veteran-spark-matcher')}<DemoBlock id="veteran-spark-matcher"><div class="preview-stack" style="max-width:320px"><ProfileVeteranSparkMatcher bind:filters={sparkRules} {characters} {scopeLabels}/><Button variant="ghost" size="sm" onclick={() => sparkRules = structuredClone(sparkDefaults)}>Reset spark rules</Button></div></DemoBlock>{/if}
 {#if ids.includes('veteran-summary')}<DemoBlock id="veteran-summary"><VeteranSummary veteran={veteranFixture}/></DemoBlock>{/if}
 {#if ids.includes('statistics-filters')}<DemoBlock id="statistics-filters"><div class="preview-narrow preview-stack"><StatisticsFilterControls {allScenarios} {allClasses} {allDistances} bind:selectedScenarios bind:selectedClasses bind:selectedDistances {selectedSamples}/><div class="preview-row"><Button variant="secondary" onclick={() => filtersOpen = true}>Open filter dialog</Button><Button variant="ghost" onclick={reset}>Reset filters</Button></div></div></DemoBlock>{/if}
 {#if ids.includes('statistics-ranking')}<DemoBlock id="statistics-ranking"><StatisticsRanking id="lab-statistics-ranking" title="Uma usage" description="Sample data. Bars are relative to the leading result." searchable items={[{id:'100601',name:'Oguri Cap',image:oguriCapImage,value:640,percentage:64},{id:'101301',name:'Mejiro McQueen',image:mejiroMcQueenImage,value:360,percentage:36}]}/></DemoBlock>{/if}
