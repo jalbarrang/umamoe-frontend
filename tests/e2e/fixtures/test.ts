@@ -31,7 +31,17 @@ export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boo
   page: async ({ page }, use, info) => {
     await throttleAuditPage(page);
     const profiler = process.env.PERF_PROFILE ? await page.context().newCDPSession(page) : undefined;
-    if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Profiler.start'); }
+    if (profiler) {
+      await profiler.send('Profiler.enable'); await profiler.send('Profiler.start');
+      await profiler.send('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline,blink.user_timing,v8', transferMode: 'ReturnAsStream' });
+      await page.addInitScript(() => {
+        document.addEventListener('click', event => {
+          const target = event.target instanceof Element ? event.target.closest('button,a,input,[role="radio"],[role="tab"]') : null;
+          // Playwright's fixed clock replaces performance.mark; console timestamps keep native trace time.
+          if (target) console.timeStamp('Click: ' + (target.getAttribute('aria-label') || target.textContent || target.id).trim().slice(0, 120));
+        }, true);
+      });
+    }
     try { await use(page); } finally {
       // Flush the final presented input before Playwright closes the page.
       if (process.env.PERF_AUDIT && !page.isClosed()) await page.waitForTimeout(250);
@@ -40,6 +50,19 @@ export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boo
         const path = info.outputPath('cpu.cpuprofile');
         await writeFile(path, JSON.stringify(profile));
         await info.attach('cpu-profile', { path, contentType: 'application/json' });
+        const complete = new Promise<string>(resolve => profiler.once('Tracing.tracingComplete', event => resolve(event.stream!)));
+        await profiler.send('Tracing.end');
+        const handle = await complete;
+        const chunks: Buffer[] = [];
+        while (true) {
+          const chunk = await profiler.send('IO.read', { handle });
+          chunks.push(Buffer.from(chunk.data, chunk.base64Encoded ? 'base64' : 'utf8'));
+          if (chunk.eof) break;
+        }
+        await profiler.send('IO.close', { handle });
+        const tracePath = info.outputPath('browser-trace.json');
+        await writeFile(tracePath, Buffer.concat(chunks));
+        await info.attach('browser-profile', { path: tracePath, contentType: 'application/json' });
       }
     }
   },

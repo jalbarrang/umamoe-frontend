@@ -23,11 +23,6 @@ function redundantGiftIds(rewards: readonly PlannerRewardEntry[]): Set<string> {
   }
   return redundant;
 }
-function matchingGlobalLogin(jpReward: PlannerRewardEntry, globalReward: PlannerRewardEntry): boolean {
-  if (scope(globalReward) !== null || component(jpReward) !== 'login_bonus' || component(globalReward) !== 'login_bonus' || jpReward.currency !== globalReward.currency || jpReward.amount !== globalReward.amount) return false;
-  const jpDate = Date.parse(jpReward.available_at); const globalDate = Date.parse(globalReward.available_at);
-  return Number.isFinite(jpDate) && Number.isFinite(globalDate) && Math.abs(jpDate-globalDate) <= LOGIN_MATCH_WINDOW_MS;
-}
 const benefitSlot = (benefit: PlannerEventBenefit) => `event:${benefit.event_id}|${benefit.kind}`;
 const campaignEvents = (campaign: PlannerFreePullCampaign) => (campaign.default_allocations ?? []).map((item) => item.event_id).filter(Boolean);
 const campaignGachas = (campaign: PlannerFreePullCampaign) => [...(campaign.eligible_gacha_ids ?? []), ...(campaign.default_allocations ?? []).map((item) => item.gacha_id)].filter((value): value is number => Number.isFinite(value));
@@ -39,8 +34,16 @@ export function applyGlobalRewardPrecedence(resource: PlannerRewardResource): Pl
   const redundant = redundantGiftIds(rewards);
   const deduplicated = rewards.filter((reward) => !redundant.has(reward.id));
   const globalSlots = new Set(deduplicated.filter(global).map(slot).filter((value): value is string => value !== null));
-  const globalLogins = deduplicated.filter((reward) => global(reward) && scope(reward) === null && component(reward) === 'login_bonus');
-  const preferredRewards = deduplicated.filter((reward) => { const rewardSlot = slot(reward); return !jp(reward) || (rewardSlot === null || !globalSlots.has(rewardSlot)) && !globalLogins.some((candidate) => matchingGlobalLogin(reward,candidate)); });
+  const globalLogins = deduplicated.filter((reward) => global(reward) && scope(reward) === null && component(reward) === 'login_bonus')
+    .map(reward => ({ currency: reward.currency, amount: reward.amount, date: Date.parse(reward.available_at) }));
+  const preferredRewards = deduplicated.filter(reward => {
+    if (!jp(reward)) return true;
+    const rewardSlot = slot(reward);
+    if (rewardSlot !== null && globalSlots.has(rewardSlot)) return false;
+    if (component(reward) !== 'login_bonus') return true;
+    const date = Date.parse(reward.available_at);
+    return !globalLogins.some(candidate => candidate.currency === reward.currency && candidate.amount === reward.amount && Math.abs(date - candidate.date) <= LOGIN_MATCH_WINDOW_MS);
+  });
   const benefits = resource.event_benefits ?? [];
   const globalBenefitSlots = new Set(benefits.filter(global).map(benefitSlot));
   const preferredBenefits = benefits.filter((benefit) => !jp(benefit) || !globalBenefitSlots.has(benefitSlot(benefit)));

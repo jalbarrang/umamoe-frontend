@@ -1,5 +1,7 @@
 # Local mobile interaction benchmark
 
+For the reward and affinity hotspots found in the shared Firefox recordings, run `node tests/performance/profile-hotspots.mjs`. It reports medians for isolated calculations on synthetic data, without browser rendering or CPU throttling. See [the profile findings](../../reports/firefox-profiler-2026-09-20.md) for the recordings, changes and limits of these measurements.
+
 ## All existing interaction workflows: 300 ms budget
 
 ```powershell
@@ -10,7 +12,7 @@ Runs the entire functional browser suite serially on mobile and desktop Chromium
 
 `summary.json` in `.tmp/interaction-audit/` lists measured controls, routes, worst durations, failure counts and every workflow's status. Entries shorter than the browser's 16 ms reporting floor may be absent. This is coverage of the exercised workflows, not a claim that every possible control/data/state combination has been enumerated. Skipped workflows and workflows without samples remain visible in the report. Synthetic `dispatchEvent`/range helpers, hover-only responses, native browser dialogs and external pages are not covered by native Event Timing.
 
-Each completed workflow is also saved immediately under `workflows/`, so interrupting a long run preserves its completed measurements. Set `PERF_PROFILE=1` for an isolated diagnostic workflow to attach a Chrome CPU profile; keep profiling off when checking the budget.
+Each completed workflow is also saved immediately under `workflows/`, so interrupting a long run preserves its completed measurements. Set `PERF_PROFILE=1` for an isolated diagnostic workflow to attach `cpu.cpuprofile` (JavaScript stacks) and `browser-trace.json` (browser tasks, style/layout, paint and garbage collection). Import the trace into Chrome DevTools Performance and the CPU profile into its JavaScript Profiler. Click marks identify exercised controls. Inspect the blocked interval, separating application work from Playwright locator evaluation and asynchronous network/animation spans. Keep profiling off when checking the budget.
 
 The large-data stress suite below additionally checks **completed content** for UQL, picker dialogs, race dialogs, planner goals and populated routes against the same 300 ms budget. These browser-clock measurements begin at input dispatch and end after the readiness condition plus two animation frames; they exclude Playwright locator lookup and readiness polling. They are reported separately from native input-to-next-paint timing, so a quick loading indicator cannot pass as completed route content.
 

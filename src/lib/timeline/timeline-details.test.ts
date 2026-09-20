@@ -5,12 +5,33 @@ import { toTimelineCalculation, toTimelinePrediction } from './timeline-predicti
 import { timelineCardContext, timelineCardRaceLines, timelineRaceEventFacts } from './timeline-race-facts';
 import { buildTimelineRewardSummaries, withTimelineRewardFallbacks } from './timeline-reward-summary';
 import { timelinePickups } from './timeline-pickups';
+import type { PlannerRewardEntry } from './carat-planner';
 
 function event(overrides: Partial<TimelineRecord> = {}): TimelineRecord {
   return { id: 'event', eventType: 'character_banner', title: 'Banner', typeLabel: 'Character scout', date: new Date('2026-09-10T00:00:00Z'), dateLabel: '', gachaIds: [], pickupCardIds: [], relatedCharacters: [], relatedSupportCards: [], relatedSupportCardNames: [], plannerRewardAvailable: false, tags: [], ...overrides };
 }
 
 describe('Angular Timeline detail parity', () => {
+  it('replaces recurring estimates only with matching positive Carats within one UTC day or an exact ID', () => {
+    const reward = (id: string, label: string, available_at: string, extra: Partial<PlannerRewardEntry> = {}): PlannerRewardEntry => ({ id, label, available_at, currency: 'free_jewels', amount: 500, ...extra });
+    const rewards = [
+      reward('login', 'Cumulative login', '2025-08-14T23:00:00-02:00'),
+      reward('valentine', 'Valentine gift', '2026-02-16'),
+      reward('white', 'White Day', '2026-03-13'),
+      reward('christmas', 'Christmas', '2026-12-11', { amount: 0 }),
+      reward('wrong-currency', 'Christmas', '2026-12-11', { currency: 'paid_jewels' }),
+      reward('invalid-date', 'Christmas', 'invalid'),
+      reward('expected-50-day-login-100', 'Exact published ID', 'invalid', { amount: 0 }),
+    ];
+    const result = withTimelineRewardFallbacks({ rewards }, [event({ date: new Date('2026-12-31') })]);
+    const addedIds = result.rewards.slice(rewards.length).map(reward => reward.id);
+    expect(addedIds).not.toContain('expected-50-day-login-50');
+    expect(addedIds).not.toContain('expected-50-day-login-100');
+    expect(addedIds).not.toContain('expected-white-day-gift-2026');
+    expect(addedIds).toContain('expected-valentines-gift-2026');
+    expect(addedIds).toContain('expected-christmas-gift-2026');
+    expect(withTimelineRewardFallbacks(result, [event({ date: new Date('2026-12-31') })])).toEqual(result);
+  });
   it('keeps compact card race lines and context distinct from the richer detail facts', () => {
     const legend = event({ eventType: 'legend_race', description: '3200m - Long - Turf' });
     expect(timelineCardRaceLines(legend)).toEqual(['3200m · Long · Turf']);

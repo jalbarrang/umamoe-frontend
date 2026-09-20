@@ -289,31 +289,25 @@ function expectedRecurringRewards(
     });
   }
 
-  return candidates.filter(candidate =>
-    candidate.available_at >= GLOBAL_LAUNCH_DATE
-    && candidate.available_at <= horizon
-    && !existingRewards.some(existing => equivalentRecurringReward(existing, candidate)));
-}
-
-function equivalentRecurringReward(
-  existing: PlannerRewardEntry,
-  candidate: PlannerRewardEntry,
-): boolean {
-  if (existing.id === candidate.id) return true;
-  if (existing.currency !== 'free_jewels' || Number(existing.amount) <= 0) return false;
-  const searchable = [existing.label, existing.category, existing.assumption, existing.evidence]
-    .filter(Boolean)
-    .join(' ');
-  const matches = candidate.category === 'login_milestone'
-    ? /(?:50.?day|total login|cumulative login|累計ログイン)/i.test(searchable)
-    : candidate.id.includes('valentines') ? /valentine|バレンタイン/i.test(searchable)
-    : candidate.id.includes('white-day') ? /white\s*day|ホワイトデー/i.test(searchable)
-    : /christmas|xmas|クリスマス/i.test(searchable);
-  if (!matches) return false;
-  const existingDate = rewardDateKey(existing.available_at);
-  const candidateDate = rewardDateKey(candidate.available_at);
-  if (!existingDate || !candidateDate) return false;
-  return Math.abs(Date.parse(existingDate) - Date.parse(candidateDate)) <= DAY_MS;
+  // Classify each published reward once, rather than rebuilding its text for every candidate.
+  const patterns = [/(?:50.?day|total login|cumulative login|累計ログイン)/i, /valentine|バレンタイン/i, /white\s*day|ホワイトデー/i, /christmas|xmas|クリスマス/i];
+  const dates = patterns.map(() => new Set<number>());
+  const ids = new Set(existingRewards.map(reward => reward.id));
+  for (const reward of existingRewards) {
+    if (reward.currency !== 'free_jewels' || Number(reward.amount) <= 0) continue;
+    const searchable = [reward.label, reward.category, reward.assumption, reward.evidence].filter(Boolean).join(' ');
+    for (let index = 0; index < patterns.length; index++) {
+      if (!patterns[index]!.test(searchable)) continue;
+      const date = rewardDateKey(reward.available_at);
+      if (date) dates[index]!.add(Date.parse(date) / DAY_MS);
+    }
+  }
+  return candidates.filter(candidate => {
+    if (candidate.available_at < GLOBAL_LAUNCH_DATE || candidate.available_at > horizon || ids.has(candidate.id)) return false;
+    const index = candidate.category === 'login_milestone' ? 0 : candidate.id.includes('valentines') ? 1 : candidate.id.includes('white-day') ? 2 : 3;
+    const day = Date.parse(candidate.available_at) / DAY_MS;
+    return !dates[index]!.has(day - 1) && !dates[index]!.has(day) && !dates[index]!.has(day + 1);
+  });
 }
 
 function loginMilestoneCarats(day: number): number {
