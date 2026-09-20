@@ -18,6 +18,19 @@ function filters(bounds: VeteranFilterState['stats']): VeteranFilterState {
 }
 
 describe('profile Veteran parity logic', () => {
+  it('sorts training dates chronologically in both directions and keeps unknown dates last', () => {
+    const veterans=[
+      {...base,id:1,creation_time:null},
+      {...base,id:2,creation_time:'2026-09-20T01:00:00+02:00'},
+      {...base,id:3,creation_time:'2026-09-19T23:30:00Z'},
+      {...base,id:4,creation_time:'invalid'},
+      {...base,id:5,creation_time:'2026-01-01'}
+    ];
+    const state=filters(computeVeteranStatBounds(veterans));
+    expect(filterAndSortVeterans(veterans,state,'creation_time','desc',new Map()).map(v=>v.id)).toEqual([3,2,5,1,4]);
+    expect(filterAndSortVeterans(veterans,state,'creation_time','asc',new Map()).map(v=>v.id)).toEqual([5,2,3,1,4]);
+    expect(veterans.map(v=>v.id)).toEqual([1,2,3,4,5]);
+  });
   it('matches multiple distance and style choices, including empty and unrestricted selections', () => {
     const veterans=[base,{...base,id:2,distance_type:2,running_style:1},{...base,id:3,distance_type:null,running_style:null}];
     const state=filters(computeVeteranStatBounds(veterans));

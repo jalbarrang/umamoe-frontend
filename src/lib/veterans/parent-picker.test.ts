@@ -1,12 +1,37 @@
 import { setupCatalogFixtures } from '../../../tests/fixtures/catalog-setup';
 setupCatalogFixtures();
 import { expect, it } from 'vitest';
-import { filterParents, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, parentSparkMatched, type ManualParent, type ParentFactorFilter } from './parent-picker';
+import { filterParents, groupParentFilters, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, parentSparkMatched, type ManualParent, type ParentFactorFilter, type ParentPickerState } from './parent-picker';
 import { VeteranAffinityEngine } from './affinity-engine';
 import { normalizeVeteranRecord } from './veteran-normalizer';
 import { parsePlannerTransfer } from '@/lib/lineage/planner';
 
 const entry: ManualParent = { id:'legacy-id',label:'Parent',mainCardId:100101,ownSparkIds:[101],p1CardId:100201,p1SparkIds:[103],p2CardId:100301,p2SparkIds:[202],mainWinSaddleIds:[16],p1WinSaddleIds:[15],createdAt:'2026-01-01' };
+it('matches alternatives within each color while requiring every color group',()=>{
+  const parents=[
+    manualParent({...entry,id:'speed-mile',ownSparkIds:[103,3202],p1SparkIds:[],p2SparkIds:[]}),
+    manualParent({...entry,id:'stamina-medium',ownSparkIds:[203,3302],p1SparkIds:[],p2SparkIds:[]}),
+    manualParent({...entry,id:'blue-only',ownSparkIds:[103,203],p1SparkIds:[],p2SparkIds:[]}),
+    manualParent({...entry,id:'red-only',ownSparkIds:[3202,3302],p1SparkIds:[],p2SparkIds:[]}),
+    manualParent({...entry,id:'both-blue',ownSparkIds:[103,203,3202],p1SparkIds:[],p2SparkIds:[]})
+  ];
+  // Deliberately interleave colors: display order must not change the matching groups.
+  const factors:ParentFactorFilter[]=[10,320,20,330].map(factorId=>({factorId,scope:'own',minLevel:2,maxLevel:3}));
+  const matches=(factorOperators:ParentPickerState['factorOperators'])=>filterParents(parents,{query:'',sort:'name',factors,factorOperators},()=>'',()=>0).map(p=>p.share_local_id);
+  expect(matches(undefined)).toEqual([]);
+  expect(matches({blue:'or',pink:'or'})).toEqual(['speed-mile','stamina-medium','both-blue']);
+  expect(matches({blue:'and',pink:'or'})).toEqual(['both-blue']);
+  expect(matches({blue:'or',pink:'and'})).toEqual([]);
+  expect(groupParentFilters(factors).map(group=>[group.tone,group.entries.map(entry=>entry.index)])).toEqual([['blue',[0,2]],['pink',[1,3]]]);
+  factors.push({factorId:10,scope:'p1',minLevel:1});
+  expect(matches({blue:'and',pink:'or'})).toEqual([]);
+  expect(filterParents(parents,{query:'',sort:'name',factors:[],factorOperators:{blue:'or'}},()=>'',()=>0)).toEqual(parents);
+});
+it('sorts newest parents first and leaves unknown dates at the end',()=>{
+  const old=manualParent(entry), newest=manualParent({...entry,id:'new',createdAt:'2026-09-20'});
+  const unknown={...old,pickerId:'unknown',creation_time:null}, invalid={...old,pickerId:'invalid',creation_time:'invalid'};
+  expect(filterParents([unknown,old,invalid,newest],{query:'',sort:'creation_time',factors:[]},()=>'',()=>0)).toEqual([newest,old,unknown,invalid]);
+});
 it('resolves missing outfits from the Angular trained-character ID without changing the saved record',()=>{
   const characters=new Map([[100101,{id:'100101',name:'Special Week',image:''}],[100102,{id:'100102',name:'Special Week (Summer)',image:''}]]);
   const parent=manualParent(entry);parent.card_id=null;parent.trained_chara_id=1001;

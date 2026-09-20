@@ -3,7 +3,7 @@ import { characterImagePath, type CharacterCatalogEntry } from '@/lib/catalog/ch
 import type { FactorInfoEntry, ProfileVeteran, SuccessionChara } from '@/pages/profile/profile-repository';
 import { aptitudeGrade, distanceName, runningStyleName, scenarioName, totalStats } from './profile-display';
 
-export type VeteranSortField = 'total' | 'rank_score' | 'speed' | 'stamina' | 'power' | 'guts' | 'wiz' | 'blue' | 'pink' | 'green' | 'name';
+export type VeteranSortField = 'total' | 'rank_score' | 'speed' | 'stamina' | 'power' | 'guts' | 'wiz' | 'blue' | 'pink' | 'green' | 'name' | 'creation_time';
 export type FactorTone = 'blue' | 'pink' | 'green' | 'white';
 export type AncestorScope = 'parent' | 'grandparent' | 'greatgrandparent';
 export type FactorScope = AncestorScope | 'any' | 'family' | 'p1' | 'p2';
@@ -14,6 +14,11 @@ export function veteranBaseStat(value: number | null | undefined, mood: number):
   // Mechanics: https://github.com/jalbarrang/torena-sim/blob/main/honse-sim/src/primitives/runner/stats.rs
   const capped = Math.min(value, 1200) + Math.floor(Math.max(0, value - 1200) / 2);
   return capped * (1 + mood * 0.02);
+}
+
+export function veteranCreationTime(veteran: ProfileVeteran): number | null {
+  const timestamp = Date.parse(veteran.creation_time ?? '');
+  return Number.isFinite(timestamp) ? timestamp : null;
 }
 
 export interface ResolvedVeteranFactor {
@@ -182,7 +187,8 @@ export function filterAndSortVeterans(
     return true;
   });
 
-  function sortableValue(veteran: ProfileVeteran): string | number {
+  function sortableValue(veteran: ProfileVeteran): string | number | null {
+    if (sortField === 'creation_time') return veteranCreationTime(veteran);
     if (sortField === 'total') return totalStats(veteran);
     if (sortField === 'name') return characters.get(veteran.card_id ?? -1)?.name ?? `Character ${veteran.card_id ?? ''}`;
     if (sortField === 'blue' || sortField === 'pink' || sortField === 'green') return factorStarSum(veteran, sortField);
@@ -190,6 +196,7 @@ export function filterAndSortVeterans(
   }
   return result.sort((left, right) => {
     const a = sortableValue(left); const b = sortableValue(right);
+    if (a == null || b == null) return a == null ? b == null ? 0 : 1 : -1;
     const comparison = typeof a === 'string' ? a.localeCompare(String(b)) : a - Number(b);
     return sortDirection === 'asc' ? comparison : -comparison;
   });

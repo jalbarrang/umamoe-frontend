@@ -1,6 +1,6 @@
 import type { ProfileVeteran, SuccessionChara } from '@/pages/profile/profile-repository';
 import type { InheritanceRecord } from '@/lib/inheritance/inheritance-search';
-import { resolveVeteranFactors } from '@/lib/profile/profile-veterans';
+import { resolveVeteranFactors, veteranCreationTime, type FactorTone } from '@/lib/profile/profile-veterans';
 import { totalStats } from '@/lib/profile/profile-display';
 import { emptyPlannerNodes, calculatePlannerAffinity } from '@/lib/lineage/planner';
 import type { VeteranAffinityEngine } from './affinity-engine';
@@ -17,9 +17,9 @@ export interface SelectableParent extends ProfileVeteran {
   share_inheritance_id?: number;
   share_local_id?: string;
 }
-export type ParentSort = 'total' | 'affinity' | 'blue' | 'pink' | 'green' | 'name';
+export type ParentSort = 'total' | 'affinity' | 'blue' | 'pink' | 'green' | 'name' | 'creation_time';
 export interface ParentFactorFilter { factorId: number; scope: 'combined' | 'any' | 'own' | 'p1' | 'p2'; minLevel: number; maxLevel?: number; }
-export interface ParentPickerState { tab: 'veterans' | 'bookmarks' | 'saved' | 'manual'; accountId: string; query: string; sort: ParentSort; factors: ParentFactorFilter[]; }
+export interface ParentPickerState { tab: 'veterans' | 'bookmarks' | 'saved' | 'manual'; accountId: string; query: string; sort: ParentSort; factors: ParentFactorFilter[]; factorOperators?: Partial<Record<FactorTone, 'and' | 'or'>>; }
 // Angular's scoped picker state is in memory, not a new browser-storage contract.
 export const parentPickerSessions = new Map<string, ParentPickerState>();
 export const MANUAL_PARENTS_KEY = 'vpd_manual_entries';
@@ -96,6 +96,12 @@ function parentFactorMatches(parent: ProfileVeteran, filter: ParentFactorFilter)
     ? factorLevelMatches(factors.reduce((sum, factor) => sum + factor.level, 0), filter)
     : factors.some(factor => factorLevelMatches(factor.level, filter));
 }
+export function groupParentFilters(filters: ParentFactorFilter[]) {
+  const entries = filters.map((filter, index) => ({filter,index,resolved:resolveVeteranFactors({factors:[filter.factorId*10+1]})[0]!})).filter(({filter}) => filter.factorId);
+  return (['blue','pink','green','white'] as const)
+    .map(tone => ({tone,entries:entries.filter(entry => entry.resolved.tone === tone)}))
+    .filter(group => group.entries.length);
+}
 export function parentSparkMatched(parent: ProfileVeteran, spark: { id:number; level:number }, source: 'own'|'p1'|'p2', filters: ParentFactorFilter[]): boolean {
   return filters.some(filter => filter.factorId === spark.id && (filter.scope === 'combined'
     ? parentFactorMatches(parent, filter)
@@ -136,9 +142,11 @@ export function manualBestFits(cardIds: readonly (number | null)[], slot: number
     return character ? [{ ...candidate, character }] : [];
   });
 }
-export function filterParents(parents: SelectableParent[], state: Pick<ParentPickerState, 'query' | 'sort' | 'factors'>, name: (parent: SelectableParent) => string, affinity: (parent: SelectableParent) => number): SelectableParent[] {
+export function filterParents(parents: SelectableParent[], state: Pick<ParentPickerState, 'query' | 'sort' | 'factors' | 'factorOperators'>, name: (parent: SelectableParent) => string, affinity: (parent: SelectableParent) => number): SelectableParent[] {
   const query = state.query.trim().toLocaleLowerCase();
+  const factorGroups = groupParentFilters(state.factors);
   const score = (parent: SelectableParent) => {
+    if (state.sort === 'creation_time') return veteranCreationTime(parent);
     // Angular supplies affinity/stat sorting only for Veteran-shaped tabs.
     const veteranTab = parent.share_source === 'veteran' || parent.share_source === 'partner';
     if (state.sort === 'affinity') return veteranTab ? affinity(parent) : 0;
@@ -146,7 +154,11 @@ export function filterParents(parents: SelectableParent[], state: Pick<ParentPic
     return scopedParentFactors(parent, parent.share_source === 'manual' ? 'own' : 'any')
       .filter((factor) => state.sort === 'total' ? factor.tone !== 'white' : factor.tone === state.sort).reduce((sum, factor) => sum + factor.level, 0);
   };
-  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && state.factors.every(filter => parentFactorMatches(parent, filter)))
+  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && factorGroups.every(group =>
+    state.factorOperators?.[group.tone] === 'or'
+      ? group.entries.some(({filter}) => parentFactorMatches(parent, filter))
+      : group.entries.every(({filter}) => parentFactorMatches(parent, filter))))
     .map((parent) => ({ parent, score: state.sort === 'name' ? 0 : score(parent) }))
-    .sort((left, right) => state.sort === 'name' ? name(left.parent).localeCompare(name(right.parent)) : right.score - left.score).map(({ parent }) => parent);
+    .sort((left, right) => state.sort === 'name' ? name(left.parent).localeCompare(name(right.parent))
+      : left.score == null ? right.score == null ? 0 : 1 : right.score == null ? -1 : right.score - left.score).map(({ parent }) => parent);
 }

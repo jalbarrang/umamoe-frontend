@@ -4,9 +4,8 @@
   import { watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
   import SparkFilterDialog from './SparkFilterDialog.svelte';
   import FilterChip from '@/components/FilterChip.svelte';
-  import { resolveVeteranFactors } from '@/lib/profile/profile-veterans';
   import { loadG1SaddleGroups } from '@/lib/catalog/race-catalog';
-  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, parentAffinityDetails, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type ParentFactorFilter, type SelectableParent } from '@/lib/veterans/parent-picker';
+  import { accountParent, inheritanceParent, manualParent, parseManualParents, filterParents, groupParentFilters, parentAffinityDetails, parentCharacter, parentPickerSessions, MANUAL_PARENTS_KEY, type ManualParent, type ParentPickerState, type ParentFactorFilter, type SelectableParent } from '@/lib/veterans/parent-picker';
   import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
   import { veteranAffinityRepository } from '@/lib/veterans/affinity-repository';
   import { authReady, authUser } from '@/services/auth/auth-state';
@@ -35,6 +34,8 @@
   const id = $props.id();
   let sparkView = $state('combined');
   let pickerState = $state<ParentPickerState>({tab:'veterans',accountId:'',query:'',sort:'total',factors:[]});
+  const factorGroups = $derived(groupParentFilters(pickerState.factors));
+  const groupLabels = {blue:'Blue stats',pink:'Aptitude',green:'Unique',white:'Skill / race'};
   let factorDraft = $state<ParentFactorFilter>(), factorEditIndex = -1;
   function editFactor(index = -1) {
     factorEditIndex = index;
@@ -53,7 +54,7 @@
   let partnerId = $state(''); let partnerPhase = $state<PartnerPhase>(); let lookupResult = $state<SelectableParent>(); let lookupError = $state(''); let lookupTimedOut = $state(false); let lookupController: AbortController | undefined;
   let renderLimit = $state(16); let accountGeneration=0; let partnerReloadPending=false; let live=true;
   const accountRequests = new Map<string, number>();
-  const sortOptions = $derived([{value:'total',label:'Total'},...(targetId?[{value:'affinity',label:'Affinity'}]:[]),{value:'blue',label:'Blue ★'},{value:'pink',label:'Pink ★'},{value:'green',label:'Green ★'},{value:'name',label:'Name'}]);
+  const sortOptions = $derived([{value:'total',label:'Total'},...(targetId?[{value:'affinity',label:'Affinity'}]:[]),{value:'creation_time',label:'Newest first'},{value:'blue',label:'Blue ★'},{value:'pink',label:'Pink ★'},{value:'green',label:'Green ★'},{value:'name',label:'Name'}]);
   const scope = $derived(draftScope(pickerState.accountId, $authUser?.id));
   const collection = $derived(mergeVeterans(veterans[pickerState.accountId] ?? [], ($veteranDrafts[scope] ?? []).map(record => deviceParent(record, pickerState.accountId))).map(veteran => accountParent(veteran, pickerState.accountId)));
   const current = $derived(pickerState.tab==='veterans' ? collection : pickerState.tab==='bookmarks' ? bookmarks : pickerState.tab==='manual' ? manuals.map(manualParent) : partners);
@@ -68,7 +69,8 @@
   const tabs = $derived([{id:'veterans',label:'Veterans',icon:'users' as const,badge:String(collection.length)},{id:'bookmarks',label:'Bookmarks',icon:'book' as const,badge:String(bookmarks.length)},{id:'saved',label:'Partner',icon:'connect' as const,badge:busy.saved?'...':String(partners.length)},{id:'manual',label:'Manual',icon:'edit' as const,badge:String(manuals.length)}]);
   function message(error: unknown): string { return error instanceof Error?error.message:'Please try again.'; }
   function choose(parent: SelectableParent): void { onselect(parent); open=false; }
-  function clearFilters(): void { pickerState.query='';pickerState.factors=[]; }
+  function clearSparkFilters(): void { pickerState.factors=[];pickerState.factorOperators={}; }
+  function clearFilters(): void { pickerState.query='';clearSparkFilters(); }
   async function loadCatalogs(): Promise<void> {
     catalogError='';
     const results=await Promise.allSettled([loadCharacterCatalog(),veteranAffinityRepository.load(),loadG1SaddleGroups(),loadReleasedCharacterCatalog()]);
@@ -159,18 +161,29 @@
     </div>
     <div class="picker-body" onscroll={(event)=>{const el=event.currentTarget;if(el.scrollHeight-el.scrollTop-el.clientHeight<360)renderLimit=Math.min(filtered.length,renderLimit+16);}}>
     <div class="active-filters" aria-label="Spark filters">
-      {#each pickerState.factors as factor,index}
-        {@const resolved=resolveVeteranFactors({factors:[factor.factorId*10+factor.minLevel]})[0]!}
-        {@const max = factor.maxLevel ?? (factor.scope === 'combined' ? 9 : 3)}
-        <div class="selected-factor selected-factor--{resolved.tone}" role="group" aria-label={resolved.name+' spark filter '+(index+1)}>
-          <FilterChip label={resolved.name+' · '+({combined:'Combined',any:'Any slot',own:'Own',p1:'P1',p2:'P2'}[factor.scope])+' '+factor.minLevel+(max === factor.minLevel ? '' : '–'+max)+'★'} selected removable onclick={() => editFactor(index)} onremove={()=>pickerState.factors=pickerState.factors.filter((_,i)=>index!==i)}/>
-        </div>
-      {/each}
+      {#if factorGroups.length}<div class="spark-filter-groups">
+        {#each factorGroups as group,groupIndex (group.tone)}
+          {#if groupIndex > 0}<span class="group-join">AND</span>{/if}
+          <section class="spark-filter-group selected-factor--{group.tone}" aria-label={groupLabels[group.tone]+' filters'}>
+            <header><strong><span aria-hidden="true">★</span> {groupLabels[group.tone]}</strong>
+              {#if group.entries.length > 1}<SegmentedControl label={groupLabels[group.tone]+' matching'} options={[{value:'and',label:'AND'},{value:'or',label:'OR'}]} value={pickerState.factorOperators?.[group.tone] ?? 'and'} onchange={value => pickerState.factorOperators={...pickerState.factorOperators,[group.tone]:value as 'and'|'or'}}/>{/if}
+            </header>
+            <div class="group-filters">
+              {#each group.entries as {filter:factor,index,resolved} (index)}
+                {@const max = factor.maxLevel ?? (factor.scope === 'combined' ? 9 : 3)}
+                <div class="selected-factor selected-factor--{resolved.tone}" role="group" aria-label={resolved.name+' spark filter '+(index+1)}>
+                  <FilterChip label={resolved.name+' · '+({combined:'Combined',any:'Any slot',own:'Own',p1:'P1',p2:'P2'}[factor.scope])+' '+factor.minLevel+(max === factor.minLevel ? '' : '–'+max)+'★'} selected removable onclick={() => editFactor(index)} onremove={()=>pickerState.factors=pickerState.factors.filter((_,i)=>index!==i)}/>
+                </div>
+              {/each}
+            </div>
+          </section>
+        {/each}
+      </div>{/if}
       <div class="spark-search">
         <Button variant="secondary" size="sm" icon="add" onclick={() => editFactor()}>Add Spark</Button>
       </div>
       <div class="spark-display"><SegmentedControl label="Parent spark display" options={[{value:'split',label:'Split'},{value:'combined',label:'Combined'}]} bind:value={sparkView}/></div>
-      {#if pickerState.factors.length}<div class="clear-sparks"><Button variant="ghost" size="sm" onclick={()=>pickerState.factors=[]}>Clear all</Button></div>{/if}
+      {#if pickerState.factors.length}<div class="clear-sparks"><Button variant="ghost" size="sm" onclick={clearSparkFilters}>Clear all</Button></div>{/if}
     </div>
       <div class="picker-results">
       {#if catalogError}<Banner tone="warning" title="Some resources are unavailable"><p>{catalogError}</p><Button variant="secondary" onclick={loadCatalogs}>Retry resources</Button></Banner>{/if}
@@ -244,6 +257,12 @@
   .parent-actions :global(.ui-button) { padding:0 10px; font-size:12px; }
   .result-count { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
   .active-filters { --spark-filter-height:28px; --control-height:var(--spark-filter-height); display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px var(--picker-inset); margin:0 calc(-1 * var(--picker-inset)) 10px; border-block:1px solid var(--border-subtle); background:var(--bg-primary); }
+  .spark-filter-groups { display:grid; gap:6px; width:100%; min-width:0; }
+  .spark-filter-group { --color-accent:var(--spark-white-text); display:grid; gap:6px; min-width:0; padding:8px; border:1px solid var(--border-subtle); border-left:3px solid var(--color-accent); border-radius:var(--radius-sm); }
+  .spark-filter-group header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+  .spark-filter-group strong { font-size:11px; }.spark-filter-group strong span { color:var(--color-accent); }
+  .spark-filter-group :global(.segments) { flex:none; padding:2px; }.spark-filter-group :global(.segments button) { min-height:var(--spark-filter-height); padding:0 8px; font-size:11px; }
+  .group-filters { display:flex; flex-wrap:wrap; gap:6px; min-width:0; }.group-join { padding-left:11px; font-size:10px; font-weight:600; color:var(--text-muted); }
   .spark-display { margin-left:auto; }.spark-display :global(.segments) { padding:2px; height:var(--control-height); }.spark-display :global(.segments button) { min-height:0; padding:0 8px; font-size:11px; }
   .clear-sparks :global(.ui-button) { min-height:var(--control-height); padding:2px 6px; font-size:11px; }
   .picker-body { --picker-inset:12px; min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:0 var(--picker-inset) 12px; }
@@ -283,7 +302,7 @@
     .parent-picker > :global(dialog > .dialog-panel > header:has(.segments)){display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:4px 8px;height:auto;padding-bottom:6px}
     .parent-picker > :global(dialog > .dialog-panel > header .header-actions:has(.segments)){grid-column:1/-1;grid-row:2;margin:0}
     .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:var(--touch-target)}
-    .filterbar{gap:6px;padding:8px}.parent-sort{width:92px}.result-count{display:none}
+    .filterbar{gap:6px;padding:8px}.result-count{display:none}
     .picker-body{--picker-inset:8px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
     .signin-notice{font-size:.7rem;padding:6px 10px}.parent-picker :global(.tabs button){padding-inline:4px;font-size:.7rem}
   }

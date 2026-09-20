@@ -66,7 +66,7 @@
     const link = document.createElement('a'); link.href = url; link.download = `veterans-${accountId}.json`; link.click(); URL.revokeObjectURL(url);
   }
   type StatField = 'speed' | 'stamina' | 'power' | 'guts' | 'wiz';
-  type CollectionSortField = VeteranSortField | 'affinity';
+  type CollectionSortField = VeteranSortField | 'affinity' | 'white_count' | 'white_stars_sum' | 'win_count';
   type AptitudeField = 'proper_ground_turf'|'proper_ground_dirt'|'proper_distance_short'|'proper_distance_mile'|'proper_distance_middle'|'proper_distance_long'|'proper_running_style_nige'|'proper_running_style_senko'|'proper_running_style_sashi'|'proper_running_style_oikomi';
 
   const statFields: Array<{ id: StatField; label: string; tone: 'blue'|'coral'|'orange'|'pink'|'teal' }> = [
@@ -82,7 +82,10 @@
   const sortOptions: Array<{ value: string; label: string }> = [
     {value:'total',label:'Total Stats'},{value:'rank_score',label:'Rank Score'},{value:'speed',label:'Speed'},{value:'stamina',label:'Stamina'},
     {value:'power',label:'Power'},{value:'guts',label:'Guts'},{value:'wiz',label:'Wiz'},{value:'blue',label:'Blue Stars'},
-    {value:'pink',label:'Pink Stars'},{value:'green',label:'Green Stars'},{value:'affinity',label:'Affinity'},{value:'name',label:'Name'}
+    {value:'pink',label:'Pink Stars'},{value:'green',label:'Green Stars'},
+    {value:'white_count',label:'White Spark Count'},{value:'white_stars_sum',label:'Total White Stars'},
+    {value:'win_count',label:'G1 Wins'},{value:'creation_time',label:'Date Trained'},
+    {value:'affinity',label:'Affinity'},{value:'name',label:'Name'}
   ];
   const distanceOptions = [{value:'',label:'Any distance'},{value:'1',label:'Sprint'},{value:'2',label:'Mile'},{value:'3',label:'Middle'},{value:'4',label:'Long'},{value:'5',label:'Dirt'}];
   const styleOptions = [{value:'',label:'Any style'},{value:'1',label:'Front'},{value:'2',label:'Pace'},{value:'3',label:'Late'},{value:'4',label:'End'}];
@@ -94,6 +97,7 @@
   const allDistances=distanceOptions.filter(option=>option.value).map(option=>option.value),allStyles=styleOptions.filter(option=>option.value).map(option=>option.value);
   const toggleChoice=(choices:string[],value:string)=>choices.includes(value) ? choices.filter(choice=>choice!==value) : [...choices,value].sort();
   let query=$state(''),distance=$state<string[]>([...allDistances]),style=$state<string[]>([...allStyles]),minTotal=$state(0),sortField=$state<CollectionSortField>('total'),sortDirection=$state<'asc'|'desc'>('desc');
+  const sortDirectionOptions=$derived(sortField==='creation_time' ? [{value:'desc',label:'Newest first'},{value:'asc',label:'Oldest first'}] : [{value:'desc',label:'Highest first'},{value:'asc',label:'Lowest first'}]);
   let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),gridColumns=$state(2),visibleCount=$state(24);
   let expandedSection=$state<'sparks'|'skills'|'compact'>('skills'),sparkSource=$state<'family'|'parent'|'p1'|'p2'>('family');
   let aptitudeFilters=$state<Partial<Record<AptitudeField,string>>>({}), selectedSkills=$state<number[]>([]), skillQuery=$state(''), skillCatalog=$state<Map<number,SkillCatalogEntry>>(new Map());
@@ -187,7 +191,8 @@
   function resetStatRanges(nextBounds=bounds){ speedMin=nextBounds.speed[0]; speedMax=nextBounds.speed[1]; staminaMin=nextBounds.stamina[0]; staminaMax=nextBounds.stamina[1]; powerMin=nextBounds.power[0]; powerMax=nextBounds.power[1]; gutsMin=nextBounds.guts[0]; gutsMax=nextBounds.guts[1]; wizMin=nextBounds.wiz[0]; wizMax=nextBounds.wiz[1]; }
   function currentStats(): VeteranFilterState['stats'] { return {speed:[speedMin,speedMax],stamina:[staminaMin,staminaMax],power:[powerMin,powerMax],guts:[gutsMin,gutsMax],wiz:[wizMin,wizMax]}; }
   function filterState(): VeteranFilterState { return { query,distance:distance.length===allDistances.length?null:distance.map(Number),style:style.length===allStyles.length?null:style.map(Number),minTotal,stats:currentStats(),aptitudes:aptitudeFilters,skills:selectedSkills,include,exclude,factors:selectedFactors,raceIds:selectedRaceIds }; }
-  const propertyFiltered = $derived(filterAndSortVeterans(veterans,filterState(),sortField==='affinity' ? 'total' : sortField,sortDirection,characters));
+  const metricSort=$derived(sortField==='affinity' || sortField==='white_count' || sortField==='white_stars_sum' || sortField==='win_count' ? sortField : undefined);
+  const propertyFiltered = $derived(filterAndSortVeterans(veterans,filterState(),sortField==='affinity' || sortField==='white_count' || sortField==='white_stars_sum' || sortField==='win_count' ? 'total' : sortField,sortDirection,characters));
   const filtered = $derived.by(() => {
     const result=propertyFiltered.filter(v => matchesSelectedRaces(v)
       && (!minSp || (spByVeteran.get(v) ?? -1) >= Number(minSp))
@@ -198,9 +203,9 @@
       && (!appliedUql || queryApplied.matches(databaseRows.get(v)!)));
     const sort=queryApplied.validation.sortBy;
     if(appliedUql && sort) return result.sort((a,b)=>Number(databaseRows.get(b)?.[sort] ?? -1)-Number(databaseRows.get(a)?.[sort] ?? -1));
-    if(sortField==='affinity') result.sort((a,b)=>{
-      const left=affinityByVeteran.get(a)?.main,right=affinityByVeteran.get(b)?.main;
-      return left==null ? right==null ? 0 : 1 : right==null ? -1 : (left-right)*(sortDirection==='asc' ? 1 : -1);
+    if(metricSort) result.sort((a,b)=>{
+      const left=databaseRows.get(a)?.[metricSort],right=databaseRows.get(b)?.[metricSort];
+      return left==null ? right==null ? 0 : 1 : right==null ? -1 : (Number(left)-Number(right))*(sortDirection==='asc' ? 1 : -1);
     });
     return result;
   });
@@ -324,7 +329,7 @@
       <div class="light-filters">
         <TextField id="profile-veteran-search" label="Search veterans" placeholder="Find a runner…" type="search" bind:value={query}/>
         <SelectField id="profile-veteran-distance" label="Distance" options={distanceOptions} value={distance.length===1 ? distance[0] : ''} onchange={value=>distance=value ? [value] : [...allDistances]}/>
-        <SelectField id="profile-veteran-sort" label="Sort" options={sortOptions.filter(option => ['total','rank_score','affinity','name'].includes(option.value))} bind:value={sortField}/>
+        <SelectField id="profile-veteran-sort" label="Sort" options={sortOptions.filter(option => ['total','rank_score','affinity','name','creation_time','white_count','white_stars_sum','win_count'].includes(option.value))} bind:value={sortField}/>
       </div>
     {/if}
 
@@ -347,7 +352,7 @@
           <div class="results-toolbar" aria-label="Browse controls" bind:this={browseToolbar}>
             <div class="result-count" aria-live="polite"><strong>{filtered.length.toLocaleString()}</strong><span>{activeCount ? 'of ' + veterans.length.toLocaleString() : ''} veteran{veterans.length === 1 ? '' : 's'}</span>{#if activeCount}<Button variant="ghost" size="sm" onclick={clearFilters}>Reset</Button>{/if}</div>
             {#if !desktopFilters.current}<Button variant="secondary" size="sm" icon="filter" ariaLabel="Filters" ariaExpanded={filterDrawerOpen && drawerView === 'filters'} onclick={()=>openDrawer('filters')}>Filters{#if activeCount}<span class="active-count">{activeCount}</span>{/if}</Button>{/if}
-            <div class="desktop-sort sort"><SelectField id="veteran-sort" label="Sort" hideLabel prefixIcon="sort" options={sortOptions} bind:value={sortField}/><Button variant="ghost" size="sm" ariaLabel={'Sort '+(sortDirection === 'asc' ? 'descending' : 'ascending')} onclick={() => sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'}>{sortDirection === 'asc' ? '↑' : '↓'}</Button></div>
+            <div class="desktop-sort sort"><SelectField id="veteran-sort" label="Sort" hideLabel prefixIcon="sort" options={sortOptions} bind:value={sortField}/><Button variant="ghost" size="sm" ariaLabel={'Sort '+(sortField==='creation_time' ? sortDirection==='desc' ? 'oldest first' : 'newest first' : sortDirection==='asc' ? 'descending' : 'ascending')} onclick={() => sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'}>{sortDirection === 'asc' ? '↑' : '↓'}</Button></div>
             <span class="mobile-sort"><Button variant="secondary" size="sm" icon="sort" ariaLabel="Sort veterans" onclick={()=>openDrawer('sort')}>Sort</Button></span>
             <Button variant="ghost" size="sm" icon="tune" ariaLabel="Display options" ariaExpanded={displayOptions} onclick={() => displayOptions = !displayOptions}><span class="display-label">Display</span></Button>
           </div>
@@ -511,7 +516,7 @@
         {@render filterFacets()}
       {:else}
         <div class="sort-drawer">
-          <SelectField id="mobile-sort-direction" label="Order" options={[{value:'desc',label:'Highest first'},{value:'asc',label:'Lowest first'}]} bind:value={sortDirection}/>
+          <SelectField id="mobile-sort-direction" label="Order" options={sortDirectionOptions} bind:value={sortDirection}/>
           <div class="sort-choices" role="group" aria-label="Sort by">{#each sortOptions as option}<button class:selected={sortField === option.value} aria-pressed={sortField === option.value} onclick={()=>sortField=option.value as CollectionSortField}><span>{option.label}</span>{#if sortField === option.value}<Icon name="check" size={16}/>{/if}</button>{/each}</div>
         </div>
       {/if}
