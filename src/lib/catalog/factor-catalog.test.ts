@@ -20,6 +20,6 @@ it('uses race-title and scenario artwork before generic skill icons, sharing the
   for (const [factorId, scenarioId] of [[300010, 1], [300020, 2], [300030, 4]]) {
     expect(factorImage(factorId!)).toBe(scenarios.find((scenario) => scenario.id === scenarioId)!.image);
   }
-  expect(factorImage(200010)).toBe('/game-assets/skill_icons/utx_ico_skill_10011.webp');
+  expect(factorImage(200010)).toBe('/assets/images/skills/utx_ico_skill_10011.webp');
   expect(factorImage(-1)).toBeUndefined();
 });

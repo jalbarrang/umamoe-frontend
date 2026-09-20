@@ -49,14 +49,13 @@ function resolveSourceImagePath(
 }
 
 
-// Dev serves source files directly. Importing every URL module adds 1,250+ requests.
-// The build still emits the same fingerprinted assets through Vite.
-const artwork: Record<string, string> = import.meta.env.DEV
-  ? Object.fromEntries(Object.keys(import.meta.glob('/src/assets/timeline-images/**/*.webp')).map(path => [path, path]))
-  : (await import('./timeline-artwork-urls')).default;
+// prepare-assets already publishes these images. Use the existing manifests
+// instead of downloading a second URL table before timeline data can load.
+const bundledPaths = new Set([...Object.values(ENGLISH_TIMELINE_IMAGE_PATHS), ...Object.values(JAPANESE_TIMELINE_IMAGE_PATHS)]);
 
 export function timelineImage(path: string | null | undefined, type: string | undefined, id: string, sourceImage?: string): string | undefined {
   const resolved = resolveSourceImagePath(path, type, timelineEventMasterId(id));
   if (!resolved) return sourceImage;
-  return artwork['/src/' + resolved.replace(/^\//, '')] ?? sourceImage ?? resolved;
+  const localPath = resolved.replace(/^\//, '');
+  return bundledPaths.has(localPath) ? `/${localPath}` : sourceImage ?? resolved;
 }

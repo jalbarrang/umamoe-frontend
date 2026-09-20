@@ -141,16 +141,16 @@ export function createHttpClient(options: HttpClientOptions = {}) {
     const port = options.browserProof;
     const headers = new Headers(request.init.headers);
     if (!port || !request.proofRequired || request.init.method === 'OPTIONS' || headers.has(port.proofHeader) || headers.has('x-api-key')) return next(request);
-    const cached = port.getCached();
-    if (!cached) port.prime();
-    const sent = cached ? withHeaders(request, { [port.proofHeader]: cached }) : request;
+    // Share verification before sending protected requests; concurrent warmup
+    // requests exhaust the server allowance and produce avoidable 429 responses.
+    const cached = port.getCached() ?? await port.refresh();
+    const sent = withHeaders(request, { [port.proofHeader]: cached });
     let response = await next(sent);
     const returnedProof = response.headers.get(port.proofHeader)?.trim();
     if (returnedProof) port.capture(returnedProof, Number(response.headers.get(port.ttlHeader) ?? 0));
     if (response.status !== 403 && response.status !== 429) return response;
     const code = await errorCode(response);
-    const warmupLimited = response.status === 429 && !cached && code === 'rate_limited';
-    if (!warmupLimited && ((response.status !== 403 && response.status !== 429) || !proofErrorCodes.has(code ?? ''))) return response;
+    if (!proofErrorCodes.has(code ?? '')) return response;
     port.invalidate(cached);
     const fresh = await port.refresh();
     response = await next(withHeaders(request, { [port.proofHeader]: fresh }));

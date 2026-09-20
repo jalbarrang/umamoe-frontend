@@ -38,7 +38,7 @@
           {@const tone = group.key === 'classes' ? classColors[value] : group.key === 'distances' ? distanceColors[statisticsDistanceId(value)] : group.color}
           <label class="choice" class:selected={group.selected.includes(value)} style:--choice-color={tone ?? group.color} title={scenario?.label}>
             <input type="checkbox" aria-label={label} checked={group.selected.includes(value)} onchange={event => select(group.key, event.currentTarget.checked ? [...group.selected, value] : group.selected.filter(item => item !== value))}/>
-            {#if scenario}<img src={scenario.image} alt="" width="64" height="38"/>{:else if group.key === 'classes'}<span class="class-number" aria-hidden="true">{value}</span>{:else}<span class="distance-dot" aria-hidden="true"></span>{/if}
+            {#if scenario}<img src={scenario.image} alt="" width="64" height="38" loading="lazy"/>{:else if group.key === 'classes'}<span class="class-number" aria-hidden="true">{value}</span>{:else}<span class="distance-dot" aria-hidden="true"></span>{/if}
             <span class="label">{label}</span><span class="check" aria-hidden="true">{#if group.selected.includes(value)}<Icon name="check" size={13}/>{/if}</span>
           </label>
         {/each}

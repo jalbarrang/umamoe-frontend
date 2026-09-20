@@ -31,5 +31,5 @@ it('normalizes legacy boolean flags and metadata-derived unique skills like Angu
   expect(catalog.get(100011)).toMatchObject({ name:'Shooting Star',unique:true });
   expect(skillRarity(catalog.get(100011),false)).toBe('unique-main');
   expect(sortEncodedSkills(catalog,[200011,100011])).toEqual([100011,200011]);
-  expect(skillImage(catalog.get(100011)?.icon)).toBe('/game-assets/skill_icons/utx_ico_skill_20013.webp');
+  expect(skillImage(catalog.get(100011)?.icon)).toBe('/assets/images/skills/utx_ico_skill_20013.webp');
 });

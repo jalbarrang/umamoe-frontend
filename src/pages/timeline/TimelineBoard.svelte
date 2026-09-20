@@ -8,7 +8,7 @@
 
   let { lanes, events, anniversaries, end, now, mobile, view, card, compact = true, active = true }: {
     lanes: TimelineLane[]; events: TimelineRecord[]; anniversaries: TimelineAnniversary[]; end: Date; now: Date;
-    mobile: boolean; view: 'horizontal' | 'vertical'; card: Snippet<[TimelineRecord]>; compact?: boolean; active?: boolean;
+    mobile: boolean; view: 'horizontal' | 'vertical'; card: Snippet<[TimelineRecord, boolean]>; compact?: boolean; active?: boolean;
   } = $props();
   const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const weekdayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
@@ -19,6 +19,7 @@
   let measured = $state<Record<string, number>>({});
   let measuredLaneHeight = $state(0);
   let initialized = $state(false);
+  let imagesReady = $state(false);
   let initialToday = false;
   let savedHorizontal = 0, savedVertical = 0;
   let drag: { x: number; left: number; lastX: number; time: number; velocity: number } | undefined;
@@ -26,7 +27,7 @@
   let momentum = 0, frame = 0;
   const months = $derived(timelineMonths(lanes, compact));
   const width = $derived((lanes.at(-1)?.position ?? 0) + LANE_WIDTH + 48);
-  const visibleLanes = $derived(lanes.filter(lane => lane.position + LANE_WIDTH >= scrollLeft - LANE_STEP * 3 && lane.position <= scrollLeft + viewportWidth + LANE_STEP * 3));
+  const visibleLanes = $derived(lanes.filter(lane => lane.position + LANE_WIDTH >= scrollLeft - LANE_STEP && lane.position <= scrollLeft + viewportWidth + LANE_STEP));
   const todayPosition = $derived(timelinePosition(lanes, now));
   const showToday = $derived(Boolean(lanes.length && now >= lanes[0]!.date && now <= lanes.at(-1)!.date));
   const trackHeight = $derived(Math.max(360, measuredLaneHeight, ...lanes.map(lane => {
@@ -36,7 +37,7 @@
   const rows = $derived(buildTimelineFeed(events, anniversaries, end, now));
   const offsets = $derived.by(() => {
     const result = [0];
-    for (const row of rows) result.push(result.at(-1)! + (measured[row.key] ?? ((row.marker ? row.marker.image ? 164 : 98 : 49 + row.events.reduce((sum, event) => sum + (event.image ? 193 : 123), 0) + Math.max(0, row.events.length - 1) * 7) + (row.adIndex ? 86 : 0))));
+    for (const row of rows) result.push(result.at(-1)! + (measured[row.key] ?? ((row.marker ? row.marker.image ? 164 : 98 : 49 + row.events.reduce((sum, event) => sum + (event.image ? 167 : 111), 0) + Math.max(0, row.events.length - 1) * 7) + (row.adIndex ? 86 : 0))));
     return result;
   });
   function indexAt(offset: number): number {
@@ -44,8 +45,9 @@
     while (low < high) { const mid = Math.floor((low + high) / 2); if (offsets[mid + 1]! < offset) low = mid + 1; else high = mid; }
     return low;
   }
-  const start = $derived(Math.max(0, indexAt(Math.max(0, pageY - feedTop - 1000)) - 2));
-  const finish = $derived(Math.min(rows.length, indexAt(Math.max(0, pageY - feedTop) + viewportHeight + 1000) + 4));
+  // A short overscan keeps scrolling smooth without downloading banners several screens away.
+  const start = $derived(Math.max(0, indexAt(Math.max(0, pageY - feedTop - 500)) - 1));
+  const finish = $derived(Math.min(rows.length, indexAt(Math.max(0, pageY - feedTop) + viewportHeight + 500) + 2));
   const visibleRows = $derived(rows.slice(start, finish));
   const behavior = (): ScrollBehavior => matchMedia('(pointer: coarse), (prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
 
@@ -150,15 +152,19 @@
     dragging = false; drag = undefined;
   }
   $effect(() => {
-    if (!active || !initialized || initialToday || !(mobile ? rows.some(row => row.marker?.type === 'today') : showToday)) return;
+    if (!active || !initialized) return;
+    if (initialToday || !(mobile ? rows.some(row => row.marker?.type === 'today') : showToday)) { imagesReady = true; return; }
     initialToday = true;
     let correction = 0;
     const currentOffset = () => mobile ? window.scrollY : view === 'horizontal' ? board?.scrollLeft : board?.scrollTop;
     const id = requestAnimationFrame(() => { void scrollToToday(false).then(() => {
       const offset = currentOffset();
-      correction = requestAnimationFrame(() => {
+      correction = requestAnimationFrame(async () => {
         // Measuring virtual rows may require a second alignment, but never undo a user's intervening scroll.
-        if (currentOffset() === offset) void scrollToToday(false);
+        if (currentOffset() === offset) await scrollToToday(false);
+        await tick();
+        // Native lazy loading would otherwise fetch the launch cards before we jump to Today.
+        imagesReady = true;
       });
     }); });
     return () => { cancelAnimationFrame(id); cancelAnimationFrame(correction); };
@@ -189,7 +195,7 @@
 <svelte:window onscroll={scheduleViewport} onresize={measureViewport} onmousemove={moveDrag} onmouseup={endDrag}/>
 {#snippet markerView(marker: TimelineMarker)}
   <div class="lane-marker" class:is-anniversary={marker.type === 'anniversary'} data-marker-type={marker.type}>
-    {#if marker.image}<img class="marker-banner" src={marker.image} alt={marker.label} width="512" height="125" loading="lazy" decoding="async"/>{/if}
+    {#if marker.image}<img class="marker-banner" src={imagesReady ? marker.image : undefined} alt={marker.label} width="512" height="125" loading="lazy" decoding="async"/>{/if}
     <div class="marker-label"><Icon name={marker.type === 'anniversary' ? 'gift' : marker.type === 'launch' ? 'diamond' : 'calendar'} size={mobile ? 18 : 13}/><span>{marker.label}</span></div>
   </div>
 {/snippet}
@@ -202,7 +208,7 @@
         <article class="feed-item" class:timeline-today-marker={row.marker?.type === 'today'} data-event-type={row.events[0]?.eventType} data-lane-key={row.marker ? undefined : timelineDateKey(row.date)}>
           <div class="dot" aria-hidden="true"></div>
           <header class="feed-date"><time>{row.label}</time>{#if row.days !== 0}<span>{row.days > 0 ? '+' : ''}{row.days}d</span>{/if}{#if row.events.length > 1}<small>{row.events.length} events</small>{/if}</header>
-          {#if row.marker}{@render markerView(row.marker)}{:else}<div class="feed-events">{#each row.events as event (event.id)}{@render card(event)}{/each}</div>{/if}
+          {#if row.marker}{@render markerView(row.marker)}{:else}<div class="feed-events">{#each row.events as event (event.id)}{@render card(event, imagesReady)}{/each}</div>{/if}
         </article>
         {#if row.adIndex}<div class="feed-ad"><AdRegion placement={`timeline_interscroller_${row.adIndex}`} kind="inline" sizes={['320x50', '300x50']} active/></div>{/if}
       </div>
@@ -224,7 +230,7 @@
               <div class="lane-meta">{#if lane.events.length}<span>{lane.events.length} {lane.events.length === 1 ? 'event' : 'events'}</span>{/if}{#if lane.gapDays > 1}<span class="lane-gap">{lane.gapDays}d later</span>{/if}</div>
             </header>
             {#each lane.markers as marker}{@render markerView(marker)}{/each}
-            <div class="lane-events">{#each expanded.includes(lane.key) ? lane.events : lane.events.slice(0, 3) as event (event.id)}{@render card(event)}{/each}</div>
+            <div class="lane-events">{#each expanded.includes(lane.key) ? lane.events : lane.events.slice(0, 3) as event (event.id)}{@render card(event, imagesReady)}{/each}</div>
             {#if lane.events.length > 3}<div class="lane-overflow"><Button variant="secondary" size="sm" ariaExpanded={expanded.includes(lane.key)} ariaLabel={expanded.includes(lane.key) ? 'Show fewer events' : `Show ${lane.events.length - 3} more events`} onclick={() => expanded = expanded.includes(lane.key) ? expanded.filter(key => key !== lane.key) : [...expanded, lane.key]}>{expanded.includes(lane.key) ? 'Show fewer' : `+${lane.events.length - 3} events`}</Button></div>{/if}
           </section>
         {/each}
@@ -236,7 +242,7 @@
             {#each month.lanes as lane (lane.key)}
               <section class="vertical-date" class:is-today={lane.key === timelineDateKey(now)} data-lane-key={lane.key}>
                 <header><time datetime={lane.key} title={lane.label}><strong>{lane.date.getUTCDate()}</strong><span>{weekdayFormatter.format(lane.date)}</span></time>{#if lane.events.length}<span>{lane.events.length} {lane.events.length === 1 ? 'event' : 'events'}</span>{/if}</header>
-                <div class="vertical-events">{#each lane.markers as marker}{@render markerView(marker)}{/each}{#each lane.events as event (event.id)}{@render card(event)}{/each}</div>
+                <div class="vertical-events">{#each lane.markers as marker}{@render markerView(marker)}{/each}{#each lane.events as event (event.id)}{@render card(event, imagesReady)}{/each}</div>
               </section>
             {/each}
           </section>

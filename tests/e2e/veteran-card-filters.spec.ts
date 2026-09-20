@@ -162,7 +162,7 @@ test('spark browsing keeps optional settings in one menu and retains range editi
   await uniqueSearch.fill('special WEEK');
   const shooting=matcher.getByRole('button',{name:'Add Shooting Star spark',exact:true});
   await expect(shooting).toContainText('Shooting Star');
-  await expect(shooting.locator('img')).toHaveAttribute('src','/game-assets/skill_icons/utx_ico_skill_20013.webp');
+  await expect(shooting.locator('img')).toHaveAttribute('src','/assets/images/skills/utx_ico_skill_20013.webp');
   await uniqueSearch.fill('not a real unique');
   await expect(matcher.getByText('No characters or unique skills match.',{exact:true})).toBeVisible();
   await uniqueSearch.fill('shooting star');

@@ -15,16 +15,42 @@ function proofPort(overrides: Partial<BrowserProofPort> = {}): BrowserProofPort 
 }
 
 describe('typed HTTP middleware pipeline', () => {
-  it('reports genuine 429 limits without a proof provider and retries proof warmup limits with one', async () => {
+  it('reports genuine 429 limits with or without a proof provider without retrying them', async () => {
     const response = () => Response.json({ error: 'rate_limited' }, { status: 429, headers: { 'retry-after': '12' } });
     const onRateLimit = vi.fn();
     await expect(createHttpClient({ fetcher: vi.fn(async () => response()), onRateLimit }).request('/search/query')).rejects.toMatchObject({ status: 429 });
     expect(onRateLimit).toHaveBeenCalledWith({ retryAfterSeconds: 12, url: '/search/query' });
     onRateLimit.mockClear();
-    const fetcher = vi.fn().mockResolvedValueOnce(response()).mockResolvedValueOnce(Response.json({ ok: true }));
+    const fetcher = vi.fn(async () => response());
     const port = proofPort({ getCached: () => undefined });
-    expect(await createHttpClient({ fetcher, browserProof: port, onRateLimit }).request('/search/query')).toEqual({ ok: true });
-    expect(port.refresh).toHaveBeenCalledOnce(); expect(onRateLimit).not.toHaveBeenCalled();
+    await expect(createHttpClient({ fetcher, browserProof: port, onRateLimit }).request('/search/query')).rejects.toMatchObject({ status: 429 });
+    expect(port.refresh).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce();
+    expect(onRateLimit).toHaveBeenCalledWith({ retryAfterSeconds: 12, url: '/search/query' });
+  });
+
+  it('waits for verification before sending parallel protected requests, while public requests proceed', async () => {
+    let verify!: (token: string) => void;
+    const verification = new Promise<string>(resolve => verify = resolve);
+    const port = proofPort({ getCached: () => undefined, refresh: vi.fn(() => verification) });
+    const fetcher = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => Response.json({ ok: true }));
+    const client = createHttpClient({ fetcher, browserProof: port });
+    const requests = ['/api/auth/me', '/api/v4/user/profile/veterans/example', '/resources/planner/manifest.json'].map(path => client.request(path, { browserProof: true }));
+    await Promise.resolve();
+    expect(fetcher).not.toHaveBeenCalled();
+    await client.request('/resources/character.json');
+    expect(fetcher).toHaveBeenCalledOnce();
+    verify('verified-proof');
+    await Promise.all(requests);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    for (const [, init] of fetcher.mock.calls.slice(1)) expect(new Headers(init?.headers).get('x-browser-proof')).toBe('verified-proof');
+  });
+
+  it('does not send protected requests when verification fails', async () => {
+    const error = new Error('Browser verification could not load.');
+    const port = proofPort({ getCached: () => undefined, refresh: vi.fn(async () => { throw error; }) });
+    const fetcher = vi.fn();
+    await expect(createHttpClient({ fetcher, browserProof: port }).request('/api/auth/me')).rejects.toBe(error);
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it('blocks late manifest follow-ups before pagehide but allows a cancelled navigation', async () => {
     let resolve!: (response: Response) => void;

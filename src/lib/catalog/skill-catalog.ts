@@ -17,7 +17,7 @@ let catalog: Promise<Map<number, SkillCatalogEntry>> | undefined;
 resourceRepository.onUpdate(name => { if (name === 'skills') catalog = undefined; });
 
 export function skillImage(icon: string | undefined): string | undefined {
-  return icon ? `/game-assets/skill_icons/${icon.replace(/\.png$/i, '.webp')}` : undefined;
+  return icon ? `/assets/images/skills/${icon.replace(/\.png$/i, '.webp')}` : undefined;
 }
 
 export function normalizeSkill(entry: Record<string, unknown>): SkillCatalogEntry {

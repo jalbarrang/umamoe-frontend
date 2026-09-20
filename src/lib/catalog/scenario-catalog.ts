@@ -1,16 +1,16 @@
-import ura from '@/assets/images/scenario/ura_finals_logo.png';
-import unity from '@/assets/images/scenario/scenario_logo_002.png';
-import grandConcert from '@/assets/images/scenario/grand_concert_logo.png';
-import trackblazer from '@/assets/images/scenario/scenario_logo_004.png';
-import grandMasters from '@/assets/images/scenario/scenario_logo_005.png';
-import larc from '@/assets/images/scenario/scenario_logo_006.png';
-import uaf from '@/assets/images/scenario/scenario_logo_007.png';
-import food from '@/assets/images/scenario/scenario_logo_008.png';
-import mecha from '@/assets/images/scenario/scenario_logo_009.png';
-import legends from '@/assets/images/scenario/scenario_logo_010.png';
-import island from '@/assets/images/scenario/scenario_logo_011.png';
-import yukoma from '@/assets/images/scenario/scenario_logo_012.png';
-import dreams from '@/assets/images/scenario/scenario_logo_013.png';
+import ura from '@/assets/images/scenario/ura_finals_logo.webp';
+import unity from '@/assets/images/scenario/scenario_logo_002.webp';
+import grandConcert from '@/assets/images/scenario/grand_concert_logo.webp';
+import trackblazer from '@/assets/images/scenario/scenario_logo_004.webp';
+import grandMasters from '@/assets/images/scenario/scenario_logo_005.webp';
+import larc from '@/assets/images/scenario/scenario_logo_006.webp';
+import uaf from '@/assets/images/scenario/scenario_logo_007.webp';
+import food from '@/assets/images/scenario/scenario_logo_008.webp';
+import mecha from '@/assets/images/scenario/scenario_logo_009.webp';
+import legends from '@/assets/images/scenario/scenario_logo_010.webp';
+import island from '@/assets/images/scenario/scenario_logo_011.webp';
+import yukoma from '@/assets/images/scenario/scenario_logo_012.webp';
+import dreams from '@/assets/images/scenario/scenario_logo_013.webp';
 
 export const scenarios = [
     // View boxes exclude transparent asset padding so logos share a visible height.

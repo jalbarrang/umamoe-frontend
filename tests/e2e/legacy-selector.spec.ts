@@ -106,7 +106,7 @@ test('legacy selector keeps full-width results with compact chips and a two-step
     await addSpark.focus();await addSpark.press('Enter');
     await addFilter.getByRole('button',{name:'Unique',exact:true}).click();
     await addFilter.getByRole('searchbox',{name:'Search unique sparks',exact:true}).fill('Special Week');
-    await expect(addFilter.getByRole('button',{name:'Add Shooting Star spark',exact:true}).locator('img')).toHaveAttribute('src','/game-assets/skill_icons/utx_ico_skill_20013.webp');
+    await expect(addFilter.getByRole('button',{name:'Add Shooting Star spark',exact:true}).locator('img')).toHaveAttribute('src','/assets/images/skills/utx_ico_skill_20013.webp');
     const options=(await addFilter.locator('.unique-options').boundingBox())!;
     expect(options.x).toBeGreaterThanOrEqual(0);expect(options.x+options.width).toBeLessThanOrEqual(width);
     await page.keyboard.press('Escape');await expect(addFilter).not.toBeVisible();

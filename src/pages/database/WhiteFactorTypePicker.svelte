@@ -66,27 +66,27 @@
   };
 
   const categoryIcons: Partial<Record<string, string>> = {
-    'passive-speed': '/game-assets/skill_icons/utx_ico_skill_10011.webp',
-    'passive-stamina': '/game-assets/skill_icons/utx_ico_skill_10021.webp',
-    'passive-power': '/game-assets/skill_icons/utx_ico_skill_10031.webp',
-    'passive-guts': '/game-assets/skill_icons/utx_ico_skill_10041.webp',
-    'passive-wit': '/game-assets/skill_icons/utx_ico_skill_10051.webp',
-    'passive-other': '/game-assets/skill_icons/utx_ico_skill_10061.webp',
-    speed: '/game-assets/skill_icons/utx_ico_skill_20011.webp',
-    recovery: '/game-assets/skill_icons/utx_ico_skill_20021.webp',
-    acceleration: '/game-assets/skill_icons/utx_ico_skill_20041.webp',
-    position: '/game-assets/skill_icons/utx_ico_skill_20051.webp',
-    start: '/game-assets/skill_icons/utx_ico_skill_20061.webp',
-    vision: '/game-assets/skill_icons/utx_ico_skill_20091.webp',
-    special: '/game-assets/skill_icons/utx_ico_skill_20101.webp',
-    'special-upgraded': '/game-assets/skill_icons/utx_ico_skill_20201.webp',
-    'speed-debuff': '/game-assets/skill_icons/utx_ico_skill_30011.webp',
-    'acceleration-debuff': '/game-assets/skill_icons/utx_ico_skill_30021.webp',
-    'rush-debuff': '/game-assets/skill_icons/utx_ico_skill_30041.webp',
-    'stamina-debuff': '/game-assets/skill_icons/utx_ico_skill_30051.webp',
-    'vision-debuff': '/game-assets/skill_icons/utx_ico_skill_30071.webp',
-    'other-debuff': '/game-assets/skill_icons/utx_ico_skill_30061.webp',
-    penalty: '/game-assets/skill_icons/utx_ico_skill_10014.webp'
+    'passive-speed': '/assets/images/skills/utx_ico_skill_10011.webp',
+    'passive-stamina': '/assets/images/skills/utx_ico_skill_10021.webp',
+    'passive-power': '/assets/images/skills/utx_ico_skill_10031.webp',
+    'passive-guts': '/assets/images/skills/utx_ico_skill_10041.webp',
+    'passive-wit': '/assets/images/skills/utx_ico_skill_10051.webp',
+    'passive-other': '/assets/images/skills/utx_ico_skill_10061.webp',
+    speed: '/assets/images/skills/utx_ico_skill_20011.webp',
+    recovery: '/assets/images/skills/utx_ico_skill_20021.webp',
+    acceleration: '/assets/images/skills/utx_ico_skill_20041.webp',
+    position: '/assets/images/skills/utx_ico_skill_20051.webp',
+    start: '/assets/images/skills/utx_ico_skill_20061.webp',
+    vision: '/assets/images/skills/utx_ico_skill_20091.webp',
+    special: '/assets/images/skills/utx_ico_skill_20101.webp',
+    'special-upgraded': '/assets/images/skills/utx_ico_skill_20201.webp',
+    'speed-debuff': '/assets/images/skills/utx_ico_skill_30011.webp',
+    'acceleration-debuff': '/assets/images/skills/utx_ico_skill_30021.webp',
+    'rush-debuff': '/assets/images/skills/utx_ico_skill_30041.webp',
+    'stamina-debuff': '/assets/images/skills/utx_ico_skill_30051.webp',
+    'vision-debuff': '/assets/images/skills/utx_ico_skill_30071.webp',
+    'other-debuff': '/assets/images/skills/utx_ico_skill_30061.webp',
+    penalty: '/assets/images/skills/utx_ico_skill_10014.webp'
   };
 
   function normalize(value: string): string {

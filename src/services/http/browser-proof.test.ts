@@ -5,7 +5,7 @@ afterEach(() => { delete window.turnstile; document.querySelectorAll('[id^="cf-t
 it('uses configured beta verification, shares a challenge, exchanges and caches proof without cookies', async () => {
   let callback!: (token: string) => void;
   const dialog = document.createElement('dialog'); dialog.open = true; document.body.append(dialog);
-  window.turnstile = { render: vi.fn((container, options) => { expect(container.parentElement).toBe(dialog); expect(container.hidden).toBe(false); expect(options.execution).toBe('execute'); expect(options.sitekey).toBe('test-site-key'); expect(options.retry).toBe('never'); expect(options['refresh-expired']).toBe('manual'); expect(options['refresh-timeout']).toBe('manual'); callback = options.callback; return 'widget'; }), execute: vi.fn(() => queueMicrotask(() => callback('challenge'))), remove: vi.fn() };
+  window.turnstile = { render: vi.fn((container, options) => { expect(container.parentElement).toBe(dialog); expect(container.hidden).toBe(false); expect(options.execution).toBe('execute'); expect(options.sitekey).toBe('test-site-key'); expect(options.retry).toBe('never'); expect(options['refresh-expired']).toBe('never'); expect(options).not.toHaveProperty('refresh-timeout'); callback = options.callback; return 'widget'; }), execute: vi.fn(() => queueMicrotask(() => callback('challenge'))), remove: vi.fn() };
   const fetcher = vi.fn(async () => new Response(null, { headers: { 'X-Browser-Proof': 'proof', 'X-Browser-Proof-TTL': '60' } })); vi.stubGlobal('fetch', fetcher);
   const { browserProofPort: port, browserVerification } = await import('./browser-proof');
   const first = port!.refresh(); expect(port!.refresh()).toBe(first); expect(port!.refresh(true)).toBe(first);

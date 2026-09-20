@@ -656,14 +656,16 @@
     finally { uqlCatalogLoading = false; scheduleSearch(true); }
   }
 
-  async function initialize(): Promise<void> {
+  function initialize(): void {
     restore();
     void loadCharacters();
     void loadG1SaddleGroups().then((value) => raceGroups = value).catch(() => notify('Race affinity details could not be loaded.', 'warning'));
     void loadFactorArtwork().catch(() => notify('Factor artwork could not be loaded.', 'warning'));
     void loadAffinity();
-    try { [characters, supports] = await Promise.all([loadCatalog('characters'), loadCatalog('supports')]); }
-    catch { /* Search still works with numeric character fallbacks. */ }
+    // Display catalogs must not hold up the first search and browser verification.
+    void Promise.all([loadCatalog('characters'), loadCatalog('supports')]).then(([nextCharacters, nextSupports]) => {
+      if (!disposed) { characters = nextCharacters; supports = nextSupports; }
+    }).catch(() => { /* Search still works with numeric character fallbacks. */ });
     initialized = true;
     infiniteObserver = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting) && listMode === 'infinite' && !inheritanceLoading && !inheritanceError && page < inheritance.totalPages) page += 1;

@@ -255,7 +255,14 @@
     loading = true;
     error = '';
     try {
-      const [nextDatasets, catalog] = await Promise.all([statisticsRepository.datasets(), statisticsRepository.catalog()]);
+      const [nextDatasets, catalog] = await Promise.all([
+        statisticsRepository.datasets().then(async entries => {
+          // Fill the existing cache while independent label catalogs are loading.
+          if (entries[0]) await statisticsRepository.global(entries[0]);
+          return entries;
+        }),
+        statisticsRepository.catalog()
+      ]);
       datasets = nextDatasets;
       characters = catalog.characters;
       supportCatalog = new Map(catalog.supports.map((item) => [item.id, item]));

@@ -91,7 +91,7 @@ test('statistics resolves character names, outfits, cards and skills from the re
   await expect(page.getByRole('button', { name: 'Analyze Resource Week', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Popular support cards', exact: true })).toContainText('Resource support');
   await expect(page.getByRole('list', { name: 'Popular support cards', exact: true })).toContainText('Stamina · SSR');
-  await expect(page.getByRole('list', { name: 'Common skills', exact: true }).locator('img')).toHaveAttribute('src', '/game-assets/skill_icons/utx_ico_skill_20013.webp');
+  await expect(page.getByRole('list', { name: 'Common skills', exact: true }).locator('img')).toHaveAttribute('src', '/assets/images/skills/utx_ico_skill_20013.webp');
   await page.getByRole('tab', { name: 'Characters', exact: true }).click();
   await expect(page.getByRole('list', { name: 'Character Analysis', exact: true })).toContainText('Resource outfit');
   for (const name of ['character', 'character_names', 'support-cards-db', 'skills']) expect(resources).toContain('/resources/catalog-check/' + name + '.json');

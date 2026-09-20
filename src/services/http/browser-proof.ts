@@ -10,8 +10,7 @@ interface TurnstileApi {
     appearance: 'interaction-only';
     execution: 'execute';
     retry: 'never';
-    'refresh-expired': 'manual';
-    'refresh-timeout': 'manual';
+    'refresh-expired': 'never';
     callback: (token: string) => void;
     'error-callback': () => void;
     'expired-callback': () => void;
@@ -93,8 +92,7 @@ async function challengeToken(): Promise<string> {
         appearance: 'interaction-only',
         execution: 'execute',
         retry: 'never',
-        'refresh-expired': 'manual',
-        'refresh-timeout': 'manual',
+        'refresh-expired': 'never',
         callback: (token) => finish(token),
         'error-callback': () => finish(undefined, new Error('Turnstile challenge failed.')),
         'expired-callback': () => finish(undefined, new Error('Turnstile challenge expired.')),

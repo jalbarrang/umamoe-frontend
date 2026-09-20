@@ -80,7 +80,7 @@ test('Lineage odds retain Angular source ordering, combined rolls and separate s
   await expect(skillRow).toHaveCount(1);
   await expect(skillRow.locator('img')).toHaveCount(1);
   await skillRow.scrollIntoViewIfNeeded();
-  await expect(skillRow.locator('img')).toHaveAttribute('src', /\/game-assets\/skill_icons\/.*\.webp$/);
+  await expect(skillRow.locator('img')).toHaveAttribute('src', /\/assets\/images\/skills\/.*\.webp$/);
   await expect.poll(() => skillRow.locator('img').evaluate(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0)).toBe(true);
   await expect(skillRow).toHaveText('Corner Recovery ○224.2%30.25%48.4%');
   await panel.getByRole('button',{name:'Per Run',exact:true}).click();
