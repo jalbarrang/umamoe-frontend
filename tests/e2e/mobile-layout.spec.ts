@@ -173,7 +173,9 @@ test('mobile layout: parent pairs and database headers stay ordered at narrow wi
     const actions = (await card.locator('.record-actions').boundingBox())!;
     const metrics = (await card.locator('.summary-metrics').boundingBox())!;
     const meta = (await card.locator('.summary-meta').boundingBox())!;
-    expect(actions.y).toBeGreaterThanOrEqual(trainer.y + trainer.height);
+    expect(Math.abs(actions.y - trainer.y)).toBeLessThan(1);
+    expect(actions.x).toBeGreaterThanOrEqual(trainer.x + trainer.width);
+    expect(await card.locator('.record-actions button span').evaluateAll(spans => spans.every(span => getComputedStyle(span).display === 'none'))).toBe(true);
     expect(metrics.y).toBeGreaterThanOrEqual(actions.y + actions.height);
     expect(meta.y).toBeGreaterThanOrEqual(metrics.y + metrics.height);
     expect(await card.locator('.record-header').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
