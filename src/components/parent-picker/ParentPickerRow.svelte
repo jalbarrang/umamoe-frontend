@@ -4,25 +4,27 @@
   import type { VeteranUiRecord } from '@/components/veteran-ui-types';
   import { characterImagePath, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
   import { factorCatalogState } from '@/lib/catalog/factor-catalog';
-  import { getRankInfoFromScore } from '@/lib/rank';
-  import { parentCharacter, parentFactors, type parentAffinityDetails, type SelectableParent } from '@/lib/veterans/parent-picker';
+  import { parentCharacter, parentFactors, parentSparkMatched, type ParentFactorFilter, type parentAffinityDetails, type SelectableParent } from '@/lib/veterans/parent-picker';
   import { combineVeteranFactors, sparkGroups, scenarios } from '@/pages/veterans/veteran-adapter';
 
-  interface Props { parent: SelectableParent; characters: Map<number, CharacterCatalogEntry>; affinity?: ReturnType<typeof parentAffinityDetails>; combined?: boolean; onselect: () => void; onedit?: () => void; ondelete?: () => void; }
-  let { parent, characters, affinity = null, combined = true, onselect, onedit, ondelete }: Props = $props();
+  interface Props { parent: SelectableParent; characters: Map<number, CharacterCatalogEntry>; affinity?: ReturnType<typeof parentAffinityDetails>; combined?: boolean; filters?: ParentFactorFilter[]; onselect: () => void; onedit?: () => void; ondelete?: () => void; }
+  let { parent, characters, affinity = null, combined = true, filters = [], onselect, onedit, ondelete }: Props = $props();
   const character = $derived(parentCharacter(parent, characters));
   const name = $derived(parent.name || character.name);
   const summary = $derived.by<VeteranUiRecord>(() => {
     $factorCatalogState;
-    const factors = parentFactors(parent);
-    const ancestors = (parent.succession_chara_array ?? []).filter(node => [10,20].includes(node.position_id)).sort((a,b) => a.position_id-b.position_id).map(node => ({ ...node, sparks:parentFactors(node) })).filter(node => node.sparks.length);
+    const highlight = (factors: ReturnType<typeof parentFactors>, source: 'own'|'p1'|'p2') => factors.map(factor => ({...factor, matched:parentSparkMatched(parent,factor,source,filters)}));
+    const factors = highlight(parentFactors(parent),'own');
+    const ancestors = (parent.succession_chara_array ?? []).filter(node => [10,20].includes(node.position_id)).sort((a,b) => a.position_id-b.position_id).map(node => ({ ...node, sparks:highlight(parentFactors(node),node.position_id === 10 ? 'p1' : 'p2') })).filter(node => node.sparks.length);
+    const allFactors = [...factors,...ancestors.flatMap(node=>node.sparks)];
+    const matchedIds = new Set(allFactors.filter(factor=>factor.matched).map(factor=>factor.id));
     return {
       id:parent.pickerId, name:character.name, image:character.cardId ? characterImagePath(character.cardId) : undefined,
-      rank:parent.rank_score == null ? '' : getRankInfoFromScore(parent.rank_score).label, score:parent.rank_score ?? undefined,
+      rank:'',
       scenario:parent.scenario_id ? scenarios[parent.scenario_id] ?? `Scenario ${parent.scenario_id}` : undefined, detail:parent.name || parent.trainerName,
       affinity:affinity ? affinity.parentOne.total + affinity.race.p1Left + affinity.race.p1Right : NaN,
       sparks:sparkGroups(parent.pickerId,factors,'main'),
-      combinedSparks:sparkGroups(parent.pickerId,combineVeteranFactors([...factors,...ancestors.flatMap(node=>node.sparks)])),
+      combinedSparks:sparkGroups(parent.pickerId,combineVeteranFactors(allFactors).map(factor=>({...factor,matched:matchedIds.has(factor.id)}))),
       parents:ancestors.map(node=>({
         id:String(node.position_id), position:node.position_id===10 ? 'P1' : 'P2',
         name:characters.get(node.card_id)?.name ?? `Character ${node.card_id}`, image:characterImagePath(node.card_id),

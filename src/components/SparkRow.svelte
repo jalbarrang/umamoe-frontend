@@ -1,6 +1,6 @@
 <script lang="ts">
   import SparkItem, { type SparkSource, type SparkTone } from './SparkItem.svelte';
-  export interface SparkRecord { id: string; name: string; level: number; chance?: string; source?: SparkSource; }
+  export interface SparkRecord { id: string; name: string; level: number; chance?: string; source?: SparkSource; matched?: boolean; }
   interface Props { tone: SparkTone; items: SparkRecord[]; label?: string; typeLabel?: string; showType?: boolean; compact?: boolean; }
   let { tone, items, label, typeLabel, showType = true, compact = false }: Props = $props();
   const defaultTypeLabel = $derived(tone === 'blue' ? 'Stats' : tone === 'pink' ? 'Aptitude' : tone === 'green' ? 'Unique' : 'Skills / races');

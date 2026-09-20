@@ -7,13 +7,13 @@ import type { SparkTone, SparkSource } from '@/components/SparkItem.svelte';
 
 export const scenarios: Record<number, string> = { 1: 'URA Finals', 2: 'Unity Cup', 3: 'Grand Concert', 4: 'Trackblazer', 5: 'Grand Masters', 6: 'Project L’Arc', 7: 'U.A.F.', 8: 'Great Food Festival', 9: 'Run! Mecha', 10: 'Twinkle Legends', 11: 'Design Your Island', 12: 'Yukoma Hot Springs', 13: 'Beyond Dreams' };
 function tone(type: number | undefined): SparkTone { return type === 0 ? 'blue' : type === 1 ? 'pink' : type === 5 ? 'green' : 'white'; }
-export function sparkGroups(recordId: string, factors: { id:number; level:number }[], source?: SparkSource): VeteranSparkGroup[] {
+export function sparkGroups(recordId: string, factors: { id:number; level:number; matched?:boolean }[], source?: SparkSource): VeteranSparkGroup[] {
   const groups = new Map<SparkTone, VeteranSparkGroup>();
   for (const [index, item] of factors.entries()) {
     const metadata = factorMetadata(item.id);
     const groupTone = tone(metadata?.type);
     const group = groups.get(groupTone) ?? { tone: groupTone, items: [] };
-    group.items.push({ id: `${recordId}:${item.id}:${item.level}:${index}`, name: metadata?.text ?? `Factor ${item.id}`, level: item.level, source });
+    group.items.push({ id: `${recordId}:${item.id}:${item.level}:${index}`, name: metadata?.text ?? `Factor ${item.id}`, level: item.level, source, matched:item.matched });
     groups.set(groupTone, group);
   }
   return (['blue', 'pink', 'green', 'white'] as const).flatMap(tone => groups.has(tone) ? [groups.get(tone)!] : []);

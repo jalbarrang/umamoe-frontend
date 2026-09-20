@@ -1,7 +1,7 @@
 import { setupCatalogFixtures } from '../../../tests/fixtures/catalog-setup';
 setupCatalogFixtures();
 import { expect, it } from 'vitest';
-import { filterParents, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, type ManualParent, type ParentFactorFilter } from './parent-picker';
+import { filterParents, manualBestFits, manualParent, parseManualParents, parentAffinity, parentCharacter, parentFactors, parentSparkMatched, type ManualParent, type ParentFactorFilter } from './parent-picker';
 import { VeteranAffinityEngine } from './affinity-engine';
 import { normalizeVeteranRecord } from './veteran-normalizer';
 import { parsePlannerTransfer } from '@/lib/lineage/planner';
@@ -65,6 +65,25 @@ it('uses the planner calculation including grouped G1 race bonuses',()=>{
   const engine=new VeteranAffinityEngine({chars:[1001,1002,1003,1004],aff2:Array(16).fill(2),aff3:Array(64).fill(3)});
   expect(parentAffinity(manualParent(entry),1004,engine,new Map([[16,1],[15,1]]))).toBe(11);
   expect(parentAffinity(manualParent(entry),undefined,engine,new Map())).toBe(0);
+});
+it('highlights only contributing slots and levels, including combined star ranges',()=>{
+  const parent=manualParent({...entry,ownSparkIds:[101,202],p1SparkIds:[103],p2SparkIds:[102]});
+  parent.succession_chara_array!.push({position_id:11,card_id:100401,rank:0,rarity:null,talent_level:null,factor_id_array:[103]});
+  const matches=(scope:ParentFactorFilter['scope'],minLevel:number,maxLevel:number)=>[
+    parentSparkMatched(parent,{id:10,level:1},'own',[{factorId:10,scope,minLevel,maxLevel}]),
+    parentSparkMatched(parent,{id:10,level:3},'p1',[{factorId:10,scope,minLevel,maxLevel}]),
+    parentSparkMatched(parent,{id:10,level:2},'p2',[{factorId:10,scope,minLevel,maxLevel}])
+  ];
+  expect(matches('combined',6,6)).toEqual([true,true,true]);
+  expect(matches('combined',7,9)).toEqual([false,false,false]);
+  expect(matches('combined',1,5)).toEqual([false,false,false]);
+  expect(matches('any',2,3)).toEqual([false,true,true]);
+  expect(matches('own',1,3)).toEqual([true,false,false]);
+  expect(matches('p1',1,3)).toEqual([false,true,false]);
+  expect(matches('p2',1,3)).toEqual([false,false,true]);
+  expect(matches('p1',1,2)).toEqual([false,false,false]);
+  expect(parentSparkMatched(parent,{id:20,level:2},'own',[{factorId:10,scope:'combined',minLevel:6}])).toBe(false);
+  expect(parentSparkMatched(parent,{id:10,level:1},'own',[])).toBe(false);
 });
 it('ranks manual fits like Angular: affinity IDs first, stable ties, twenty before outfit resolution, no occupied or release filtering',()=>{
   const chars=Array.from({length:22},(_,index)=>1001+index);

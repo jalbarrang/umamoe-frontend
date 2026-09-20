@@ -86,6 +86,21 @@ export function scopedParentFactors(parent: ProfileVeteran, scope: ParentFactorF
   if (scope === 'any' || scope === 'combined') return [parent, ...ancestors].flatMap(parentFactors);
   return ancestors.filter((node) => node.position_id === (scope === 'p1' ? 10 : 20)).flatMap(parentFactors);
 }
+function factorLevelMatches(level: number, filter: ParentFactorFilter): boolean {
+  return level >= filter.minLevel && level <= (filter.maxLevel ?? Infinity);
+}
+function parentFactorMatches(parent: ProfileVeteran, filter: ParentFactorFilter): boolean {
+  if (!filter.factorId) return true;
+  const factors = scopedParentFactors(parent, filter.scope).filter(factor => factor.id === filter.factorId);
+  return filter.scope === 'combined'
+    ? factorLevelMatches(factors.reduce((sum, factor) => sum + factor.level, 0), filter)
+    : factors.some(factor => factorLevelMatches(factor.level, filter));
+}
+export function parentSparkMatched(parent: ProfileVeteran, spark: { id:number; level:number }, source: 'own'|'p1'|'p2', filters: ParentFactorFilter[]): boolean {
+  return filters.some(filter => filter.factorId === spark.id && (filter.scope === 'combined'
+    ? parentFactorMatches(parent, filter)
+    : (filter.scope === 'any' || filter.scope === source) && factorLevelMatches(spark.level, filter)));
+}
 export function parentAffinity(parent: ProfileVeteran, targetId: number | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>): number {
   const score = parentAffinityDetails(parent, targetId, engine, groups);
   return score ? score.parentOne.total + score.race.p1Left + score.race.p1Right : 0;
@@ -131,14 +146,7 @@ export function filterParents(parents: SelectableParent[], state: Pick<ParentPic
     return scopedParentFactors(parent, parent.share_source === 'manual' ? 'own' : 'any')
       .filter((factor) => state.sort === 'total' ? factor.tone !== 'white' : factor.tone === state.sort).reduce((sum, factor) => sum + factor.level, 0);
   };
-  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && state.factors.every((filter) => {
-    if (!filter.factorId) return true;
-    const factors = scopedParentFactors(parent, filter.scope).filter(factor => factor.id === filter.factorId);
-    const inRange = (level: number) => level >= filter.minLevel && level <= (filter.maxLevel ?? Infinity);
-    return filter.scope === 'combined'
-      ? inRange(factors.reduce((sum, factor) => sum + factor.level, 0))
-      : factors.some(factor => inRange(factor.level));
-  }))
+  return parents.filter((parent) => (!query || name(parent).toLocaleLowerCase().includes(query)) && state.factors.every(filter => parentFactorMatches(parent, filter)))
     .map((parent) => ({ parent, score: state.sort === 'name' ? 0 : score(parent) }))
     .sort((left, right) => state.sort === 'name' ? name(left.parent).localeCompare(name(right.parent)) : right.score - left.score).map(({ parent }) => parent);
 }

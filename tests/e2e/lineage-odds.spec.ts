@@ -31,7 +31,7 @@ test('Lineage odds retain Angular source ordering, combined rolls and separate s
   await expect(page.getByLabel('Shared contribution to target').locator('b')).toHaveText('2');
   await page.screenshot({path:test.info().outputPath('affinity-flow.png'),fullPage:true});
   const parent = page.locator('.node').filter({has:page.getByRole('button',{name:'Clear Parent 1',exact:true})});
-  await expect(parent.getByLabel('Spark affinity breakdown')).toContainText('4 base+0 race');
+  await expect(parent.getByLabel('Spark affinity breakdown')).toHaveText('4=4 Base+0 Race');
   const inheritance = page.getByRole('button',{name:'Potential Inheritance',exact:true});
   await inheritance.click();
   const popup = page.getByRole('dialog',{name:'Potential Inheritance',exact:true});
@@ -40,9 +40,10 @@ test('Lineage odds retain Angular source ordering, combined rolls and separate s
   expect(popupBox.x).toBeGreaterThanOrEqual(0);
   expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   if(isMobile) {
-    for(const button of [inheritance,parent.getByRole('button',{name:/^Change Parent 1:/}),parent.getByRole('button',{name:'Clear Parent 1',exact:true})]) {
+    expect((await inheritance.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    for(const button of [parent.getByRole('button',{name:/^Change Parent 1:/}),parent.getByRole('button',{name:'Clear Parent 1',exact:true})]) {
       const box = (await button.boundingBox())!;
-      expect(box.height).toBeGreaterThanOrEqual(44);expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBe(32);expect(box.width).toBe(32);
     }
   } else {
     const shell = (await page.locator('.planner-scroll').boundingBox())!;

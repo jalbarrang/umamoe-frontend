@@ -23,7 +23,7 @@
         <div class="name-row"><h3>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
         {#if veteran.detail}<span class="detail">{veteran.detail}</span>{/if}
       </div>
-      <div class="rank-score">{#if veteran.rank}<RankBadge label={veteran.rank} size="sm"/>{/if}{#if veteran.score !== undefined}<span>{veteran.score.toLocaleString()}</span>{/if}</div>
+      {#if veteran.rank || veteran.score !== undefined}<div class="rank-score">{#if veteran.rank}<RankBadge label={veteran.rank} size="sm"/>{/if}{#if veteran.score !== undefined}<span>{veteran.score.toLocaleString()}</span>{/if}</div>{/if}
     </header>
 
     {#if showStats && veteran.stats?.length}<StatStrip items={veteran.stats} compact={compact} presentation="icons"/>{/if}
@@ -119,11 +119,11 @@
   .combined-layout .summary-parent{flex:0 1 auto;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
   .combined-layout .factor-section{order:1;flex:1 0 100%;align-items:flex-start;padding:5px 0 0;border-left:0;border-top:1px solid var(--border-subtle)}
   @container (min-width: 600px) {
-    .split-layout{display:grid;grid-template-columns:220px minmax(0,1fr);align-items:center;gap:4px 8px}
+    .split-layout{display:grid;grid-template-columns:fit-content(220px) minmax(0,1fr);align-items:center;gap:4px 8px}
     .split-layout .summary-head{gap:5px}
     .split-layout .factor-section{padding:0;border:0}
     .split-layout .parent-rows{display:contents}
-    .split-layout .summary-parent{grid-column:1/-1;grid-template-columns:220px minmax(0,1fr);gap:8px;padding:4px 0 0;border-top:1px solid var(--border-subtle)}
+    .split-layout .summary-parent{grid-column:1/-1;grid-template-columns:subgrid;gap:8px;padding:4px 0 0;border-top:1px solid var(--border-subtle)}
     .split-layout .summary-extra{grid-column:1/-1}
   }
 </style>

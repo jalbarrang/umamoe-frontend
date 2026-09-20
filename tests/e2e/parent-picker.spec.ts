@@ -72,6 +72,7 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
     expect(sparks.x).toBeGreaterThan(header.x+header.width);
     expect(sparks.y).toBeLessThan(header.y+header.height);
     expect(sparks.x).toBe(parentSparks.x);
+    expect(parentSparks.x-(await rows.first().boundingBox())!.x).toBeLessThan(190);
     expect((await rows.first().boundingBox())!.height).toBeLessThan(110);
   }
   for(const [index,expected] of [[0,['3 Speed','3 Stamina','1 Speed']],[1,['3 Speed','3 Stamina','1 Speed']],[2,['3 Speed','3 Stamina','1 Speed','1 Stamina']]] as const){
@@ -84,7 +85,7 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
   await expect(rows.first().locator('.summary-parent')).toHaveCount(1);
   await expect(rows.first().locator('.summary-parent .spark')).toHaveText(['3★Speed','2★Speed']);
   await expect(rows.first().locator('.factor-list .spark').first()).toHaveAttribute('aria-label',/3 star Speed/);
-  await expect(rows.first().locator('.rank')).toBeVisible();
+  await expect(rows.locator('.rank-score')).toHaveCount(0);
   await display.getByRole('radio',{name:'Combined',exact:true}).click();
   await expect(rows.first().locator('.parent-factors')).toHaveCount(0);
   await dialog.getByRole('button',{name:'Add Spark',exact:true}).click();
@@ -94,6 +95,27 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
   await editor.getByRole('radio',{name:'Own',exact:true}).click();
   await editor.getByRole('button',{name:'Add filter',exact:true}).click();
   await expect(rows).toHaveCount(3);
+  await expect(rows.first().locator('.factor-list .spark.matched')).toHaveText(['9★Speed']);
+  await display.getByRole('radio',{name:'Split',exact:true}).click();
+  await expect(rows.first().locator('.factor-list .spark.matched')).toHaveText(['3★Speed','1★Speed']);
+  await expect(rows.first().locator('.parent-factors .spark.matched')).toHaveCount(0);
+  await dialog.getByRole('button',{name:'Speed · Own 1–3★',exact:true}).click();
+  const edit=page.getByRole('dialog',{name:'Edit spark filter',exact:true});
+  await edit.getByRole('radio',{name:'Combined',exact:true}).click();
+  await edit.getByRole('slider',{name:'Stars minimum'}).fill('6');
+  await edit.getByRole('button',{name:'Save filter',exact:true}).click();
+  await expect(rows.first().locator('.parent-factors .spark.matched')).toHaveText(['3★Speed','2★Speed']);
+  await expect(rows.first().locator('.factor-list .spark.matched')).toHaveText(['3★Speed','1★Speed']);
+  await dialog.screenshot({path:test.info().outputPath('split-matched-parents.png'),scale:'css'});
+  await dialog.getByRole('button',{name:'Speed · Combined 6–9★',exact:true}).click();
+  await edit.getByRole('radio',{name:'P1',exact:true}).click();
+  await edit.getByRole('button',{name:'Save filter',exact:true}).click();
+  await expect(rows.first().locator('.factor-list .spark.matched')).toHaveCount(0);
+  await expect(rows.first().locator('.parent-factors .spark.matched')).toHaveText(['3★Speed']);
+  await display.getByRole('radio',{name:'Combined',exact:true}).click();
+  await expect(rows.first().locator('.factor-list .spark.matched')).toHaveText(['9★Speed']);
+  await dialog.getByRole('button',{name:'Clear all',exact:true}).click();
+  await expect(rows.locator('.spark.matched')).toHaveCount(0);
   await dialog.screenshot({path:test.info().outputPath('parent-rows.png')});
   await rows.nth(1).locator('.select-parent').focus();await page.keyboard.press('Enter');
   await expect(dialog).not.toBeVisible();await expect(page.getByRole('button',{name:'Clear selected legacy'})).toBeVisible();
@@ -389,7 +411,15 @@ test('Partner lookup follows backend persistence, separates direct results from 
   await expect(dialog.getByRole('heading',{name:'Lookup result',exact:true})).toHaveCount(0);expect(savedReads).toBe(1);
   await expect(dialog.getByRole('tab',{name:/Partner/}).locator('small')).toHaveText('1');
   await expect(dialog.locator('.parent-row')).toHaveCount(0);await dialog.getByRole('button',{name:'Clear filters',exact:true}).first().click();
-  await expect(dialog.locator('.parent-row')).toHaveCount(1);await page.screenshot({path:test.info().outputPath('partner-saved-history.png')});
+  await expect(dialog.locator('.parent-row')).toHaveCount(1);
+  await dialog.getByRole('radiogroup',{name:'Parent spark display'}).getByRole('radio',{name:'Split',exact:true}).click();
+  await expect(dialog.locator('.parent-row .rank-score')).toHaveCount(0);
+  if(!isMobile) {
+    const row=(await dialog.locator('.parent-row').boundingBox())!;
+    const sparks=(await dialog.locator('.parent-factors').first().boundingBox())!;
+    expect(sparks.x-row.x).toBeLessThan(190);
+  }
+  await page.screenshot({path:test.info().outputPath('partner-saved-history.png')});
   await fetch.click();await expect(dialog.getByRole('heading',{name:'No response - timed out'})).toBeVisible();await expect(dialog.locator('.parent-row')).toHaveCount(0);
   await dialog.getByRole('button',{name:'Clear partner ID'}).click();await expect(input).toHaveValue('');await expect(fetch).toBeDisabled();await expect(dialog.locator('.parent-row')).toHaveCount(1);
   await input.fill('123456789012');await fetch.click();await expect(dialog.getByText('Lookup completed without inheritance data. Please try again.')).toBeVisible();await expect(dialog.locator('.parent-row')).toHaveCount(0);
