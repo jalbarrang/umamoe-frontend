@@ -136,6 +136,24 @@ export async function loadRaceSaddleIndex(): Promise<Map<number, number[]>> {
     .map((saddle) => saddle.saddle_id)]));
 }
 
+/** Saved wins claim their first free calendar slot in array order. */
+export function assignRaceWinSlots(schedule: readonly RaceScheduleYear[], saddleIndex: ReadonlyMap<number, number[]>, wins: readonly number[]): Array<{ key: string; winIndex: number }> {
+  const slots = schedule.flatMap(year => year.slots);
+  const usedSlots = new Set<string>();
+  const selected: Array<{ key: string; winIndex: number }> = [];
+  for (const [winIndex, saddleId] of wins.entries()) {
+    for (const slot of slots) {
+      if (usedSlots.has(slot.id)) continue;
+      const race = slot.races.find(race => saddleIndex.get(Number(race.id))?.includes(saddleId));
+      if (!race) continue;
+      usedSlots.add(slot.id);
+      selected.push({ key: `${slot.id}:${race.id}`, winIndex });
+      break;
+    }
+  }
+  return selected;
+}
+
 /** One bonus per G1 group, even when its year-specific saddle IDs differ. */
 export async function loadG1SaddleGroups(): Promise<Map<number, number>> {
   const groups = new Map<number, number>();

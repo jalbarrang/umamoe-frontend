@@ -268,6 +268,41 @@ test('Lineage Planner keeps readable parent branches and expandable ancestors in
   }
 });
 
+test('Lineage race wins occupy one slot each in saved order and retain individual repeated wins', async ({ page }) => {
+  await mockAffinity(page);
+  await page.addInitScript(() => {
+    if (localStorage.getItem('lineage-planner-state-v1')) return;
+    localStorage.setItem('lineage-planner-state-v1', JSON.stringify([
+      { position: 'p1', characterId: 101301, sparks: [], manualWinSaddleIds: [999999, 23, 11, 16, 15, 62, 64] }
+    ]));
+  });
+  await page.goto('/tools/lineage-planner');
+  const open = page.getByRole('button', { name: 'Edit race wins for Parent 1', exact: true });
+  await open.click();
+  const dialog = page.getByRole('dialog', { name: 'Select Race Wins', exact: true });
+  const classic = dialog.locator('.year--classic'), senior = dialog.locator('.year--senior');
+  for (const name of ['Mile Championship', 'Kikuka Sho', 'St. Lite Kinen']) await expect(classic.getByRole('button', { name: `Remove ${name}`, exact: true })).toHaveCount(1);
+  for (const name of ['Japan Cup', 'Tenno Sho (Autumn)', 'All Comers']) await expect(senior.getByRole('button', { name: `Remove ${name}`, exact: true })).toHaveCount(1);
+  expect(await dialog.locator('.cell-races').evaluateAll(cells => cells.every(cell => cell.querySelectorAll('.race').length <= 1))).toBe(true);
+  await expect(dialog.getByText('6 races selected', { exact: true })).toBeVisible();
+  await dialog.getByRole('searchbox', { name: 'Search races' }).fill('Japan');
+  await expect(senior.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(1);
+  await dialog.getByRole('searchbox', { name: 'Search races' }).fill('');
+  await classic.getByRole('button', { name: 'Remove Mile Championship', exact: true }).click();
+  await expect(classic.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(1);
+  await dialog.getByRole('button', { name: 'Add race: Senior Year, Nov Late', exact: true }).click();
+  await page.getByRole('button', { name: 'Select Japan Cup', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(2);
+  await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('lineage-planner-state-v1')!).find((node: { position: string }) => node.position === 'p1').manualWinSaddleIds)).toEqual([999999, 11, 16, 15, 62, 64, 11]);
+  await page.reload(); await open.click();
+  await expect(dialog.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(2);
+  await senior.getByRole('button', { name: 'Remove Japan Cup', exact: true }).click();
+  await expect(classic.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(1);
+  await expect(senior.getByRole('button', { name: 'Remove Japan Cup', exact: true })).toHaveCount(0);
+  await dialog.screenshot({ path: test.info().outputPath('ordered-race-wins.png') });
+});
+
 test('Lineage race wins require confirmation and cancellation keeps the prior saved wins', async ({ page }) => {
   await page.goto(populatedTree);
   await page.getByRole('button', { name: 'Edit race wins for Parent 1', exact: true }).click();

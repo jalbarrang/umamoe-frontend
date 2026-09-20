@@ -1,9 +1,26 @@
 import { setupCatalogFixtures } from '../../../tests/fixtures/catalog-setup';
 setupCatalogFixtures();
 import { describe, expect, it } from 'vitest';
-import { loadOptimalRaceRecommendations, loadRaceHistory, optimalRaceSchedule, raceHistorySchedule } from './race-catalog';
+import { assignRaceWinSlots, loadOptimalRaceRecommendations, loadRaceHistory, loadRaceSaddleIndex, loadRaceSchedule, optimalRaceSchedule, raceHistorySchedule } from './race-catalog';
 
 describe('shared Angular race catalog', () => {
+  it('assigns wins in array order to distinct slots, matching race history', async () => {
+    const schedule = await loadRaceSchedule(), saddles = await loadRaceSaddleIndex();
+    for (const [wins, expected] of [
+      [[11, 23], ['classic-11-2:101901', 'senior-11-2:101801']],
+      [[23, 11], ['classic-11-2:101801', 'senior-11-2:101901']],
+      [[11, 11], ['classic-11-2:101901', 'senior-11-2:101901']],
+      [[11, 23, 11], ['classic-11-2:101901', 'senior-11-2:101801']]
+    ] as const) {
+      const selected = assignRaceWinSlots(schedule, saddles, wins);
+      expect(selected.map(entry => entry.key)).toEqual(expected);
+      expect(selected.map(entry => entry.winIndex)).toEqual([0, 1]);
+      const history = await loadRaceHistory(wins, []);
+      expect(history.map(entry => `${entry.year}-${entry.month}-${entry.half}:${entry.id}`)).toEqual(expected);
+    }
+    expect(assignRaceWinSlots(schedule, saddles, [999999, 11])).toEqual([{ key: 'classic-11-2:101901', winIndex: 1 }]);
+  });
+
   it('decodes program * 100 + placement and does not duplicate its win saddle', async () => {
     const history = await loadRaceHistory([30], [102]);
     expect(history).toHaveLength(1);
