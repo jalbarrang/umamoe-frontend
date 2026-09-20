@@ -124,7 +124,9 @@
   /* The larger 2560-class scale has room for a balanced pair of Publift rails. */
   @container app-viewport (min-width: 2200px) {
     .page-grid.has-ad-rails { grid-template-columns: var(--ad-rail-width) minmax(960px, 1fr) var(--ad-rail-width); grid-template-areas: 'left-ad content right-ad'; }
-    .page-grid.has-ad-rails .ad-rail--left,
+    /* A publisher without a left slot must not reserve an empty rail column. */
+    .page-grid.has-ad-rails:not(:has(.ad-rail--left > :global(.ad-region))) { grid-template-columns: minmax(0, 1fr) var(--ad-rail-width); grid-template-areas: 'content right-ad'; }
+    .page-grid.has-ad-rails .ad-rail--left:has(> :global(.ad-region)),
     .page-grid.has-ad-rails .ad-rail--right { display: block; }
   }
 </style>

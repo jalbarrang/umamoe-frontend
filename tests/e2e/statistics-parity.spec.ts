@@ -325,7 +325,9 @@ test('Statistics uses the standard frame, grouped tabs and a centered right rail
   await page.setViewportSize({width:1920,height:1080});
   await mockStatistics(page);
   await page.goto('/tools/statistics');
-  await expect(page.getByRole('tablist',{name:'Statistics sections'})).not.toHaveClass(/underline|pills/);
+  await expect(page.getByRole('tablist',{name:'Statistics sections'})).toHaveClass(/navigation/);
+  await expect(page.locator('.workspace-navigation')).toHaveCSS('border-bottom-width','0px');
+  await expect(page.locator('.content-area')).toHaveCSS('padding-top','6px');
   const rail=page.locator('[data-ad-placement="statistics_sticky_vrec_right"]');
   await expect(rail).toBeVisible();
   await expect(rail.locator('[data-fuse]')).toHaveAttribute('data-fuse','stadiumstat_sticky_vrec_rhs');
@@ -335,5 +337,22 @@ test('Statistics uses the standard frame, grouped tabs and a centered right rail
   expect(columns[2]).toBeLessThan(columns[1]);
   const box=(await rail.boundingBox())!;
   expect(box.y+box.height/2).toBeCloseTo(540,0);
-  await page.screenshot({path:test.info().outputPath('statistics-standard-frame.png'),fullPage:true});
+  for(const width of [1536,1920,2200]) {
+    await page.setViewportSize({width,height:1080});
+    const frame=page.locator('[data-route-id="statistics"]');
+    await expect(frame).toHaveAttribute('data-page-width','wide');
+    const geometry=await frame.evaluate(node=>{
+      const content=node.querySelector('[data-page-content]')!.getBoundingClientRect();
+      const frame=node.getBoundingClientRect();
+      const heading=node.querySelector('h1')!.getBoundingClientRect();
+      const summary=node.querySelector('.dataset-summary')!.getBoundingClientRect();
+      return {left:content.left-frame.left,width:content.width,heading:heading.left,summary:summary.left,columns:getComputedStyle(node).gridTemplateColumns.split(' ').length};
+    });
+    expect(geometry.left).toBeLessThanOrEqual(32);
+    expect(geometry.width).toBeGreaterThan(1300);
+    expect(geometry.heading).toBeCloseTo(geometry.summary,0);
+    expect(geometry.columns).toBe(width>=1700 ? 2 : 1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
+    await page.screenshot({path:test.info().outputPath(`statistics-standard-frame-${width}.png`),fullPage:true});
+  }
 });
