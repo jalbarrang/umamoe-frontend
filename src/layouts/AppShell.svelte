@@ -81,7 +81,7 @@
         <a class="mobile-brand" href="/" aria-label="uma.moe home"><LogoMark size={31}/><strong>uma.moe</strong></a>
       </div>
       <div class="route-context"><strong>{currentRoute?.title ?? 'uma.moe'}</strong><span>uma.moe</span></div>
-      <nav class="header-navigation" aria-label="Quick navigation"><a class="account-action veterans-action" href="/veterans" aria-current={router.route.pathname.startsWith('/veterans') ? 'page' : undefined}><Icon name="veterans" size={18}/><span>Veterans</span></a></nav>
+      <nav class="header-navigation" aria-label="Quick navigation"><a class="account-action veterans-action" href="/veterans" data-preload="hover" aria-current={router.route.pathname.startsWith('/veterans') ? 'page' : undefined}><Icon name="veterans" size={18}/><span>Veterans</span></a></nav>
       <div class="utility-actions">
         <button class="account-action" type="button" aria-label="Start guided tour" onclick={startGuidedTour}><Icon name="help" size={18}/></button>
         <IconButton icon={$theme === 'dark' ? 'sun' : 'moon'} label="Toggle theme" onclick={toggleTheme}/>
@@ -106,7 +106,6 @@
 
     <div class="route-content">
       <div class="route-view" aria-busy={$pendingRoute !== null}>
-        {#if $pendingRoute}<div class="route-loading"><div class="route-loading-indicator"><Spinner size={28} label={`Loading ${routeDefinitionForPath($pendingRoute)?.title ?? 'page'}`}/></div></div>{/if}
         {@render children()}
       </div>
       <MoeFooter/>
@@ -152,8 +151,6 @@
   .route-content { min-width: 0; display: flex; flex-direction: column; }
   .route-view { position: relative; min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
   .route-view :global(> *) { flex: 1 1 auto; }
-  .route-loading { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-  .route-loading-indicator { position: sticky; top: calc(var(--utility-height) + 24px); display: grid; place-items: center; width: fit-content; margin: 24px auto; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-canvas); }
   .mobile-navigation { position:fixed; inset:var(--menu-top) 0 auto; width:100%; max-height:calc(100dvh - var(--menu-top) - 8px); margin:0; padding:6px 8px max(8px,env(safe-area-inset-bottom)); overflow:auto; overscroll-behavior:contain; border:0; border-bottom:1px solid var(--border-primary); background:var(--bg-secondary); color:var(--text-primary); box-shadow:var(--shadow-md); }
   @media(max-width:359px) { .utility-bar { gap:2px; } .utility-actions { gap:0; } .mobile-heading { gap:2px; } .mobile-brand { display:none; } }
   @media(max-width:767px) { .utility-bar { background:var(--bg-secondary); } .mobile-brand strong { display:none; } }

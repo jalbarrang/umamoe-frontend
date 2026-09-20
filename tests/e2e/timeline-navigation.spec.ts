@@ -11,7 +11,7 @@ async function sectionLink(page: Page, name: string) {
   return navigation.getByRole('link', { name, exact:true });
 }
 
-test('Navigation, Timeline data, planner code and planner data show spinners while pending', async ({ page }) => {
+test('Navigation paints usable Timeline controls before cold content code or data loads', async ({ page }, info) => {
   await mockTimeline(page, false);
   const releases: (() => void)[] = [];
   async function hold(pattern: string | RegExp) {
@@ -21,7 +21,7 @@ test('Navigation, Timeline data, planner code and planner data show spinners whi
     await page.route(pattern, async route => { await pending; await route.fallback(); });
     return release;
   }
-  const timelineCode = await hold(/\/TimelinePage(?:-[\w-]+\.js|\.svelte)(?:\?.*)?$/);
+  const timelineCode = await hold(/\/TimelineContent(?:-[\w-]+\.js|\.svelte)(?:\?.*)?$/);
   const timelineData = await hold('**/resources/test/banner_timeline.json*');
   const rewardData = await hold('**/resources/test/planner_rewards.json*');
   const plannerCode = await hold(/\/CaratPlanner(?:-[\w-]+\.js|\.svelte)(?:\?.*)?$/);
@@ -34,23 +34,32 @@ test('Navigation, Timeline data, planner code and planner data show spinners whi
   });
   try {
     await page.goto('/tools');
-    await (await sectionLink(page, 'Timeline')).evaluate((link: HTMLAnchorElement) => link.click());
-    await expect(page.locator('.route-view .route-loading .spinner')).toHaveText('Loading Timeline');
-    await expect(page.locator('.route-view .route-loading .spinner')).toBeVisible();
-    await expect(page.locator('.utility-actions .spinner')).toHaveCount(0);
-    await expect(page.locator('.route-view')).toHaveAttribute('aria-busy', 'true');
-    const spinnerBox = (await page.locator('.route-loading .spinner').boundingBox())!;
-    const contentBox = (await page.locator('.route-view').boundingBox())!;
-    const headerBox = (await page.locator('.utility-bar').boundingBox())!;
-    expect(spinnerBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-    expect(spinnerBox.x).toBeGreaterThanOrEqual(contentBox.x);
-    expect(spinnerBox.x + spinnerBox.width).toBeLessThanOrEqual(contentBox.x + contentBox.width);
+    const link = await sectionLink(page, 'Timeline');
+    const frameTiming = await completion(page, 'Timeline frame with content code held',
+      () => link.evaluate((link: HTMLAnchorElement) => link.click()),
+      { selector: '.timeline-tabs', pathname: '/timeline' });
+    await info.attach('timeline-frame-timing', { body: JSON.stringify(frameTiming), contentType: 'application/json' });
+    console.info(`Timeline frame (${process.env.PERF_CPU ?? '1'}x CPU): ${frameTiming.ms} ms`);
+    await expect(page).toHaveURL(/\/timeline$/);
+    await expect(page.getByRole('navigation', { name: 'Timeline tools' })).toBeVisible();
+    await expect(page.locator('[data-route-id="tools"]')).toHaveCount(0);
+    const filters = page.getByRole('button', { name: /^(Filters|Search & filters)(\s*\(\d+\))?$/ });
+    await filters.click();
+    await expect(page.getByRole('checkbox', { name: 'Characters', exact: true })).toBeVisible();
+    await page.getByRole('checkbox', { name: 'Characters', exact: true }).uncheck();
+    await page.getByRole('button', { name: 'Close filters', exact: true }).click();
+    await expect(page.locator('.timeline-board')).toHaveCount(0);
+    await expect(page.locator('.route-loading')).toHaveCount(0);
     timelineCode();
     await expect(page.locator('.spinner').filter({ hasText: 'Loading Timeline data' })).toBeVisible();
     await expect(page.locator('.route-loading')).toHaveCount(0);
     await expect(page.locator('.utility-actions .spinner')).toHaveCount(0);
     timelineData();
     await expect(page.locator('.timeline-board')).toBeVisible();
+    await filters.click();
+    await expect(page.getByRole('checkbox', { name: 'Characters', exact: true })).not.toBeChecked();
+    await page.getByRole('checkbox', { name: 'Characters', exact: true }).check();
+    await page.getByRole('button', { name: 'Close filters', exact: true }).click();
     await expect(page.locator('.timeline-tabs .spinner')).toHaveText('Loading event rewards');
     rewardData();
     await expect(page.locator('.timeline-tabs .spinner')).toHaveCount(0);

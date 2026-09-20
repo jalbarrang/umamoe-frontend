@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LazyContent from '@/components/LazyContent.svelte';
   import { router } from '@/routes/router';
   import { formatProfileNumber as format, signedProfileGain as signed, profileGainColor } from '@/lib/profile/profile-display';
   import Button from '@/components/Button.svelte';
@@ -118,7 +119,7 @@
       {#if profile.team_stadium.length && context.sectionVisible('team_stadium')}
         <section class="stadium-section" aria-roledescription="carousel" aria-labelledby="profile-stadium-title">
           <header class="section-heading"><Icon name="race" size={20}/><h2 id="profile-stadium-title">Team Stadium</h2>{@render visibilityControl('team_stadium')}</header>
-          <ProfileTeamStadium {accountId} members={profile.team_stadium} characters={context.characters}/>
+          <LazyContent height={240}><ProfileTeamStadium {accountId} members={profile.team_stadium} characters={context.characters}/></LazyContent>
         </section>
       {/if}
     {/snippet}
@@ -127,7 +128,7 @@
       {#if context.sectionVisible('veterans')}
         <section class="profile-collection" aria-labelledby="veterans-title">
           <header class="section-heading"><Icon name="veterans" size={20}/><h2 id="veterans-title">Veterans</h2><span class="section-detail">{profile.veterans?.length ?? 0} in collection</span><div class="collection-actions">{@render visibilityControl('veterans')}<Button href={'/veterans/' + accountId} variant="secondary" size="sm" icon="external">Open browser</Button></div></header>
-          <ProfileVeteransRoster {accountId} {profile} characters={context.characters} isOwner={context.isOwner} compact/>
+          <LazyContent height={480}><ProfileVeteransRoster {accountId} {profile} characters={context.characters} isOwner={context.isOwner} compact/></LazyContent>
         </section>
       {/if}
     {/snippet}

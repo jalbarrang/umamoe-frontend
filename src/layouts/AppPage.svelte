@@ -19,17 +19,18 @@
     flush?: boolean;
     fullBleed?: boolean;
     adsEnabled?: boolean;
+    adsActive?: boolean;
     fill?: boolean;
     mobileHeading?: 'default' | 'actions-only';
   }
 
-  let { children, routeId, title, description, metadata, eyebrow, tone = 'brand', width = 'normal', actions, flush = false, fullBleed = false, adsEnabled = !fullBleed, fill = false, mobileHeading = 'default' }: Props = $props();
+  let { children, routeId, title, description, metadata, eyebrow, tone = 'brand', width = 'normal', actions, flush = false, fullBleed = false, adsEnabled = !fullBleed, adsActive = true, fill = false, mobileHeading = 'default' }: Props = $props();
   const adSurface = $derived(adSurfaceForRoute(routeId));
 </script>
 
 <PageFrame {routeId} featureId={routeId} pageTitle={title} {width} {fullBleed} {fill} adsEnabled={adsEnabled && Boolean(adSurface && fuseIdForPlacement(`${adSurface}_sticky_vrec_right`))} labelledby={`${routeId}-title`}>
-  {#snippet leftAd()}<AdRegion placement={`${adSurface}_sticky_vrec_left`} kind="rail" sizes={['160x600', '120x600']} active/>{/snippet}
-  {#snippet rightAd()}<AdRegion placement={`${adSurface}_sticky_vrec_right`} kind="rail" sizes={['160x600', '120x600']} active/>{/snippet}
+  {#snippet leftAd()}<AdRegion placement={`${adSurface}_sticky_vrec_left`} kind="rail" sizes={['160x600', '120x600']} active={adsActive}/>{/snippet}
+  {#snippet rightAd()}<AdRegion placement={`${adSurface}_sticky_vrec_right`} kind="rail" sizes={['160x600', '120x600']} active={adsActive}/>{/snippet}
   <main class="app-page" class:flush class:fill class:full-bleed={fullBleed} style:--heading-max={width === 'wide' ? 'var(--page-content-wide)' : 'var(--page-content-normal)'}>
     <PageHeading {title} id={`${routeId}-title`} {description} {metadata} {eyebrow} {tone} {actions} {flush} {mobileHeading}/>
     <div class="page-sections">{@render children()}</div>

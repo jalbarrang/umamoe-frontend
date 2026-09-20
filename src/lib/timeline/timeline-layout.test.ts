@@ -7,14 +7,14 @@ const event = (id: string, day: string, eventType = 'character_banner'): Timelin
 it('packs compact lanes while preserving calendar spacing, ordering and marker interpolation', () => {
   const events = [event('campaign', '2026-09-01T00:00:00Z', 'campaign'), event('support', '2026-09-01T22:00:00Z', 'support_card_banner'), event('character', '2026-09-01T23:00:00Z'), event('next', '2026-12-01T00:00:00Z')];
   const compact = buildTimelineLanes(events, [], timelineEndDate(events), true, true);
-  expect(compact.map(lane => lane.position)).toEqual([24, 360]);
+  expect(compact.map(lane => lane.position)).toEqual([24, 325]);
   expect(compact[0]!.events.map(item => item.id)).toEqual(['character', 'support', 'campaign']);
   const date = compact[0]!.date;
   expect(compact[0]!.label).toBe(date.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' }).replace(/[.,]+$/u, '') + '\u2003' + date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).replace(/,/gu, ''));
   const calendar = buildTimelineLanes(events, [], timelineEndDate(events), false, true);
-  expect(calendar[1]!.position).toBe(1620);
+  expect(calendar[1]!.position).toBe(1585);
   expect(calendar[1]!.gapDays).toBe(91);
-  expect(timelinePosition(calendar, new Date('2026-10-16T12:00:00Z'))).toBe(822);
+  expect(timelinePosition(calendar, new Date('2026-10-16T12:00:00Z'))).toBe(804.5);
   expect(timelineMonths(calendar).spans.map(month => month.key)).toEqual(['2026-09', '2026-10', '2026-11', '2026-12']);
   expect(timelineMonths(compact,true).spans.map(month => month.key)).toEqual(['2026-09', '2026-12']);
   // A release on the first belongs inside its own month, including the card's left edge.

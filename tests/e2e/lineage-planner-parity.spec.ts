@@ -242,8 +242,11 @@ test('Lineage Planner restores the complete Angular tree and persistence workflo
   await expect(page.getByRole('heading', { name: 'Lineage Planner' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Inheritance tree planner' }).or(page.locator('[aria-label="Inheritance tree planner"]'))).toBeVisible();
   await expect(page.getByRole('button', { name: /Change Target: Special Week/ })).toBeVisible();
+  await page.getByRole('region', { name: 'Parent 2 lineage', exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: 'Great-Grandparents' })).toHaveCount(4);
   await page.getByRole('button', { name: 'Great-Grandparents' }).last().click();
   await expect(page.getByRole('button', { name: /Change Great-GP 8:/ })).toBeAttached();
+  await page.locator('.planner-scroll').evaluate(element => element.scrollIntoView({ block: 'end' }));
   await expect(page.getByRole('heading', { name: 'Spark Proc Odds' })).toBeVisible();
   await page.getByRole('button', { name: 'Save / Load' }).click();
   await expect(page.getByRole('dialog', { name: 'Lineage Trees' })).toBeVisible();

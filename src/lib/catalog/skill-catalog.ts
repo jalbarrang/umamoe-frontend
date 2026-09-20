@@ -96,7 +96,7 @@ export function skillPointTotal(catalog: Map<number, SkillCatalogEntry>, encoded
     if (skill.baseCost == null) return null;
     costs.set(skill.skill_id, skill.baseCost);
     const paired = catalog.get(skill.skill_id % 10 === 1 ? skill.skill_id + 1 : skill.skill_id - 1);
-    if (paired && (skill.rarity === 2 || skill.rarity === 1 && skill.skill_id % 10 === 1 && paired.rarity === 1)) {
+    if (paired && (skill.rarity === 2 || skill.rarity === 1 && skill.name.endsWith('◎') && paired.name.endsWith('○'))) {
       if (paired.baseCost == null) return null;
       costs.set(paired.skill_id, paired.baseCost);
     }

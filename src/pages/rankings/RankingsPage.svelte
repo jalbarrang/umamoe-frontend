@@ -1,5 +1,6 @@
 <script lang="ts">
   import ContentAd from '@/layouts/ContentAd.svelte';
+  import { loadWhenVisible } from '@/lib/load-when-visible';
   import { onMount } from 'svelte';
   import AppPage from '@/layouts/AppPage.svelte';
   import Icon from '@/components/Icon.svelte';
@@ -16,6 +17,8 @@
   const today = new Date();
   let tab = $state<RankingTab>('monthly');
   let result = $state<PagedResult<TrainerRanking>>();
+  let visibleLimit = $state(20);
+  $effect(() => { void result; visibleLimit = 20; });
   let loading = $state(true);
   let error = $state('');
   let search = $state('');
@@ -76,7 +79,7 @@
   {#if loading}<div class="loading"><Spinner size={28}/><span>Loading rankings…</span></div>
   {:else if error}<Banner title="Ranking data unavailable" tone="danger"><p>{error}</p><Button variant="secondary" size="sm" onclick={() => void load(true)}>Retry</Button></Banner>
   {:else if !result?.items.length}<div class="no-results"><Icon name="search" size={42}/><p>No rankings found.</p></div>
-  {:else}<ContentAd routeId="rankings" top/><section class="leaderboard" aria-label="Trainer ranking results">{#each result.items as entry, index (entry.viewerId)}<LeaderboardRow rank={entry.rank} name={entry.name} group={entry.circleId ? entry.circleName || 'Club' : undefined} groupHref={entry.circleId ? `/circles/${entry.circleId}` : undefined} stats={entry.stats}/>{#if index % 20 === 19 && index < result.items.length - 1 && index < 60}<ContentAd routeId="rankings" index={2 + Math.floor(index / 20)}/>{/if}{/each}</section>{/if}
+  {:else}<ContentAd routeId="rankings" top/><section class="leaderboard" aria-label="Trainer ranking results">{#each result.items.slice(0, visibleLimit) as entry, index (entry.viewerId)}<LeaderboardRow rank={entry.rank} name={entry.name} group={entry.circleId ? entry.circleName || 'Club' : undefined} groupHref={entry.circleId ? `/circles/${entry.circleId}` : undefined} stats={entry.stats}/>{#if index % 20 === 19 && index < result.items.length - 1 && index < 60}<ContentAd routeId="rankings" index={2 + Math.floor(index / 20)}/>{/if}{/each}{#if visibleLimit < result.items.length}{#key visibleLimit}<div style="height:1px" aria-hidden="true" use:loadWhenVisible={() => visibleLimit += 20}></div>{/key}{/if}</section>{/if}
   <div class="mat-paginator"><span>Items per page:</span><SelectField id="ranking-page-size" label="Items per page" hideLabel options={pageSizeOptions} bind:value={pageSize} onchange={changeFilter}/><strong>{result?.total ? `${(page - 1) * Number(pageSize) + 1}–${Math.min(page * Number(pageSize), result.total)} of ${result.total}` : '0 of 0'}</strong><button type="button" aria-label="Previous page" disabled={page <= 1} onclick={() => { page -= 1; writeQuery(); void load(); }}><Icon name="chevron" size={17}/></button><button class="next" type="button" aria-label="Next page" disabled={page >= (result?.totalPages ?? 1)} onclick={() => { page += 1; writeQuery(); void load(); }}><Icon name="chevron" size={17}/></button></div>
 </AppPage>
 

@@ -40,6 +40,7 @@ test('Planner bulk settings preserve disabled targets, reorder pulls and restore
   await mockPlannerControls(page);
   await page.goto('/timeline?tab=carat-planner');
   const rows = page.locator('.target');
+  await page.locator('.target-list').evaluate(element => element.scrollIntoView({ block: 'end' }));
   await expect(rows).toHaveCount(5);
   await expect.poll(() => rows.evaluateAll(items => items.map(item => item.getAttribute('data-target-id')))).toEqual(['first', 'custom', 'later', 'past-new', 'past-old']);
   await expect(page.getByRole('separator', { name: '0.5-Year Anniversary on 2026-09-05' })).toHaveCount(1);
@@ -70,6 +71,7 @@ test('Planner bulk settings preserve disabled targets, reorder pulls and restore
   await timing.click(); await bulk.getByRole('option', { name: 'Banner end', exact: true }).click();
   await page.reload();
   await expect(timing).toHaveText('Banner end'); await expect(paid).toHaveText('Mixed');
+  await page.locator('.target-list').evaluate(element => element.scrollIntoView({ block: 'end' }));
   await expect(rows).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
   await page.setViewportSize({ width: 320, height: 844 });

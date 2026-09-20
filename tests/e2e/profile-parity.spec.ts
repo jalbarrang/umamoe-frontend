@@ -40,6 +40,7 @@ test('populated profile remains page-overflow safe at 390px and 320px', async ({
   const visibilityBodies: unknown[] = []; await page.setViewportSize({ width: 390, height: 844 }); await mockOwnerProfile(page, visibilityBodies);
   await page.goto(`/profile/${accountId}`);
   await expect(page.getByRole('heading', { name: 'Team Stadium' })).toBeVisible();
+  await page.locator('.stadium-section').scrollIntoViewIfNeeded();
   await expect(page.locator('.stadium-member .stats img')).toHaveCount(5);
   await expect(page.locator('.stadium-member .stats>div')).toHaveCount(5);
   await page.getByRole('button', { name:'Fan History', exact:true }).click();
@@ -48,6 +49,7 @@ test('populated profile remains page-overflow safe at 390px and 320px', async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.setViewportSize({ width:320, height:844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.locator('.stadium-section').scrollIntoViewIfNeeded();
   const aptitudes = page.locator('.stadium-member .aptitude-container');
   expect(await aptitudes.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });

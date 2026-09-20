@@ -1,3 +1,8 @@
+<script module lang="ts">
+  const fullFormatters = [false, true].map(signed => new Intl.NumberFormat('en', { signDisplay: signed ? 'exceptZero' : 'auto' }));
+  const compactFormatters = [false, true].map(signed => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, signDisplay: signed ? 'exceptZero' : 'auto' }));
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import Icon from './Icon.svelte';
@@ -11,8 +16,8 @@
   let { circle: club, children, layout = 'row' }: { circle: CircleCardData; children?: Snippet; layout?: 'row' | 'summary' } = $props();
   const rankIcon = $derived(clubRankIcon(club.clubRank));
   const gain = $derived(club.liveFans == null || club.monthlyFans == null || club.liveFans < club.monthlyFans ? undefined : club.liveFans - club.monthlyFans);
-  function format(value: number, signed = false): string { return value.toLocaleString('en', { signDisplay: signed ? 'exceptZero' : 'auto' }); }
-  function compact(value: number, signed = false): string { return new Intl.NumberFormat('en', { notation:'compact', maximumFractionDigits:1, signDisplay:signed ? 'exceptZero' : 'auto' }).format(value); }
+  function format(value: number, signed = false): string { return fullFormatters[Number(signed)]!.format(value); }
+  function compact(value: number, signed = false): string { return compactFormatters[Number(signed)]!.format(value); }
   function joinLabel(style: number): string { return style === 2 ? 'Approval' : style === 3 ? 'Closed' : 'Open'; }
   function trend(club: CircleCardData): number { return club.yesterdayRank && club.rank != null ? club.yesterdayRank - club.rank : 0; }
   function fans(club: CircleCardData): number { return Math.max(club.monthlyFans ?? 0, club.liveFans ?? 0); }

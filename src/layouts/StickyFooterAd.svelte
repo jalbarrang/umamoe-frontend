@@ -144,11 +144,11 @@
     cursor: pointer;
   }
   :global(.footer-ad-close:hover) { background: var(--surface-2); color: var(--text-primary); }
-  :global(html:has(.timeline-content.mobile:not([hidden]) .mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) {
+  :global(html:has(.mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) {
     bottom: calc(58px + var(--bottom-nav-height) + env(safe-area-inset-bottom)) !important;
   }
   @media (min-width: 768px) {
-    :global(html:has(.timeline-content.mobile:not([hidden]) .mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) { bottom: 58px !important; }
+    :global(html:has(.mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) { bottom: 58px !important; }
   }
   @media (max-width: 767px) {
     :global(.footer-ad-close) { width: 44px; height: 44px; }

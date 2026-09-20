@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LazyContent from '@/components/LazyContent.svelte';
   import { buildTimelineRewardSummaries, withTimelineRewardFallbacks } from '@/lib/timeline/timeline-reward-summary';
   import { copyText } from '@/lib/clipboard';
   import { itemIconPath } from '@/lib/catalog/item-icons';
@@ -387,9 +388,9 @@
   <SelectField id="planner-all-paid" label="Paid Carats" options={[{value:'',label:'Mixed'},{value:'free-only',label:'Do not use'},{value:'allow',label:'Allowed'}]} value={globalPaidCarats} onchange={applyGlobalPaidCarats}/>
 </div>{/if}
 </div>
-</header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. We will start with 200 pulls at banner end and select the first featured rate-up for you.</p></div></div>{:else}<div class="target-list">{#each pullItems as item (item.id)}
+</header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. We will start with 200 pulls at banner end and select the first featured rate-up for you.</p></div></div>{:else}<div class="target-list">{#each pullItems as item, index (item.id)}
 {#if item.kind === 'anniversary'}<div class="anniversary-marker" role="separator" aria-label={`${item.label} on ${item.date}`}><span></span><strong><Icon name="cake" size={14}/>{item.label}</strong><span></span></div>
-{:else}{@const target = item.target}<PlannerTargetRow {target} past={item.past} projection={projectionByTarget.get(target.id)} {resources} {events} {catalog} {pickupCopyMemory} onupdate={(mutator) => updateTarget(target.id, mutator)} onremove={() => removeTarget(target.id)}/>{/if}
+{:else}{@const target = item.target}<LazyContent height={150} eager={index < 2}><PlannerTargetRow {target} past={item.past} projection={projectionByTarget.get(target.id)} {resources} {events} {catalog} {pickupCopyMemory} onupdate={(mutator) => updateTarget(target.id, mutator)} onremove={() => removeTarget(target.id)}/></LazyContent>{/if}
 {/each}</div>
 <p class="disclaimer">
 <Icon name="info"/> Each pickup uses its published rate. Uncap Crystals replace copies after the first; available exchange copies are shared across selected goals after the pulls.</p>{/if}</section>

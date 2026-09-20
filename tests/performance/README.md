@@ -1,5 +1,21 @@
 # Local mobile interaction benchmark
 
+## Destination frame and deferred content
+
+`navigation-rendering.spec.ts` holds page-module downloads for 16 destinations and measures the click through the painted destination frame and updated URL. `timeline-navigation.spec.ts` separately holds Timeline's content module, then uses its already-rendered tabs and filters. These frame measurements intentionally do **not** mean that async content is finished. The cached Lineage Planner test separately measures the actual tree while its character catalogs remain unavailable.
+
+Against the current beta build served on port 4184, run these serially without another build or browser benchmark:
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:4184'
+$env:PERF_AUDIT = '1'
+$env:PERF_CPU = '8'
+$env:PERF_OUT = '.tmp/navigation-frames'
+npx playwright test navigation-rendering.spec.ts timeline-navigation.spec.ts --grep 'every page frame|Navigation paints|background-cached' --project=mobile-chromium --workers=1 --repeat-each=3 --trace=off
+```
+
+All completion measurements retain the 300 ms limit. The same rendering tests also exercise automatic scrolling through 100 Clubs, Rankings and Activity results, without a Show more button. Planner, profile and tierlist workflows scroll to deferred sections before exercising their controls.
+
 For the reward and affinity hotspots found in the shared Firefox recordings, run `node tests/performance/profile-hotspots.mjs`. It reports medians for isolated calculations on synthetic data, without browser rendering or CPU throttling. See [the profile findings](../../reports/firefox-profiler-2026-09-20.md) for the recordings, changes and limits of these measurements.
 
 ## Native Firefox Profiler recordings

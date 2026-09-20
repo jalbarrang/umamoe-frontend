@@ -6,6 +6,7 @@ test('Tierlist retains Angular controls, percentile rows, and card interaction',
   await expect(page.getByText(/no longer maintained/i)).toBeVisible();
   await expect(page.locator('.card-chart')).toBeVisible();
   await expect(page.locator('.grid-line span').first()).toHaveText(/[\d,.]+/);
+  await page.locator('.tierlist').scrollIntoViewIfNeeded();
   await expect(page.locator('.card-lb').first()).toHaveText('LB4');
   await expect(page.locator('.tierlist article').first()).toContainText(/99–100%/);
   await page.getByRole('combobox', { name: 'Limit Break Level' }).click();
@@ -35,6 +36,7 @@ test('Tierlist preserves the dense Angular mobile grid without page overflow', a
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/tierlist');
   await expect(page.locator('.tierlist article')).toHaveCount(5); // Populated tiers in the small hosted-data fixture.
+  await page.locator('.tierlist').scrollIntoViewIfNeeded();
   const card = page.locator('.tierlist button').first();
   await card.click();
   await expect(page.getByRole('dialog').getByText('Limit Break Progression')).toBeVisible();

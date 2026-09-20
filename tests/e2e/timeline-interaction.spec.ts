@@ -34,7 +34,10 @@ test('Direction changes keep a large timeline bounded and preserve scroll positi
     expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(280);
   await page.getByRole('radio', { name: 'Horizontal', exact: true }).click();
   await page.getByRole('radio', { name: 'Vertical', exact: true }).click();
-  await expect.poll(() => board.evaluate(node => node.scrollTop)).toBeCloseTo(y, 0);
+  // Newly measured rows can shorten the virtual scroll range at its far end.
+  // The browser clamps the saved offset, but the last event must stay visible.
+  await expect.poll(() => board.evaluate((node, saved) => node.scrollTop - Math.min(saved, node.scrollHeight - node.clientHeight), y)).toBeCloseTo(0, 0);
+  await expect(page.locator('#timeline-event-large-1199')).toBeInViewport();
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(board.locator('.vertical-date.is-today')).toBeInViewport();
 });

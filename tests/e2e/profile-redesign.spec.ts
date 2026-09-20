@@ -23,6 +23,7 @@ test('Profile keeps light filters and complete veteran information, with a stand
   const activity = await page.locator('.activity-row').boundingBox();
   expect(borrow!.width).toBeCloseTo(overview!.width, 0);
   expect(borrow!.y).toBeGreaterThanOrEqual(activity!.y + activity!.height);
+  await page.locator('.stadium-section').scrollIntoViewIfNeeded();
   await expect(page.getByRole('button', { name:'Previous distance', exact:true })).toBeDisabled();
   await expect(page.getByRole('button', { name:'Next distance', exact:true })).toBeDisabled();
   expect(await page.locator('.content-container').evaluate(el => [...el.children].filter(section => !section.matches('.ad-region')).map(section => section.querySelector('h2,h3')?.textContent))).toEqual(['Fan activity', 'All-Time Stats', 'Current borrow', 'Current Circle', 'Circle History', 'Team Stadium', 'Veterans']);
@@ -65,6 +66,7 @@ test('Profile keeps light filters and complete veteran information, with a stand
   await expect(tabs.getByRole('link')).toHaveCount(4);
   await expect(tabs.getByRole('link', { name: 'Veterans' })).toHaveCount(0);
   const collection = page.locator('.profile-collection');
+  await collection.scrollIntoViewIfNeeded();
   await expect(collection.locator('.veteran-card')).toHaveCount(3);
   const card = collection.locator('.veteran-card').first();
   await card.scrollIntoViewIfNeeded();
@@ -126,6 +128,7 @@ test('Team Stadium cycles complete distance squads with three desktop columns an
   await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({ json:{ ...profile, team_stadium:fullTeamStadium } }));
   await page.goto(`/profile/${accountId}`);
   const stadium = page.getByRole('region', { name:'Team Stadium', exact:true });
+  await stadium.scrollIntoViewIfNeeded();
   const panel = stadium.getByRole('tabpanel');
   const navigation = stadium.locator('.stadium-navigation');
   const tablist = stadium.getByRole('tablist',{name:'Team Stadium distance'});

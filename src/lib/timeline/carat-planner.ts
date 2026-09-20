@@ -21,7 +21,7 @@ import { competitionIncomeEntries } from './planner-competition-assumptions';
 import { plannerUtcDay as utcDay, plannerDayKey as dayKey, validPlannerDateKey } from './planner-calendar';
 
 export const CARAT_PLANNER_STORAGE_KEY = 'carat-planner-plans-v1';
-export const TIMELINE_PREFERENCES_KEY = 'umamoe.timeline.desktop-preferences.v1';
+export { TIMELINE_PREFERENCES_KEY } from '@/pages/timeline/timeline-controls';
 export type PlannerCurrency = 'free_jewels' | 'paid_jewels' | 'uma_ticket' | 'support_ticket' | 'rainbow_crystal' | 'gold_crystal' | 'rainbow_full_crystal' | 'gold_full_crystal';
 export type PlannerIncomeCadence = 'once' | 'daily' | 'weekly' | 'monthly' | 'interval';
 export interface PlannerCoreResource { version?: string | number; jewel_cost_per_pull?: number; default_spark_pulls?: number; gacha_shard_by_event?: Record<string, string>; gacha_shard_by_id?: Record<string, string>; gacha_shards?: string[]; }

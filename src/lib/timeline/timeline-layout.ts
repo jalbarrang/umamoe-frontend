@@ -1,8 +1,8 @@
 import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 
 export const TIMELINE_LAUNCH = new Date('2025-06-26T22:00:00Z');
-export const LANE_WIDTH = 320;
-export const LANE_STEP = 336;
+export const LANE_WIDTH = 285;
+export const LANE_STEP = LANE_WIDTH + 16;
 const DAY = 86_400_000;
 export interface TimelineAnniversary { date: Date; label: string; image?: string; predicted: boolean; }
 export interface TimelineMarker { type: 'launch' | 'anniversary' | 'today' | 'year'; label: string; image?: string; predicted?: boolean; }

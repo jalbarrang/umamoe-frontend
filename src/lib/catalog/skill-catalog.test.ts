@@ -1,7 +1,16 @@
 import { setupCatalogFixtures } from '../../../tests/fixtures/catalog-setup';
 setupCatalogFixtures();
 import { expect, it } from 'vitest';
-import { loadSkillCatalog, normalizeSkill, resolveEncodedSkill, skillImage, skillRarity, sortEncodedSkills, type SkillCatalogEntry } from './skill-catalog';
+import { loadSkillCatalog, normalizeSkill, resolveEncodedSkill, skillImage, skillRarity, skillPointTotal, sortEncodedSkills, type SkillCatalogEntry } from './skill-catalog';
+
+it('does not treat the next normal skill ID as a prerequisite for Groundwork', async () => {
+  const catalog = new Map(await loadSkillCatalog());
+  // The live catalog also includes this separate skill without a published cost.
+  catalog.set(201602, { skill_id:201602, name:'Solid Preparation', rarity:1, icon:'' });
+  expect(skillPointTotal(catalog, [2016011])).toBe(100);
+  expect(skillPointTotal(catalog, [2016011, 9000111, 2000111])).toBe(500);
+  expect(skillPointTotal(catalog, [2016021])).toBeNull();
+});
 
 it('sorts by rarity, effect type and descending SP cost with stable ties and inherited uniques first', () => {
   const entries: SkillCatalogEntry[] = [

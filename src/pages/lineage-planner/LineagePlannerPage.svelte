@@ -26,13 +26,13 @@
   import Icon from '@/components/Icon.svelte';
   import IconButton from '@/components/IconButton.svelte';
   import InspectPopover from '@/components/InspectPopover.svelte';
-  import Spinner from '@/components/Spinner.svelte';
   import TextField from '@/components/TextField.svelte';
   import ToastRegion, { type Toast } from '@/components/ToastRegion.svelte';
   import type { CharacterPickerOption } from '@/components/picker-types';
   import type { ProfileVeteran, SuccessionChara } from '@/pages/profile/profile-repository';
   import { loadG1SaddleGroups, loadOptimalRaceRecommendations, type OptimalRaceRecommendation } from '@/lib/catalog/race-catalog';
   import LineagePlannerNode from './LineagePlannerNode.svelte';
+  import LazyContent from '@/components/LazyContent.svelte';
   import LineageSparkOdds from './LineageSparkOdds.svelte';
   import LineageSkillCreation from './LineageSkillCreation.svelte';
   import { loadSkillCatalog, skillImage } from '@/lib/catalog/skill-catalog';
@@ -42,13 +42,14 @@
     { parent: 'p2', gps: [{ gp: 'p2-1', greats: ['p2-1-1', 'p2-1-2'] }, { gp: 'p2-2', greats: ['p2-2-1', 'p2-2-2'] }] }
   ] as const;
   let nodes = $state(emptyPlannerNodes());
+  const legacyCardIds = new Set<number>();
+  let disposed = false;
   let characters = $state(new Map<number, CharacterCatalogEntry>());
   let selectableCharacters = $state<CharacterCatalogEntry[]>([]);
   let charactersLoading = $state(false);
   let charactersError = $state('');
   let affinityEngine = $state<VeteranAffinityEngine>();
   let raceGroups = $state.raw(new Map<number, number>());
-  let loading = $state(true);
   let loadError = $state('');
   let activePosition = $state<PlannerPosition>('target');
   let pickerOpen = $state(false);
@@ -121,6 +122,7 @@
   function hydrate(input: Record<PlannerPosition, PlannerNode>): Record<PlannerPosition, PlannerNode> {
     return Object.fromEntries(BTREE_ORDER.map((position) => {
       const node = input[position]; const resolved = characterEntry(node.characterId); const entry = resolved?.[1];
+      if (characters.size && node.characterId && legacyCardIds.has(node.characterId) && !entry) return [position, emptyPlannerNodes()[position]];
       const sparks = node.sparks.map(spark => {
         const metadata = factorMetadata(spark.factorId);
         return metadata ? { ...spark, name: metadata.text, type: metadata.type } : spark;
@@ -172,8 +174,9 @@
     try {
       selectableCharacters = await loadReleasedCharacterCatalog();
       characters = await loadCharacterCatalog();
+      if (disposed) return;
       nodes = hydrate(nodes);
-      loadError = '';
+      if (legacyCardIds.size) { legacyCardIds.clear(); persist(); }
     }
     catch (error) { charactersError = error instanceof Error ? error.message : 'The character catalog could not be loaded.'; }
     finally { charactersLoading = false; }
@@ -255,15 +258,8 @@
     catch { notify('Failed to read file', 'danger', 'The current tree has not changed. Try importing the file again.'); }
   }
 
-  onMount(async () => {
-    void loadSelectableCharacters();
+  function restoreTree(): void {
     try {
-      const [catalog, affinityData, groups] = await Promise.all([
-        loadCharacterCatalog().catch(() => { loadError = 'Character names could not be loaded. Retry in the character picker.'; return new Map<number, CharacterCatalogEntry>(); }),
-        veteranAffinityRepository.load().catch(() => undefined),
-        loadG1SaddleGroups().catch(() => { loadError = 'Race data could not be loaded. Reload to retry.'; return new Map<number, number>(); })
-      ]);
-      raceGroups = groups; characters = catalog; if (affinityData) affinityEngine = new VeteranAffinityEngine(affinityData);
       const query = new URLSearchParams(location.search); let payload: PlannerPayloadNode[] | null = null;
       const shared = query.get('tree'); if (shared) { payload = decodeShareState(shared); if (!payload) notify('Invalid lineage planner URL state.', 'warning'); }
       const from = query.get('from');
@@ -281,15 +277,28 @@
           const initial = emptyPlannerNodes();
           ids.slice(0, BTREE_ORDER.length).forEach((id, index) => {
             const position = BTREE_ORDER[index]; const entry = id ? characterEntry(id) : undefined;
-            if (position && Number.isSafeInteger(id) && id > 0 && (entry || !characters.size)) initial[position].characterId = entry?.[0] ?? id;
+            if (position && Number.isSafeInteger(id) && id > 0 && (entry || !characters.size)) { initial[position].characterId = entry?.[0] ?? id; legacyCardIds.add(id); }
           });
           payload = buildPlannerPayload(initial);
         }
       }
       if (!payload) { try { payload = parsePlannerPayload(JSON.parse(localStorage.getItem(LINEAGE_STORAGE_KEY) ?? 'null')); } catch { payload = null; } }
       if (payload) { nodes = hydrate(applyPlannerPayload(payload)); persist(); }
-    } catch { loadError = 'The character catalog could not be loaded.'; }
-    finally { loading = false; }
+    } catch { loadError = 'The saved tree could not be loaded.'; }
+  }
+  onMount(() => {
+    restoreTree();
+    void loadSelectableCharacters();
+    let current = true;
+    void Promise.all([
+      veteranAffinityRepository.load().catch(() => undefined),
+      loadG1SaddleGroups().catch(() => { if (current) loadError = 'Race data could not be loaded. Reload to retry.'; return new Map<number, number>(); })
+    ]).then(([affinityData, groups]) => {
+      if (!current) return;
+      raceGroups = groups;
+      if (affinityData) affinityEngine = new VeteranAffinityEngine(affinityData);
+    });
+    return () => { current = false; disposed = true; };
   });
 </script>
 
@@ -316,7 +325,6 @@
 
   {#if loadError}<Banner title="Planner data unavailable" tone="danger"><p>{loadError}</p></Banner>{/if}
   {#if optimalError}<Banner title="Optimal races unavailable" tone="danger"><p>{optimalError}</p><Button variant="secondary" size="sm" onclick={() => optimalRetry++}>Retry optimal races</Button></Banner>{/if}
-  {#if loading}<div class="loading"><Spinner size={30}/><span>Loading lineage planner…</span></div>{:else}
     <section class="planner-shell" aria-label="Inheritance tree planner">
       <div class="planner-scroll">
         <div class="planner-content">
@@ -336,8 +344,10 @@
             {#each parentBranches as branch, branchIndex}
               <section class="parent-branch" aria-label={`Parent ${branchIndex+1} lineage`}>
                 <header class="branch-heading"><div><span class="branch-number">P{branchIndex+1}</span><h2>Parent {branchIndex+1} lineage</h2></div><span class="branch-affinity"><span aria-hidden="true">↑</span><small>Target</small><Icon name="heart" size={14}/>{flows ? branch.parent==='p1' ? flows.p1 : flows.p2 : '—'}</span></header>
+                <LazyContent height={380} eager={branchIndex === 0}>
                 <div class="branch-node">{@render plannerNode(branch.parent)}</div>
                 <div class="grandparents">
+                  <LazyContent height={220}>
                   {#each branch.gps as item}
                     {@const contribution = plannerAffinityBreakdown(affinity,item.gp)}
                     <section class="gp-branch">
@@ -345,23 +355,24 @@
                       <div class="branch-node">{@render plannerNode(item.gp)}</div>
                       <button class="great-toggle" class:expanded={expandedGPs.has(item.gp)} aria-label="Great-Grandparents" aria-expanded={expandedGPs.has(item.gp)} aria-controls={'greats-'+item.gp} onclick={() => toggleGreats(item.gp)}><Icon name="lineage" size={13}/>Great-grandparents<span>{item.greats.filter(position=>nodes[position].characterId).length}/2</span><Icon name="chevron" size={13}/></button>
                       <div class="greats" id={'greats-'+item.gp} hidden={!expandedGPs.has(item.gp)}>
-                        {#each item.greats as position}
+                        {#if expandedGPs.has(item.gp)}{#each item.greats as position}
                           {@render plannerNode(position)}
-                        {/each}
+                        {/each}{/if}
                       </div>
                     </section>
                   {/each}
+                  </LazyContent>
                 </div>
+                </LazyContent>
               </section>
             {/each}
           </div>
         </div>
         <ContentAd routeId="lineage-planner"/>
-        <LineageSparkOdds {nodes} {affinity} bind:perRun bind:tab={oddsTab} {skillIcons}/>
+        <LazyContent height={240}><LineageSparkOdds {nodes} {affinity} bind:perRun bind:tab={oddsTab} {skillIcons}/></LazyContent>
         </div>
       </div>
     </section>
-  {/if}
 </AppPage>
 
 {#if pickerOpen}<CharacterSelectDialog id="lineage-picker" bind:open={pickerOpen} label={`Character for ${activeNode.label}`} options={characterChoices} loading={charactersLoading} error={charactersError} onretry={loadSelectableCharacters} bind:sort={pickerSort} onselect={selectCharacter}/>{/if}
@@ -424,7 +435,6 @@
 {#if optimalOpen}<OptimalRacesDialog bind:open={optimalOpen} recommendations={optimalRaces}/>{/if}
 
 <style>
-  .loading{min-height:160px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text-muted)}
   .planner-shell,.planner-scroll,.planner-content,.tree-canvas{min-width:0;width:100%}
   .planner-shell{container:lineage-planner / inline-size}
   .planner-content{display:grid;gap:14px}.tree-canvas{display:grid;gap:0;--flow-line:var(--border-primary)}

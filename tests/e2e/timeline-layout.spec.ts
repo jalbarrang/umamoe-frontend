@@ -21,6 +21,7 @@ test('Timeline keeps compact artwork cards and Carat Planner preserves banner al
   expect(artworkModules).toEqual([]);
   const card = page.locator('[data-event-id="artwork-entry"]');
   expect((await card.boundingBox())!.height).toBeLessThanOrEqual(isMobile ? 200 : 195);
+  if (!isMobile) expect((await card.boundingBox())!.width).toBe(285);
   const media = (await card.locator('.event-media').boundingBox())!;
   expect(media.width / media.height).toBeCloseTo(512 / 125, 1);
   await card.screenshot({path:info.outputPath('compact-timeline-card.png')});
@@ -80,6 +81,7 @@ test('Timeline preserves grouped-event expansion, marker order, spacing and the 
     await expect(page.getByRole('button', { name: 'Compact gaps', exact: true })).toBeDisabled();
     await expect(lane.locator('.event-card')).toHaveCount(5);
     await expect(page.locator('.month-header').filter({ hasText: 'September' })).toContainText('5 events');
+    expect((await lane.locator('.event-card').first().boundingBox())!.width).toBe(285);
     await page.reload();
     await expect(page.getByRole('radio', { name: 'Vertical', exact: true })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByRole('button', { name: 'Compact gaps', exact: true })).toBeDisabled();
