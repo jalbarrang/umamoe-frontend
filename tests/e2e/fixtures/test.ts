@@ -34,13 +34,16 @@ export const test = base.extend<{ runtimeErrors: void; allowPageLoadFailure: boo
     if (profiler) {
       await profiler.send('Profiler.enable'); await profiler.send('Profiler.start');
       await profiler.send('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline,blink.user_timing,v8', transferMode: 'ReturnAsStream' });
-      await page.addInitScript(() => {
+    }
+    if (profiler || process.env.PERF_FIREFOX) {
+      await page.addInitScript(title => {
+        console.timeStamp('Workflow: ' + title);
         document.addEventListener('click', event => {
           const target = event.target instanceof Element ? event.target.closest('button,a,input,[role="radio"],[role="tab"]') : null;
           // Playwright's fixed clock replaces performance.mark; console timestamps keep native trace time.
           if (target) console.timeStamp('Click: ' + (target.getAttribute('aria-label') || target.textContent || target.id).trim().slice(0, 120));
         }, true);
-      });
+      }, info.title);
     }
     try { await use(page); } finally {
       // Flush the final presented input before Playwright closes the page.

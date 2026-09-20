@@ -9,12 +9,14 @@ test.setTimeout(300_000);
 test.beforeEach(async ({ page, context }) => {
   page.setDefaultTimeout(30_000);
   await stressData(page);
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.PERF_CPU ?? 8) });
+  if (!process.env.PERF_FIREFOX) {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.PERF_CPU ?? 8) });
+  }
   await page.addInitScript(() => {
     const metrics = (window as any).__stress = { label: '', paints: [] as any[], events: [] as any[], tasks: [] as any[] };
-    new PerformanceObserver(list => metrics.events.push(...list.getEntries().map((e: any) => ({ label: metrics.label, duration: e.duration, name: e.name, interaction: e.interactionId })))).observe({ type: 'event', durationThreshold: 16, buffered: true });
-    new PerformanceObserver(list => metrics.tasks.push(...list.getEntries().map(e => ({ label: metrics.label, duration: e.duration })))).observe({ type: 'longtask', buffered: true });
+    if (PerformanceObserver.supportedEntryTypes.includes('event')) new PerformanceObserver(list => metrics.events.push(...list.getEntries().map((e: any) => ({ label: metrics.label, duration: e.duration, name: e.name, interaction: e.interactionId })))).observe({ type: 'event', durationThreshold: 16, buffered: true });
+    if (PerformanceObserver.supportedEntryTypes.includes('longtask')) new PerformanceObserver(list => metrics.tasks.push(...list.getEntries().map(e => ({ label: metrics.label, duration: e.duration })))).observe({ type: 'longtask', buffered: true });
     for (const type of ['click', 'input']) document.addEventListener(type, () => {
       const start = performance.now(), label = metrics.label;
       requestAnimationFrame(() => setTimeout(() => metrics.paints.push({ label, ms: performance.now() - start }), 0));
@@ -24,7 +26,7 @@ test.beforeEach(async ({ page, context }) => {
 
 async function action(page: Page, label: string, run: () => Promise<unknown>) {
   console.log('Measuring', label);
-  await page.evaluate(label => (window as any).__stress.label = label, label);
+  await page.evaluate(label => { (window as any).__stress.label = label; console.timeStamp('Action: ' + label); }, label);
   await run();
   await page.waitForTimeout(700); // Allow EventTiming delivery and any debounced search to settle.
   await page.evaluate(() => (window as any).__stress.label = '');

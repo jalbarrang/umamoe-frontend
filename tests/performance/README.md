@@ -2,6 +2,35 @@
 
 For the reward and affinity hotspots found in the shared Firefox recordings, run `node tests/performance/profile-hotspots.mjs`. It reports medians for isolated calculations on synthetic data, without browser rendering or CPU throttling. See [the profile findings](../../reports/firefox-profiler-2026-09-20.md) for the recordings, changes and limits of these measurements.
 
+## Native Firefox Profiler recordings
+
+Build beta and serve `dist/` on port 4184, then run a small batch:
+
+```powershell
+$env:PERF_OUT = '.tmp/firefox-statistics'
+npx playwright test --config playwright.firefox-profile.config.ts statistics-parity
+node tests/performance/firefox-stalls.mjs .tmp/firefox-statistics
+```
+
+The browser writes `firefox-*.json` on shutdown. Open that file in [Firefox Profiler](https://profiler.firefox.com/) to inspect the event-delay track, stacks, layout/paint and GC markers. Native console timestamps label workflows and clicks. The analyzer saves **every main-thread event-delay interval over 50 ms** in `stalls.json`, with overlapping markers and source-mapped samples. It keeps automation stalls visible too. Inclusive stack times overlap; marker duration (especially network, asynchronous compilation and whole GC cycles) is not necessarily blocked main-thread time. Inspect the interval and GC slices before attributing a cost.
+
+Keep the matching `dist/app/*.js.map` files when comparing builds; pass their directory as the analyzer's second argument. Firefox sampling is approximate and function-entry source positions can map to an adjacent compiled component; use caller stacks and rendering markers together. Native addresses may remain unsymbolicated with Playwright's Firefox build. The requested sample interval is 1 ms; actual Windows sample spacing can be coarser.
+
+Run short batches and check the reported workflow names/count against the test output: Firefox's recording buffer can discard early workflows in a long run. Repeat missing workflows separately. Tests are serial and use mocked APIs/ads. Do not run builds or other browser benchmarks concurrently. On this Windows host Firefox needs execution outside the sandbox, which fails even for a blank page.
+
+For the five large-data workflows in a narrow Firefox viewport:
+
+```powershell
+$env:PERF_STRESS = '1'
+$env:PERF_ENFORCE = '0'
+$env:PERF_OUT = '.tmp/firefox-stress'
+npx playwright test --config playwright.firefox-profile.config.ts interaction.spec.ts
+node tests/performance/firefox-stalls.mjs .tmp/firefox-stress
+Remove-Item Env:PERF_STRESS
+```
+
+Firefox recording runs have **no artificial CPU throttle**. Firefox does not support Chromium's CDP throttle or Event Timing audit, so this config disables those flags. Use the Chromium audit below, without profiling, for the 300 ms budget. `PERF_ENFORCE=0` collects all diagnostic results; it does not certify a budget pass. See [the broader Firefox pass](../../reports/firefox-cross-page-2026-09-20.md).
+
 ## All existing interaction workflows: 300 ms budget
 
 ```powershell

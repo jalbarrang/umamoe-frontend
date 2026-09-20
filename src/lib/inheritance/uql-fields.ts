@@ -813,9 +813,12 @@ export type UqlNamedFactor = FriendlySparkField & {
   valueContext: UqlFactorValueContext;
 };
 
+const scopedFieldsCache = new WeakMap<UqlNamedFactor[], FriendlyScopedSparkField[]>();
 export function buildScopedSparkFields(
   factors: UqlNamedFactor[],
 ): FriendlyScopedSparkField[] {
+  const cached = scopedFieldsCache.get(factors);
+  if (cached) return cached;
   const scopes = [
     {
       label: 'Main',
@@ -918,11 +921,11 @@ export function buildScopedSparkFields(
     },
   ];
 
-  return scopes.flatMap((scope) =>
+  const fields = scopes.flatMap((scope) =>
     factors.flatMap((factor) => {
       const fields = scope.fieldsByContext[factor.valueContext];
       if (!fields?.length) return [];
-      const factorAliases = [factor.label, ...factor.aliases];
+      const factorAliases = [...new Set([factor.label, ...factor.aliases])];
       return [
         {
           label: `${scope.label} ${factor.label}`,
@@ -937,9 +940,17 @@ export function buildScopedSparkFields(
       ];
     }),
   );
+  scopedFieldsCache.set(factors, fields);
+  return fields;
 }
 
-export const namedUqlFactors = (): UqlNamedFactor[] => factorOptions()
+let factorSnapshot: ReturnType<typeof factorOptions> = [], namedFactors: UqlNamedFactor[] = [];
+export function namedUqlFactors(): UqlNamedFactor[] {
+  // Read the reactive catalog even on a cache hit; resource replacement invalidates it.
+  const factors = factorOptions();
+  if (factors.length === factorSnapshot.length && factors.every((factor, index) => factor === factorSnapshot[index])) return namedFactors;
+  factorSnapshot = factors;
+  return namedFactors = factors
   .filter((factor) => factor.type >= 0 && factor.type <= 5)
   .map((factor) => {
     const color =
@@ -968,9 +979,14 @@ export const namedUqlFactors = (): UqlNamedFactor[] => factorOptions()
       valueContext: `${color}-factor` as UqlFactorValueContext,
     };
   });
+}
 
 // Angular prefers the stable stat/aptitude aliases over loaded duplicate labels.
-export const scopedUqlFactors = (factors = namedUqlFactors()) => [
+const scopedFactorsCache = new WeakMap<UqlNamedFactor[], UqlNamedFactor[]>();
+export function scopedUqlFactors(factors = namedUqlFactors()): UqlNamedFactor[] {
+  const cached = scopedFactorsCache.get(factors);
+  if (cached) return cached;
+  const scoped = [
   ...new Map(
     [
       ...factors,
@@ -986,3 +1002,6 @@ export const scopedUqlFactors = (factors = namedUqlFactors()) => [
     ),
   ).values(),
 ];
+  scopedFactorsCache.set(factors, scoped);
+  return scoped;
+}

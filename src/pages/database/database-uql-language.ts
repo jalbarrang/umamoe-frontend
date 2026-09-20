@@ -486,6 +486,7 @@ const factorSuggestions = (): UqlSuggestion[] => factorOptions().filter(factor =
   backendValue: String(Number(factor.id) * 10 + 1),
 }));
 
+const scopedSuggestions = new WeakMap<FriendlyScopedSparkField, UqlSuggestion>();
 export function createDatabaseUqlLanguage(
   characters: CatalogEntry[],
   supports: CatalogEntry[],
@@ -883,19 +884,24 @@ export function createDatabaseUqlLanguage(
       valueContext: 'white-factor' as const,
       fieldType: 'array' as UqlFieldType,
     })),
-    ...buildScopedSparkFields(scopedUqlFactors()).map((field) => ({
-      label: field.label,
-      insertText: field.label,
-      kind: 'field' as const,
-      detail:
-        'Up to 3 stars on a specific slot; compare a named factor like Main End Closer >= 1',
-      searchText: getScopedSparkFieldSearchText(field),
-      matchPhrases: [field.label, ...field.aliases],
-      priority: getScopedSparkFieldPriority(field),
-      scopeContext: getScopeContextForLabel(field.label),
-      valueContext: field.valueContext,
-      fieldType: 'number' as UqlFieldType,
-    })),
+    ...buildScopedSparkFields(scopedUqlFactors()).map((field) => {
+      const cached = scopedSuggestions.get(field);
+      if (cached) return cached;
+      const suggestion: UqlSuggestion = {
+        label: field.label,
+        insertText: field.label,
+        kind: 'field',
+        detail: 'Up to 3 stars on a specific slot; compare a named factor like Main End Closer >= 1',
+        searchText: getScopedSparkFieldSearchText(field),
+        matchPhrases: [field.label, ...field.aliases],
+        priority: getScopedSparkFieldPriority(field),
+        scopeContext: getScopeContextForLabel(field.label),
+        valueContext: field.valueContext,
+        fieldType: 'number',
+      };
+      scopedSuggestions.set(field, suggestion);
+      return suggestion;
+    }),
   ];
 
   const characterNames = new Map(

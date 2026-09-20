@@ -251,7 +251,8 @@ test('Club details exposes populated charts, calendar, row view, and Excel expor
   await expect(page.getByRole('region', { name: 'Club Information', exact: true })).toBeVisible();
   await expect(page.getByRole('figure', { name: 'Club progression by observed day' })).toBeVisible();
   await page.getByRole('button', { name: 'Show member calendar' }).click();
-  await page.getByRole('button', { name: 'Day 1 contributors', exact: true }).click();
+  // Mouse movement can open the hover preview over its trigger before a click lands.
+  await page.getByRole('button', { name: 'Day 1 contributors', exact: true }).press('Enter');
   await expect(page.getByRole('dialog')).toContainText('Gold Ship');
   await page.getByRole('dialog').getByRole('button', { name: 'Close Day 1 contributors', exact: true }).click();
   await page.getByRole('button', { name: 'Show member rows' }).click();

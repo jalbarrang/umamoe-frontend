@@ -1190,7 +1190,7 @@ export class UqlEditorLanguage {
 
   private fieldSuggestionPhraseIndex: Array<{ fieldType?: UqlFieldType; phrases: string[] }> = [];
 
-  private suggestionSearchCache = new WeakMap<
+  private static readonly suggestionSearchCache = new WeakMap<
     UqlSuggestion,
     {
       normalizedLabel: string;
@@ -1239,7 +1239,7 @@ export class UqlEditorLanguage {
   }
 
   private getSuggestionSearchEntry(suggestion: UqlSuggestion) {
-    let entry = this.suggestionSearchCache.get(suggestion);
+    let entry = UqlEditorLanguage.suggestionSearchCache.get(suggestion);
     if (!entry) {
       const normalizedLabel = this.normalizeSuggestionToken(suggestion.label);
       const normalizedInsertText = suggestion.insertText === suggestion.label ? normalizedLabel : this.normalizeSuggestionToken(suggestion.insertText);
@@ -1252,7 +1252,7 @@ export class UqlEditorLanguage {
         searchTerms: `${normalizedLabel} ${normalizedInsertText} ${normalizedSearch} ${normalizedDetail} ${normalizedBackend}`.match(/[a-z0-9\u00c0-\uffff]+/g) || [],
         haystack: `${normalizedLabel} ${normalizedDetail} ${normalizedSearch} ${normalizedInsertText} ${normalizedBackend}`,
       };
-      this.suggestionSearchCache.set(suggestion, entry);
+      UqlEditorLanguage.suggestionSearchCache.set(suggestion, entry);
     }
     return entry;
   }

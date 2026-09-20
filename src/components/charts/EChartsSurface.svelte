@@ -14,7 +14,7 @@
   interface Props { option: EChartsCoreOption; label: string; description?: string; height?: number; dismissTouchTooltip?: boolean; zoomable?: boolean; }
   let { option, label, description, height = 280, dismissTouchTooltip = false, zoomable = false }: Props = $props();
   let host: HTMLDivElement;
-  let chart: EChartsType | undefined;
+  let chart = $state.raw<EChartsType>();
   const surfaceId = $props.id();
   const tooltipClass = `chart-tooltip-${surfaceId}`;
   const tooltipElement = () => document.getElementsByClassName(tooltipClass)[0];
@@ -32,7 +32,6 @@
 
   onMount(() => {
     chart = echarts.init(host, undefined, { renderer: 'svg' });
-    chart.setOption(chartOption);
     const observer = new ResizeObserver(() => chart?.resize());
     observer.observe(host);
     let dismissTimer: ReturnType<typeof setTimeout>;

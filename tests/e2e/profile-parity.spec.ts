@@ -95,6 +95,8 @@ for (const theme of ['dark', 'light']) {
     }
     if (theme === 'light') await expect(inheritance.locator('.plan-action')).toHaveCSS('background-color', mobile ? 'rgba(0, 0, 0, 0)' : 'rgb(247, 249, 252)');
     if (!mobile) {
+      await inheritance.scrollIntoViewIfNeeded();
+      await expect(inheritance.locator('.spark-modes')).toBeVisible();
       const alignment = await inheritance.evaluate(card => ({ factors: card.querySelector('.spark-modes')!.getBoundingClientRect().y, portraits: card.querySelector('.character-panel')!.getBoundingClientRect().y }));
       expect(Math.abs(alignment.factors - alignment.portraits)).toBeLessThan(1);
     }

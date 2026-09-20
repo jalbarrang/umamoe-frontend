@@ -96,13 +96,15 @@ export const timelineRepository = {
         const context = [...relatedCharacters, ...relatedSupportCardNames].slice(0, 3).join(' · ');
         const estimatedEndDate = parseResourceDate(event.estimated_end_date) ?? (typeof event.banner_duration_days === 'number' ? new Date(date.getTime() + event.banner_duration_days * 86_400_000) : undefined);
         const jpReleaseDate = event.jp_release_date ? new Date(event.jp_release_date) : undefined;
+        let dateLabel: string | undefined;
         return [{
           id: event.id,
           title: event.title,
           typeLabel: typeLabels[event.type ?? ''] ?? 'Event',
           eventType: event.type ?? 'event',
           date,
-          dateLabel: dateFormatter.format(date) + (estimatedEndDate && estimatedEndDate > date ? ' – ' + dateFormatter.format(estimatedEndDate) : ''),
+          // Only visible cards need presentation labels; keep the cached resource cheap to prepare.
+          get dateLabel() { return dateLabel ??= dateFormatter.format(date) + (estimatedEndDate && estimatedEndDate > date ? ' – ' + dateFormatter.format(estimatedEndDate) : ''); },
           gachaLabel: (typeof event.gacha_type_name === 'string' ? gachaLabels[event.gacha_type_name] : '') || gachaTypes[Number(event.gacha_type)] || '',
           context,
           image: contentUrl(timelineImage(event.image_path, event.type, event.id, contentUrl(event.image))),
@@ -135,7 +137,8 @@ export const timelineRepository = {
           .sort((a, b) => Math.abs(a.jpReleaseDate!.getTime() - jpDate.getTime()) - Math.abs(b.jpReleaseDate!.getTime() - jpDate.getTime()) || phase(a.title) - phase(b.title))[0];
         return [{ date, label: item.label, predicted: item.is_confirmed !== true, image: contentUrl(timelineImage(item.image_path, undefined, '', contentUrl(item.image))) ?? source?.image }];
       }).sort((a, b) => a.date.getTime() - b.date.getTime());
-      return { events: events.map(event => ({ ...event, pickups: timelinePickups(event, catalog) })), anniversaries, calculation: toTimelineCalculation(resource.calculation), catalog };
+      for (const event of events) event.pickups = timelinePickups(event, catalog);
+      return { events, anniversaries, calculation: toTimelineCalculation(resource.calculation), catalog };
     }, refresh);
   }
 };

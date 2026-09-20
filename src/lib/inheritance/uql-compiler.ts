@@ -72,6 +72,10 @@ interface UqlSkillListItem {
 }
 
 export class UqlCompiler {
+  private static readonly factorIndexes = new WeakMap<UqlNamedFactor[], {
+    values: Map<string, UqlNamedFactor>;
+    scoped: Map<string, FriendlyScopedSparkField>;
+  }>();
   private readonly friendlySparkFields = friendlySparkFields;
   private readonly friendlyFieldAliases = friendlyFieldAliases;
   private readonly factors = namedUqlFactors();
@@ -95,8 +99,14 @@ export class UqlCompiler {
   ) {
     this.uqlNamedFactorsCache = this.factors;
     this.scopedUqlNamedFactorsCache = scopedUqlFactors(this.factors);
+    const cached = UqlCompiler.factorIndexes.get(this.factors);
+    if (cached) {
+      this.factorValueLookup = cached.values;
+      this.scopedSparkComparisonAliasLookup = cached.scoped;
+      return;
+    }
     for (const factor of this.factors)
-      for (const alias of [factor.label, ...factor.aliases]) {
+      for (const alias of new Set([factor.label, ...factor.aliases])) {
         const name = this.normalizeUqlName(alias);
         for (const context of [factor.valueContext, null]) {
           const key = this.getFactorValueLookupKey(context, name);
@@ -105,12 +115,13 @@ export class UqlCompiler {
         }
       }
     for (const field of buildScopedSparkFields(this.scopedUqlNamedFactorsCache))
-      for (const alias of [field.label, ...field.aliases]) {
+      for (const alias of new Set([field.label, ...field.aliases])) {
         this.scopedSparkComparisonAliasLookup.set(
           this.normalizeUqlName(alias),
           field,
         );
       }
+    UqlCompiler.factorIndexes.set(this.factors, { values: this.factorValueLookup, scoped: this.scopedSparkComparisonAliasLookup });
   }
 
   compile(query: string): string {
@@ -3081,17 +3092,11 @@ export class UqlCompiler {
   }
 
   private normalizeUqlName(value: string): string {
-    return this.stripUqlFactorLevelMarker(value.replace(/^['"]|['"]$/g, ''))
-      .toLowerCase()
-      .replace(/[_-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  private stripUqlFactorLevelMarker(value: string): string {
-    return value
+    return value.replace(/^['"]|['"]$/g, '')
       .replace(/[○◎◯]/g, '')
       .replace(/\s+[oO]$/g, '')
+      .toLowerCase()
+      .replace(/[_-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
