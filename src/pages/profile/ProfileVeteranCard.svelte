@@ -120,7 +120,6 @@
   .spark-groups,.spark-group,.skill-list { min-width:0; display:flex; flex-wrap:wrap; gap:4px; }
   .spark-group[data-tone='white'] { flex-basis:100%; }
   .spark-filter,.skill-filter { max-width:100%; display:flex; align-items:center; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
-  .spark-filter :global(.spark) { min-height:22px; padding:3px 5px; border-radius:4px; border-color:var(--spark-border-color,rgb(var(--spark-rgb)/.3)); font-size:11px; }
   .spark-filter :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.2; }
   .spark-filter:hover :global(.spark) { border-color:var(--spark-border-color,currentColor); }
   .skill-filter.matched { outline:2px solid var(--color-accent); outline-offset:1px; }

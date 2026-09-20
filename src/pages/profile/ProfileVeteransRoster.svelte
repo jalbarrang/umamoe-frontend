@@ -629,7 +629,7 @@
   .table-totals { display:flex; align-items:baseline; gap:10px; margin-top:8px; color:var(--color-text-muted); font-size:10px; white-space:nowrap; font-variant-numeric:tabular-nums; }.table-totals strong { color:var(--color-text); font-size:12px; font-weight:600; }
   .table-affinity :global(.affinity) { padding:0; border:0; background:transparent; }
   .table-action { padding-inline:0; text-align:center; }
-  .table-factors { display:flex; flex-wrap:wrap; gap:5px; }.table-spark { max-width:100%; padding:0; border:0; border-radius:var(--radius-sm); background:transparent; cursor:pointer; }.table-factors :global(.spark) { font-size:10px; }.table-factors :global(.name) { white-space:normal; line-height:1.25; }
+  .table-factors { display:flex; flex-wrap:wrap; gap:5px; }.table-spark { max-width:100%; padding:0; border:0; border-radius:var(--radius-sm); background:transparent; cursor:pointer; }.table-factors :global(.name) { white-space:normal; line-height:1.25; }
   .query-row td { padding:8px 12px; }.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
   .more { min-height:70px; display:flex; justify-content:center; align-items:center; gap:12px; color:var(--color-text-muted); font-size:12px; }
   .light-filters { display:grid; grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,1fr)); gap:8px; }.compact-roster { padding:0; }

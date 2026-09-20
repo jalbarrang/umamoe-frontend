@@ -162,12 +162,8 @@
     <div class="picker-body" onscroll={(event)=>{const el=event.currentTarget;if(el.scrollHeight-el.scrollTop-el.clientHeight<360)renderLimit=Math.min(filtered.length,renderLimit+16);}}>
     <div class="active-filters" aria-label="Spark filters">
       {#if factorGroups.length}<div class="spark-filter-groups">
-        {#each factorGroups as group,groupIndex (group.tone)}
-          {#if groupIndex > 0}<span class="group-join">AND</span>{/if}
+        {#each factorGroups as group (group.tone)}
           <section class="spark-filter-group selected-factor--{group.tone}" aria-label={groupLabels[group.tone]+' filters'}>
-            <header><strong><span aria-hidden="true">★</span> {groupLabels[group.tone]}</strong>
-              {#if group.entries.length > 1}<SegmentedControl label={groupLabels[group.tone]+' matching'} options={[{value:'and',label:'AND'},{value:'or',label:'OR'}]} value={pickerState.factorOperators?.[group.tone] ?? 'and'} onchange={value => pickerState.factorOperators={...pickerState.factorOperators,[group.tone]:value as 'and'|'or'}}/>{/if}
-            </header>
             <div class="group-filters">
               {#each group.entries as {filter:factor,index,resolved} (index)}
                 {@const max = factor.maxLevel ?? (factor.scope === 'combined' ? 9 : 3)}
@@ -176,6 +172,7 @@
                 </div>
               {/each}
             </div>
+            {#if group.entries.length > 1}<SegmentedControl label={groupLabels[group.tone]+' matching'} options={[{value:'and',label:'AND'},{value:'or',label:'OR'}]} value={pickerState.factorOperators?.[group.tone] ?? 'and'} onchange={value => pickerState.factorOperators={...pickerState.factorOperators,[group.tone]:value as 'and'|'or'}}/>{/if}
           </section>
         {/each}
       </div>{/if}
@@ -258,11 +255,9 @@
   .result-count { margin-left:auto; color:var(--text-muted); font-size:11px; white-space:nowrap; }
   .active-filters { --spark-filter-height:28px; --control-height:var(--spark-filter-height); display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px var(--picker-inset); margin:0 calc(-1 * var(--picker-inset)) 10px; border-block:1px solid var(--border-subtle); background:var(--bg-primary); }
   .spark-filter-groups { display:grid; gap:6px; width:100%; min-width:0; }
-  .spark-filter-group { --color-accent:var(--spark-white-text); display:grid; gap:6px; min-width:0; padding:8px; border:1px solid var(--border-subtle); border-left:3px solid var(--color-accent); border-radius:var(--radius-sm); }
-  .spark-filter-group header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
-  .spark-filter-group strong { font-size:11px; }.spark-filter-group strong span { color:var(--color-accent); }
-  .spark-filter-group :global(.segments) { flex:none; padding:2px; }.spark-filter-group :global(.segments button) { min-height:var(--spark-filter-height); padding:0 8px; font-size:11px; }
-  .group-filters { display:flex; flex-wrap:wrap; gap:6px; min-width:0; }.group-join { padding-left:11px; font-size:10px; font-weight:600; color:var(--text-muted); }
+  .spark-filter-group { display:flex; align-items:flex-start; gap:8px; min-width:0; }
+  .spark-filter-group :global(.segments) { flex:none; height:var(--spark-filter-height); padding:2px; }.spark-filter-group :global(.segments button) { min-height:0; padding:0 8px; font-size:11px; }
+  .group-filters { flex:1; display:flex; flex-wrap:wrap; gap:4px; min-width:0; }
   .spark-display { margin-left:auto; }.spark-display :global(.segments) { padding:2px; height:var(--control-height); }.spark-display :global(.segments button) { min-height:0; padding:0 8px; font-size:11px; }
   .clear-sparks :global(.ui-button) { min-height:var(--control-height); padding:2px 6px; font-size:11px; }
   .picker-body { --picker-inset:12px; min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:0 var(--picker-inset) 12px; }

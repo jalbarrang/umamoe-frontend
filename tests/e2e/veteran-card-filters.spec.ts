@@ -96,7 +96,11 @@ test('spark filters support exact stars, scope and family totals without opening
   await scope.click();
   const scopeMenu=page.getByRole('listbox',{name:'Where to match',exact:true});
   await expect(scopeMenu).toBeVisible();
-  await expect.poll(async()=>{const menu=(await scopeMenu.boundingBox())!,control=(await scope.boundingBox())!;return menu.y+menu.height<=control.y;}).toBe(true);
+  await expect.poll(async()=>{
+    const menu=(await scopeMenu.boundingBox())!,control=(await scope.boundingBox())!,viewport=page.viewportSize()!;
+    return (menu.y+menu.height<=control.y+1 || menu.y>=control.y+control.height-1)
+      && menu.x>=0 && menu.x+menu.width<=viewport.width+1 && menu.y>=0 && menu.y+menu.height<=viewport.height+1;
+  }).toBe(true);
   await page.screenshot({path:testInfo.outputPath('spark-scope-select.png')});
   await page.getByRole('option',{name:'Main',exact:true}).click();
   await expect(page.getByText('No veterans match your filters.',{exact:true})).toBeVisible();
@@ -129,16 +133,18 @@ test('spark filters support exact stars, scope and family totals without opening
   await page.screenshot({path:testInfo.outputPath('add-spark-above.png')});
   await page.getByRole('button',{name:'Add Dirt spark',exact:true}).click();
   await expect(page.locator('.veteran-card')).toHaveCount(0);
-  await page.getByRole('button',{name:'Spark options for rule 2',exact:true}).click();
-  const secondOptions=page.getByRole('dialog',{name:'Spark options for rule 2',exact:true});
-  await secondOptions.getByRole('radiogroup',{name:'Rule 2 operator',exact:true}).getByRole('radio',{name:'OR',exact:true}).click();
+  const operator=page.getByRole('radiogroup',{name:'Rule 2 operator',exact:true});
+  await operator.getByRole('radio',{name:'OR',exact:true}).click();
+  await expect(page.locator('.veteran-card')).toHaveCount(1);
+  await operator.getByRole('radio',{name:'AND',exact:true}).click();
+  await expect(page.locator('.veteran-card')).toHaveCount(0);
+  await operator.getByRole('radio',{name:'OR',exact:true}).click();
   await expect(page.locator('.veteran-card')).toHaveCount(1);
   const secondRule=page.locator('.requirement').nth(1);
-  await page.keyboard.press('Escape');
   await secondRule.getByRole('combobox',{name:'Where to match',exact:true}).click();
   await page.getByRole('option',{name:'Main',exact:true}).click();
   await page.screenshot({path:testInfo.outputPath('two-spark-rules.png')});
-  await expect(page.locator('.rule-join')).toHaveText('or');
+  await expect(operator.getByRole('radio',{name:'OR',exact:true})).toBeChecked();
   await secondRule.getByRole('slider',{name:'Stars maximum',exact:true}).press('End');
   await secondRule.getByRole('slider',{name:'Stars maximum',exact:true}).press('ArrowLeft');
   await expect(page.locator('.veteran-card')).toHaveCount(0);

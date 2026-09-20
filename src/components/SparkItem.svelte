@@ -31,22 +31,22 @@
   .spark.highlightMain[data-source='main'] .level, .spark.highlightMain[data-source='main'] .star { color: var(--spark-main-color, var(--spark-source-main)); }
   .p2-marker { width: 16px; height: 16px; display: inline-grid; flex: 0 0 auto; place-items: center; color: var(--accent-purple); line-height: var(--line-height-none); }
   .source-portrait { width:20px; height:20px; flex:none; object-fit:contain; object-position:center; margin:-2px 2px -2px -3px; }
-  .compact { padding: .15rem .5rem; border-radius: var(--radius-sm); font-size: .72rem; }
+  .compact { min-width:0; gap:3px; padding:2px 4px; border-radius:var(--radius-xs); font-size:11px; }
   .compact .star { font-size: 11px; }
   .compact .p2-marker { width: 12px; height: 12px; }
   .compact .p2-marker :global(svg) { width: 12px; height: 12px; }
   .spark.removable{padding:2px 2px 2px 6px;min-width:0}
   .spark>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px;padding:0;border:0;border-left:1px solid rgb(var(--spark-rgb)/.3);border-radius:0 2px 2px 0;color:inherit;background:transparent;opacity:.7}.spark>:global(.icon-button:hover),.spark>:global(.icon-button:focus-visible){opacity:1;background:rgb(var(--spark-rgb)/.15)}.spark>:global(.icon-button svg){width:12px;height:12px}
-  .spark.compact.removable{gap:3px;padding:0 0 0 5px}
-  .compact.removable .chance{padding:1px 3px}
+  .spark.compact.removable{padding:0 0 0 4px}
+  .compact .chance{padding:1px 3px}
   .compact.removable>:global(.icon-button){width:20px;height:20px;min-width:20px;min-height:20px}
   @media(pointer:coarse){.compact.removable>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px}}
   :global([data-theme='light']) .chance { border-color: rgb(17 24 39 / .14); background: rgb(17 24 39 / .06); }
 
   @media (max-width: 767px) {
     .spark:not(.compact) { gap:3px; padding:2px 4px; border-radius:4px; font-size:11px; }
-    .spark:not(.compact) .star { font-size: 9px; }
-    .spark:not(.compact) .chance { padding:1px 3px; font-size:10px; }
+    .spark:not(.compact) .star { font-size:11px; }
+    .spark:not(.compact) .chance { padding:1px 3px; }
     .spark:not(.compact) .p2-marker { width: 11px; height: 11px; }
     .spark:not(.compact) .p2-marker :global(svg) { width: 11px; height: 11px; }
   }

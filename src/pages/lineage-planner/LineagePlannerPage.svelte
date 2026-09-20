@@ -445,6 +445,11 @@
   }
   @container lineage-planner (1040px < width <= 1252px) or (width <= 620px){.grandparents{grid-template-columns:1fr;padding:28px 0 0 10px;gap:6px}.gp-branch+.gp-branch{margin-top:28px}.grandparents::before,.grandparents::after{display:none}.gp-branch::before{left:-10px;top:-28px;bottom:-6px;height:auto}.gp-branch:last-child::before{bottom:auto;height:14px}.gp-branch::after{content:'';position:absolute;left:-10px;top:-14px;width:10px;border-top:1px solid var(--flow-line)}.gp-flow{left:0;top:-25px;transform:none}.gp-flow>span{display:none}.greats{padding-left:0;border-left:0}}
   @media(max-width:767px){.target-row{gap:6px}.planner-guide{padding:4px 2px 8px}.great-toggle{min-height:44px}.inheritance-trigger{min-height:44px}.inheritance-header{min-height:44px;padding-right:48px}}
+  @media(max-width:767px){
+    .target-arrow,.parent-connections::before,.parent-connections::after,.parent-flow::before,.parent-branch::before,.branch-heading::before,.grandparents::before,.grandparents::after,.gp-branch::before,.gp-branch::after{display:none}
+    .parents,.grandparents,.greats{padding-left:0;border-left:0}
+    .parent-connections{height:42px}.shared-flow{top:8px}
+  }
   .inheritance{--inspect-popover-width:480px;--inspect-popover-padding:0;--factor-panel-bg:var(--surface-overlay);--factor-panel-border:rgb(var(--accent-warning-rgb)/.2);margin-top:4px}
   .inheritance :global(.inspect),.inheritance :global(.trigger){width:100%}.inheritance-trigger{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid rgb(var(--accent-warning-rgb)/.2);border-radius:var(--radius-sm);background:rgb(var(--accent-warning-rgb)/.06);color:var(--accent-warning);font-size:.65rem;font-weight:600}.inheritance-trigger:hover{background:rgb(var(--accent-warning-rgb)/.12)}
   .inheritance-header{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:10px 40px 10px 12px;border-bottom:1px solid var(--border-subtle);font-size:.7rem}.inheritance-header :global(svg){color:var(--accent-warning)}.inheritance-header small{font-size:.55rem;font-weight:400;color:var(--text-disabled)}

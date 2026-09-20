@@ -160,7 +160,7 @@
   @container spark-details (max-width:310px) { .spark-sources { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }.own-sources { grid-column:1/-1; } }
   .source-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }.source-name span { color:var(--color-text-subtle); }
   .race-section { padding-top:10px; border-top:1px solid var(--border-subtle); }
-  .spark-list { display:flex; flex-wrap:wrap; align-content:start; gap:5px; padding:1px; }.spark-group { min-width:0; display:flex; flex-wrap:wrap; gap:5px; }.spark-group[data-tone='blue'],.spark-group[data-tone='pink'],.spark-group[data-tone='green'] { display:contents; }.spark-group[data-tone='white'] { flex-basis:100%; }.spark-token { min-width:0; max-width:100%; display:flex; }.spark-token :global(.spark) { min-height:24px; padding:4px 6px; border-radius:4px; border-color:rgb(var(--spark-rgb)/.3); font-size:12px; }.spark-token :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.25; }
+  .spark-list { display:flex; flex-wrap:wrap; align-content:start; gap:5px; padding:1px; }.spark-group { min-width:0; display:flex; flex-wrap:wrap; gap:5px; }.spark-group[data-tone='blue'],.spark-group[data-tone='pink'],.spark-group[data-tone='green'] { display:contents; }.spark-group[data-tone='white'] { flex-basis:100%; }.spark-token { min-width:0; max-width:100%; display:flex; }.spark-token :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.25; }
   .skill-list { min-width:0; display:flex; align-content:start; flex-wrap:wrap; gap:5px; padding:1px; }.learned-skill { display:flex; min-width:0; max-width:100%; }.learned-skill :global(.skill-chip) { min-height:25px; font-size:11px; }.learned-skill :global(.skill-chip img) { width:25px; height:25px; }.learned-skill :global(.skill-body) { min-height:25px; }.learned-skill :global(.skill-name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; }.learned-skill :global(.skill-level) { font-size:10px; }
   .race-list { display:flex; flex-wrap:wrap; gap:5px; }.race { display:inline-flex; align-items:center; gap:5px; padding:4px 6px; border:1px solid var(--border-subtle); border-radius:4px; font-size:11px; }.race b { font-size:9px; color:var(--color-text-muted); }.grade-g1 b { color:var(--race-g1); }.grade-g2 b { color:var(--race-g2); }.grade-g3 b { color:var(--race-g3); }
   .family-section { min-width:0; display:grid; gap:6px; border-top:1px solid var(--border-subtle); padding-top:8px; }.family-section h3 :global(svg) { color:var(--color-accent); }
@@ -171,6 +171,5 @@
     .compact-overview { grid-template-columns:1fr; gap:12px; }
     .support-deck { grid-template-columns:repeat(2,minmax(0,1fr)); }.support-deck li { grid-template-columns:36px minmax(0,1fr); gap:3px 6px; padding:6px; }.support-deck :global(.art) { width:36px; height:36px; }.support-deck li>span { font-size:11px; }
     .support-rarity { width:16px; height:16px; }.support-lb { font-size:12px; }
-    .spark-token :global(.spark) { font-size:11px; }
   }
 </style>
