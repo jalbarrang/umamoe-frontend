@@ -252,11 +252,11 @@ export async function mockTimeline(page: Page, freezeTime = true): Promise<void>
 export const veteran = {
   id: 1, member_id: 1, trained_chara_id: 991, card_id: 101101, distance_type: 4, running_style: 2,
   speed: 1210, stamina: 960, power: 1090, guts: 720, wiz: 1040, rank_score: 15900, skills: [200011, 100011],
-  factors: [103, 1203, 10013, 200012], support_cards: [], scenario_id: 5, rarity: 5, talent_level: 5,
+  factors: [103, 1203, 10010103, 2000102], support_cards: [], scenario_id: 5, rarity: 5, talent_level: 5,
   proper_ground_turf: 7, proper_ground_dirt: 1, proper_distance_short: 2, proper_distance_mile: 4,
   proper_distance_middle: 6, proper_distance_long: 7, proper_running_style_nige: 2, proper_running_style_senko: 7,
   proper_running_style_sashi: 4, proper_running_style_oikomi: 1,
-  inheritance: { blue_sparks: [103], pink_sparks: [1203], green_sparks: [10013], white_sparks: [200012], blue_stars_sum: 3, pink_stars_sum: 3, green_stars_sum: 3, white_stars_sum: 2, affinity_score: 83 },
+  inheritance: { blue_sparks: [103], pink_sparks: [1203], green_sparks: [10010103], white_sparks: [2000102], blue_stars_sum: 3, pink_stars_sum: 3, green_stars_sum: 3, white_stars_sum: 2, affinity_score: 83 },
   win_saddle_id_array: [30], race_results: [102],
   succession_chara_array: [
     { position_id: 10, card_id: 106701, rank: 14500, rarity: 4, talent_level: 4, factor_id_array: [103] },

@@ -49,5 +49,5 @@
   .clear { margin-left: auto; display: flex; }
   .uql-cm-toolbar { min-height: var(--uql-control-height, 44px); }
   .uql-cm-meta { min-width: 0; }
-  @media (pointer: coarse) and (max-width: 1300px) { :global(.cm-tooltip.cm-tooltip-autocomplete > ul > li) { min-height: max(44px, var(--touch-target)); height: auto; } }
+  @media (max-width: 767px) { :global(.cm-tooltip.cm-tooltip-autocomplete > ul > li) { min-height: max(44px, var(--touch-target)); height: auto; } }
 </style>

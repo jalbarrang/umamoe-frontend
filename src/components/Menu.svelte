@@ -65,5 +65,5 @@
   .menu-panel button.active{color:var(--accent-primary);background:var(--factor-option-hover)}hr{width:100%;margin:2px 0;border:0;border-top:1px solid var(--border-subtle)}
   button.danger { color: var(--color-danger); }
   button:disabled { opacity: .4; cursor: not-allowed; }
-  @media (max-width: 768px), (pointer: coarse) and (max-width: 1300px) { .menu-item,.trigger { min-height:var(--touch-target); }.trigger.icon-only{min-width:var(--touch-target)} }
+  @media (max-width: 768px) { .menu-item,.trigger { min-height:var(--touch-target); }.trigger.icon-only{min-width:var(--touch-target)} }
 </style>

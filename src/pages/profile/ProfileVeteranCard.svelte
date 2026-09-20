@@ -137,5 +137,5 @@
   .text-action { display:inline-flex; align-items:center; gap:5px; min-height:24px; padding:0; border:0; background:transparent; color:var(--color-accent); font-size:10px; text-decoration:none; cursor:pointer; }
   small { color:var(--color-text-muted); font-size:10px; }button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }.card-open:focus-visible { outline-offset:-2px; }
   @container(max-width:330px) { .card-open { padding:8px; }.card-body { padding:8px; }}
-  @media(pointer: coarse) and (max-width: 1300px) { .spark-filter,.skill-filter,.text-action { min-height:32px; }.spark-groups,.spark-group,.skill-list { gap:5px; } }
+  @media (max-width: 767px) { .text-action { min-height:32px; } }
 </style>

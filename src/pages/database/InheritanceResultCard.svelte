@@ -308,10 +308,6 @@
     .support-card-section { width: auto; flex: 0 0 auto; flex-direction: column; gap: .35rem; margin: 0 0 0 .5rem; padding: 0 .5rem 0 .75rem; border-width: 0 0 0 1px; border-radius: 0; background: transparent; }
     .limit-break { justify-content: center; font-size: 18px; }
   }
-  @media (pointer: coarse) and (max-width: 1300px) {
-    .record-actions button, .spark-modes .count-mode, .hidden-summary { min-height: var(--touch-target); min-width: var(--touch-target); }
-    .white-section summary { min-height: var(--touch-target); align-content: center; margin-bottom: 0; }
-  }
   @container inheritance-card (max-width: 480px) {
     .trainer-copy { width: 100%; }.trainer-copy strong { flex: 1; max-width: none; text-align: left; }.trainer-copy>span { flex: 0 0 auto; margin-left: auto; }.record-actions button { min-width: 44px; min-height: 44px; gap: 3px; padding-inline: 3px; font-size: .6rem; }.record-actions .action-desktop { display: none; }.record-actions .action-mobile { display: inline; }
     .record-stats { flex-wrap: nowrap; gap: clamp(4px,1.8cqw,8px); padding: 7px .5rem; }.rank-score { margin-left: auto; padding-left: 7px; gap: 4px; }.rank-score :global(.rank) { width: 30px; height: 30px; }.stat strong { font-size: .95rem; }.stat span { font-size: .52rem; white-space: nowrap; }.scenario-mark { padding-left: 7px; }.scenario-mark svg { width: 64px; height: 36px; }.trainer-copy { min-height: 44px; }

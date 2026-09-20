@@ -50,5 +50,4 @@
   .compact h4{grid-column:1/-1}.compact .rule,.compact .chips{display:contents}
   .compact .filter-row{grid-row:2;grid-column:1;min-width:0;min-height:32px;color:var(--accent-success)}.compact .exclude .filter-row{grid-column:2;color:var(--accent-error)}.compact .filter-row :global(svg){color:inherit}.compact .filter-row small{margin-left:auto}
   .compact .chip{grid-column:1/-1;justify-self:start}
-  @media(pointer: coarse) and (max-width: 1300px){.filter-row,.compact .filter-row,.chip button{min-height:var(--touch-target)}.chip button{min-width:var(--touch-target)}.filter-row.icon-only{flex-basis:44px;width:var(--touch-target);min-height:var(--touch-target)}}
 </style>

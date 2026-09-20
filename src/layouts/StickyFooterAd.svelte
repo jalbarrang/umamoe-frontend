@@ -150,7 +150,7 @@
   @media (min-width: 768px) {
     :global(html:has(.timeline-content.mobile:not([hidden]) .mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) { bottom: 58px !important; }
   }
-  @media (pointer: coarse) {
+  @media (max-width: 767px) {
     :global(.footer-ad-close) { width: 44px; height: 44px; }
   }
 </style>

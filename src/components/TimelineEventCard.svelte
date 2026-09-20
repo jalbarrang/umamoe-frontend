@@ -56,5 +56,5 @@
   .plan{min-height:30px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:4px 9px;margin-left:auto;flex:none;order:3;pointer-events:auto;border:1px solid color-mix(in srgb,var(--event-accent) 35%,transparent);border-radius:var(--radius-sm);background:color-mix(in srgb,var(--event-accent) 8%,transparent);color:var(--event-accent);font:inherit;font-size:11px;font-weight:600;cursor:pointer}.plan:hover,.plan:focus-visible{background:color-mix(in srgb,var(--event-accent) 16%,transparent);border-color:var(--event-accent)}.plan.planned{color:var(--accent-success);border-color:color-mix(in srgb,var(--accent-success) 40%,transparent);background:color-mix(in srgb,var(--accent-success) 8%,transparent)}
   .plan.planned:hover,.plan.planned:focus-visible{color:var(--accent-error);border-color:var(--accent-error);background:rgb(var(--accent-error-rgb)/.08)}
   .is-mobile .metadata{font-size:9px}.is-mobile.no-pickups:not(.has-race) .event-body{min-height:93px;grid-template-rows:15px minmax(18px,auto) 17px minmax(32px,1fr)}
-  @media(pointer: coarse) and (max-width: 1300px){.plan{min-height:44px;min-width:44px}}@media(prefers-reduced-motion:reduce){.event-card,.event-media img{transition:none}}
+  @media(prefers-reduced-motion:reduce){.event-card,.event-media img{transition:none}}
 </style>

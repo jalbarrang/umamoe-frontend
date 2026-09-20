@@ -477,5 +477,5 @@
   .confirmation-message{margin:0;font-size:13px;line-height:1.5}
   @media(max-width:600px){.transfer-actions{grid-template-columns:1fr}}
   @media(min-width:768px){.lineage-saves-surface :global(.dialog-panel>header){min-height:53px;padding:12px 12px 12px 16px}.lineage-saves-surface :global(.dialog-panel>header .icon-button){width:28px;height:28px}}
-  @media(pointer: coarse) and (max-width: 1300px),(max-width:767px){.save-row :global(input),.save-row :global(.ui-button){min-height:var(--touch-target)}.save-item :global(.icon-button){width:var(--touch-target);height:var(--touch-target)}}
+  @media (max-width:767px) {.save-row :global(input),.save-row :global(.ui-button){min-height:var(--touch-target)}.save-item :global(.icon-button){width:var(--touch-target);height:var(--touch-target)}}
 </style>

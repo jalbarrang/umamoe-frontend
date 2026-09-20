@@ -83,7 +83,6 @@
       <div class="route-context"><strong>{currentRoute?.title ?? 'uma.moe'}</strong><span>uma.moe</span></div>
       <nav class="header-navigation" aria-label="Quick navigation"><a class="account-action veterans-action" href="/veterans" aria-current={router.route.pathname.startsWith('/veterans') ? 'page' : undefined}><Icon name="veterans" size={18}/><span>Veterans</span></a></nav>
       <div class="utility-actions">
-        {#if $pendingRoute}<Spinner size={20} label={`Loading ${routeDefinitionForPath($pendingRoute)?.title ?? 'page'}`}/>{/if}
         <button class="account-action" type="button" aria-label="Start guided tour" onclick={startGuidedTour}><Icon name="help" size={18}/></button>
         <IconButton icon={$theme === 'dark' ? 'sun' : 'moon'} label="Toggle theme" onclick={toggleTheme}/>
         {#if $authUser}
@@ -105,7 +104,10 @@
     </aside>
 
     <div class="route-content">
-      <div class="route-view" aria-busy={$pendingRoute !== null}>{@render children()}</div>
+      <div class="route-view" aria-busy={$pendingRoute !== null}>
+        {#if $pendingRoute}<div class="route-loading"><div class="route-loading-indicator"><Spinner size={28} label={`Loading ${routeDefinitionForPath($pendingRoute)?.title ?? 'page'}`}/></div></div>{/if}
+        {@render children()}
+      </div>
       <MoeFooter/>
     </div>
   </div>
@@ -121,7 +123,7 @@
 {#if tourLoadError}<Dialog open title="Tour unavailable" onclose={() => tourLoadError = false}><p>The guided tour could not be loaded. Reload this page, then use the help button to try again.</p><Button size="sm" variant="secondary" onclick={() => location.reload()}>Reload page</Button></Dialog>{/if}
 
 <style>
-  @media(pointer: coarse) and (max-width: 1300px),(max-width:767px) { .account-action { min-width:var(--touch-target); min-height:var(--touch-target); } }
+  @media (max-width:767px) { .account-action { min-width:var(--touch-target); min-height:var(--touch-target); } }
   .app-viewport { width: 100%; min-width: 320px; flex: 1; display: flex; flex-direction: column; background: var(--color-canvas); container: app-viewport / inline-size; }
   .app-shell { flex: 1; display: grid; grid-template-rows: auto 1fr; background: var(--color-canvas); }
   .utility-bar { position: sticky; z-index: var(--z-header); top: 0; min-height: var(--utility-height); display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 6px 4px; border-bottom: 1px solid var(--border-primary); background: var(--navbar-bg); }
@@ -146,8 +148,10 @@
   .veterans-action { width:auto; display:flex; align-items:center; gap:8px; padding:0 12px; font-size:var(--font-sm); font-weight:600; text-decoration:none; }
   .side-rail { display: none; }
   .route-content { min-width: 0; display: flex; flex-direction: column; }
-  .route-view { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+  .route-view { position: relative; min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
   .route-view :global(> *) { flex: 1 1 auto; }
+  .route-loading { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .route-loading-indicator { position: sticky; top: calc(var(--utility-height) + 24px); display: grid; place-items: center; width: fit-content; margin: 24px auto; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-canvas); }
   .mobile-navigation { position:fixed; inset:var(--menu-top) 0 auto; width:100%; max-height:calc(100dvh - var(--menu-top) - 8px); margin:0; padding:6px 8px max(8px,env(safe-area-inset-bottom)); overflow:auto; overscroll-behavior:contain; border:0; border-bottom:1px solid var(--border-primary); background:var(--bg-secondary); color:var(--text-primary); box-shadow:var(--shadow-md); }
   @media(max-width:359px) { .utility-bar { gap:2px; } .utility-actions { gap:0; } .mobile-heading { gap:2px; } .mobile-brand { display:none; } }
   @media(max-width:767px) { .utility-bar { background:var(--bg-secondary); } .mobile-brand strong { display:none; } }

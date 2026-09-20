@@ -39,8 +39,7 @@
   .spark>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px;padding:0;border:0;border-left:1px solid rgb(var(--spark-rgb)/.3);border-radius:0 2px 2px 0;color:inherit;background:transparent;opacity:.7}.spark>:global(.icon-button:hover),.spark>:global(.icon-button:focus-visible){opacity:1;background:rgb(var(--spark-rgb)/.15)}.spark>:global(.icon-button svg){width:12px;height:12px}
   .spark.compact.removable{padding:0 0 0 4px}
   .compact .chance{padding:1px 3px}
-  .compact.removable>:global(.icon-button){width:20px;height:20px;min-width:20px;min-height:20px}
-  @media(pointer:coarse){.compact.removable>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px}}
+  .compact.removable>:global(.icon-button){width:24px;height:24px;min-width:24px;min-height:24px}
   :global([data-theme='light']) .chance { border-color: rgb(17 24 39 / .14); background: rgb(17 24 39 / .06); }
 
   @media (max-width: 767px) {

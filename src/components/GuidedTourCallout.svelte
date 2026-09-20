@@ -27,5 +27,5 @@
   footer button:first-child { justify-self:start; } footer button:last-child { justify-self:end; }
   .progress { color:var(--text-muted); font-size:12px; font-weight:600; white-space:nowrap; }
   @media(max-width:600px) { header { padding-top:4px; padding-left:12px; } h2 { font-size:.95rem; } p { font-size:.82rem; line-height:1.4; } footer { gap:2px; padding:0 10px 10px; } }
-  @media(pointer: coarse) and (max-width: 1300px),(max-width:767px) { button { min-height:var(--touch-target); } }
+  @media (max-width:767px) { button { min-height:var(--touch-target); } }
 </style>

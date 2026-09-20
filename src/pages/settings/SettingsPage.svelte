@@ -240,7 +240,6 @@
 
 <style>
   .settings-page { min-height: 100%; }
-  
   .content-container { min-width: 0; display: grid; gap: 1.5rem; padding: 0 var(--page-gutter-current) 3rem; }
   .settings-card { overflow: hidden; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--bg-secondary); }
   .card-header { min-height: 48px; display: flex; align-items: center; gap: .65rem; padding: .75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }.card-header :global(svg) { color: var(--accent-primary); }.card-header h2 { margin: 0; font-size: 1rem; line-height: 1.2; }
@@ -268,5 +267,4 @@
     .account-header { align-items: flex-start; flex-direction: column; }.account-actions { width: 100%; flex-wrap: wrap; }.account-actions :global(.ui-button) { flex: 1; }.form-row,.connect-buttons { align-items: stretch; flex-direction: column; }.form-row :global(.ui-button),.connect-buttons :global(.ui-button) { width: 100%; }.api-key-intro { align-items: stretch; flex-direction: column; }.api-docs-link { justify-content: center; }.api-key-row { padding-inline: 5px; }:global(.api-key-row > .ui-button > span:not(.button-spinner)) { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }.token-display,.token-note { margin-left: 0; }
   }
   @media (max-width: 640px) { .form-row input { flex:none;min-height:var(--touch-target); } }
-  @media (pointer: coarse) and (max-width: 1300px) { .form-row input { min-height:var(--touch-target); }.token-display button { width: var(--touch-target); height: var(--touch-target); flex-basis: 44px; } }
 </style>

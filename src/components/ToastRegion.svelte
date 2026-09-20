@@ -30,5 +30,5 @@
   strong { display:block; font-size:var(--font-sm); line-height:1.4; } p { margin:4px 0 0; color:var(--text-secondary); font-size:12px; line-height:1.5; }
   button { width:28px; height:28px; display:grid; place-items:center; padding:0; border:0; border-radius:var(--radius-sm); background:transparent; color:var(--color-text-muted); cursor:pointer; }
   button:hover { color:var(--text-primary); background:var(--surface-3); }
-  @media(pointer: coarse) and (max-width: 1300px) { .toast { grid-template-columns:20px minmax(0,1fr) 32px; }button { width:32px; height:32px; } }
+  @media (max-width: 767px) { .toast { grid-template-columns:20px minmax(0,1fr) 32px; }button { width:32px; height:32px; } }
 </style>

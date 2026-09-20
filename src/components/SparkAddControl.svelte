@@ -56,7 +56,7 @@
   .spark-add :global(.combo-panel button){min-height:27px;gap:8px;padding:5px 10px;border-color:var(--border-subtle);font:400 .65rem/1.5 var(--font-sans)}
   .factor-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-weight:600}
   small{flex:none;color:var(--text-disabled);font-size:.55rem;text-transform:uppercase;font-weight:600;letter-spacing:.03em}.blue{color:var(--accent-primary)}.pink{color:var(--color-pink)}.green{color:var(--accent-secondary)}
-  @media(max-width:767px),(pointer: coarse) and (max-width: 1300px){
+  @media (max-width:767px) {
     .spark-add-control>:global(.ui-button),.spark-add :global(input),.spark-add :global(.segments button),.spark-add>:global(.icon-button){min-height:var(--touch-target);min-width:var(--touch-target)}
     .spark-add :global(.combo-panel button){min-height:var(--touch-target)}
     .spark-add{grid-template-columns:minmax(0,1fr) auto}.spark-add :global(.field){grid-column:1/-1}

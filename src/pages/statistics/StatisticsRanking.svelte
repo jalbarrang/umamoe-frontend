@@ -76,5 +76,4 @@
   @container chart-frame (min-width:450px){.identity strong{font-size:13px}.rank{flex-basis:20px}}
   @container chart-frame (max-width:449px){.selectable .numeric-labels{margin-right:0}.arrow{display:none}}
   @media(max-width:600px){.ranking :global(.chart-frame){padding:10px}.ranking-row{gap:6px}.rank{flex-basis:16px}.ranking-tools{gap:6px}.sort select{max-width:110px;font-size:11px}.deck{gap:2px}}
-  @media(pointer: coarse) and (max-width: 1300px){.sort select,.ranking-row{min-height:var(--touch-target)}.ranking-info{min-width:32px;min-height:32px}.ranking :global(.chart-actions>button){min-height:var(--touch-target)}}
 </style>

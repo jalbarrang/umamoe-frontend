@@ -47,6 +47,5 @@
   .navigation .active small{color:var(--accent-primary);background:rgb(var(--accent-primary-rgb)/.12);border-color:rgb(var(--accent-primary-rgb)/.32)}
   .detailed{overflow:hidden}.detailed .tab{min-width:0;min-height:46px;justify-content:flex-start;gap:9px;padding:8px 12px;text-align:left}.tab-copy{display:grid;gap:2px;min-width:0}.tab-copy strong{font-size:12px}.tab-copy small{overflow:hidden;margin:0;font-size:10px;font-weight:400;text-overflow:ellipsis;white-space:nowrap}
   @media(max-width:760px){.detailed .tab{min-height:var(--touch-target);justify-content:center;padding:0 5px;gap:5px}.tab-copy small{display:none}.tab-copy strong{font-size:11px}}
-  @media(pointer: coarse) and (max-width: 1300px){.tab,.navigation .tab{min-height:var(--touch-target)}}
   @media(max-width:767px){.tab,.navigation .tab,.detailed .tab{min-height:30px}.navigation .tab{min-width:0;padding-inline:10px;font-size:12px}.tab :global(svg){width:16px;height:16px}}
 </style>

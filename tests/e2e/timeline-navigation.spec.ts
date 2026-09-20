@@ -35,10 +35,19 @@ test('Navigation, Timeline data, planner code and planner data show spinners whi
   try {
     await page.goto('/tools');
     await (await sectionLink(page, 'Timeline')).evaluate((link: HTMLAnchorElement) => link.click());
-    await expect(page.locator('.utility-actions .spinner')).toHaveText('Loading Timeline');
+    await expect(page.locator('.route-view .route-loading .spinner')).toHaveText('Loading Timeline');
+    await expect(page.locator('.route-view .route-loading .spinner')).toBeVisible();
+    await expect(page.locator('.utility-actions .spinner')).toHaveCount(0);
     await expect(page.locator('.route-view')).toHaveAttribute('aria-busy', 'true');
+    const spinnerBox = (await page.locator('.route-loading .spinner').boundingBox())!;
+    const contentBox = (await page.locator('.route-view').boundingBox())!;
+    const headerBox = (await page.locator('.utility-bar').boundingBox())!;
+    expect(spinnerBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+    expect(spinnerBox.x).toBeGreaterThanOrEqual(contentBox.x);
+    expect(spinnerBox.x + spinnerBox.width).toBeLessThanOrEqual(contentBox.x + contentBox.width);
     timelineCode();
     await expect(page.locator('.spinner').filter({ hasText: 'Loading Timeline data' })).toBeVisible();
+    await expect(page.locator('.route-loading')).toHaveCount(0);
     await expect(page.locator('.utility-actions .spinner')).toHaveCount(0);
     timelineData();
     await expect(page.locator('.timeline-board')).toBeVisible();

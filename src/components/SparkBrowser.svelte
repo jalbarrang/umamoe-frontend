@@ -76,5 +76,5 @@
   .unique-choice { display:grid; grid-template-columns:24px minmax(0,1fr) 16px; align-items:center; gap:6px; }
   .unique-choice img { width:24px; height:24px; object-fit:contain; }
   .unique-choice>span { min-width:0; line-height:1.4; overflow-wrap:anywhere; }
-  @media(pointer:coarse) and (max-width:1300px),(max-width:767px) { .spark-choice :global(.ui-button),.unique-sparks :global(input),.unique-options :global(.ui-button) { min-height:var(--touch-target); } }
+  @media (max-width:767px) { .spark-choice :global(.ui-button),.unique-sparks :global(input),.unique-options :global(.ui-button) { min-height:var(--touch-target); } }
 </style>

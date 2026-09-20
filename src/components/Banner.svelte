@@ -34,5 +34,5 @@
   .report-link:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
   button { width: 32px; height: 32px; display: grid; place-items: center; margin: -5px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: currentColor; cursor: pointer; }
   button:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
-  @media (pointer: coarse) and (max-width: 1300px) { .report-link { min-height: var(--touch-target); } button { width: var(--touch-target); height: var(--touch-target); } }
+  @media (max-width: 767px) { .report-link { min-height: var(--touch-target); } button { width: var(--touch-target); height: var(--touch-target); } }
 </style>

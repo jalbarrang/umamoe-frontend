@@ -93,6 +93,5 @@
   .mobile-race{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:8px;padding:5px;background:var(--surface-2);border-radius:4px}.mobile-race time{text-align:left}.mobile-race strong{font-size:11px}
   @container race-schedule (max-width:1120px){.race-schedule-container:not(.selectable) .race-schedule{grid-template-columns:1fr;gap:16px}.race-schedule-container:not(.selectable) .calendar{display:none}.mobile-races{display:grid;gap:5px}}
   @container race-schedule (max-width:680px){.race-schedule{grid-template-columns:1fr;gap:16px}.selectable .year+ .year{border-left:0;padding-left:0}.calendar-cell time{font-size:10px}}
-  @media(pointer: coarse) and (max-width: 1300px){.selectable .cell-races,.add-race :global(.ui-button){min-height:36px}}
   @media(max-width:600px){.race-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>

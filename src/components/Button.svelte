@@ -47,7 +47,6 @@
   .ui-button--danger { color: var(--color-danger); background: var(--color-danger-soft); border-color: color-mix(in srgb, var(--color-danger) 38%, transparent); }
   .ui-button--sm { min-height: 36px; padding-inline: var(--space-3); font-size: var(--font-sm); }
   .button-spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
-  @media (pointer: coarse) and (max-width: 1300px) and (min-width:768px) { .ui-button--sm { min-height:var(--touch-target);min-width:var(--touch-target); } }
   @media (max-width:767px) { .ui-button { min-height:32px; padding:4px 8px; gap:5px; font-size:12px; } .ui-button--sm { min-height:28px; padding:3px 6px; font-size:11px; } .ui-button :global(svg) { width:14px; height:14px; } }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
