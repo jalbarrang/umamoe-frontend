@@ -28,3 +28,21 @@ it('keeps unreachable status neutral and skips local build checks', async () => 
   expect(get(serviceStatus)).toEqual({ state: 'loading', endpoints: [] });
   expect(fetch).toHaveBeenCalledTimes(1);
 });
+
+it('checks the version at most every five minutes even with focus and online events', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  document.head.innerHTML = '<meta name="app-build-version" content="2.1.20">';
+  const fetcher = vi.fn(async (_url: string) => Response.json({ version: '2.1.20' }));
+  vi.stubGlobal('fetch', fetcher);
+  const versionCalls = () => fetcher.mock.calls.filter(([url]) => url === '/version.json');
+  stop = startSiteServices();
+  await vi.advanceTimersByTimeAsync(240_000);
+  window.dispatchEvent(new Event('focus'));
+  window.dispatchEvent(new Event('online'));
+  await vi.advanceTimersByTimeAsync(1);
+  expect(versionCalls()).toHaveLength(1);
+  expect(fetcher).toHaveBeenCalledWith('/version.json', expect.objectContaining({ cache: 'no-store' }));
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(versionCalls()).toHaveLength(2);
+});

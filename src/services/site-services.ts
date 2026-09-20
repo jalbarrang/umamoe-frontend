@@ -43,11 +43,11 @@ export function startSiteServices(): () => void {
     finally { statusBusy = false; }
   }
   async function refreshVersion() {
-    if (versionBusy || current === 'local' || Date.now() - versionChecked < 60_000) return;
+    if (versionBusy || current === 'local' || Date.now() - versionChecked < 300_000) return;
     versionBusy = true;
     versionChecked = Date.now();
     try {
-      const data = await fetchJson(`/version.json?t=${Date.now()}`);
+      const data = await fetchJson('/version.json');
       const version = typeof data?.version === 'string' ? data.version.trim() : '';
       if (!controller.signal.aborted && version && version !== current) availableVersion.set(version);
     } catch { /* Keep the working page when the version endpoint is unavailable. */ }
