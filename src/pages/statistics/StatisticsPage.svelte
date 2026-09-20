@@ -1,12 +1,11 @@
 <script lang="ts">
   import ContentAd from '@/layouts/ContentAd.svelte';
-  import PageHeading from '@/layouts/PageHeading.svelte';
   import { tick } from 'svelte';
   import type { EChartsCoreOption } from 'echarts/core';
   import { theme } from '@/stores/theme';
   import { scenarioName } from '@/lib/profile/profile-display';
   import { aggregateMetric, aggregateStatDistributions, characterScopes, characterUsage, meanStats, statisticsDistanceId, supportTypeDistribution, compositionLabel, histogram, metricMaps, type ChartDatum, type StatisticsFilters } from '@/lib/statistics/statistics';
-  import SourcePage from '@/layouts/SourcePage.svelte';
+  import AppPage from '@/layouts/AppPage.svelte';
   import Banner from '@/components/Banner.svelte';
   import Icon from '@/components/Icon.svelte';
   import SelectField from '@/components/SelectField.svelte';
@@ -285,11 +284,11 @@
   <StatisticsChartPanel id={prefix + '-distribution'} title={statName(activeStat) + ' Stat Distribution'} description={histogramMode === 'count' ? 'Training samples in each stat range. Hover or tap a bar for the exact count.' : 'Share of recorded samples in each stat range. Each distribution totals 100%.'} option={histogramChart(values[activeStat], activeStat)} height={260}/>
 {/snippet}
 
-<SourcePage routeId="statistics" title="Team Stadium Statistics" width="wide">
-  <div class="statistics-page">
-    <PageHeading title="Team Stadium" description="Community statistics">{#snippet actions()}{#if datasets.length}<div class="dataset-select"><SelectField id="statistics-dataset" label="Statistics Version" options={datasetOptions} bind:value={datasetId} onchange={() => loadDataset()}/>{#if stats?.metadata?.generated_at}<small>Snapshot · {new Date(stats.metadata.generated_at).toLocaleDateString()}</small>{/if}</div>{/if}{/snippet}</PageHeading>
-
-    <div class="statistics-content">
+<AppPage routeId="statistics" title="Team Stadium" description="Community statistics" width="wide">
+  {#snippet actions()}
+    {#if datasets.length}<div class="dataset-select"><SelectField id="statistics-dataset" label="Statistics Version" options={datasetOptions} bind:value={datasetId} onchange={() => loadDataset()}/>{#if stats?.metadata?.generated_at}<small>Snapshot &middot; {new Date(stats.metadata.generated_at).toLocaleDateString()}</small>{/if}</div>{/if}
+  {/snippet}
+  <div class="statistics-content">
     {#if error}<Banner title="Statistics unavailable" tone="danger"><p>{error}</p><Button variant="secondary" size="sm" icon="refresh" onclick={initialize}>Try again</Button></Banner>{/if}
     {#if loading}<div class="loading"><Spinner size={28}/><span>Loading community statistics…</span></div>
     {:else if stats}
@@ -407,13 +406,11 @@
         {#snippet actions()}<Button variant="ghost" size="sm" icon="refresh" disabled={!filtersChanged} onclick={resetFilters}>Reset filters</Button><Button size="sm" onclick={() => filtersOpen = false}>Show results</Button>{/snippet}
       </Dialog>
     {/if}
-    </div>
   </div>
-</SourcePage>
+</AppPage>
 
 <style>
-  .statistics-content{min-width:0;padding-inline:var(--page-gutter-current);container:statistics / inline-size}
-  .statistics-page{min-width:0;min-height:calc(100dvh - var(--utility-height));padding:14px 0 0;background:var(--document-bg)}
+  .statistics-content{min-width:0;container:statistics / inline-size}
   
   .dataset-select{width:290px;flex:none}.dataset-select>small{display:block;margin-top:4px;text-align:right;color:var(--text-muted);font-size:10px}
   .dataset-summary{display:grid;grid-template-columns:1.25fr 1fr 1fr;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--card-surface-bg);margin-bottom:10px;padding:8px 14px}.dataset-summary>div{min-width:0;display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:1px 10px;padding-inline:18px}.dataset-summary>div:first-child{padding-left:0}.dataset-summary>div+div{border-left:1px solid var(--border-subtle)}.dataset-summary strong{font-size:22px;line-height:1.2;letter-spacing:-.035em;font-variant-numeric:tabular-nums}.dataset-summary .sample-summary strong{color:var(--accent-primary);font-size:24px}.dataset-summary strong small{font-size:13px;color:var(--text-muted);font-weight:500}.dataset-summary span{color:var(--text-muted);font-size:11px;line-height:1.5}.dataset-summary .summary-label{grid-column:1/-1;color:var(--text-secondary);font-size:11px;font-weight:600}
@@ -440,6 +437,6 @@
   footer{display:flex;align-items:start;justify-content:center;gap:7px;padding:16px 0;color:var(--text-muted)}footer>:global(svg){flex:none;margin-top:1px}footer p{margin:0;font-size:10px;line-height:1.6}
   @container statistics (max-width:950px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.scope-bar{justify-content:space-between}.content-area{scroll-margin-top:114px}}
   @container statistics (max-width:700px){.overview-grid,.support-grid,.two-columns{grid-template-columns:minmax(0,1fr)}.overview-grid{grid-auto-rows:auto}.dataset-summary>div{padding-inline:10px}.dataset-summary>div>span:last-child{grid-column:1/-1}.context-label{display:none}.distance-focus{display:block}.distance-focus>span{display:none}.distance-focus :global(.segments){width:100%}.distance-focus :global(.segments button){flex:1;padding-inline:10px}.training-profile{padding-inline:10px}}
-  @media(max-width:600px){.statistics-page{padding:12px 0 0}.dataset-select{width:100%}.dataset-select>small{display:none}.dataset-select :global(.field){gap:3px}.dataset-summary{padding:8px 10px;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:6px}.dataset-summary>div{display:flex;flex-direction:column;gap:2px;padding-inline:8px}.dataset-summary strong,.dataset-summary .sample-summary strong{font-size:20px}.dataset-summary strong small{font-size:11px}.dataset-summary span{font-size:9px}.dataset-summary .summary-label{font-size:9px}.scope-bar{padding:4px 0;gap:4px;justify-content:space-between}.scope-controls{gap:8px}.scope-copy{font-size:10px;max-height:42px;overflow:auto}.scope-bar>:global(button){font-size:10px;flex:none;padding-inline:6px}.content-area{padding-top:6px;scroll-margin-top:114px}.section-heading{margin-bottom:10px}.section-heading h2{font-size:18px}.section-heading p{font-size:11px}.distribution-controls{gap:6px}.distribution-controls>:global(.segments):first-child{width:100%}.distribution-controls :global(.segments button){flex:1;min-width:0;padding-inline:9px;font-size:12px}.stat-overview :global(.stats>div){min-height:48px}.stat-overview :global(dd){font-size:17px}.stat-overview :global(dt){font-size:8px}.workspace-navigation{gap:0}}
+  @media(max-width:600px){.dataset-select{width:100%}.dataset-select>small{display:none}.dataset-select :global(.field){gap:3px}.dataset-summary{padding:8px 10px;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:6px}.dataset-summary>div{display:flex;flex-direction:column;gap:2px;padding-inline:8px}.dataset-summary strong,.dataset-summary .sample-summary strong{font-size:20px}.dataset-summary strong small{font-size:11px}.dataset-summary span{font-size:9px}.dataset-summary .summary-label{font-size:9px}.scope-bar{padding:4px 0;gap:4px;justify-content:space-between}.scope-controls{gap:8px}.scope-copy{font-size:10px;max-height:42px;overflow:auto}.scope-bar>:global(button){font-size:10px;flex:none;padding-inline:6px}.content-area{padding-top:6px;scroll-margin-top:114px}.section-heading{margin-bottom:10px}.section-heading h2{font-size:18px}.section-heading p{font-size:11px}.distribution-controls{gap:6px}.distribution-controls>:global(.segments):first-child{width:100%}.distribution-controls :global(.segments button){flex:1;min-width:0;padding-inline:9px;font-size:12px}.stat-overview :global(.stats>div){min-height:48px}.stat-overview :global(dd){font-size:17px}.stat-overview :global(dt){font-size:8px}.workspace-navigation{gap:0}}
   @media(pointer: coarse) and (max-width: 1300px){.profile-heading :global(button){min-height:var(--touch-target)}.distance-focus :global(.segments button),.distance-leader{min-height:var(--touch-target)}.type-filters :global(button){min-height:var(--touch-target)}.distribution-controls :global(.segments button){min-height:var(--touch-target)}}
 </style>

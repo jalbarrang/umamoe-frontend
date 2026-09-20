@@ -328,6 +328,8 @@ test('Statistics uses the standard frame, grouped tabs and a centered right rail
   await expect(page.getByRole('tablist',{name:'Statistics sections'})).toHaveClass(/navigation/);
   await expect(page.locator('.workspace-navigation')).toHaveCSS('border-bottom-width','0px');
   await expect(page.locator('.content-area')).toHaveCSS('padding-top','6px');
+  await expect(page.locator('[data-page-content] > .page-body > .app-page > .page-sections > .statistics-content')).toBeVisible();
+  await expect(page.locator('.statistics-page')).toHaveCount(0);
   const rail=page.locator('[data-ad-placement="statistics_sticky_vrec_right"]');
   await expect(rail).toBeVisible();
   await expect(rail.locator('[data-fuse]')).toHaveAttribute('data-fuse','stadiumstat_sticky_vrec_rhs');
@@ -345,12 +347,14 @@ test('Statistics uses the standard frame, grouped tabs and a centered right rail
       const content=node.querySelector('[data-page-content]')!.getBoundingClientRect();
       const frame=node.getBoundingClientRect();
       const heading=node.querySelector('h1')!.getBoundingClientRect();
+      const header=node.querySelector('.page-heading')!.getBoundingClientRect();
       const summary=node.querySelector('.dataset-summary')!.getBoundingClientRect();
-      return {left:content.left-frame.left,width:content.width,heading:heading.left,summary:summary.left,columns:getComputedStyle(node).gridTemplateColumns.split(' ').length};
+      return {left:content.left-frame.left,width:content.width,heading:heading.left,headerTop:header.top,frameTop:frame.top,summary:summary.left,columns:getComputedStyle(node).gridTemplateColumns.split(' ').length};
     });
     expect(geometry.left).toBeLessThanOrEqual(32);
     expect(geometry.width).toBeGreaterThan(1300);
     expect(geometry.heading).toBeCloseTo(geometry.summary,0);
+    expect(geometry.headerTop).toBe(geometry.frameTop);
     expect(geometry.columns).toBe(width>=1700 ? 2 : 1);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
     await page.screenshot({path:test.info().outputPath(`statistics-standard-frame-${width}.png`),fullPage:true});
