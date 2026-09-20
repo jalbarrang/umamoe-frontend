@@ -11,6 +11,9 @@ test('Database filters split on small screens, share collapse styling, and retai
 
   const group = (id: string) => page.locator(`[data-filter-group="${id}"]`);
   const header = (id: string) => group(id).locator('.group-title');
+  for (const id of ['characters', 'support', 'search', 'inheritance', 'main', 'races']) {
+    await expect(group(id).locator('.collapsible-body')).toBeEmpty();
+  }
   await header('affinity').click();
   for (const width of [320, 600, 760, 900]) {
     await page.setViewportSize({ width, height: 844 });
@@ -53,6 +56,7 @@ test('Database filters split on small screens, share collapse styling, and retai
   await expect(header('support')).toHaveAttribute('aria-expanded', 'true');
   await expect(header('search')).toHaveAttribute('aria-expanded', 'true');
   await expect(group('characters').locator('.collapsible-body')).toBeHidden();
+  await expect(group('characters').locator('.legacy-tree .chip')).toHaveCount(1);
   await group('support').screenshot({ path: test.info().outputPath('mobile-support-section.png') });
 
   await page.setViewportSize({ width: 1440, height: 960 });

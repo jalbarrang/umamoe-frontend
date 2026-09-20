@@ -1270,30 +1270,7 @@ export class UqlEditorLanguage {
   }
 
   private rebuildSuggestionSearchIndex(): void {
-    this.suggestionSearchCache = new WeakMap();
-    for (const suggestion of this._suggestions) {
-      const normalizedLabel = this.normalizeSuggestionToken(suggestion.label);
-      const normalizedInsertText = this.normalizeSuggestionToken(suggestion.insertText);
-      const normalizedSearch = this.normalizeSuggestionToken(suggestion.searchText || '');
-      const normalizedDetail = this.normalizeSuggestionToken(suggestion.detail || '');
-      const normalizedBackend = this.normalizeSuggestionToken(suggestion.backendValue || '');
-      const haystack = `${normalizedLabel} ${normalizedDetail} ${normalizedSearch} ${normalizedInsertText} ${normalizedBackend}`;
-      const normalizedSearchTokens = normalizedSearch ? normalizedSearch.split(/\s+/).filter(Boolean) : [];
-      const searchTerms = [
-        ...this.extractSuggestionTerms(suggestion.label),
-        ...this.extractSuggestionTerms(suggestion.insertText),
-        ...this.extractSuggestionTerms(suggestion.searchText || ''),
-        ...this.extractSuggestionTerms(suggestion.detail || ''),
-        ...this.extractSuggestionTerms(suggestion.backendValue || ''),
-      ];
-      this.suggestionSearchCache.set(suggestion, {
-        normalizedLabel,
-        normalizedInsertText,
-        normalizedSearchTokens,
-        searchTerms,
-        haystack,
-      });
-    }
+    for (const suggestion of this._suggestions) this.getSuggestionSearchEntry(suggestion);
   }
 
   private getSuggestionSearchEntry(suggestion: UqlSuggestion) {
@@ -1308,13 +1285,7 @@ export class UqlEditorLanguage {
         normalizedLabel,
         normalizedInsertText,
         normalizedSearchTokens: normalizedSearch ? normalizedSearch.split(/\s+/).filter(Boolean) : [],
-        searchTerms: [
-          ...this.extractSuggestionTerms(suggestion.label),
-          ...this.extractSuggestionTerms(suggestion.insertText),
-          ...this.extractSuggestionTerms(suggestion.searchText || ''),
-          ...this.extractSuggestionTerms(suggestion.detail || ''),
-          ...this.extractSuggestionTerms(suggestion.backendValue || ''),
-        ],
+        searchTerms: `${normalizedLabel} ${normalizedInsertText} ${normalizedSearch} ${normalizedDetail} ${normalizedBackend}`.match(/[a-z0-9\u00c0-\uffff]+/g) || [],
         haystack: `${normalizedLabel} ${normalizedDetail} ${normalizedSearch} ${normalizedInsertText} ${normalizedBackend}`,
       };
       this.suggestionSearchCache.set(suggestion, entry);

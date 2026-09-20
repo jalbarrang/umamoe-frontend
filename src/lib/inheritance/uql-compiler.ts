@@ -241,7 +241,7 @@ export class UqlCompiler {
 
   private readonly scopedArrayFields = this.buildScopedArrayFields();
 
-  private readonly friendlyArrayAliasReplacements: FriendlyArrayAliasReplacement[] =
+  private readonly friendlyArrayAliases =
     [
       ...this.friendlyFieldAliases
         .filter((field) => field.type === 'array')
@@ -254,8 +254,10 @@ export class UqlCompiler {
         ),
       ...this.scopedArrayFields,
     ]
-      .sort((left, right) => right.alias.length - left.alias.length)
-      .map((field) => this.createFriendlyArrayAliasReplacement(field));
+      .sort((left, right) => right.alias.length - left.alias.length);
+
+  private readonly friendlyArrayAliasReplacements = new Map<(typeof this.friendlyArrayAliases)[number], FriendlyArrayAliasReplacement>();
+  private skillClauseBoundary: string | undefined;
 
   private uqlNamedFactorsCache: UqlNamedFactor[] = [];
 
@@ -390,7 +392,7 @@ export class UqlCompiler {
   }
 
   private getFriendlySkillClauseBoundaryLookahead(): string {
-    return `(?=\\s+(?:and|or)\\s+(?:${this.getUqlPredicateStartPattern()})|\\)|;|$)`;
+    return this.skillClauseBoundary ??= `(?=\\s+(?:and|or)\\s+(?:${this.getUqlPredicateStartPattern()})|\\)|;|$)`;
   }
 
   private getUqlPredicateStartPattern(): string {
@@ -949,7 +951,9 @@ export class UqlCompiler {
   private compileFriendlySparkComparisons(query: string): string {
     return replaceOutsideUqlStrings(query, (segment) => {
       let compiledSegment = segment;
+      const normalized = segment.toLowerCase().replace(/\s+/g, ' ');
       this.friendlySparkComparisonAliases.forEach((field) => {
+        if (!normalized.includes(field.alias.toLowerCase().replace(/\s+/g, ' '))) return;
         compiledSegment = compiledSegment.replace(
           this.resetPattern(field.comparisonPattern),
           (
@@ -970,7 +974,9 @@ export class UqlCompiler {
   private compileFriendlyFieldAliases(query: string): string {
     return replaceOutsideUqlStrings(query, (segment) => {
       let compiledSegment = segment;
+      const normalized = segment.toLowerCase().replace(/\s+/g, ' ');
       this.friendlyFieldAliasReplacements.forEach((aliasGroup) => {
+        if (!normalized.includes(aliasGroup.alias.toLowerCase().replace(/\s+/g, ' '))) return;
         compiledSegment = compiledSegment.replace(
           this.resetPattern(aliasGroup.pattern),
           (_match, leadingText: string) => `${leadingText}${aliasGroup.field}`,
@@ -1019,7 +1025,9 @@ export class UqlCompiler {
   private compileFriendlyCharacterScopeExpressions(query: string): string {
     return replaceOutsideUqlStrings(query, (segment) => {
       let compiledSegment = segment;
+      const normalized = segment.toLowerCase().replace(/\s+/g, ' ');
       this.friendlyCharacterScopeAliasReplacements.forEach((scope) => {
+        if (!normalized.includes(scope.alias.toLowerCase().replace(/\s+/g, ' '))) return;
         compiledSegment = compiledSegment.replace(
           this.resetPattern(scope.notInPattern),
           (
@@ -1536,9 +1544,16 @@ export class UqlCompiler {
   private getFriendlyArrayAliasReplacementsForSegment(
     segment: string,
   ): FriendlyArrayAliasReplacement[] {
-    return this.friendlyArrayAliasReplacements.filter((arrayField) =>
+    return this.friendlyArrayAliases.filter((arrayField) =>
       this.hasFriendlyArrayAliasOperatorSyntax(segment, arrayField.alias),
-    );
+    ).map((field) => {
+      let replacement = this.friendlyArrayAliasReplacements.get(field);
+      if (!replacement) {
+        replacement = this.createFriendlyArrayAliasReplacement(field);
+        this.friendlyArrayAliasReplacements.set(field, replacement);
+      }
+      return replacement;
+    });
   }
 
   private hasFriendlyArrayAliasOperatorSyntax(

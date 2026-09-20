@@ -32,9 +32,9 @@
   const chartText = $derived({ color: $theme === 'light' ? '#4b5563' : '#bdbdbd', fontFamily: 'Arial, sans-serif' });
   const chartGrid = $derived($theme === 'light' ? '#e5e7eb' : '#363636');
 
-  let datasets = $state<StatisticsDataset[]>([]);
+  let datasets = $state.raw<StatisticsDataset[]>([]);
   let datasetId = $state('');
-  let stats = $state<GlobalStatistics>();
+  let stats = $state.raw<GlobalStatistics>();
   let loading = $state(true);
   let error = $state('');
   let selectedDistances = $state<string[]>([]);
@@ -55,11 +55,11 @@
     { id: 'characters', label: 'Characters', icon: 'community' }
   ];
   let characterQuery = $state('');
-  let characters = $state<StatisticsCatalogEntry[]>([]);
+  let characters = $state.raw<StatisticsCatalogEntry[]>([]);
   let supportCatalog = $state(new Map<string, StatisticsCatalogEntry>());
   let skillCatalog = $state(new Map<string, StatisticsCatalogEntry>());
   let selectedCharacterId = $state('');
-  let characterStats = $state<CharacterStatistics>();
+  let characterStats = $state.raw<CharacterStatistics>();
   let characterLoading = $state(false);
   let characterError = $state('');
   let datasetRequest = 0;
@@ -299,7 +299,7 @@
       </section>
 
       <div class="workspace-navigation">
-        <Tabs variant="pills" id="statistics-tabs" label="Statistics sections" items={sections} bind:value={activeSection} controls="statistics-panel" onchange={changeSection}/>
+        <Tabs variant="pills" id="statistics-tabs" label="Statistics sections" items={sections} bind:value={activeSection} controls="statistics-panel"/>
         <div class="scope-bar">
           <div class="scope-controls"><Button variant={filtersChanged ? 'primary' : 'secondary'} size="sm" icon="tune" onclick={openFilters}>Filters</Button><span class="scope-copy" title={selectionSummary}>{selectionSummary}</span></div>
           {#if filtersChanged}<Button variant="ghost" size="sm" icon="refresh" onclick={resetFilters}>Reset filters</Button>{/if}

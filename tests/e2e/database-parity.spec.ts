@@ -16,7 +16,6 @@ test('Database keeps populated Angular results, filter modes, sharing, and Train
   await expect(page.locator('.support-card-section img')).toHaveAttribute('src', '/game-assets/umamusume_cards/tex_support_card_30189.webp');
   await page.getByRole('button', { name: /Filters/ }).click();
   await page.getByRole('radio', { name: 'Advanced' }).click();
-  await expect(page.locator('#trainer-id')).toHaveValue('123456789012');
   if (isMobile) {
     for (const id of ['characters', 'support', 'search']) await page.locator(`[data-filter-group="${id}"] .group-title`).click();
     for (const name of ['Inheritance Factors', 'Main Parent Factors', 'General Criteria', 'Total Star Count']) {
@@ -26,6 +25,7 @@ test('Database keeps populated Angular results, filter modes, sharing, and Train
     }
     await page.getByRole('button', { name: /Race Schedule Filter/ }).click();
   }
+  await expect(page.locator('#trainer-id')).toHaveValue('123456789012');
   await expect(page.locator('.legacy-quick')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Preferred White Factors' }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Main Parent Factors' })).toHaveAttribute('aria-expanded', 'true');

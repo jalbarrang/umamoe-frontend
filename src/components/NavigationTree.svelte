@@ -14,10 +14,18 @@
   const navigationId = $props.id();
   let openItems = $state<Record<string, boolean>>({});
   let currentSection: string | undefined;
+  let navigationWidth = $state<number>();
 
-  function isFlyout() { return variant === 'rail' && navigationElement?.clientWidth < 100; }
+  function measureNavigation(node: HTMLElement) {
+    const observer = new ResizeObserver(([entry]) => { if (entry) navigationWidth = entry.contentRect.width; });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
+
+  function isFlyout() { return variant === 'rail' && (navigationWidth ?? 0) < 100; }
 
   $effect(() => {
+    if (variant === 'rail' && navigationWidth === undefined) return;
     const section = items.find(item => item.expanded)?.id;
     if (section === currentSection) return;
     currentSection = section;
@@ -47,7 +55,7 @@
 
 <svelte:window onpointerdown={handleOutsidePointer}/>
 
-<nav bind:this={navigationElement} class="navigation-tree" class:sheet={variant === 'sheet'} aria-label={label}>
+<nav bind:this={navigationElement} use:measureNavigation class="navigation-tree" class:sheet={variant === 'sheet'} aria-label={label}>
   {#each items as item (item.id)}
     <div class="navigation-item" class:has-children={Boolean(item.children?.length)} class:open={openItems[item.id]} class:current={item.current}>
       <div class="navigation-parent">

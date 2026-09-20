@@ -19,6 +19,8 @@
     open = $bindable(typeof window === 'undefined' ? true : window.innerWidth > 600),
     children
   }: Props = $props();
+  let initialized = $state(false);
+  $effect(() => { if (open) initialized = true; });
 </script>
 
 <section data-filter-group={id} class="database-filter-card variant-{variant}" class:collapsed={!open}>
@@ -28,7 +30,7 @@
     {#if count !== undefined}<small>{count}</small>{/if}
   </button>
   <div class="collapsible-body" hidden={!open}>
-    {@render children()}
+    {#if open || initialized}{@render children()}{/if}
   </div>
 </section>
 

@@ -221,16 +221,9 @@ const wherePrefixPlugin = ViewPlugin.fromClass(
 
 const autocompleteTooltipPlacementPlugin = ViewPlugin.fromClass(
   class {
-    private animationFrame = 0;
-    private timeout = 0;
     private readonly maxMobileWidth = 640;
     private readonly inset = 8;
     private readonly handleResize = () => this.schedule();
-    private readonly measureReq = {
-      read: () => null,
-      write: () => this.placeAutocompleteTooltipBelow(),
-      key: this,
-    };
 
     constructor(private readonly view: EditorView) {
       this.view.dom.ownerDocument.defaultView?.addEventListener('resize', this.handleResize);
@@ -244,35 +237,33 @@ const autocompleteTooltipPlacementPlugin = ViewPlugin.fromClass(
     }
 
     destroy(): void {
-      const win = this.view.dom.ownerDocument.defaultView;
-      if (this.animationFrame) {
-        win?.cancelAnimationFrame(this.animationFrame);
-      }
-      if (this.timeout) {
-        win?.clearTimeout(this.timeout);
-      }
-      win?.removeEventListener('resize', this.handleResize);
+      this.view.dom.ownerDocument.defaultView?.removeEventListener('resize', this.handleResize);
     }
 
     private schedule(): void {
-      const win = this.view.dom.ownerDocument.defaultView;
-      if (!win) return;
-      this.view.requestMeasure(this.measureReq);
-      if (this.animationFrame) win.cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = win.requestAnimationFrame(() => {
-        this.animationFrame = 0;
-        this.view.requestMeasure(this.measureReq);
-        this.placeAutocompleteTooltipBelow();
+      this.view.requestMeasure({
+        key: this,
+        read: () => this.measureTooltip(),
+        write: layout => {
+          if (!layout) return;
+          const { tooltip, top, left, width } = layout;
+          tooltip.style.setProperty('top', `${top}px`, 'important');
+          if (width !== null) {
+            tooltip.dataset['uqlMobilePositioned'] = 'true';
+            tooltip.style.setProperty('left', `${left}px`, 'important');
+            tooltip.style.setProperty('width', `${width}px`, 'important');
+            tooltip.style.setProperty('max-width', `${width}px`, 'important');
+            tooltip.style.setProperty('min-width', '0', 'important');
+          } else {
+            this.resetMobilePositioning(tooltip);
+          }
+          tooltip.classList.remove('cm-tooltip-above');
+          tooltip.classList.add('cm-tooltip-below');
+        },
       });
-      if (this.timeout) win.clearTimeout(this.timeout);
-      this.timeout = win.setTimeout(() => {
-        this.timeout = 0;
-        this.view.requestMeasure(this.measureReq);
-        this.placeAutocompleteTooltipBelow();
-      }, 24);
     }
 
-    private placeAutocompleteTooltipBelow(): void {
+    private measureTooltip() {
       const doc = this.view.dom.ownerDocument;
       const docEl = doc.documentElement;
       const tooltip =
@@ -292,27 +283,10 @@ const autocompleteTooltipPlacementPlugin = ViewPlugin.fromClass(
           this.view.dom.getBoundingClientRect())
         : { left: 0, top: 0 };
 
-      const minTop = Math.max(this.inset, scrollerRect.top + 4);
-      const preferredBelowTop = Math.max(minTop, (selectionRect?.bottom ?? scrollerRect.top) + 4);
-      const nextTop = preferredBelowTop;
-
-      tooltip.style.setProperty('top', `${nextTop - parentRect.top}px`, 'important');
-
-      if (docEl.clientWidth <= this.maxMobileWidth) {
-        const left = Math.max(this.inset, frameRect.left + this.inset);
-        const right = Math.min(docEl.clientWidth - this.inset, frameRect.right - this.inset);
-        const width = Math.max(0, right - left);
-        tooltip.dataset['uqlMobilePositioned'] = 'true';
-        tooltip.style.setProperty('left', `${left - parentRect.left}px`, 'important');
-        tooltip.style.setProperty('width', `${width}px`, 'important');
-        tooltip.style.setProperty('max-width', `${width}px`, 'important');
-        tooltip.style.setProperty('min-width', '0', 'important');
-      } else {
-        this.resetMobilePositioning(tooltip);
-      }
-
-      tooltip.classList.remove('cm-tooltip-above');
-      tooltip.classList.add('cm-tooltip-below');
+      const top = Math.max(this.inset, scrollerRect.top + 4, (selectionRect?.bottom ?? scrollerRect.top) + 4) - parentRect.top;
+      const left = Math.max(this.inset, frameRect.left + this.inset);
+      const right = Math.min(docEl.clientWidth - this.inset, frameRect.right - this.inset);
+      return { tooltip, top, left: left - parentRect.left, width: docEl.clientWidth <= this.maxMobileWidth ? Math.max(0, right - left) : null };
     }
 
     private resetMobilePositioning(tooltip: HTMLElement): void {

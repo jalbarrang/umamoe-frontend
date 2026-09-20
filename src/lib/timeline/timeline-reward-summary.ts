@@ -293,28 +293,19 @@ function equivalentRecurringReward(
 ): boolean {
   if (existing.id === candidate.id) return true;
   if (existing.currency !== 'free_jewels' || Number(existing.amount) <= 0) return false;
-  const existingDate = rewardDateKey(existing.available_at);
-  const candidateDate = rewardDateKey(candidate.available_at);
-  if (!existingDate || !candidateDate) return false;
-  const dayDifference = Math.abs(
-    new Date(`${existingDate}T00:00:00Z`).getTime()
-      - new Date(`${candidateDate}T00:00:00Z`).getTime(),
-  ) / DAY_MS;
-  if (dayDifference > 1) return false;
-
   const searchable = [existing.label, existing.category, existing.assumption, existing.evidence]
     .filter(Boolean)
     .join(' ');
-  if (candidate.category === 'login_milestone') {
-    return /(?:50.?day|total login|cumulative login|累計ログイン)/i.test(searchable);
-  }
-  if (candidate.id.includes('valentines')) {
-    return /valentine|バレンタイン/i.test(searchable);
-  }
-  if (candidate.id.includes('white-day')) {
-    return /white\s*day|ホワイトデー/i.test(searchable);
-  }
-  return /christmas|xmas|クリスマス/i.test(searchable);
+  const matches = candidate.category === 'login_milestone'
+    ? /(?:50.?day|total login|cumulative login|累計ログイン)/i.test(searchable)
+    : candidate.id.includes('valentines') ? /valentine|バレンタイン/i.test(searchable)
+    : candidate.id.includes('white-day') ? /white\s*day|ホワイトデー/i.test(searchable)
+    : /christmas|xmas|クリスマス/i.test(searchable);
+  if (!matches) return false;
+  const existingDate = rewardDateKey(existing.available_at);
+  const candidateDate = rewardDateKey(candidate.available_at);
+  if (!existingDate || !candidateDate) return false;
+  return Math.abs(Date.parse(existingDate) - Date.parse(candidateDate)) <= DAY_MS;
 }
 
 function loginMilestoneCarats(day: number): number {

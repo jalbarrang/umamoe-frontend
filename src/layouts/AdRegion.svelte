@@ -23,12 +23,12 @@
     if (!active || preview || !fuseId || !region) return;
     const element = region;
     let unregister: (() => void) | undefined;
-    const sync = () => {
-      if (element.getBoundingClientRect().width > 0) unregister ??= registerFuseZone(elementId, fuseId);
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      if (entry.contentRect.width > 0) unregister ??= registerFuseZone(elementId, fuseId);
       else { unregister?.(); unregister = undefined; }
-    };
-    const observer = new ResizeObserver(sync);
-    observer.observe(element); sync();
+    });
+    observer.observe(element);
     return () => { observer.disconnect(); unregister?.(); };
   });
 </script>

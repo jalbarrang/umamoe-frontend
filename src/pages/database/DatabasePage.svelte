@@ -767,7 +767,12 @@
         {:then editor}
           <editor.default bind:value={filters.uql} validation={uqlValidation} {characters} {supports} catalog={uqlCatalog} loading={uqlCatalogLoading} legacyParents={selectedParent ? [selectedParent, ...uqlParents.filter(parent => parent.pickerId !== selectedParent?.pickerId)] : uqlParents} onpicklegacy={() => uqlLegacyPickerOpen = true} onclear={clearFilters}/>
         {:catch}
-          <Banner tone="danger" title="UQL editor unavailable">Reload the page to try again.</Banner>
+          <Banner tone="warning" title="UQL suggestions unavailable">You can still edit and run your query below. <Button size="sm" variant="secondary" onclick={() => { persist(); location.reload(); }}>Retry editor</Button></Banner>
+          <div class="uql-fallback">
+            <label for="uql-plain-query">UQL query</label>
+            <textarea id="uql-plain-query" bind:value={filters.uql} rows="4" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="uql-plain-status" aria-invalid={uqlValidation.state === 'invalid' ? 'true' : undefined}></textarea>
+            <span id="uql-plain-status" role="status">{uqlValidation.message}</span>
+          </div>
         {/await}
       {:else}
         <div class="filter-grid">
@@ -933,6 +938,9 @@
 {/snippet}
 
 <style>
+  .uql-fallback { display:grid; gap:8px; padding-block:12px; }
+  .uql-fallback textarea { box-sizing:border-box; width:100%; min-height:100px; padding:12px; resize:vertical; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--surface-1); color:var(--text-primary); font:16px/1.5 monospace; }
+  .uql-fallback span { font-size:12px; color:var(--text-secondary); }
 
 
   .inheritance-database{min-height:calc(100dvh - var(--utility-height));background:var(--color-canvas);overflow-x:clip}.content-container{min-width:0;display:flex;flex-direction:column;gap:.75rem;padding:1rem var(--page-gutter-current)}

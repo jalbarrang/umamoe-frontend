@@ -9,7 +9,8 @@ test('Tools and Timeline subsections navigate and track the active page in both 
     await page.goto('/tools');
     const nav = page.getByRole('navigation', { name: 'Main navigation', exact: true });
     const tools = nav.getByRole('button', { name: /(?:Open|Collapse) Tools subsections/ });
-    const wasOpen = await tools.getAttribute('aria-expanded') === 'true';
+    const wasOpen = width === 1920;
+    await expect(tools).toHaveAttribute('aria-expanded', String(wasOpen));
     if (width === 1920) await tools.locator('.navigation-label').click();
     else await tools.click();
     await expect(tools).toHaveAttribute('aria-expanded', String(!wasOpen));
