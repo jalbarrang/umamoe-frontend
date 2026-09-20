@@ -76,7 +76,7 @@ it('recognizes an error from the head loader before the app subscribes', async (
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it('initializes each route before registration, destroys removed zones, and never restarts auctions on resize', async () => {
+it('initializes once per document, destroys removed route slots, and preserves provider widgets on navigation and resize', async () => {
   const calls: string[] = [];
   window.fusetag = { pageInit: () => calls.push('page'), registerZone: id => calls.push(`register:${id}`), destroyZone: id => calls.push(`destroy:${id}`) };
   const { registerFuseZone, syncFusePage } = await import('./fuse-ads');
@@ -93,7 +93,8 @@ it('initializes each route before registration, destroys removed zones, and neve
   removeResized(); document.body.innerHTML = '';
   history.replaceState(null, '', '/circles'); syncFusePage(); zone('club-1'); registerFuseZone('club-1', 'slot-1');
   await vi.advanceTimersByTimeAsync(40);
-  expect(calls.slice(-2)).toEqual(['page', 'register:club-1']);
+  expect(calls.at(-1)).toBe('register:club-1');
+  expect(calls.filter(call => call === 'page')).toHaveLength(1);
 });
 
 it('prevents two active zones sharing a publisher slot and skips unmounted pending zones', async () => {

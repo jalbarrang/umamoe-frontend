@@ -19,6 +19,7 @@
   import MoeFooter from './MoeFooter.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import ServiceNotices from './ServiceNotices.svelte';
+  import StickyFooterAd from './StickyFooterAd.svelte';
   import { startAnalytics, trackPageView } from '@/services/analytics';
   import { syncFusePage } from '@/services/ads/fuse-ads';
 
@@ -59,8 +60,8 @@
   }
   onMount(() => { if (tourAudience() === 'new') void loadTour(); });
   onMount(startAnalytics);
+  onMount(syncFusePage);
   $effect(() => { trackPageView(router.route.pathname); });
-  $effect(() => { router.route.pathname; void tick().then(syncFusePage); });
   $effect(() => {
     const path = router.route.pathname;
     if ($pendingRoute) return;
@@ -116,6 +117,7 @@
 
 {#if PageTour}<PageTour startRequest={tourRequest}/>{/if}
 <ServiceNotices/>
+<StickyFooterAd/>
 {#if tourLoadError}<Dialog open title="Tour unavailable" onclose={() => tourLoadError = false}><p>The guided tour could not be loaded. Reload this page, then use the help button to try again.</p><Button size="sm" variant="secondary" onclick={() => location.reload()}>Reload page</Button></Dialog>{/if}
 
 <style>

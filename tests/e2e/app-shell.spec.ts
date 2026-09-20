@@ -7,7 +7,7 @@ test('landing and data pages preserve content widths, gutters and ad rails at ev
   for (const [path, maxContent] of [['/tools', 1080], ['/database', 1760]] as const) {
     await page.goto(path);
     await expect(page.locator('[data-page-content]')).toBeVisible();
-    for (const width of [320, 768, 1024, 1299, 1300, 1301, 1366, 1536, 1920, 2560]) {
+    for (const width of [320, 768, 1024, 1301, 1366, 1536, 1699, 1700, 1920, 2560]) {
       await page.setViewportSize({ width, height: 960 });
       const content = await page.locator(path === '/tools' ? '.hero-content' : '[data-page-content]').boundingBox();
       expect(content!.width, `${path} at ${width}px`).toBeLessThanOrEqual(maxContent);
@@ -18,7 +18,7 @@ test('landing and data pages preserve content widths, gutters and ad rails at ev
       }
       const right = page.locator('[data-ad-position="right-rail"]');
       const left = page.locator('[data-ad-position="left-rail"]');
-      if (path === '/database' && width > 1300) {
+      if (path === '/database' && width >= 1700) {
         await expect(right).toBeVisible();
         const ad = await right.boundingBox();
         expect(ad!.x).toBeGreaterThanOrEqual(content!.x + content!.width - 1);

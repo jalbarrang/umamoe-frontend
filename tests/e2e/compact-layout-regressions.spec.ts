@@ -37,9 +37,9 @@ test('profile club ranks fit the shared row and ads follow the standard breakpoi
   await expect(circle.getByText('Approval', { exact: true })).toBeVisible();
   const rail = page.locator('[data-route-id="profile"] [data-ad-position="right-rail"]');
   const inline = page.locator('[data-ad-target="profile_interscroller_1"]');
-  for (const width of [1536, 1301, 1300, 768, 320]) {
+  for (const width of [1920, 1700, 1699, 1536, 1301, 768, 320]) {
     await page.setViewportSize({ width, height: 1000 });
-    if (width > 1300) { await expect(rail).toBeVisible(); await expect(inline).toBeHidden(); }
+    if (width >= 1700) { await expect(rail).toBeVisible(); await expect(inline).toBeHidden(); }
     else { await expect(rail).toBeHidden(); await expect(inline).toBeVisible(); }
     const rank = await circle.locator('.rank-number').evaluate(element => ({ height: element.getBoundingClientRect().height, lineHeight: parseFloat(getComputedStyle(element).lineHeight), overflow: element.scrollWidth > element.clientWidth }));
     expect(rank.height).toBeLessThanOrEqual(rank.lineHeight + 1);

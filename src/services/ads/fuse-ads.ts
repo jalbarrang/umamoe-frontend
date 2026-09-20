@@ -22,7 +22,7 @@ const pending = new Map<string, { element: HTMLElement; fuseId: string }>();
 const registered = new Map<string, HTMLElement>();
 let startTask: Promise<boolean> | undefined;
 let pageInitTimer: number | undefined;
-let initializedPath: string | undefined;
+let initialized = false;
 
 export function fuseEnabled(): boolean {
   return fuseAllowed(runtimeConfig.providersEnabled);
@@ -69,10 +69,11 @@ function scheduleZones(): void {
       used.add(fuseId);
       return true;
     });
-    // A new page resets the auction; adding/resizing slots on that page does not.
-    if (initializedPath !== location.pathname) {
+    // pageInit destroys provider-owned widgets, including the persistent footer.
+    // Route slots have their own register/destroy lifecycle; initialize Fuse once per document.
+    if (!initialized) {
       window.fusetag!.pageInit!({ blockingFuseIds: [...used], blockingTimeout: 2000 });
-      initializedPath = location.pathname;
+      initialized = true;
     }
     for (const [elementId, { element, fuseId }] of zones) {
       if (registered.get(elementId) === element) continue;

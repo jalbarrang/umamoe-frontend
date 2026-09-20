@@ -109,8 +109,8 @@
     .page-grid { --page-gutter-current: var(--page-gutter-expanded); }
   }
 
-  /* Preserve one far-right Publift rail by keeping the site navigation compact. */
-  @container app-viewport (min-width: 1301px) and (max-width: 1799px) {
+  /* Publift tag 4302 only enables rail sizes at its xl breakpoint (1700px). */
+  @container app-viewport (min-width: 1700px) and (max-width: 1799px) {
     .page-grid.has-ad-rails { grid-template-columns: minmax(0, 1fr) var(--ad-rail-width); grid-template-areas: 'content right-ad'; }
     .page-grid.has-ad-rails .ad-rail--right { display: block; }
   }

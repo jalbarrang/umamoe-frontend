@@ -46,6 +46,7 @@ describe('screen layout contract', () => {
     expect(tokenSource).toContain(`--ad-mobile-height: ${PAGE_LAYOUT.ads.mobileHeight}px`);
     expect(tokenSource).toContain('--ad-inline-mobile-height: 100px');
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.railMin}px`);
+    expect(adRegionSource).toContain(`min-width: ${PAGE_LAYOUT.ads.railMin}px`);
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.counterRailMin}px`);
     expect(pageFrameSource).toContain(`min-width: ${PAGE_LAYOUT.ads.balancedRailsMin}px`);
     expect(pageFrameSource).toContain('has-ad-rails');

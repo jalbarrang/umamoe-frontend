@@ -61,6 +61,8 @@
   .ad-region--leaderboard { width:100%; max-width:100%; height:var(--ad-mobile-height); max-height:var(--ad-mobile-height); margin:12px auto; contain:strict; }
   .ad-region--leaderboard .ad-target { min-height:0; max-height:100%; overflow:hidden; }
   .ad-region--rail { width: var(--ad-rail-width); height: var(--ad-rail-height); }
+  /* Fuse filters creative sizes using the registered target's computed max dimensions. */
+  .ad-region--rail .ad-target { max-width: var(--ad-rail-width); max-height: var(--ad-rail-height); }
   .preview { border: 1px dashed var(--color-border-strong); background: var(--color-surface-1); color: var(--color-text-subtle); }
   .preview span { display: grid; place-items: center; gap: 2px; padding: var(--space-2); text-align: center; }
   .preview strong { color: var(--color-text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
@@ -72,7 +74,7 @@
     .ad-region--leaderboard { height:var(--ad-leaderboard-height); max-height:var(--ad-leaderboard-height); }
   }
 
-  @container app-viewport (min-width: 1301px) {
+  @container app-viewport (min-width: 1700px) {
     .rail-alternative { display: none; }
   }
 </style>
