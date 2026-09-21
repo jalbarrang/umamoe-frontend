@@ -1,10 +1,10 @@
 <script lang="ts">
   import AffinityStat from '@/components/AffinityStat.svelte';
   import type { VeteranUiRecord } from '@/components/veteran-ui-types';
-  let { summary }: { summary: VeteranUiRecord } = $props();
+  let { summary, compact = false }: { summary: VeteranUiRecord; compact?: boolean } = $props();
 </script>
 
-      <div class="affinity-sources" aria-label="Veteran parents">
+      <div class="affinity-sources" class:compact aria-label="Veteran parents">
         <div class="affinity-main" title={summary.affinityNote}>
           <span class="affinity-label">{summary.affinityTarget ? 'Target total' : 'Main total'}</span>
           {#if Number.isFinite(summary.affinity)}<AffinityStat value={summary.affinity} label={summary.affinityTarget ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span class="affinity-missing" aria-label={summary.affinityTarget ? 'Target affinity unavailable' : 'Main affinity unavailable'}>—</span>{/if}
@@ -39,4 +39,15 @@
   .affinity-parent :global(.affinity b) { font-size:14px; }
   .affinity-parent :global(.affinity svg) { width:14px; height:14px; }
   .affinity-missing { color:var(--color-text-muted); font-family:var(--font-mono); font-size:11px; line-height:21px; }
+  .compact { grid-template-columns:auto minmax(0,1fr); align-items:center; gap:6px; border:0; border-radius:0; background:transparent; }
+  .compact .affinity-main { padding:0; border:0; }
+  .compact .affinity-main :global(.affinity b) { font-size:14px; }
+  .compact .affinity-main :global(svg) { width:12px; height:12px; }
+  .compact .affinity-parents { padding:0; gap:2px; }
+  .compact .affinity-parent { min-height:24px; gap:3px; border:0; }
+  .compact .affinity-parent img { width:22px; height:24px; }
+  .compact .affinity-parent :global(.affinity) { margin:0; padding:0; border:0; background:transparent; gap:2px; }
+  .compact .affinity-parent :global(.affinity b) { font-size:11px; }
+  .compact .affinity-parent :global(.affinity svg) { width:10px; height:10px; }
+  .compact :is(.affinity-label,.parent-slot,.affinity-parent-name) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 </style>

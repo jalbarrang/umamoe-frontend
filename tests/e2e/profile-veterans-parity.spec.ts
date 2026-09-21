@@ -84,12 +84,17 @@ test('account Veterans is page-overflow safe at 390px', async ({ page }) => {
 
 test('Veteran comparison table keeps aptitudes readable, sorts stats and opens details',async({page},testInfo)=>{
   await mockProfile(page);
+  await page.route('**/resources/*/affinity.json*',route=>route.fulfill({json:{chars:[1011,1013,1067,1088],aff2:Array(16).fill(2),aff3:Array(64).fill(3)}}));
   const whites = factorCatalog.filter(factor => ![0,1,5].includes(factor.type)).slice(0,4).map(factor => Number(factor.id)*10+2);
   const comparisonVeteran = {...veteran,factors:[...whites,1203,10010103,103]};
   await page.route('**/api/v4/user/profile/123456789012',route=>route.fulfill({json:{...profile,veterans:[comparisonVeteran,{...comparisonVeteran,id:2,trained_chara_id:2,card_id:101301,speed:1400}]}}));
   await page.goto('/veterans/123456789012');
   const card = page.locator('.veteran-card').first();
   await expect(card.locator('.white-count')).toContainText('4 white');
+  await expect(card.getByLabel(/^P1 affinity: \d+$/)).toBeVisible();
+  await expect(card.getByLabel(/^P2 affinity: \d+$/)).toBeVisible();
+  const affinityLabels = await card.locator('.affinity-sources .affinity').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
+  const parentImages = await card.locator('.affinity-parent img').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('src')));
   const identity = await card.locator('.veteran-identity').innerText();
   const sparks = await card.locator('.spark-groups').innerText();
   await page.getByRole('button',{name:'Display options',exact:true}).click();
@@ -100,7 +105,12 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
   await expect(table.locator('.veteran-identity').first()).toHaveText(identity, {useInnerText:true});
   await expect(table.locator('.spark-groups').first()).toHaveText(sparks, {useInnerText:true});
   await expect(table.locator('thead th')).toHaveCount(6);
-  await expect(table.locator('.table-stats').first().getByRole('term')).toHaveText(['Speed','Stamina','Power','Guts','Wit']);
+  await expect(table.locator('.table-stats').first().getByRole('term')).toHaveText(['Speed','Stamina','Power','Guts','Wit','SP']);
+  const affinity = table.locator('.table-affinity').first();
+  await expect(affinity.locator('.affinity')).toHaveCount(3);
+  expect(await affinity.locator('.affinity').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')))).toEqual(affinityLabels);
+  expect(await affinity.locator('.affinity-parent img').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('src')))).toEqual(parentImages);
+  expect(await affinity.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
   await expect(table.locator('.table-aptitudes').first().getByRole('listitem')).toHaveCount(10);
   expect(await table.locator('.table-aptitudes').first().evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   await expect(table.locator('.table-factors').first()).toContainText('6');
@@ -121,8 +131,12 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
   }else await page.getByRole('button',{name:'Sort ascending',exact:true}).click();
   await expect(table.locator('.table-stats [data-stat="speed"] dd').first()).toHaveText('1,210');
   await expect(table.locator('.table-totals').first()).toHaveText('Total Stats5,020');
-  await expect(table.locator('thead th').last()).toHaveText('SP total');
-  await expect(table.locator('tbody tr').first().locator('td').last().locator('strong')).toHaveText('200');
+  await expect(table.locator('.table-stats [data-stat="sp"] dd').first()).toHaveText('200');
+  const witBounds = (await table.locator('.table-stats [data-stat="wiz"]').first().boundingBox())!;
+  const spBounds = (await table.locator('.table-stats [data-stat="sp"]').first().boundingBox())!;
+  expect(spBounds.y).toBeCloseTo(witBounds.y,0);
+  expect(spBounds.x).toBeGreaterThan(witBounds.x);
+  await expect(table.locator('thead th').last()).toHaveText('Details');
   await expect(table.locator('.table-character .veteran-identity')).toHaveCount(2);
   await expect(table.locator('.table-factors .spark-group').first()).toHaveAttribute('data-tone','blue');
   if(page.viewportSize()!.width>=1400) expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
@@ -130,6 +144,9 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
     await page.setViewportSize({width,height:844});
     expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
     const row=table.locator('tbody tr').first();
+    await expect(row.locator('[data-stat="sp"] dd')).toHaveText('200');
+    await expect(row.locator('.affinity-parent img')).toHaveCount(2);
+    expect(await row.locator('.table-affinity').evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
     const areas=await row.locator('th,td').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
     expect(areas[0].bottom).toBeLessThanOrEqual(areas[1].top);
     expect(areas[4].bottom).toBeLessThanOrEqual(areas[5].top);
