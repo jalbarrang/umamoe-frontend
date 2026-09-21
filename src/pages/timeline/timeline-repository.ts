@@ -107,7 +107,7 @@ export const timelineRepository = {
           get dateLabel() { return dateLabel ??= dateFormatter.format(date) + (estimatedEndDate && estimatedEndDate > date ? ' – ' + dateFormatter.format(estimatedEndDate) : ''); },
           gachaLabel: (typeof event.gacha_type_name === 'string' ? gachaLabels[event.gacha_type_name] : '') || gachaTypes[Number(event.gacha_type)] || '',
           context,
-          image: contentUrl(timelineImage(event.image_path, event.type, event.id, contentUrl(event.image))),
+          image: contentUrl(timelineImage(event.image_path, event.type, event.id, contentUrl(event.image), event.type !== 'champions_meeting' || event.is_confirmed === true)),
           predicted: !event.is_confirmed,
           canPlan: ['character_banner', 'support_card_banner'].includes(event.type ?? '') && Boolean(event.planner_data_available === true || event.gacha_id || numbers(event.gacha_ids).length),
           rerun: strings(event.tags).includes('rerun-banner'),

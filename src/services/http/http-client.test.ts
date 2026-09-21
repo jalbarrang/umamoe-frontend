@@ -15,6 +15,28 @@ function proofPort(overrides: Partial<BrowserProofPort> = {}): BrowserProofPort 
 }
 
 describe('typed HTTP middleware pipeline', () => {
+  it('includes the backend explanation and status for JSON and download failures', async () => {
+    const body = { error: 'circle month cannot be in the future', status: 400 };
+    const fetcher = vi.fn(async () => Response.json(body, { status: 400, statusText: 'Bad Request' }));
+    const client = createHttpClient({ fetcher });
+    for (const responseType of ['json', 'text', 'blob', 'arrayBuffer', 'response'] as const) {
+      await expect(client.request('/api/v4/circles', { responseType })).rejects.toMatchObject({
+        name: 'HttpError', status: 400, body, message: '400 Bad Request: circle month cannot be in the future'
+      });
+    }
+  });
+
+  it('prefers explanatory messages and retains a status fallback for missing or non-JSON details', () => {
+    const response = new Response('', { status: 400 });
+    for (const [body, expected] of [
+      [{ error: 'invalid_request', message: ' Choose an earlier month. ' }, '400: Choose an earlier month.'],
+      [{ error: {}, detail: 'Month is unavailable.' }, '400: Month is unavailable.'],
+      [{ error: '  ', message: 123 }, '400'],
+      [null, '400'],
+      ['<html>Gateway error</html>', '400']
+    ] as const) expect(new HttpError(400, '', '/api/v4/circles', body, response).message).toBe(expected);
+  });
+
   it('reports genuine 429 limits with or without a proof provider without retrying them', async () => {
     const response = () => Response.json({ error: 'rate_limited' }, { status: 429, headers: { 'retry-after': '12' } });
     const onRateLimit = vi.fn();

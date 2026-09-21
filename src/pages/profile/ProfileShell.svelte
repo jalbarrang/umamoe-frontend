@@ -74,8 +74,8 @@
     } catch (reason) {
       if (!isCurrent(request)) return;
       if (reason instanceof HttpError && reason.status === 403) hidden = true;
-      else if (reason instanceof HttpError && reason.status === 404) error = 'Trainer not found. | build=local (local)';
-      else error = 'Failed to load profile. | build=local (local)';
+      else if (reason instanceof HttpError && reason.status === 404) error = `Trainer not found. ${reason.message}`;
+      else error = `Failed to load profile.${reason instanceof Error ? ' ' + reason.message : ''}`;
     } finally { if (isCurrent(request)) loading = false; }
   }
 

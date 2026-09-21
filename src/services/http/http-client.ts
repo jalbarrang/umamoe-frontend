@@ -41,6 +41,12 @@ interface PipelineRequest {
 type Next = (request: PipelineRequest) => Promise<Response>;
 type Middleware = (request: PipelineRequest, next: Next) => Promise<Response>;
 
+function backendErrorMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const details = body as Record<string, unknown>;
+  return [details.message, details.detail, details.error].find((value): value is string => typeof value === 'string' && Boolean(value.trim()))?.trim();
+}
+
 export class HttpError<T = unknown> extends Error {
   constructor(
     public readonly status: number,
@@ -49,7 +55,9 @@ export class HttpError<T = unknown> extends Error {
     public readonly body: T,
     public readonly response: Response
   ) {
-    super((String(status) + ' ' + statusText).trim());
+    const statusMessage = (String(status) + ' ' + statusText).trim();
+    const backendMessage = backendErrorMessage(body);
+    super(backendMessage ? `${statusMessage}: ${backendMessage}` : statusMessage);
     this.name = 'HttpError';
   }
 }
@@ -199,7 +207,7 @@ export function createHttpClient(options: HttpClientOptions = {}) {
     delete (init as HttpRequestOptions).browserProof;
     const ownApi = isOwnApi(url, baseUrl);
     const response = await pipeline({ url, init, ownApi, proofRequired: ownApi || requestOptions.browserProof === true });
-    if (!response.ok) throw new HttpError(response.status, response.statusText, response.url || url, await responseBody(response, requestOptions.responseType === 'response' ? 'json' : requestOptions.responseType, true), response);
+    if (!response.ok) throw new HttpError(response.status, response.statusText, response.url || url, await responseBody(response, 'json', true), response);
     if (requestOptions.responseType === 'response') return response as T;
     return await responseBody(response, requestOptions.responseType) as T;
   }

@@ -27,11 +27,12 @@ export function timelineEventMasterId(eventId: string | null | undefined): numbe
 export function resolveBundledTimelineEventImagePath(
   eventType: string | null | undefined,
   masterEventId: number | null | undefined,
+  preferEnglish = true,
 ): string | undefined {
   const category = eventType ? EVENT_IMAGE_CATEGORIES[eventType] : undefined;
   if (!category || !Number.isSafeInteger(masterEventId) || Number(masterEventId) <= 0) return undefined;
   const logicalPath = `assets/timeline-images/events/${category}/${masterEventId}.webp`;
-  return ENGLISH_TIMELINE_IMAGE_PATHS[logicalPath]
+  return (preferEnglish ? ENGLISH_TIMELINE_IMAGE_PATHS[logicalPath] : undefined)
     ?? JAPANESE_TIMELINE_IMAGE_PATHS[logicalPath];
 }
 
@@ -39,10 +40,11 @@ function resolveSourceImagePath(
   imagePath: string | null | undefined,
   eventType: string | null | undefined,
   masterEventId: number | null | undefined,
+  preferEnglish: boolean,
 ): string | undefined {
-  const bundledFallback = resolveBundledTimelineEventImagePath(eventType, masterEventId);
+  const bundledFallback = resolveBundledTimelineEventImagePath(eventType, masterEventId, preferEnglish);
   if (!imagePath || imagePath.endsWith('/')) return bundledFallback;
-  return ENGLISH_TIMELINE_IMAGE_PATHS[imagePath]
+  return (preferEnglish ? ENGLISH_TIMELINE_IMAGE_PATHS[imagePath] : undefined)
     ?? JAPANESE_TIMELINE_IMAGE_PATHS[imagePath]
     ?? bundledFallback
     ?? imagePath;
@@ -53,8 +55,8 @@ function resolveSourceImagePath(
 // instead of downloading a second URL table before timeline data can load.
 const bundledPaths = new Set([...Object.values(ENGLISH_TIMELINE_IMAGE_PATHS), ...Object.values(JAPANESE_TIMELINE_IMAGE_PATHS)]);
 
-export function timelineImage(path: string | null | undefined, type: string | undefined, id: string, sourceImage?: string): string | undefined {
-  const resolved = resolveSourceImagePath(path, type, timelineEventMasterId(id));
+export function timelineImage(path: string | null | undefined, type: string | undefined, id: string, sourceImage?: string, preferEnglish = true): string | undefined {
+  const resolved = resolveSourceImagePath(path, type, timelineEventMasterId(id), preferEnglish);
   if (!resolved) return sourceImage;
   const localPath = resolved.replace(/^\//, '');
   return bundledPaths.has(localPath) ? `/${localPath}` : sourceImage ?? resolved;

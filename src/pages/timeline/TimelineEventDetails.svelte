@@ -33,7 +33,7 @@
   const dateLabel = $derived(event.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }));
   const endLabel = $derived(event.estimatedEndDate && event.estimatedEndDate > event.date ? event.estimatedEndDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
   const freePullSource = $derived(contentUrl(gacha?.free_pulls_source_url));
-  const formatRate = (rate: number) => new Intl.NumberFormat(undefined, { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(rate);
+  const formatRate = (rate: number) => new Intl.NumberFormat(undefined, { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(rate);
   const rarityRate = $derived([...(gacha?.rarity_rates ?? [])].sort((a, b) => b.rarity - a.rarity)[0]?.rate);
   const rateSummary = $derived([Number.isFinite(rarityRate) ? `${event.eventType === 'support_card_banner' ? 'SSR pool' : '3★ pool'} ${formatRate(rarityRate!)}` : '', gacha?.rates_confidence === 'inferred_standard' ? 'Standard rates (estimated)' : 'Published banner rates'].filter(Boolean).join(' · '));
   const pickups = $derived.by(() => {
