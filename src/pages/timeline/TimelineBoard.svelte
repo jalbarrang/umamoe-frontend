@@ -55,7 +55,10 @@
   });
   const lastMonth = $derived.by(() => { const index = monthOffsets.findIndex(offset => offset > scrollTop + viewportHeight + 500); return index < 0 ? months.groups.length : index; });
   const width = $derived((lanes.at(-1)?.position ?? 0) + LANE_WIDTH + 48);
-  const visibleLanes = $derived(lanes.filter(lane => lane.position + LANE_WIDTH >= scrollLeft - 150 && lane.position <= scrollLeft + viewportWidth + 150));
+  // Keep the rendered array stable between lane boundaries, with a lane of overscan.
+  const firstLane = $derived.by(() => { const index = lanes.findIndex(lane => lane.position + LANE_WIDTH >= scrollLeft - LANE_STEP); return index < 0 ? lanes.length : index; });
+  const lastLane = $derived.by(() => { const index = lanes.findIndex(lane => lane.position > scrollLeft + viewportWidth + LANE_STEP); return index < 0 ? lanes.length : index; });
+  const visibleLanes = $derived(lanes.slice(firstLane, lastLane));
   const todayPosition = $derived(timelinePosition(lanes, now));
   const todayLane = $derived(lanes.reduce<TimelineLane | undefined>((best, lane) => !best || Math.abs(lane.date.getTime() - now.getTime()) < Math.abs(best.date.getTime() - now.getTime()) ? lane : best, undefined));
   const showToday = $derived(Boolean(lanes.length && now >= lanes[0]!.date && now <= lanes.at(-1)!.date));
@@ -206,7 +209,7 @@
     if (elapsed > 0) { drag.vx = (event.pageX - drag.lastX) / elapsed * 16; drag.vy = (event.pageY - drag.lastY) / elapsed * 16; }
     drag.lastX = event.pageX; drag.lastY = event.pageY; drag.time = performance.now();
     board.scrollLeft = drag.left - (event.pageX - drag.x);
-    board.scrollTop = drag.top - (event.pageY - drag.y); updateViewport();
+    board.scrollTop = drag.top - (event.pageY - drag.y); scheduleViewport();
   }
   function endDrag() {
     let vx = drag?.vx ?? 0, vy = drag?.vy ?? 0;

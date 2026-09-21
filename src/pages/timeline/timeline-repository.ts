@@ -109,7 +109,7 @@ export const timelineRepository = {
           context,
           image: contentUrl(timelineImage(event.image_path, event.type, event.id, contentUrl(event.image), event.type !== 'champions_meeting' || event.is_confirmed === true)),
           predicted: !event.is_confirmed,
-          canPlan: ['character_banner', 'support_card_banner'].includes(event.type ?? '') && Boolean(event.planner_data_available === true || event.gacha_id || numbers(event.gacha_ids).length),
+          canPlan: (Number(event.gacha_type) === 14 ? event.planner_data_available === true : ['character_banner', 'support_card_banner'].includes(event.type ?? '')) && Boolean(event.planner_data_available === true || event.gacha_id || numbers(event.gacha_ids).length),
           rerun: strings(event.tags).includes('rerun-banner'),
           newsUrl: contentUrl(event.umapyoi_url),
           gametoraUrl: contentUrl(event.gametora_url),

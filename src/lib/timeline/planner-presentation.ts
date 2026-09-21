@@ -31,8 +31,9 @@ export function filterPlannerBanners(events: readonly TimelineRecord[], query: s
   const reference = [today, projectionStart].sort().at(-1)!;
   const ranks = new Map<string, number>();
   return events.filter(event => {
+    if (event.gachaType === 14 && !event.canPlan) return false;
     const kind = bannerKind(event);
-    if (kind !== 'character' && kind !== 'support') return false;
+    if (kind !== 'character' && kind !== 'support' && !(event.gachaType === 14 && event.canPlan)) return false;
     if (!needle) return true;
     const rerun = [event.title, event.eventType, event.gachaTypeName, ...event.tags].some(value => /rerun|re-run|revival|returning|encore/i.test(value ?? ''));
     const values = [event.title, ...event.relatedCharacters, ...event.relatedSupportCards, ...event.relatedSupportCardNames,

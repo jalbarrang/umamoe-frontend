@@ -34,7 +34,8 @@ export interface PlannerEventBenefit { id: string; event_id: string; gacha_id?: 
 export interface PlannerFreePullCampaign { id: string; label: string; total_pulls: number; pulls_per_day?: number; allocation_mode?: string; stockable?: boolean; eligible_gacha_ids?: number[]; default_allocations: PlannerFreePullCampaignAllocation[]; provenance?: string; confidence?: string; source_url?: string; }
 export interface PlannerPickupRate { pickup_id: number; label?: string; rate: number; exchangeable?: boolean; }
 export interface PlannerRarityRate { rarity: number; rate: number; }
-export interface PlannerGachaEntry { event_id?: string; gacha_id: number; gacha_type?: number; banner_kind: PlannerTarget['bannerKind']; start_date: string; end_date: string; jewel_cost_per_pull?: number; spark_pulls?: number; free_pulls?: number; free_pulls_source_url?: string; ticket_currency?: Extract<PlannerCurrency, 'uma_ticket' | 'support_ticket'>; pickups?: PlannerPickupRate[]; featured_pickups?: PlannerPickupRate[]; rarity_rates?: PlannerRarityRate[]; provenance?: string; confidence?: string; rates_provenance?: string; rates_confidence?: string; }
+export interface PlannerStepUp { rounds: number; steps: { gacha_id: number; pulls: number; cost: number; guaranteed_rarity: number; selectable: boolean }[]; }
+export interface PlannerGachaEntry { step_up?: PlannerStepUp; event_id?: string; gacha_id: number; gacha_type?: number; banner_kind: PlannerTarget['bannerKind']; start_date: string; end_date: string; jewel_cost_per_pull?: number; spark_pulls?: number; free_pulls?: number; free_pulls_source_url?: string; ticket_currency?: Extract<PlannerCurrency, 'uma_ticket' | 'support_ticket'>; pickups?: PlannerPickupRate[]; featured_pickups?: PlannerPickupRate[]; rarity_rates?: PlannerRarityRate[]; provenance?: string; confidence?: string; rates_provenance?: string; rates_confidence?: string; }
 export interface PlannerGachaResource { version?: string | number; shard?: string; gachas: PlannerGachaEntry[]; }
 export interface PlannerGlobalRewardComparison { speculative_method?: string; observation_end: string; speculative_monthly_carats: number; speculative_recent_median_monthly_carats?: number; }
 export interface PlannerCompetitiveRewardVariant { master_event_id?: number; id: string; competition: string; event_id: string; label: string; source_items: PlannerSourceItem[]; available_at?: string; default_enabled?: boolean; provenance?: string; source_url?: string; }
@@ -192,7 +193,7 @@ export function findPlannerEvent(id: string, events: readonly TimelineRecord[]):
   return timelineEventIndex(events).get(id) ?? events.find(event => normalizedEventId(event.id) === normalizedEventId(id));
 }
 export function plannerTargetEvents(plan: CaratPlan, events: readonly TimelineRecord[]): PlannerGachaEvent[] {
-  return enabledPlannerTargets(plan).filter(target => target.bannerKind === 'character' || target.bannerKind === 'support').map(target => {
+  return enabledPlannerTargets(plan).filter(target => target.bannerKind === 'character' || target.bannerKind === 'support' || target.bannerKind === 'paid').map(target => {
     const event = findPlannerEvent(target.eventId, events);
     return {
       id: event?.id ?? target.eventId, title: event?.title ?? target.title,
@@ -233,7 +234,7 @@ export function synchronizePlannerTargets(plan: CaratPlan, events: readonly Time
 }
 export function setTimelineEvent(
   collection: CaratPlanCollection,
-  event: Pick<TimelineRecord, 'id' | 'title' | 'eventType'> & Partial<Pick<TimelineRecord, 'date' | 'estimatedEndDate' | 'pickupCardIds' | 'image' | 'gachaId' | 'gachaIds' | 'plannerRewardAvailable'>>,
+  event: Pick<TimelineRecord, 'id' | 'title' | 'eventType'> & Partial<Pick<TimelineRecord, 'date' | 'estimatedEndDate' | 'pickupCardIds' | 'image' | 'gachaId' | 'gachaIds' | 'gachaType' | 'plannerRewardAvailable'>>,
   selected: boolean,
   rewards?: PlannerRewardResource,
 ): CaratPlanCollection {
@@ -245,7 +246,7 @@ export function setTimelineEvent(
   plan.disabledEventIds = [...disabled];
   const existing = plan.targets.find((item) => item.eventId === event.id);
   const kind = bannerKind(event);
-  if (selected && (kind === 'character' || kind === 'support')) {
+  if (selected && (kind === 'character' || kind === 'support' || event.gachaType === 14)) {
     const start = (event.date ?? new Date()).toISOString().slice(0, 10);
     const end = event.estimatedEndDate?.toISOString().slice(0, 10) ?? start;
     const pickupId = event.pickupCardIds?.[0];
@@ -260,7 +261,7 @@ export function setTimelineEvent(
         existing.pickupGoals = [{ pickupId, desiredCopies: 1 }];
       }
     } else {
-      plan.targets.push({ id: id('target'), eventId: event.id, gachaId: event.gachaId, gachaIds: event.gachaIds?.length ? [...event.gachaIds] : undefined, title: event.title, bannerKind: kind, imagePath: event.image, bannerStart: start, bannerEnd: end, pullTiming: 'end', plannedPulls: 200, desiredCopies: 1, pickupId, pickupGoals: pickupId === undefined ? [] : [{ pickupId, desiredCopies: 1 }], useTickets: true, allowPaidJewels: false });
+      plan.targets.push({ id: id('target'), eventId: event.id, gachaId: event.gachaId, gachaIds: event.gachaIds?.length ? [...event.gachaIds] : undefined, title: event.title, bannerKind: kind, imagePath: event.image, bannerStart: start, bannerEnd: end, pullTiming: 'end', plannedPulls: event.gachaType === 14 ? 50 : 200, desiredCopies: 1, pickupId, pickupGoals: pickupId === undefined ? [] : [{ pickupId, desiredCopies: 1 }], useTickets: event.gachaType !== 14, allowPaidJewels: event.gachaType === 14 });
     }
   }
   if (event.plannerRewardAvailable) {
@@ -443,26 +444,43 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
     }
     const balanceBefore = { ...current };
     const gacha = findGacha(target, bundle);
-    const planned = number(target.plannedPulls, 5000);
+    const stepUp = gacha?.step_up;
+    const steps = stepUp ? Array.from({ length: stepUp.rounds }, () => stepUp.steps).flat() : [];
+    const paidOnly = target.bannerKind === 'paid' || gacha?.gacha_type === 14;
+    const planned = paidOnly ? Math.min(Math.floor(number(target.plannedPulls, 5000) / 10) * 10, steps.reduce((sum, step) => sum + step.pulls, 0)) : number(target.plannedPulls, 5000);
     plannedPulls += planned;
     const freePullsAvailable = campaignPulls.has(target.id) ? campaignPulls.get(target.id)! : number(gacha?.free_pulls, 5000);
-    const freePullsUsed = Math.min(planned, freePullsAvailable);
+    const freePullsUsed = paidOnly ? 0 : Math.min(planned, freePullsAvailable);
     let remaining = planned - freePullsUsed;
     const ticketCurrency = gacha?.ticket_currency ?? (target.bannerKind === 'support' ? 'support_ticket' : target.bannerKind === 'character' ? 'uma_ticket' : undefined);
     const ticketKey = ticketCurrency ? balanceKey(ticketCurrency) : undefined;
-    const availableTickets = target.useTickets && ticketKey ? Math.min(current[ticketKey], target.ticketLimit ?? Number.MAX_SAFE_INTEGER, remaining) : 0;
+    const availableTickets = !paidOnly && target.useTickets && ticketKey ? Math.min(current[ticketKey], target.ticketLimit ?? Number.MAX_SAFE_INTEGER, remaining) : 0;
     if (ticketKey) current[ticketKey] -= availableTickets;
     remaining -= availableTickets;
     const jewelCost = Math.max(1, number(gacha?.jewel_cost_per_pull ?? defaultJewelCost));
-    const freeJewelPulls = Math.min(remaining, Math.floor(current.freeJewels / jewelCost));
+    const freeJewelPulls = paidOnly ? 0 : Math.min(remaining, Math.floor(current.freeJewels / jewelCost));
     current.freeJewels -= freeJewelPulls * jewelCost;
     remaining -= freeJewelPulls;
-    const paidJewelPulls = target.allowPaidJewels ? Math.min(remaining, Math.floor(current.paidJewels / jewelCost)) : 0;
-    current.paidJewels -= paidJewelPulls * jewelCost;
+    let paidJewelPulls = 0;
+    let stepUpCost = 0;
+    if (paidOnly) {
+      let requested = 0, canFund = true;
+      for (const step of steps) {
+        if (requested + step.pulls > planned) break;
+        requested += step.pulls;
+        stepUpCost += step.cost;
+        canFund &&= current.paidJewels >= step.cost;
+        if (canFund) { current.paidJewels -= step.cost; paidJewelPulls += step.pulls; }
+      }
+    } else {
+      paidJewelPulls = target.allowPaidJewels ? Math.min(remaining, Math.floor(current.paidJewels / jewelCost)) : 0;
+      current.paidJewels -= paidJewelPulls * jewelCost;
+    }
     remaining -= paidJewelPulls;
     const fundedPulls = planned - remaining;
-    const sparkPulls = number(gacha?.spark_pulls ?? bundle?.core.default_spark_pulls ?? 200);
-    const goals = plannerPickupGoals(target, target.pickupId ?? gacha?.pickups?.[0]?.pickup_id);
+    const sparkPulls = paidOnly ? 0 : number(gacha?.spark_pulls ?? bundle?.core.default_spark_pulls ?? 200);
+    // ponytail: budget step-ups only; model their selectable pools before exposing pickup odds.
+    const goals = paidOnly ? [] : plannerPickupGoals(target, target.pickupId ?? gacha?.pickups?.[0]?.pickup_id);
     let rainbowCrystalsUsed = 0;
     let goldCrystalsUsed = 0;
     const adjustedGoals = goals.map((goal) => {
@@ -491,7 +509,7 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
       return { pickupId: goal.pickupId, desiredCopies: goal.desiredCopies, copiesNeededFromPulls: goal.requestedCopies, crystalCopiesApplied: goal.crystalCopiesApplied, crystalKind: goal.crystalKind, pickupRate: odds?.pickupRate, probability: odds?.probability };
     });
     const ratesAvailable = pickupGoals.length > 0 && pickupGoals.every(goal => goal.pickupRate !== undefined);
-    const shortfallJewels = remaining * jewelCost;
+    const shortfallJewels = paidOnly ? Math.max(0, stepUpCost - balanceBefore.paidJewels) : remaining * jewelCost;
     totalShortfallJewels += shortfallJewels;
     targets.push({ income, targetId: target.id, pullDate: new Date(targetDay * dayMs).toISOString().slice(0,10), balanceBefore, fundedPulls, plannedPulls: planned, shortfallJewels, freePullsUsed, freeJewelPulls, paidJewelPulls, ticketPulls: availableTickets, freeJewelsAfter: current.freeJewels, paidJewelsAfter: current.paidJewels, ticketsAfter: ticketKey ? current[ticketKey] : 0, rewardCaratsGained, sparkCopies: sparkPulls > 0 ? Math.floor(fundedPulls / sparkPulls) : 0, rainbowCrystalsUsed, goldCrystalsUsed, pickupProbability, pickupGoals, ratesAvailable, jointProbabilityExact: goalProbability?.jointProbabilityExact ?? false });
   }

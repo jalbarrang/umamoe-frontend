@@ -87,7 +87,8 @@
     const timing = activeTargets[0]?.pullTiming;
     return timings.size === 1 && (timing === 'start' || timing === 'end') ? timing : '';
   });
-  const globalPaidCarats = $derived(activeTargets.length && activeTargets.every(target => target.allowPaidJewels === activeTargets[0]!.allowPaidJewels) ? activeTargets[0]!.allowPaidJewels ? 'allow' : 'free-only' : '');
+  const regularTargets = $derived(activeTargets.filter(target => target.bannerKind !== 'paid'));
+  const globalPaidCarats = $derived(regularTargets.length && regularTargets.every(target => target.allowPaidJewels === regularTargets[0]!.allowPaidJewels) ? regularTargets[0]!.allowPaidJewels ? 'allow' : 'free-only' : '');
   const planOptions: MenuItem[] = $derived([
     ...collection.plans.map(item => ({ id:'plan:'+item.id, label:item.name, checked:item.id === plan.id, icon:item.id === plan.id ? 'check' as const : 'book' as const })),
     { id:'create', label:'Add plan', icon:'add', separator:true }
@@ -119,7 +120,7 @@
   }
   function applyGlobalPaidCarats(selection: string): void {
     if (selection !== 'allow' && selection !== 'free-only') return;
-    commit(value => { for (const target of enabledPlannerTargets(value)) target.allowPaidJewels = selection === 'allow'; });
+    commit(value => { for (const target of enabledPlannerTargets(value)) if (target.bannerKind !== 'paid') target.allowPaidJewels = selection === 'allow'; });
   }
   function selectPlan(value: string): void { publish({ ...currentCollection(), activePlanId: value }); }
   function addPlan(): void { const next = clonePlanCollection(collection); const value = createPlan('New plan'); next.plans.push(value); next.activePlanId = value.id; publish(next); }
@@ -385,7 +386,7 @@
 {#if activeTargets.length}<div class="target-bulk" role="group" aria-label="Apply settings to every planned banner">
   <span class="bulk-title"><Icon name="tune" size={15}/><strong>All banners</strong></span>
   <SelectField id="planner-all-timing" label="Pull on" options={[{value:'',label:'Individual'},{value:'start',label:'Banner start'},{value:'end',label:'Banner end'}]} value={globalPullTiming} onchange={applyGlobalPullTiming}/>
-  <SelectField id="planner-all-paid" label="Paid Carats" options={[{value:'',label:'Mixed'},{value:'free-only',label:'Do not use'},{value:'allow',label:'Allowed'}]} value={globalPaidCarats} onchange={applyGlobalPaidCarats}/>
+  <SelectField id="planner-all-paid" label={regularTargets.length < activeTargets.length ? "Paid Carats (regular banners)" : "Paid Carats"} disabled={!regularTargets.length} options={[{value:'',label:'Mixed'},{value:'free-only',label:'Do not use'},{value:'allow',label:'Allowed'}]} value={globalPaidCarats} onchange={applyGlobalPaidCarats}/>
 </div>{/if}
 </div>
 </header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. We will start with 200 pulls at banner end and select the first featured rate-up for you.</p></div></div>{:else}<div class="target-list">{#each pullItems as item, index (item.id)}

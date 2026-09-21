@@ -1,5 +1,32 @@
 import { expect, test } from './fixtures/test';
 import { mockPlannerGoals } from './fixtures/planner-goals';
+import { detailGachas, detailTimeline } from './fixtures/timeline-details';
+
+test('Large pickup lists stay bounded, searchable and selectable without hiding the header', async ({ page }, info) => {
+  await mockPlannerGoals(page);
+  const ids = [30028, 30001, 30002, ...Array.from({ length: 25 }, (_, i) => 31001 + i)];
+  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: { events: detailTimeline.events.map(event => event.id === 'detail-support' ? { ...event, pickup_card_ids: ids, related_support_cards: ['Kitasan Black', 'Special Week', 'Silence Suzuka', ...ids.slice(3).map((_, i) => `Featured option ${i + 1}`)] } : event) } }));
+  await page.route('**/resources/test/planner_gacha_2026.json*', route => route.fulfill({ json: { gachas: [{ ...detailGachas.gachas[1], pickups: ids.map(pickup_id => ({ pickup_id, rate: .001 })) }] } }));
+  await page.goto('/timeline?tab=carat-planner');
+  const target = page.locator('[data-target-id="support-goals"]');
+  await target.locator('.pickup-summary').click();
+  await target.getByRole('button', { name: 'Choose rate-ups', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: 'Choose rate-ups', exact: true });
+  expect((await picker.boundingBox())!.height).toBeLessThanOrEqual(542);
+  await expect(picker.getByRole('status')).toHaveText('2 selected · 28 available');
+  await picker.locator('.pickup-options').evaluate(node => node.scrollTop = node.scrollHeight);
+  await expect(picker.getByText('Featured on this banner', { exact: true })).toBeInViewport();
+  await picker.getByRole('searchbox').fill('Featured option 25');
+  await expect(picker.locator('.pickup-options button')).toHaveCount(1);
+  await picker.getByRole('button', { name: 'Select Featured option 25', exact: true }).click();
+  await expect(picker.getByRole('status')).toHaveText('3 selected · 28 available');
+  await picker.getByRole('searchbox').fill('no such pickup');
+  await expect(picker.getByText('No pickups match your search.')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await target.getByRole('button', { name: 'Choose rate-ups', exact: true }).click();
+  await expect(picker.getByRole('searchbox')).toHaveValue('');
+  await picker.screenshot({ path: info.outputPath('large-pickup-picker.png') });
+});
 
 test('Planner rate-up goals preserve copies, crystal details and shared odds across picker changes and reload', async ({ page, isMobile }, testInfo) => {
   await mockPlannerGoals(page);

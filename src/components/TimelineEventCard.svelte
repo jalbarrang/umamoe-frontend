@@ -41,7 +41,6 @@
 </article>
 
 <style>
-  .event-card{content-visibility:auto;contain-intrinsic-block-size:auto 195px}
   .event-card{--event-accent:var(--accent-primary);position:relative;width:100%;min-width:0;overflow:hidden;isolation:isolate;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--surface-1);color:var(--text-primary);transition:border-color 140ms,box-shadow 140ms}
   [data-event-type='support_card_banner'],[data-event-type='champions_meeting']{--event-accent:#ba68c8}[data-event-type='story_event'],[data-event-type='paid_banner'],[data-event-type='racing_carnival']{--event-accent:#ffb74d}[data-event-type='legend_race']{--event-accent:#e91e63}[data-event-type='campaign'],[data-event-type='league_of_heroes']{--event-accent:#4db6ac}[data-event-type='masters_challenge']{--event-accent:#9575cd}[data-event-type='factor_research']{--event-accent:#4dd0e1}[data-event-type='strongest_team']{--event-accent:#e57373}[data-event-type='scenario_release']{--event-accent:#81c784}
   .event-card:hover,.event-card:focus-within{border-color:color-mix(in srgb,var(--event-accent) 65%,transparent);box-shadow:0 2px 10px rgb(0 0 0/.12)}

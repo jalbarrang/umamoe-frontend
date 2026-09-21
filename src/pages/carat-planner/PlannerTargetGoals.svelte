@@ -19,9 +19,11 @@
   }
   let { target, projection, resources, events, catalog, pickupCopyMemory, onupdate }: Props = $props();
   let expanded = $state(false);
+  let pickupSearch = $state('');
   let viewportWidth = $state<number>();
   const gacha = $derived(findGacha(target, resources));
   const options = $derived(plannerPickupOptions(target, gacha, events, catalog));
+  const filteredOptions = $derived(options.filter(option => `${option.name} ${option.subLabel}`.toLocaleLowerCase().includes(pickupSearch.trim().toLocaleLowerCase())));
   const goals = $derived(plannerPickupGoals(target).map(goal => ({ ...goal, option: options.find(option => option.pickupId === goal.pickupId)!, odds: projection.pickupGoals.find(odds => odds.pickupId === goal.pickupId) })));
   const ratesAvailable = $derived(goals.length > 0 && goals.every(goal => goal.odds?.pickupRate !== undefined));
   const inferred = $derived(gacha?.rates_confidence === 'inferred_standard');
@@ -107,14 +109,18 @@
     <div class="goal-workspace">
       <section class="goal-editor" aria-label={`Rate-up goals for ${target.title}`}>
         <header><span><strong>Rate-up goals</strong><small>Choose who you want and how many copies.</small></span>
-          {#if options.length}<InspectPopover label="Choose rate-ups" align="end">
+          {#if options.length}<InspectPopover label="Choose rate-ups" align="end" onopenchange={open => { if (!open) pickupSearch = ''; }}>
             {#snippet trigger()}<span class="picker-trigger"><Icon name="add" size={16}/><span>Choose rate-ups</span><small>{goals.length} selected</small></span>{/snippet}
-            <div class="pickup-picker"><header><strong>Featured on this banner</strong><small>Select more than one if you want both.</small></header>
-              {#each options as option (option.pickupId)}{@const selected = goals.some(goal => goal.pickupId === option.pickupId)}
+            <div class="pickup-picker"><header><strong>Featured on this banner</strong><small>Select one or more pickups.</small></header>
+              {#if options.length > 6}<input class="pickup-search" type="search" aria-label="Search featured pickups" placeholder="Search name or variant…" bind:value={pickupSearch}/>{/if}
+              <div class="pickup-options">
+              {#each filteredOptions as option (option.pickupId)}{@const selected = goals.some(goal => goal.pickupId === option.pickupId)}
                 <button type="button" class:selected aria-pressed={selected} aria-label={`${selected ? 'Remove' : 'Select'} ${option.name}`} onclick={() => editGoal(option.pickupId)}>
                   {@render art(option, 40)}<span><strong>{option.name}</strong><small>{option.subLabel} · {percent(option.rate, 2)} {inferred ? 'estimated ' : ''}per pull</small></span><Icon name={selected ? 'check' : 'add'} size={16}/>
                 </button>
-              {/each}
+              {:else}<p>No pickups match your search.</p>{/each}
+              </div>
+              <small class="picker-count" role="status">{goals.length} selected · {options.length} available</small>
             </div>
           </InspectPopover>{/if}
         </header>
@@ -178,7 +184,7 @@
   .goal-workspace{min-width:0;display:grid;grid-template-columns:minmax(270px,.58fr) minmax(0,1.42fr);border-top:1px solid var(--border-subtle)}
   .goal-editor{min-width:0;padding:10px;--inspect-popover-width:370px;--inspect-popover-padding:10px}.goal-editor>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.goal-editor>header>span,.pickup-picker header{min-width:0;display:grid;gap:3px}.goal-editor :global(.inspect){flex:none}
   .picker-trigger{display:flex;align-items:center;gap:5px;min-height:32px;padding:3px 7px;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm);background:var(--factor-field-bg);font-size:10px}.picker-trigger :global(svg){color:var(--accent-primary)}
-  .pickup-picker{display:grid;gap:4px}.pickup-picker header{margin-bottom:6px;padding-right:34px}.pickup-picker button{display:grid;grid-template-columns:40px minmax(0,1fr) 16px;align-items:center;gap:7px;min-height:52px;padding:5px;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-primary);text-align:left;cursor:pointer}.pickup-picker button>span:nth-child(2){min-width:0;display:grid;gap:3px}.pickup-picker button strong{font-size:11px}.pickup-picker button.selected{background:var(--color-accent-soft);border-color:var(--accent-primary)}.pickup-picker button:hover{background:var(--factor-option-hover)}.pickup-picker button:focus-visible{outline:2px solid var(--accent-primary)}
+  .pickup-picker{display:flex;flex-direction:column;gap:8px;max-height:min(520px,calc(100dvh - 48px))}.pickup-picker header{padding-right:34px}.pickup-search{flex:none;width:100%;min-height:40px;padding:8px;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm);background:var(--factor-field-bg);color:var(--text-primary);font:inherit;font-size:12px}.pickup-options{min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:4px;padding:2px;scrollbar-gutter:stable}.picker-count{flex:none;border-top:1px solid var(--border-subtle);padding-top:8px}.pickup-picker button{display:grid;grid-template-columns:40px minmax(0,1fr) 16px;align-items:center;gap:7px;min-height:52px;padding:5px;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-primary);text-align:left;cursor:pointer}.pickup-picker button>span:nth-child(2){min-width:0;display:grid;gap:3px}.pickup-picker button strong{font-size:12px}.pickup-picker button.selected{background:var(--color-accent-soft);border-color:var(--accent-primary)}.pickup-picker button:hover{background:var(--factor-option-hover)}.pickup-picker button:focus-visible,.pickup-search:focus-visible{outline:2px solid var(--accent-primary)}
   .selected-goals{display:grid;gap:5px}.selected-goal{min-width:0;min-height:60px;display:grid;grid-template-columns:40px minmax(0,1fr) auto auto 28px;align-items:center;gap:5px;border-top:1px solid var(--border-subtle)}.goal-name{min-width:0;display:grid;gap:3px}.goal-name strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.goal-name small{font-size:9px}.goal-copies{display:grid;justify-items:center;gap:3px}.copy-stepper{display:flex;align-items:center;overflow:hidden;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm)}.copy-stepper :global(.ui-button){width:28px;min-height:28px;padding:0;border-radius:0}.copy-stepper output{min-width:22px;text-align:center;font-weight:700}.individual-chance{font-size:11px;color:var(--accent-primary)}.selected-goal>:global(.ui-button){width:28px;min-height:30px;padding:0}.selected-goal>.pickup-art{width:40px!important;height:40px!important}
   .advanced-odds{min-width:0;border-left:1px solid var(--border-subtle)}.advanced-odds>summary{display:none}
   .goal-rollup{display:grid;gap:10px;padding:10px 12px;background:color-mix(in srgb,var(--surface-1) 84%,var(--surface-2))}.goal-rollup>header{display:flex;justify-content:space-between;align-items:start;gap:12px}.goal-rollup h4{font-size:12px;margin:0 0 4px}.all-goals{display:grid;grid-template-columns:auto auto;align-items:baseline;justify-content:end;gap:2px 7px;text-align:right;flex:none;max-width:180px;padding-left:12px;border-left:1px solid var(--border-primary)}.all-goals>span{color:var(--text-secondary);font-size:10px}.all-goals>small{grid-column:1/-1}.all-goals>strong{font-size:14px;color:var(--accent-primary)}.all-goals.strong>strong,.goal-chance.strong>strong{color:var(--accent-secondary)}

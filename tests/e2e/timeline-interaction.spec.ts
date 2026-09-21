@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures/test';
+import { LANE_WIDTH } from '../../src/lib/timeline/timeline-layout';
 import { mockTimeline } from './fixtures/api';
 import { detailTimeline, mockTimelineDetails } from './fixtures/timeline-details';
 
@@ -19,7 +20,7 @@ test('Direction changes keep a large timeline bounded and preserve scroll positi
     await expect(board.locator('.vertical-date.is-today')).toBeInViewport();
     timings.push(Math.round(performance.now() - start));
     expect(await board.locator('.event-card').count()).toBeLessThan(100);
-    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(280);
+    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(LANE_WIDTH);
     await page.getByRole('radio', { name: 'Horizontal', exact: true }).click();
     await expect.poll(() => board.evaluate(node => node.scrollLeft)).toBeCloseTo(x, 0);
     expect(await board.locator('.event-card').count()).toBeLessThan(40);
@@ -31,7 +32,7 @@ test('Direction changes keep a large timeline bounded and preserve scroll positi
   await expect(page.locator('#timeline-event-large-1199')).toBeAttached();
   const y = await board.evaluate(async node => { await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); return node.scrollTop; });
   expect(await board.locator('.event-card').count()).toBeLessThan(100);
-    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(280);
+    expect((await board.locator('.event-card').first().boundingBox())!.width).toBeLessThanOrEqual(LANE_WIDTH);
   await page.getByRole('radio', { name: 'Horizontal', exact: true }).click();
   await page.getByRole('radio', { name: 'Vertical', exact: true }).click();
   // Newly measured rows can shorten the virtual scroll range at its far end.
