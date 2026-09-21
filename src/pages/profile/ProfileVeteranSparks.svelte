@@ -23,8 +23,8 @@
     {/each}</div>{/if}
   {/each}
   {#if white.length > 3 && !expanded}
-    {#snippet count()}<span>★</span><strong>{white.length}</strong> white{/snippet}
-    {#if onmore}<button class="white-count" aria-label={`View all ${white.length} white sparks`} onclick={onmore}>{@render count()}</button>{:else}<span class="white-count">{@render count()}</span>{/if}
+    {#snippet count()}<span class="white-count"><span aria-hidden="true">★</span><strong>{white.length}</strong> white</span>{/snippet}
+    {#if onmore}<button class="spark-filter" aria-label={`View all ${white.length} white sparks`} onclick={onmore}>{@render count()}</button>{:else}{@render count()}{/if}
   {/if}
 </div>
 
@@ -35,8 +35,8 @@
   .spark-filter:not(button) { cursor:default; }
   .spark-filter :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.2; }
   .spark-filter:hover :global(.spark) { border-color:var(--spark-border-color,currentColor); }
-  .white-count { display:inline-flex; align-items:center; gap:4px; min-height:22px; padding:3px 6px; border:1px solid var(--border-secondary); border-radius:4px; color:var(--color-text-muted); background:var(--surface-2); font-size:11px; }
-  .white-count strong { color:var(--color-text); font-weight:600; }
-  button.white-count { cursor:pointer; }.white-count:hover:is(button) { border-color:var(--accent-primary); }
+  .white-count { display:inline-flex; align-items:center; align-self:center; gap:3px; padding:2px 4px; border:1px solid rgb(158 158 158 / .5); border-radius:var(--radius-xs); color:var(--spark-white-text); background:rgb(158 158 158 / .15); font-size:11px; font-weight:500; line-height:1.2; white-space:nowrap; }
+  .white-count strong { font-weight:600; }
+  button.spark-filter:hover .white-count { border-color:currentColor; }
   button:focus-visible { outline:2px solid var(--color-accent); outline-offset:1px; }
 </style>

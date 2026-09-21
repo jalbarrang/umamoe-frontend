@@ -105,12 +105,19 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
   await expect(table.locator('.veteran-identity').first()).toHaveText(identity, {useInnerText:true});
   await expect(table.locator('.spark-groups').first()).toHaveText(sparks, {useInnerText:true});
   await expect(table.locator('thead th')).toHaveCount(6);
-  await expect(table.locator('.table-stats').first().getByRole('term')).toHaveText(['Speed','Stamina','Power','Guts','Wit','SP']);
+  await expect(table.locator('.table-stats').first().getByRole('term')).toHaveText(['Speed','Stamina','Power','Guts','Wit','SP','Total Stats']);
+  for (const identity of await table.locator('.veteran-identity').all()) {
+    const stars = (await identity.locator('.rarity').boundingBox())!;
+    const metadata = await identity.locator('.scenario,.race-style').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().bottom));
+    expect(stars.y).toBeGreaterThanOrEqual(Math.max(...metadata));
+  }
   const affinity = table.locator('.table-affinity').first();
   await expect(affinity.locator('.affinity')).toHaveCount(3);
   expect(await affinity.locator('.affinity').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')))).toEqual(affinityLabels);
   expect(await affinity.locator('.affinity-parent img').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('src')))).toEqual(parentImages);
   expect(await affinity.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
+  const affinityRows = await affinity.locator('.affinity-main,.affinity-parent').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
+  for (let index=1;index<affinityRows.length;index++) expect(affinityRows[index].top).toBeGreaterThanOrEqual(affinityRows[index-1].bottom);
   await expect(table.locator('.table-aptitudes').first().getByRole('listitem')).toHaveCount(10);
   expect(await table.locator('.table-aptitudes').first().evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   await expect(table.locator('.table-factors').first()).toContainText('6');
@@ -130,7 +137,11 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
     await page.getByRole('button',{name:'Show 2 veterans',exact:true}).click();
   }else await page.getByRole('button',{name:'Sort ascending',exact:true}).click();
   await expect(table.locator('.table-stats [data-stat="speed"] dd').first()).toHaveText('1,210');
-  await expect(table.locator('.table-totals').first()).toHaveText('Total Stats5,020');
+  await expect(table.locator('.table-stats [data-stat="total"] dd').first()).toHaveText('5,020');
+  const totalLabel = (await table.locator('.table-stats [data-stat="total"] dt').first().boundingBox())!;
+  const totalValue = (await table.locator('.table-stats [data-stat="total"] dd').first().boundingBox())!;
+  expect(Math.abs(totalValue.y+totalValue.height/2-totalLabel.y-totalLabel.height/2)).toBeLessThan(1);
+  expect(totalValue.x-totalLabel.x-totalLabel.width).toBeLessThanOrEqual(5);
   await expect(table.locator('.table-stats [data-stat="sp"] dd').first()).toHaveText('200');
   const witBounds = (await table.locator('.table-stats [data-stat="wiz"]').first().boundingBox())!;
   const spBounds = (await table.locator('.table-stats [data-stat="sp"]').first().boundingBox())!;
@@ -142,22 +153,43 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
   if(page.viewportSize()!.width>=1400) expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   if(page.viewportSize()!.width<768) for (const width of [390,320]) {
     await page.setViewportSize({width,height:844});
-    expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await table.evaluate(el=>el.scrollLeft=0);
+    await table.scrollIntoViewIfNeeded();
+    await expect(table.locator('thead')).toBeInViewport();
+    await expect(table.locator('tbody tr').first()).toHaveCSS('display','table-row');
+    expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeGreaterThan(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     const row=table.locator('tbody tr').first();
     await expect(row.locator('[data-stat="sp"] dd')).toHaveText('200');
+    expect(await row.locator('[data-stat="sp"] dt').evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
     await expect(row.locator('.affinity-parent img')).toHaveCount(2);
     expect(await row.locator('.table-affinity').evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
+    const chipHeight = (await row.locator('.spark').first().boundingBox())!.height;
+    expect(Math.abs((await row.locator('.white-count').boundingBox())!.height-chipHeight)).toBeLessThanOrEqual(1);
     const areas=await row.locator('th,td').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
-    expect(areas[0].bottom).toBeLessThanOrEqual(areas[1].top);
-    expect(areas[4].bottom).toBeLessThanOrEqual(areas[5].top);
-    expect(areas[5].right).toBeLessThanOrEqual(width);
-    await row.screenshot({path:testInfo.outputPath(`table-row-${width}.png`)});
+    for (const area of areas) {
+      expect(area.top).toBeCloseTo(areas[0].top,0);
+      expect(area.bottom).toBeCloseTo(areas[0].bottom,0);
+    }
+    expect(areas[0].height).toBeLessThan(95);
+    expect(areas[0].width).toBeLessThanOrEqual(120);
+    const rankBounds = (await row.locator('.rank strong').boundingBox())!;
+    expect(rankBounds.x+rankBounds.width).toBeLessThanOrEqual(areas[0].right);
+    expect((await table.locator('table').boundingBox())!.width).toBeLessThanOrEqual(740);
+    await table.screenshot({path:testInfo.outputPath(`table-left-${width}.png`)});
+    await table.evaluate(el=>el.scrollLeft=el.scrollWidth);
+    await expect(row.getByRole('button',{name:'Open Grass Wonder details',exact:true})).toBeInViewport();
+    expect((await row.locator('th').boundingBox())!.x).toBeCloseTo(areas[0].x,0);
+    await table.screenshot({path:testInfo.outputPath(`table-right-${width}.png`)});
   }
   await table.evaluate(el=>el.scrollLeft=0);
   await page.screenshot({path:testInfo.outputPath('veteran-table.png'),fullPage:true});
   await table.screenshot({path:testInfo.outputPath('table-region.png')});
-  await table.getByRole('button',{name:'View Grass Wonder details',exact:true}).focus();
-  await page.keyboard.press('Enter');
+  if(page.viewportSize()!.width<768) await table.getByRole('button',{name:'View all 4 white sparks',exact:true}).first().tap();
+  else {
+    await table.getByRole('button',{name:'View Grass Wonder details',exact:true}).focus();
+    await page.keyboard.press('Enter');
+  }
   await expect(page.getByRole('dialog',{name:'Grass Wonder',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

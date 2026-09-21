@@ -39,8 +39,8 @@
   .affinity-parent :global(.affinity b) { font-size:14px; }
   .affinity-parent :global(.affinity svg) { width:14px; height:14px; }
   .affinity-missing { color:var(--color-text-muted); font-family:var(--font-mono); font-size:11px; line-height:21px; }
-  .compact { grid-template-columns:auto minmax(0,1fr); align-items:center; gap:6px; border:0; border-radius:0; background:transparent; }
-  .compact .affinity-main { padding:0; border:0; }
+  .compact { grid-template-columns:minmax(0,1fr); gap:2px; border:0; border-radius:0; background:transparent; }
+  .compact .affinity-main { align-items:flex-start; padding:0 0 0 25px; border:0; }
   .compact .affinity-main :global(.affinity b) { font-size:14px; }
   .compact .affinity-main :global(svg) { width:12px; height:12px; }
   .compact .affinity-parents { padding:0; gap:2px; }
