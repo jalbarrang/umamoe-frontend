@@ -117,7 +117,12 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
   expect(await affinity.locator('.affinity-parent img').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('src')))).toEqual(parentImages);
   expect(await affinity.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
   const affinityRows = await affinity.locator('.affinity-main,.affinity-parent').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
-  for (let index=1;index<affinityRows.length;index++) expect(affinityRows[index].top).toBeGreaterThanOrEqual(affinityRows[index-1].bottom);
+  await expect(affinity.locator('img')).toHaveCount(3);
+  await expect(affinity.locator('.affinity-main img')).toHaveAttribute('src', (await table.locator('.portrait img').first().getAttribute('src'))!);
+  for (let index=1;index<affinityRows.length;index++) {
+    expect(affinityRows[index].top).toBeGreaterThanOrEqual(affinityRows[index-1].bottom);
+    expect(affinityRows[index].height).toBeCloseTo(affinityRows[0].height, 0);
+  }
   await expect(table.locator('.table-aptitudes').first().getByRole('listitem')).toHaveCount(10);
   expect(await table.locator('.table-aptitudes').first().evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   await expect(table.locator('.table-factors').first()).toContainText('6');

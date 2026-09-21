@@ -9,25 +9,27 @@ export async function completion(page: Page, label: string, run: () => Promise<u
     metrics.completions ??= [];
     metrics.pendingCompletion = label;
     let start: number | undefined, scheduled = false;
-    const observer = new MutationObserver(check);
     function check() {
-      if (start === undefined || scheduled || ready.pathname && location.pathname !== ready.pathname) return;
+      if (start === undefined || scheduled) return;
       const elements = document.querySelectorAll(ready.selector);
       const element = elements[0];
-      if (ready.count !== undefined && elements.length !== ready.count) return;
-      if (ready.count !== 0 && (!element?.checkVisibility() || ready.text && !element.textContent?.includes(ready.text) || ready.attribute && element.getAttribute(ready.attribute[0]) !== ready.attribute[1])) return;
+      if (ready.pathname && location.pathname !== ready.pathname ||
+          ready.count !== undefined && elements.length !== ready.count ||
+          ready.count !== 0 && (!element?.checkVisibility() || ready.text && !element.textContent?.includes(ready.text) || ready.attribute && element.getAttribute(ready.attribute[0]) !== ready.attribute[1])) {
+        // Stylesheet loads and layout can make a frame visible without a DOM mutation.
+        requestAnimationFrame(check);
+        return;
+      }
       scheduled = true;
       requestAnimationFrame(() => requestAnimationFrame(() => {
         metrics.completions.push({ label, ms: Math.round(performance.now() - start!), ready });
         metrics.pendingCompletion = undefined;
-        observer.disconnect();
       }));
     }
     function begin(event: Event) {
       if (start !== undefined) return;
       start = event.timeStamp;
       for (const type of ['click', 'input', 'keydown']) document.removeEventListener(type, begin, true);
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
       queueMicrotask(check);
     }
     for (const type of ['click', 'input', 'keydown']) document.addEventListener(type, begin, true);

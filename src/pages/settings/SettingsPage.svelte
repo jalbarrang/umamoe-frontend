@@ -46,7 +46,7 @@
   async function loadAccounts(): Promise<void> {
     const request = ++accountsRequest; loading.accounts = true; loadErrors.accounts = '';
     try {
-      const result = await authRepository.linkedAccounts();
+      const result = await authRepository.linkedAccounts(true);
       if (request === accountsRequest) {
         accounts = result;
         setAccountWorkspaces(result.filter(account => account.verification_status === 'verified').map(account => ({ accountId: account.account_id, label: account.trainer_name || account.account_id })));

@@ -6,6 +6,7 @@
 
       <div class="affinity-sources" class:compact aria-label="Veteran parents">
         <div class="affinity-main" title={summary.affinityNote}>
+          {#if compact && summary.image}<img src={summary.image} alt={summary.name} loading="lazy"/>{/if}
           <span class="affinity-label">{summary.affinityTarget ? 'Target total' : 'Main total'}</span>
           {#if Number.isFinite(summary.affinity)}<AffinityStat value={summary.affinity} label={summary.affinityTarget ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span class="affinity-missing" aria-label={summary.affinityTarget ? 'Target affinity unavailable' : 'Main affinity unavailable'}>—</span>{/if}
         </div>
@@ -40,12 +41,13 @@
   .affinity-parent :global(.affinity svg) { width:14px; height:14px; }
   .affinity-missing { color:var(--color-text-muted); font-family:var(--font-mono); font-size:11px; line-height:21px; }
   .compact { grid-template-columns:minmax(0,1fr); gap:2px; border:0; border-radius:0; background:transparent; }
-  .compact .affinity-main { align-items:flex-start; padding:0 0 0 25px; border:0; }
-  .compact .affinity-main :global(.affinity b) { font-size:14px; }
-  .compact .affinity-main :global(svg) { width:12px; height:12px; }
+  .compact .affinity-main { flex-direction:row; justify-content:flex-start; min-height:24px; gap:3px; padding:0; border:0; }
+  .compact .affinity-main :global(.affinity) { gap:2px; }
+  .compact .affinity-main :global(.affinity b) { font-family:var(--font-mono); font-size:11px; font-weight:700; line-height:normal; }
+  .compact .affinity-main :global(svg) { width:10px; height:10px; }
   .compact .affinity-parents { padding:0; gap:2px; }
   .compact .affinity-parent { min-height:24px; gap:3px; border:0; }
-  .compact .affinity-parent img { width:22px; height:24px; }
+  .compact img { flex:none; width:22px; height:24px; object-fit:contain; }
   .compact .affinity-parent :global(.affinity) { margin:0; padding:0; border:0; background:transparent; gap:2px; }
   .compact .affinity-parent :global(.affinity b) { font-size:11px; }
   .compact .affinity-parent :global(.affinity svg) { width:10px; height:10px; }

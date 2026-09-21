@@ -12,6 +12,7 @@
   import Tabs from '@/components/Tabs.svelte';
   import TextField from '@/components/TextField.svelte';
   import { afterPagePaint } from '@/routes/after-page-paint';
+  import { withPageRequest } from '@/services/http/page-request';
   import { filterOptions, filterIcons, TIMELINE_PREFERENCES_KEY, type FilterType, type TimelineStatus } from './timeline-controls';
   import type TimelineContent from './TimelineContent.svelte';
 
@@ -29,7 +30,7 @@
   let footerVisible = $state(false);
   let initialized = $state(false);
   const activeFilterCount = $derived(filterOptions.length - visibleTypes.length);
-  const page = afterPagePaint().then(() => import('./TimelineContent.svelte'));
+  const page = withPageRequest(() => Promise.all([import('./TimelineContent.svelte'), afterPagePaint()]).then(([module]) => module));
 
   function setFilters(open: boolean) {
     if (open) filterTrigger = document.querySelector<HTMLElement>('[data-timeline-control="filters"] button') ?? undefined;

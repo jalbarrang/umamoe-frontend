@@ -5,6 +5,7 @@ import DeferredPage from './DeferredPage.svelte';
 import TimelinePage from '@/pages/timeline/TimelinePage.svelte';
 import HomePage from '@/pages/home/HomePage.svelte';
 import LegacyRedirectPage from './LegacyRedirectPage.svelte';
+import { pendingPageRequests, whenPageRequestsIdle } from '@/services/http/page-request';
 
 type PageLoader = () => Promise<{ default: Component }>;
 declare module 'sv-router' { interface RouteMeta { loadPage?: PageLoader; } }
@@ -69,6 +70,8 @@ function warmPageModules(): void {
   function next(): void {
     const run = () => {
       if (document.hidden) { document.addEventListener('visibilitychange', next, { once: true }); return; }
+      // An idle CPU can still have critical data or page code in flight.
+      if (pendingPageRequests) { void whenPageRequestsIdle().then(next); return; }
       const load = pages.shift();
       if (load) void load().catch(() => {}).finally(next);
     };

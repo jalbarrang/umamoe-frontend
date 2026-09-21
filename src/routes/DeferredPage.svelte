@@ -4,10 +4,11 @@
   import { routeDefinitionForPath } from './route-manifest';
   import RouteLoadErrorPage from './RouteLoadErrorPage.svelte';
   import { afterPagePaint } from './after-page-paint';
+  import { withPageRequest } from '@/services/http/page-request';
 
   const loader = $derived(router.route.meta.loadPage!);
   // Query changes keep the existing page and its local state mounted.
-  const page = $derived(afterPagePaint().then(loader));
+  const page = $derived(withPageRequest(() => Promise.all([loader(), afterPagePaint()]).then(([module]) => module)));
   const definition = $derived(routeDefinitionForPath(router.route.pathname));
   const titles: Record<string, string> = {
     clubs: 'Club Leaderboard', rankings: 'Trainer Rankings', activity: 'Top 100 Club Activity Reports',

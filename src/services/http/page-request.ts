@@ -1,7 +1,12 @@
 // Safari rejects fetches started during navigation, including requests following
 // a late manifest response. Keep this guard active through the whole operation.
 let pageActive = true;
-let pendingRequests = 0;
+export let pendingPageRequests = 0;
+const idleWaiters = new Set<() => void>();
+
+export function whenPageRequestsIdle(): Promise<void> {
+  return pendingPageRequests ? new Promise(resolve => idleWaiters.add(resolve)) : Promise.resolve();
+}
 function departing(event: BeforeUnloadEvent): void {
   pageActive = false;
   queueMicrotask(() => { if (event.defaultPrevented || event.returnValue) pageActive = true; });
@@ -17,9 +22,13 @@ export const pageFetch: typeof fetch = (url, init) => pageActive
 
 export async function withPageRequest<T>(operation: () => Promise<T>): Promise<T> {
   // Only listen while busy so idle pages remain eligible for the back/forward cache.
-  if (++pendingRequests === 1 && typeof window !== 'undefined') window.addEventListener('beforeunload', departing);
+  if (++pendingPageRequests === 1 && typeof window !== 'undefined') window.addEventListener('beforeunload', departing);
   try { return await operation(); }
   finally {
-    if (--pendingRequests === 0 && typeof window !== 'undefined') window.removeEventListener('beforeunload', departing);
+    if (--pendingPageRequests === 0) {
+      if (typeof window !== 'undefined') window.removeEventListener('beforeunload', departing);
+      for (const resolve of idleWaiters) resolve();
+      idleWaiters.clear();
+    }
   }
 }

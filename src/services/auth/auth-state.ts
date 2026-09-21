@@ -11,8 +11,10 @@ export const authReady = writable(false);
 export async function initializeAuth(): Promise<void> {
   if (!getAuthToken()) { authReady.set(true); return; }
   try {
-    authUser.set(await authRepository.me());
-    const accounts = await authRepository.linkedAccounts().catch(() => []);
+    const userRequest = authRepository.me();
+    const accountsRequest = authRepository.linkedAccounts().catch(() => []);
+    authUser.set(await userRequest);
+    const accounts = await accountsRequest;
     setAccountWorkspaces(accounts.filter(account => account.verification_status === 'verified').map((account) => ({ accountId: account.account_id, label: account.trainer_name || account.account_id })));
   }
   catch (error) {
@@ -36,9 +38,11 @@ export async function completeLogin(token: string): Promise<AuthUser> {
   authReady.set(false);
   setAuthToken(token);
   try {
-    const user = await authRepository.me();
+    const userRequest = authRepository.me();
+    const accountsRequest = authRepository.linkedAccounts().catch(() => []);
+    const user = await userRequest;
     authUser.set(user);
-    const accounts = await authRepository.linkedAccounts().catch(() => []);
+    const accounts = await accountsRequest;
     setAccountWorkspaces(accounts.filter(account => account.verification_status === 'verified').map((account) => ({ accountId: account.account_id, label: account.trainer_name || account.account_id })));
     return user;
   } catch (error) {
