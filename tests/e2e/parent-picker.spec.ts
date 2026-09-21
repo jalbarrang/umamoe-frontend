@@ -56,6 +56,38 @@ async function prepare(page: Page, authenticated = false, filters?: Record<strin
   return page.getByRole('dialog',{name:'Select Parent',exact:true});
 }
 
+for(const target of [false,true]) test(`parent picker keeps accounts and combined Uma identities on single rows at narrow widths${target?' with affinity':''}`,async({page})=>{
+  const dialog=await prepare(page,true,target?{t:[100102]}:undefined);
+  const summary=dialog.locator('.parent-row .veteran-summary').first();
+  await expect(summary.locator('.summary-parent')).toHaveCount(2);
+  for(const width of [500,390,320]) {
+    await page.setViewportSize({width,height:844});
+    const title=(await dialog.getByRole('heading',{name:'Select Parent',exact:true}).boundingBox())!;
+    const accounts=dialog.getByRole('radiogroup',{name:'Linked account'});
+    const accountBounds=(await accounts.boundingBox())!;
+    expect(accountBounds.y).toBeLessThan(title.y+title.height);
+    expect(accountBounds.y+accountBounds.height).toBeGreaterThan(title.y);
+    expect(accountBounds.x).toBeGreaterThanOrEqual(title.x+title.width);
+    await accounts.getByRole('radio',{name:'Second account',exact:true}).click();
+    await expect(dialog.locator('.drop strong')).toHaveText('Upload veterans');
+    await accounts.getByRole('radio',{name:'First account',exact:true}).click();
+    await expect(summary).toBeVisible();
+    const main=(await summary.locator('.summary-head').boundingBox())!;
+    expect((await summary.locator('h3').boundingBox())!.width).toBeGreaterThan(10);
+    let right=main.x+main.width;
+    for(const parent of await summary.locator('.summary-parent').all()) {
+      const bounds=(await parent.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(right);
+      right=bounds.x+bounds.width;
+      expect(bounds.y).toBeLessThan(main.y+main.height);
+      expect(bounds.y+bounds.height).toBeGreaterThan(main.y);
+    }
+    expect(await summary.evaluate(element=>element.scrollWidth<=element.clientWidth+1),`Summary fits ${width}px`).toBe(true);
+    expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);
+    await dialog.screenshot({path:test.info().outputPath(`parent-picker-${width}.png`),scale:'css'});
+  }
+});
+
 test('Parent rows preserve Angular encoded factors, legacy inheritance, star ordering and empty-parent omission',async({page,isMobile})=>{
   await prepare(page,true,undefined,mockParentRowProfile);
   const dialog=page.getByRole('dialog',{name:'Select Parent',exact:true});
@@ -569,7 +601,7 @@ test('selected legacy retains the original veteran summary without its stat stri
   }
   expect(sparkBounds.y).toBeGreaterThanOrEqual(Math.max(headerBounds.y+headerBounds.height,...parentBounds.map(row=>row.bottom)));
   expect(sparkBounds.width).toBeGreaterThan((await summary.boundingBox())!.width-20);
-  await expect(summary.locator('.factor-list .spark-row')).toHaveCount(3);
+  await expect(summary.locator('.factor-list .spark-row')).toHaveCount(4);
   await expect(summary.locator('.factor-list .type--blue')).toBeVisible();
   await expect(summary.locator('.factor-list .type--pink')).toBeVisible();
   await summary.screenshot({path:test.info().outputPath('combined-veteran-summary.png')});

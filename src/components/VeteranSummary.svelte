@@ -20,7 +20,7 @@
       {#if !showStats && Number.isFinite(veteran.affinity)}<div class="leading-affinity"><AffinityStat value={veteran.affinity} kind="total" compact/>{#if veteran.raceAffinity !== undefined}<AffinityStat value={veteran.raceAffinity} kind="race" compact/>{/if}</div>{/if}
       <Artwork src={veteran.image} alt={veteran.name} size={compact ? 'sm' : 'md'} shape="circle"/>
       <div class="identity">
-        <div class="name-row"><h3>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
+        <div class="name-row"><h3 title={veteran.name}>{veteran.name}</h3>{#if veteran.scenario}<span class="scenario">{veteran.scenario}</span>{/if}</div>
         {#if veteran.detail}<span class="detail">{veteran.detail}</span>{/if}
       </div>
       {#if veteran.rank || veteran.score !== undefined}<div class="rank-score">{#if veteran.rank}<RankBadge label={veteran.rank} size="sm"/>{/if}{#if veteran.score !== undefined}<span>{veteran.score.toLocaleString()}</span>{/if}</div>{/if}
@@ -50,7 +50,7 @@
           <section class="summary-parent">
             <div class="parent-id" class:affinity-first={!showStats}>
                <Artwork src={parent.image} alt={parent.name} size="xs" shape="circle"/>
-               <div class="parent-copy"><strong>{parent.name}</strong><span class="parent-position parent-position--{parent.position.toLowerCase()}">{parent.position}</span></div>
+               <div class="parent-copy"><strong title={parent.name}>{parent.name}</strong><span class="parent-position parent-position--{parent.position.toLowerCase()}">{parent.position}</span></div>
               {#if Number.isFinite(parent.affinity)}<AffinityStat value={parent.affinity} compact/>{/if}
             </div>
             {#if !combined}<div class="parent-factors">
@@ -113,20 +113,20 @@
   .summary-head.affinity-first{grid-template-columns:auto auto minmax(0,1fr) auto}
   .leading-affinity{display:flex;flex-wrap:wrap;gap:4px}
   .parent-id.affinity-first :global(.affinity){order:-1}
-  .combined-layout{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:5px 12px}
-  .combined-layout .summary-head{flex:0 1 auto;max-width:100%;gap:6px}
+  .combined-layout{display:grid;grid-template-columns:repeat(3,minmax(0,max-content)) minmax(0,1fr);align-items:center;gap:5px 12px}
+  .combined-layout .summary-head{grid-row:1;grid-column:1;max-width:100%;gap:6px}
   .combined-layout .parent-rows{display:contents}
-  .combined-layout .summary-parent{flex:0 1 auto;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
-  .combined-layout .factor-section{order:1;flex:1 0 100%;align-items:flex-start;padding:5px 0 0;border-left:0;border-top:1px solid var(--border-subtle)}
-  @container (max-width: 599px) {
-    .combined-layout .summary-head { flex-basis:100%; }
-    .combined-layout .parent-rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; gap:8px; border:0; }
-    .combined-layout .summary-parent { padding:0; border:0; }
-    .combined-layout .parent-id { display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 5px; }
-    .combined-layout .parent-copy { display:contents; }
-    .combined-layout .parent-id strong { max-width:none; white-space:normal; overflow-wrap:anywhere; }
-    .combined-layout .parent-position { grid-column:1; justify-self:center; }
-    .combined-layout .parent-id :global(.affinity) { grid-column:2; order:0; }
+  .combined-layout .summary-parent{grid-row:1;grid-template-columns:minmax(0,1fr);padding:0 0 0 10px;border-top:0;border-left:1px solid var(--border-subtle)}
+  .combined-layout .factor-section{grid-row:2;grid-column:1/-1;align-items:flex-start;padding:5px 0 0;border-left:0;border-top:1px solid var(--border-subtle)}
+  .combined-layout .detail,.combined-layout .scenario{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .combined-layout .name-row,.combined-layout .parent-copy{grid-template-columns:minmax(0,1fr)}
+  .combined-layout h3,.combined-layout .parent-id strong{max-width:100%}
+  .combined-layout .summary-extra{grid-column:1/-1}
+  @container (max-width: 430px) {
+    .combined-layout{column-gap:6px}
+    .combined-layout .summary-parent{padding-left:6px}
+    .combined-layout .summary-head{gap:4px}
+    .combined-layout .summary-head :global(.art){width:28px;height:28px}
   }
   @container (min-width: 600px) {
     .split-layout{display:grid;grid-template-columns:fit-content(220px) minmax(0,1fr);align-items:center;gap:4px 8px}

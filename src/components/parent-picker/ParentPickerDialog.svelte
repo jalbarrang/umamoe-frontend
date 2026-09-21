@@ -228,13 +228,13 @@
   .parent-picker { --parent-picker-height:min(1000px,94dvh); --dialog-content-font:var(--font-sans); --control-height:34px; }
   @media(max-width:480px) { .parent-picker { --parent-picker-height:96dvh; } }
   .parent-picker > :global(dialog > .dialog-panel > header) { min-height:48px; height:48px; align-items:center; padding:0 8px 0 20px; border-bottom-color:var(--border-subtle); }
-  .parent-picker > :global(dialog > .dialog-panel > header h2) { font-size:.95rem; font-weight:700; }
+  .parent-picker > :global(dialog > .dialog-panel > header h2) { font-size:.95rem; font-weight:700; white-space:nowrap; }
   .parent-picker > :global(dialog > .dialog-panel > .content) { display:flex; min-height:0; overflow:hidden; padding:0; }
   .picker-layout { display:flex; flex-direction:column; min-width:0; min-height:0; width:100%; flex:1; }
   .parent-picker > :global(dialog > .dialog-panel > header .heading){flex:none}
   .parent-picker > :global(dialog > .dialog-panel > header .header-actions){flex:1;justify-content:flex-start;margin-left:8px}
   .parent-picker > :global(dialog > .dialog-panel > header .segments){padding:2px}
-  .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:30px;font-size:12px}
+  .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:30px;font-size:12px;white-space:nowrap}
   .signin-notice { display:flex; align-items:center; gap:8px; flex:none; padding:8px 16px; margin:0; border-bottom:1px solid rgb(33 150 243/.25); background:rgb(33 150 243/.1); color:rgb(var(--on-surface-rgb)/.75); font-size:.8rem; line-height:1.5; }
   .signin-notice :global(svg) { flex:none; color:var(--accent-blue-strong); }
   .parent-picker :global(.tabs) { flex:none; gap:0; border-color:var(--border-subtle); }
@@ -294,9 +294,8 @@
     .active-filters{--spark-filter-height:32px}
   }
   @media(max-width:600px) {
-    .parent-picker > :global(dialog > .dialog-panel > header){padding-left:12px}
-    .parent-picker > :global(dialog > .dialog-panel > header:has(.segments)){display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:4px 8px;height:auto;padding-bottom:6px}
-    .parent-picker > :global(dialog > .dialog-panel > header .header-actions:has(.segments)){grid-column:1/-1;grid-row:2;margin:0}
+    .parent-picker > :global(dialog > .dialog-panel > header){padding-left:12px;gap:6px}
+    .parent-picker > :global(dialog > .dialog-panel > header .header-actions){margin-left:0}
     .parent-picker > :global(dialog > .dialog-panel > header .segments button){min-height:var(--touch-target)}
     .filterbar{gap:6px;padding:8px}.result-count{display:none}
     .picker-body{--picker-inset:8px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
