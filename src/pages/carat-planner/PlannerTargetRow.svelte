@@ -34,6 +34,7 @@
   const cardKind = $derived(plannerCardKind(target, gacha));
   const maxPulls = $derived(paidOnly ? paidBannerSteps(gacha).reduce((sum, step) => sum + step.pulls, 0) : 5000);
   const stepUp = $derived(gacha?.step_up);
+  const chosenCopies = $derived(paidBannerSteps(gacha).slice(0, (projection?.plannedPulls ?? 0) / 10).filter(step => step.selectable).length);
   const stepOptions = $derived.by(() => {
     let pulls = 0, cost = 0;
     const options = [{ value: '0', label: 'No pulls' }];
@@ -69,14 +70,14 @@
   {#if past}<div class="past-note" role="note"><Icon name="timeline" size={16}/><span><strong>Before plan start</strong><small>Kept for editing, but excluded from this projection.</small></span></div>{/if}
   {#if paidOnly && !past && (stepUp || !maxPulls)}<div class="step-up-summary" role="status">
     {#if maxPulls > 0 && projection}
-      <strong>{projection.fundedPulls} / {projection.plannedPulls} pulls funded · Paid Carats only</strong>
-      <span>{projection.shortfallJewels.toLocaleString()} paid Carats short</span>
+      <strong>{projection.plannedPulls} planned pulls · Paid Carats only</strong>
+      <span>{projection.shortfallJewels ? `Requires ${projection.shortfallJewels.toLocaleString()} paid Carats` : 'Paid cost covered'}</span>
       {#if stepUp}
         <div class="step-goal">
           <TextField id={'step-copies-' + target.id} label="Desired copies of one chosen card" type="number" min={1} max={cardKind === 'support' ? 5 : 20} step={1} value={String(target.desiredCopies)} oninput={event => onupdate(value => value.desiredCopies = Math.max(1, Math.min(cardKind === 'support' ? 5 : 20, Number((event.currentTarget as HTMLInputElement).value) || 1)))}/>
-          <strong aria-label="Step-up goal odds">{projection.pickupProbability === undefined ? 'Odds unavailable' : (projection.pickupProbability * 100).toFixed(1) + '% chance'}</strong>
+          <strong aria-label="Step-up goal odds">{projection.pickupProbability === undefined ? 'Odds unavailable' : `${(projection.pickupProbability * 100).toFixed(1)}% chance of at least ${target.desiredCopies} ${target.desiredCopies === 1 ? 'copy' : 'copies'}`}</strong>
         </div>
-        <small>For one desired card in your chosen pool{#if stepUp.selection_pool_size} of {stepUp.selection_pool_size}{/if}, using {projection.fundedPulls} funded pulls. Includes guaranteed draws and choosing that card at the final step.</small>
+        <small>Odds use all {projection.plannedPulls} planned pulls for one desired card in your chosen pool{#if stepUp.selection_pool_size} of {stepUp.selection_pool_size}{/if}, including guaranteed draws in the selected steps. {#if chosenCopies}Choose that card at each reached selection step: {chosenCopies} {chosenCopies === 1 ? 'copy is' : 'copies are'} guaranteed.{:else}Your selected steps do not reach a guaranteed card choice.{/if}{#if projection.shortfallJewels} Assumes you add the required paid Carats before pulling.{/if}</small>
         <details><summary>Step costs and guarantees · {stepUp.rounds} {stepUp.rounds === 1 ? 'round' : 'rounds'} available</summary><ol>{#each stepUp.steps as step, index}<li><b>Step {index + 1}</b> · {step.cost.toLocaleString()} paid Carats · {step.pulls} pulls{#if step.selectable} · Choose the guaranteed {cardKind === 'support' ? 'SSR' : '3★'}{:else if step.guaranteed_rarity === 3} · Guaranteed {cardKind === 'support' ? 'SSR' : '3★'}{/if}</li>{/each}</ol></details>
       {/if}
     {:else}<span>Paid banner costs are unavailable. Funding and odds will appear when its data loads.</span>{/if}

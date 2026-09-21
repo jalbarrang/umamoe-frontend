@@ -43,7 +43,7 @@
     projection.sparkCopies ? `${projection.sparkCopies} shared exchange ${projection.sparkCopies === 1 ? 'copy' : 'copies'}` : '',
     projection.rainbowCrystalsUsed + projection.goldCrystalsUsed ? `${projection.rainbowCrystalsUsed + projection.goldCrystalsUsed} Uncap Crystal${projection.rainbowCrystalsUsed + projection.goldCrystalsUsed === 1 ? '' : 's'}` : ''
   ].filter(Boolean).map((part, index, parts) => index === parts.length - 1 ? `${part} included` : part).join(' + ') || 'Exact joint chance');
-  const fundingLabel = $derived([paidOnly ? 'Paid Carats only' : '', paidOnly || projection.shortfallJewels ? `${projection.shortfallJewels.toLocaleString()} ${paidOnly ? 'paid ' : ''}Carats short` : '', `${projection.ticketPulls + projection.freeJewelPulls + projection.paidJewelPulls} from resources`, projection.freePullsUsed ? `${projection.freePullsUsed} free` : ''].filter(Boolean).join(' · '));
+  const fundingLabel = $derived(paidOnly ? `Paid Carats only · ${projection.shortfallJewels ? `Requires ${projection.shortfallJewels.toLocaleString()} paid Carats` : 'Paid cost covered'}` : [projection.shortfallJewels ? `${projection.shortfallJewels.toLocaleString()} Carats short` : '', `${projection.ticketPulls + projection.freeJewelPulls + projection.paidJewelPulls} from resources`, projection.freePullsUsed ? `${projection.freePullsUsed} free` : ''].filter(Boolean).join(' · '));
   const topRarity = $derived(cardKind === 'support' ? 'SSR' : '3★');
 
   function percent(value?: number, digits = 1): string { return value === undefined || !Number.isFinite(value) ? 'Unavailable' : `${(value * 100).toFixed(value > 0 && value < .001 ? 2 : digits)}%`; }
@@ -94,7 +94,7 @@
   <summary class="pickup-summary" aria-label={`Pickup goals for ${target.title}`}>
     <span class="funding" class:short={projection.shortfallJewels > 0}>
       <Icon name={projection.shortfallJewels > 0 ? 'warning' : 'check'} size={16}/>
-      <span><strong>{projection.fundedPulls}{#if projection.shortfallJewels} / {target.plannedPulls}{/if} funded</strong><small>{fundingLabel}{#if !paidOnly && projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
+      <span><strong>{#if paidOnly}{projection.plannedPulls} planned pulls{:else}{projection.fundedPulls}{#if projection.shortfallJewels} / {target.plannedPulls}{/if} funded{/if}</strong><small>{fundingLabel}{#if !paidOnly && projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
     </span>
     <small class="goals-label">Goals</small>
     <span class="goal-previews">
@@ -148,7 +148,7 @@
         <details class="advanced-odds" open={(viewportWidth ?? 1024) > 768}>
           <summary><span><strong>Detailed odds</strong><small>{paidOnly ? 'Includes guaranteed draws' : 'Pool rates, outcome ranges, and averages'}</small></span><strong>{percent(projection.pickupProbability)}</strong><Icon name="chevron" size={16}/></summary>
           <div class="goal-rollup">
-            {#if paidOnly && ratesAvailable}<p>Goal odds include the guaranteed draws in your {projection.fundedPulls} funded pulls.</p>{:else if ratesAvailable}
+            {#if paidOnly && ratesAvailable}<p>Odds use all {projection.plannedPulls} planned pulls, including guaranteed draws.{#if projection.shortfallJewels} Assumes you add the required paid Carats before pulling.{/if}</p>{:else if ratesAvailable}
               <header><span><h4>Selected pickup outcomes at {distribution.pulls.toLocaleString()} pulls</h4><p>{#if inferred}Estimated from standard banner rates · {/if}Only selected featured cards count here{#if distribution.guaranteedHits} · totals include {distribution.guaranteedHits} shared exchange {distribution.guaranteedHits === 1 ? 'copy' : 'copies'}{/if}</p></span>
                 <span class="all-goals" class:strong={(projection.pickupProbability ?? 0) >= .5} role="status"><span>All goals</span><strong>{totalLabel}</strong><small>{allGoalsStatus}</small></span>
               </header>

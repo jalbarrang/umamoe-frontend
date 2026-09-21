@@ -52,7 +52,7 @@ export interface CaratPlanCollection { version: 1; activePlanId: string; plans: 
 export interface PlannerGoalProjection { pickupId: number; desiredCopies: number; copiesNeededFromPulls: number; crystalCopiesApplied: number; crystalKind?: 'rainbow' | 'gold'; pickupRate?: number; probability?: number; }
 export interface PlannerLedgerEntry { id: string; label: string; date: string; currency: PlannerCurrency; amount: number; source: 'rule' | 'custom' | 'reward'; }
 export interface TargetProjection { income: PlannerLedgerEntry[]; targetId: string; pullDate: string; balanceBefore: PlannerBalances; fundedPulls: number; plannedPulls: number; shortfallJewels: number; freePullsUsed: number; freeJewelPulls: number; paidJewelPulls: number; ticketPulls: number; freeJewelsAfter: number; paidJewelsAfter: number; ticketsAfter: number; rewardCaratsGained: number; sparkCopies: number; rainbowCrystalsUsed: number; goldCrystalsUsed: number; pickupProbability?: number; pickupGoals: PlannerGoalProjection[]; ratesAvailable: boolean; jointProbabilityExact: boolean; }
-export interface PlanProjection { unallocatedIncome: PlannerLedgerEntry[]; targets: TargetProjection[]; balances: PlannerBalances; totalShortfallJewels: number; plannedPulls: number; }
+export interface PlanProjection { unallocatedIncome: PlannerLedgerEntry[]; targets: TargetProjection[]; balances: PlannerBalances; totalShortfallJewels: number; requiredPaidJewels: number; plannedPulls: number; }
 
 /** Planner records are JSON-compatible by contract. This also safely unwraps
  * reactive framework proxies before they cross into pure domain functions. */
@@ -431,6 +431,7 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
   let ledgerIndex = 0;
   const targets: TargetProjection[] = [];
   let totalShortfallJewels = 0;
+  let requiredPaidJewels = 0;
   let rewardCaratsGained = 0;
   let plannedPulls = 0;
   for (const target of ordered) {
@@ -464,16 +465,15 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
     current.freeJewels -= freeJewelPulls * jewelCost;
     remaining -= freeJewelPulls;
     let paidJewelPulls = 0;
-    let stepUpCost = 0;
+    let paidCost = 0;
     if (paidOnly) {
-      let requested = 0, canFund = true;
       for (const step of steps) {
-        if (requested + step.pulls > planned) break;
-        requested += step.pulls;
-        stepUpCost += step.cost;
-        canFund &&= current.paidJewels >= step.cost;
-        if (canFund) { current.paidJewels -= step.cost; paidJewelPulls += step.pulls; }
+        if (paidJewelPulls + step.pulls > planned) break;
+        paidJewelPulls += step.pulls;
+        paidCost += step.cost;
       }
+      // Paid banners assume the missing currency will be supplied by their pull date.
+      current.paidJewels = Math.max(0, current.paidJewels - paidCost);
     } else {
       paidJewelPulls = target.allowPaidJewels ? Math.min(remaining, Math.floor(current.paidJewels / jewelCost)) : 0;
       current.paidJewels -= paidJewelPulls * jewelCost;
@@ -510,10 +510,11 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
       return { pickupId: goal.pickupId, desiredCopies: goal.desiredCopies, copiesNeededFromPulls: goal.requestedCopies, crystalCopiesApplied: goal.crystalCopiesApplied, crystalKind: goal.crystalKind, pickupRate: odds?.pickupRate, probability: odds?.probability };
     });
     const ratesAvailable = pickupGoals.length > 0 && pickupGoals.every(goal => goal.pickupRate !== undefined);
-    const shortfallJewels = paidOnly ? Math.max(0, stepUpCost - balanceBefore.paidJewels) : remaining * jewelCost;
+    const shortfallJewels = paidOnly ? Math.max(0, paidCost - balanceBefore.paidJewels) : remaining * jewelCost;
     totalShortfallJewels += shortfallJewels;
+    if (paidOnly) requiredPaidJewels += shortfallJewels;
     targets.push({ income, targetId: target.id, pullDate: new Date(targetDay * dayMs).toISOString().slice(0,10), balanceBefore, fundedPulls, plannedPulls: planned, shortfallJewels, freePullsUsed, freeJewelPulls, paidJewelPulls, ticketPulls: availableTickets, freeJewelsAfter: current.freeJewels, paidJewelsAfter: current.paidJewels, ticketsAfter: ticketKey ? current[ticketKey] : 0, rewardCaratsGained, sparkCopies: sparkPulls > 0 ? Math.floor(fundedPulls / sparkPulls) : 0, rainbowCrystalsUsed, goldCrystalsUsed, pickupProbability, pickupGoals, ratesAvailable, jointProbabilityExact: goalProbability?.jointProbabilityExact ?? false });
   }
-  return { targets, balances: current, totalShortfallJewels, plannedPulls, unallocatedIncome: ledger.slice(ledgerIndex) };
+  return { targets, balances: current, totalShortfallJewels, requiredPaidJewels, plannedPulls, unallocatedIncome: ledger.slice(ledgerIndex) };
 }
 export function probabilityAtLeast(draws: number, copies: number, rate = .0075, sparkCopies = Math.floor(draws / 200)): number { const needed = Math.max(0, copies - sparkCopies); if (!needed) return 1; if (!draws || rate <= 0) return 0; let probabilityBelow = 0; let term = Math.pow(1 - rate, draws); for (let hits = 0; hits < needed; hits += 1) { if (hits) term *= (draws - hits + 1) / hits * rate / (1 - rate); probabilityBelow += term; } return Math.max(0, Math.min(1, 1 - probabilityBelow)); }
