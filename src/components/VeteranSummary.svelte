@@ -128,6 +128,9 @@
     .combined-layout .summary-head{gap:4px}
     .combined-layout .summary-head :global(.art){width:28px;height:28px}
   }
+  @container (max-width: 599px) {
+    .split-layout .summary-parent{grid-template-columns:minmax(0,1fr)}
+  }
   @container (min-width: 600px) {
     .split-layout{display:grid;grid-template-columns:fit-content(220px) minmax(0,1fr);align-items:center;gap:4px 8px}
     .split-layout .summary-head{gap:5px}

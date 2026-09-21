@@ -89,6 +89,7 @@ for(const target of [false,true]) test(`parent picker keeps accounts and combine
 });
 
 test('Parent rows preserve Angular encoded factors, legacy inheritance, star ordering and empty-parent omission',async({page,isMobile})=>{
+  if(isMobile)await page.setViewportSize({width:500,height:844});
   await prepare(page,true,undefined,mockParentRowProfile);
   const dialog=page.getByRole('dialog',{name:'Select Parent',exact:true});
   await expect(dialog.locator('.parent-row')).toHaveCount(3);
@@ -106,6 +107,12 @@ test('Parent rows preserve Angular encoded factors, legacy inheritance, star ord
     expect(sparks.x).toBe(parentSparks.x);
     expect(parentSparks.x-(await rows.first().boundingBox())!.x).toBeLessThan(190);
     expect((await rows.first().boundingBox())!.height).toBeLessThan(110);
+  } else {
+    const parent=rows.first().locator('.summary-parent').first();
+    const identity=(await parent.locator('.parent-id').boundingBox())!;
+    const sparks=(await parent.locator('.parent-factors').boundingBox())!;
+    expect(sparks.y).toBeGreaterThanOrEqual(identity.y+identity.height);
+    expect(sparks.width).toBeCloseTo((await parent.boundingBox())!.width,0);
   }
   for(const [index,expected] of [[0,['3 Speed','3 Stamina','1 Speed']],[1,['3 Speed','3 Stamina','1 Speed']],[2,['3 Speed','3 Stamina','1 Speed','1 Stamina']]] as const){
     await expect(rows.nth(index).locator('.factor-list .spark')).toHaveText(expected.map(text=>text.replace(' ','★')));
