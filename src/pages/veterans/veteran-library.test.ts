@@ -42,6 +42,18 @@ it('preserves support limit breaks through imports and distinguishes zero from m
     { support_card_id:20023, limit_break_count:2.5 }, { support_card_id:30011, limit_break_count:'3' }
   ] }).map(card => card.limit_break_count)).toEqual([0,4,null,null,null,null,null]);
 });
+it('decodes packed Team Stadium support IDs and limit breaks without changing ordinary support IDs', () => {
+  const support_cards = [200233, 300152, 300284, 300194, 300360, 300104];
+  expect(veteranSupportCards({ support_cards })).toEqual([
+    { support_card_id:20023, limit_break_count:3 }, { support_card_id:30015, limit_break_count:2 },
+    { support_card_id:30028, limit_break_count:4 }, { support_card_id:30019, limit_break_count:4 },
+    { support_card_id:30036, limit_break_count:0 }, { support_card_id:30010, limit_break_count:4 }
+  ]);
+  expect(veteranSupportCards({ support_cards:[30028,300285,999999] })).toEqual([
+    { support_card_id:30028, limit_break_count:null }, { support_card_id:30028, limit_break_count:null }, { support_card_id:999999, limit_break_count:null }
+  ]);
+  expect(veteranSupportCards({ support_cards:[300284], support_card_list:[{ support_card_id:30028, limit_break_count:0 }] })).toEqual([{ support_card_id:30028, limit_break_count:0 }]);
+});
 it('imports guests without network writes and validates every file before changing storage', async () => {
   await importVeteranFiles([file({ veterans: [raw] })]);
   expect(saved.local).toHaveLength(1); expect(get(veteranDrafts).local).toHaveLength(1);

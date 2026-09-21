@@ -23,8 +23,7 @@ jobs:
       matrix:
         include:
           - branch: svelte-rewrite
-            # Match the resources currently deployed to beta until promotion to main.
-            resources_ref: codex/timeline-resource-fixes
+            resources_ref: main
             timeline_url: https://beta.uma.moe/resources/current/banner_timeline.json.gz
             site_origin: https://beta.uma.moe
             deploy: true

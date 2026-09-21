@@ -307,7 +307,9 @@ test('Veteran details retain support deck, stats, aptitudes, races, sparks, skil
   await expect(dialog.getByRole('heading',{name:'Lineage',exact:true})).toBeVisible();
   await expect(dialog.locator('.family-section .lineage-node')).toHaveCount(6);
   await expect(dialog.locator('.family-section .root')).toHaveCount(0);
-  expect((await dialog.locator('.family-section').boundingBox())!.height).toBeLessThan(180);
+  // Offscreen sections use content-visibility placeholders until scrolled into view.
+  await dialog.locator('.family-section').scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await dialog.locator('.family-section').boundingBox())!.height).toBeLessThan(180);
   await dialog.locator('.family-section').screenshot({path:testInfo.outputPath('compact-lineage.png')});
   await dialog.getByRole('button',{name:'P1 legacy 1: Grass Wonder',exact:true}).click();
   await expect(dialog.getByRole('radio',{name:'Grass Wonder P1 · Grandparent 1',exact:true})).toBeChecked();

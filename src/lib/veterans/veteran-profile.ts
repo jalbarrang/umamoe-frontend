@@ -8,8 +8,12 @@ const object = (value: unknown): Record<string, unknown> => value && typeof valu
 export function veteranSupportCards(raw: { support_cards?: unknown; support_card_list?: unknown }): VeteranSupportCard[] {
   const details = Array.isArray(raw.support_card_list) ? raw.support_card_list.map(object) : [];
   const recordedIds = ids(raw.support_cards);
-  return (recordedIds.length ? recordedIds : ids(details.map(card => card.support_card_id))).map(id => {
-    const limitBreak = number(details.find(card => card.support_card_id === id)?.limit_break_count);
+  return (recordedIds.length ? recordedIds : ids(details.map(card => card.support_card_id))).map(value => {
+    // Team Stadium packs the five-digit R/SR/SSR card ID and LB into one integer.
+    const packed = recordedIds.length > 0 && value >= 100000 && value < 400000;
+    const id = packed ? Math.floor(value / 10) : value;
+    const detail = details.find(card => card.support_card_id === id);
+    const limitBreak = detail ? number(detail.limit_break_count) : packed ? value % 10 : null;
     return { support_card_id:id, limit_break_count:limitBreak !== null && limitBreak >= 0 && limitBreak <= 4 ? limitBreak : null };
   });
 }

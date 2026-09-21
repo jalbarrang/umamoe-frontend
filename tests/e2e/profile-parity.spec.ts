@@ -1,5 +1,24 @@
 import { expect, test } from './fixtures/test';
-import { accountId, mockOwnerProfile, mockProfilePresentation } from './fixtures/api';
+import { accountId, mockOwnerProfile, mockProfilePresentation, profile, veteran } from './fixtures/api';
+
+test('Team Stadium decodes packed support cards into artwork, names and limit breaks', async ({ page }) => {
+  await mockOwnerProfile(page, []);
+  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({ json: {
+    ...profile, veterans: [], team_stadium: [{ ...veteran, support_cards: [200233, 300152, 300284, 300194, 300360, 300104] }]
+  } }));
+  await page.goto(`/profile/${accountId}`);
+  const stadium = page.locator('.stadium-section');
+  await stadium.scrollIntoViewIfNeeded();
+  await stadium.getByRole('button', { name: 'View Grass Wonder details', exact: true }).click();
+  const deck = page.getByRole('dialog').getByRole('region', { name: 'Training support cards', exact: true });
+  await expect(deck.locator('li')).toHaveCount(6);
+  await expect(deck.locator('.support-name').nth(2)).toHaveText('Kitasan Black');
+  for (const [index, [id, lb]] of [[20023, 3], [30015, 2], [30028, 4], [30019, 4], [30036, 0], [30010, 4]].entries()) {
+    const card = deck.locator('li').nth(index);
+    await expect(card.locator('.art img')).toHaveAttribute('src', `/assets/images/support_card/half/support_card_s_${id}.webp`);
+    await expect(card.getByRole('img', { name: `Limit break ${lb} of 4`, exact: true })).toBeAttached();
+  }
+});
 
 test('profile overview retains every populated Angular section and owner visibility contract', async ({ page }) => {
   const visibilityBodies: unknown[] = []; await mockOwnerProfile(page, visibilityBodies);
