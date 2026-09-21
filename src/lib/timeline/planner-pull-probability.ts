@@ -88,11 +88,14 @@ const MAX_JOINT_WORK = 50_000_000;
 
 /** Exact Angular-compatible multinomial evaluation. Exchange copies are shared
  * across selected pickups and allocated optimally after the random draws. */
-export function calculateMultiPickupProbability(pullsInput: number, goalsInput: readonly PickupProbabilityGoal[], sparkPullsInput?: number): MultiPickupProbability {
+export function calculateMultiPickupProbability(pullsInput: number, goalsInput: readonly PickupProbabilityGoal[], sparkPullsInput?: number, drawRates?: readonly (readonly number[])[]): MultiPickupProbability {
   const pulls = nonNegativeInt(pullsInput);
   const sparkPulls = nonNegativeInt(sparkPullsInput);
   const sparkCopiesAvailable = sparkPulls > 0 ? Math.floor(pulls / sparkPulls) : 0;
-  const goals = goalsInput.flatMap((goal) => {
+  if (drawRates && (drawRates.length !== pulls || drawRates.some(rates => rates.length !== goalsInput.length || rates.some(rate => !Number.isFinite(rate) || rate < 0 || rate > 1) || rates.reduce((sum, rate) => sum + rate, 0) > 1 + 1e-12))) {
+    return { pulls, sparkCopiesAvailable, goals: [], jointProbabilityExact: false };
+  }
+  const goals = goalsInput.flatMap((goal, index) => {
     const pickupRate = normalizeRate(goal.rate);
     if (pickupRate === undefined || !Number.isFinite(goal.pickupId) || goal.pickupId < 0) return [];
     const requestedCopies = Math.max(1, nonNegativeInt(goal.requestedCopies));
@@ -102,14 +105,14 @@ export function calculateMultiPickupProbability(pullsInput: number, goalsInput: 
     return [{
       pickupId: Math.trunc(goal.pickupId), requestedCopies, pickupRate, exchangeable,
       exchangeCopiesAvailable, randomCopiesNeeded,
-      probability: binomialTail(pulls, randomCopiesNeeded, pickupRate)
+      probability: drawRates ? varyingRateTail(drawRates.map(rates => rates[index]!), randomCopiesNeeded) : binomialTail(pulls, randomCopiesNeeded, pickupRate)
     }];
   });
-  const jointProbability = goals.length === goalsInput.length ? multinomialJointProbability(pulls, goals, sparkCopiesAvailable) : undefined;
+  const jointProbability = goals.length === goalsInput.length ? multinomialJointProbability(pulls, goals, sparkCopiesAvailable, drawRates) : undefined;
   return { pulls, sparkCopiesAvailable, goals, jointProbability, jointProbabilityExact: jointProbability !== undefined };
 }
 
-function multinomialJointProbability(pulls: number, goals: readonly PickupGoalProbability[], sparks: number): number | undefined {
+function multinomialJointProbability(pulls: number, goals: readonly PickupGoalProbability[], sparks: number, drawRates?: readonly (readonly number[])[]): number | undefined {
   if (!goals.length) return 1;
   if (new Set(goals.map((goal) => goal.pickupId)).size !== goals.length) return undefined;
   const selectedRate = goals.reduce((sum, goal) => sum + goal.pickupRate, 0);
@@ -135,8 +138,9 @@ function multinomialJointProbability(pulls: number, goals: readonly PickupGoalPr
   });
   let distribution = new Float64Array(stateCount);
   distribution[0] = 1;
-  const otherRate = Math.max(0, 1 - selectedRate);
   for (let pull = 0; pull < pulls; pull += 1) {
+    const rates = drawRates?.[pull] ?? goals.map(goal => goal.pickupRate);
+    const otherRate = Math.max(0, 1 - rates.reduce((sum, rate) => sum + rate, 0));
     const nextDistribution = new Float64Array(stateCount);
     for (let state = 0; state < stateCount; state += 1) {
       const probability = distribution[state]!;
@@ -144,7 +148,7 @@ function multinomialJointProbability(pulls: number, goals: readonly PickupGoalPr
       nextDistribution[state] = nextDistribution[state]! + probability * otherRate;
       for (let goalIndex = 0; goalIndex < goals.length; goalIndex += 1) {
         const nextState = nextStates[goalIndex]![state]!;
-        nextDistribution[nextState] = nextDistribution[nextState]! + probability * goals[goalIndex]!.pickupRate;
+        nextDistribution[nextState] = nextDistribution[nextState]! + probability * rates[goalIndex]!;
       }
     }
     distribution = nextDistribution;
@@ -165,6 +169,18 @@ function multinomialJointProbability(pulls: number, goals: readonly PickupGoalPr
     if (satisfies && exchangeDeficit <= sparks) success += probability;
   }
   return clamp(success);
+}
+
+function varyingRateTail(rates: readonly number[], needed: number): number {
+  if (needed <= 0) return 1;
+  if (needed > rates.length) return 0;
+  const probabilities = new Float64Array(needed + 1);
+  probabilities[0] = 1;
+  for (const rate of rates) {
+    for (let count = needed; count > 0; count--) probabilities[count] = probabilities[count]! * (count === needed ? 1 : 1 - rate) + probabilities[count - 1]! * rate;
+    probabilities[0] = probabilities[0]! * (1 - rate);
+  }
+  return clamp(probabilities[needed]!);
 }
 
 function binomialTail(draws: number, successesNeeded: number, rate: number): number {

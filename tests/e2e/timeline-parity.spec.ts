@@ -88,7 +88,7 @@ test('Timeline and Planner preserve configured pulls and goals through remove, r
   await page.getByRole('navigation', { name: 'Timeline tools' }).getByRole('link', { name: /Carat Planner/ }).click();
   await expect(target).toHaveCount(0);
   await expect(page.getByText('Your plan is ready for its first banner')).toBeVisible();
-  await page.getByRole('combobox', { name: 'Search character or support banners' }).fill('McQueen');
+  await page.getByRole('combobox', { name: 'Search character, support, or paid banners' }).fill('McQueen');
   await page.getByRole('option', { name: /Mejiro McQueen Pickup/ }).click();
   await expect(target.locator('.stepper input')).toHaveValue('330');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0].targets)).toEqual([configured]);
@@ -105,15 +105,14 @@ test('Timeline and Planner preserve configured pulls and goals through remove, r
 
 test('Planner search re-enables rewards inferred from the shared resource and removal clears the event selection', async ({ page }) => {
   await mockTimelineDetails(page);
-  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: { ...detailTimeline, events: [...detailTimeline.events, { ...detailTimeline.events[0], id: 'paid-only', type: 'paid_banner', title: 'Paid anniversary banner' }] } }));
+  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: { ...detailTimeline, events: [...detailTimeline.events, { ...detailTimeline.events[0], id: 'paid-only', type: 'paid_banner', title: 'Paid anniversary banner', pickup_card_ids: [], related_characters: [] }] } }));
   const initial = createPlan('Reward plan'); initial.disabledRewardIds = ['banner-gift']; initial.disabledEventIds = ['detail-banner'];
   await page.addInitScript(plan => localStorage.setItem('carat-planner-plans-v1', JSON.stringify({ version: 1, activePlanId: plan.id, plans: [plan] })), initial);
   await page.goto('/timeline?tab=carat-planner');
   await expect(page.getByText('Loading rates, rewards, and income data…')).toHaveCount(0);
-  await page.getByRole('combobox', { name: 'Search character or support banners' }).fill('Paid anniversary');
-  await expect(page.getByRole('option', { name: /Paid anniversary/ })).toHaveCount(0);
-  await expect(page.getByText('No banners match this search and type.')).toBeVisible();
-  await page.getByRole('combobox', { name: 'Search character or support banners' }).fill('McQueen');
+  await page.getByRole('combobox', { name: 'Search character, support, or paid banners' }).fill('Paid anniversary');
+  await expect(page.getByRole('option', { name: /Paid anniversary/ })).toBeEnabled();
+  await page.getByRole('combobox', { name: 'Search character, support, or paid banners' }).fill('McQueen');
   await page.getByRole('option', { name: /Mejiro McQueen/ }).click();
   const enabled = await page.evaluate(() => JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0]);
   expect(enabled.disabledRewardIds).toEqual([]);

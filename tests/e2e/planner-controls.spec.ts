@@ -24,7 +24,7 @@ test('Planner Balance keeps Angular resource groups, editable values and compact
   for (const [group, label, value] of fields) await expect(panel.getByRole('group', { name: group!, exact: true }).getByRole('spinbutton', { name: label!, exact: true })).toHaveValue(value!);
   for (const width of [page.viewportSize()!.width, 1280, 1024, 768, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     const controls = await panel.locator('input').evaluateAll(inputs => inputs.map(input => ({ width: input.getBoundingClientRect().width, height: input.getBoundingClientRect().height })));
     expect(controls).toHaveLength(9);
     if (width < 768) expect(controls.every(input => input.width >= 32 && input.height >= 32)).toBe(true);
@@ -151,7 +151,7 @@ test('Planner action combobox supports Added rows, keyboard selection, clear, es
   const initial = plannerControlsPlan(); initial.targets = [{ ...initial.targets[0]!, id: 'already-added', eventId: 'banner-0', title: 'Banner 00' }]; initial.disabledEventIds = [];
   await page.addInitScript(plan => localStorage.setItem('carat-planner-plans-v1', JSON.stringify({ version: 1, activePlanId: plan.id, plans: [plan] })), initial);
   await page.goto('/timeline?tab=carat-planner');
-  const input = page.getByRole('combobox', { name: 'Search character or support banners' });
+  const input = page.getByRole('combobox', { name: 'Search character, support, or paid banners' });
   await input.click();
   const options = page.getByRole('option');
   await expect(options).toHaveCount(40);
@@ -166,7 +166,7 @@ test('Planner action combobox supports Added rows, keyboard selection, clear, es
   await input.press('Escape'); await expect(input).toHaveValue('no matching banners'); await expect(input).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: 'Clear banner search' }).click();
   await expect(input).toHaveValue(''); await expect(options).toHaveCount(40);
-  const panel = page.getByRole('listbox', { name: 'Search character or support banners suggestions' });
+  const panel = page.getByRole('listbox', { name: 'Search character, support, or paid banners suggestions' });
   await panel.evaluate(element => element.scrollTop = element.scrollHeight);
   await expect(options).toHaveCount(65);
   expect(await panel.evaluate(element => element.scrollTop)).toBeGreaterThan(0);

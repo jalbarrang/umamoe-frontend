@@ -11,10 +11,10 @@ function target(id: string, start: string, end = start, extra: Partial<PlannerTa
 }
 
 describe('Angular Planner search and pull-plan presentation', () => {
-  it('offers step-ups only when their master-data schedule is available', () => {
+  it('offers paid banners even while their master data is unavailable', () => {
     const ready = event('step-up', 'SSR Support Select Step-Up', '2026-09-01', { eventType: 'paid_banner', gachaType: 14, canPlan: true });
     const missing = event('future-step-up', 'Select Step-Up', '2026-10-01', { eventType: 'support_card_banner', gachaType: 14, canPlan: false });
-    expect(filterPlannerBanners([ready, missing], 'step up', '2026-08-01', '2026-08-01')).toEqual([ready]);
+    expect(filterPlannerBanners([ready, missing], 'step up', '2026-08-01', '2026-08-01')).toEqual([ready, missing]);
   });
   it('searches banner labels and tags regardless of spaces or hyphens', () => {
     const events = [
@@ -78,12 +78,12 @@ describe('Angular Planner search and pull-plan presentation', () => {
       event('variant', 'Summer pickup', '2026-09-05', { pickups: [{ id: '101302', name: 'Mejiro McQueen [End of Sky]', image: '', kind: 'character', subLabel: 'End of Sky variant', searchTerms: ['Mejiro McQueen', 'End of Sky'] }] })
     ];
     const find = (query: string) => filterPlannerBanners(events, query, '2026-09-01', '2026-08-29').map(item => item.id);
-    expect(find('Oguri Cap')).toEqual(['exact', 'participant', 'prefix']);
+    expect(find('Oguri Cap')).toEqual(['exact', 'paid', 'participant', 'prefix']);
     expect(find('ré-vivál')).toEqual(['prefix']);
     expect(find('kitasan stamina')).toEqual(['support']);
     expect(find('End of Sky')).toEqual(['variant']);
-    expect(find('')).toEqual(['support', 'variant', 'participant', 'exact', 'prefix']);
-    expect(filterPlannerBanners(events, '', '2026-09-01', '2026-10-05').map(item => item.id)).toEqual(['exact', 'participant', 'variant', 'support', 'prefix']);
+    expect(find('')).toEqual(['support', 'variant', 'participant', 'exact', 'paid', 'prefix']);
+    expect(filterPlannerBanners(events, '', '2026-09-01', '2026-10-05').map(item => item.id)).toEqual(['exact', 'participant', 'variant', 'support', 'paid', 'prefix']);
     expect(events[0]!.id).toBe('prefix');
   });
 

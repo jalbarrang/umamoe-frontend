@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  import { isPaidBanner, paidBannerSteps, plannerCardKind } from '@/lib/timeline/planner-paid-banners';
   import { itemIconPath } from '@/lib/catalog/item-icons';
   import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
   import { availableCrystals, findGacha, type PlannerDataBundle, type PlannerTarget, type TargetProjection } from '@/lib/timeline/carat-planner';
@@ -29,7 +30,9 @@
   let { target, past = false, projection, resources, events, catalog, pickupCopyMemory, onupdate, onremove }: Props = $props();
 
   const gacha = $derived(findGacha(target, resources));
-  const paidOnly = $derived(target.bannerKind === 'paid' || gacha?.gacha_type === 14);
+  const paidOnly = $derived(isPaidBanner(target, gacha));
+  const cardKind = $derived(plannerCardKind(target, gacha));
+  const maxPulls = $derived(paidOnly ? paidBannerSteps(gacha).reduce((sum, step) => sum + step.pulls, 0) : 5000);
   const stepUp = $derived(gacha?.step_up);
   const stepOptions = $derived.by(() => {
     let pulls = 0, cost = 0;
@@ -42,42 +45,49 @@
     }
     return options;
   });
-  const ticketKind = $derived((findGacha(target, resources)?.ticket_currency ?? (target.bannerKind === 'support' ? 'support_ticket' : 'uma_ticket')) === 'support_ticket' ? 'support' : 'uma');
+  const ticketKind = $derived((findGacha(target, resources)?.ticket_currency ?? (cardKind === 'support' && !stepUp ? 'support_ticket' : 'uma_ticket')) === 'support_ticket' ? 'support' : 'uma');
   const ticketCount = $derived(projection?.balanceBefore[ticketKind === 'support' ? 'supportTickets' : 'umaTickets'] ?? 0);
   const ticketLabel = $derived(`${ticketCount} ${ticketKind === 'support' ? 'support' : 'Trainee'} tickets available at pull; ${projection?.ticketPulls ? `${projection.ticketPulls} used and ${ticketCount - projection.ticketPulls} remaining` : 'none used'}`);
   function dateLabel(value?: string): string { const date = new Date(`${value}T00:00:00Z`); return Number.isFinite(date.getTime()) ? dateFormatter.format(date) : 'Unknown'; }
-  function setPulls(pulls: number): void { onupdate(value => value.plannedPulls = Math.max(0, Math.min(5000, Math.trunc(pulls) || 0))); }
+  function setPulls(pulls: number): void { onupdate(value => value.plannedPulls = Math.max(0, Math.min(maxPulls, paidOnly ? Math.floor(pulls / 10) * 10 || 0 : Math.trunc(pulls) || 0))); }
 
 </script>
 
 <article class="target" class:past data-target-id={target.id}>
   <div class="target-title" class:has-image={Boolean(target.imagePath)}>
     {#if target.imagePath}<img src={target.imagePath} width="512" height="125" loading="lazy" alt=""/>{/if}
-    <div><strong>{target.title}</strong><small class="date"><Icon name="calendar" size={13}/>{dateLabel(target.bannerStart)} – {dateLabel(target.bannerEnd ?? target.bannerStart)}</small>
-      {#if projection && !paidOnly}<div class="at-pull" aria-label={`At pull date: ${ticketLabel}`}><small>At pull</small><span title={ticketLabel}><img src={itemIconPath(ticketKind === 'support' ? 111 : 41)} width="18" height="18" alt=""/><b>{ticketCount}</b>{#if projection.ticketPulls}<em>→ {ticketCount - projection.ticketPulls}</em>{/if}</span>{#if target.bannerKind === 'support'}{#each ['rainbow', 'gold'] as kind}<span title={`${kind === 'rainbow' ? 'Rainbow' : 'Gold'} Uncap Crystals available at pull`}><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="18" height="18" alt=""/><b>{kind === 'rainbow' ? availableCrystals(projection.balanceBefore.rainbowFullCrystals, projection.balanceBefore.rainbowCrystals) : availableCrystals(projection.balanceBefore.goldFullCrystals, projection.balanceBefore.goldCrystals)}</b></span>{/each}{/if}</div>{/if}
+    <div><strong class:paid={paidOnly}>{#if paidOnly}<span aria-label="Paid banner" title="Paid banner"><Icon name="paid" size={17}/></span>{/if}{target.title}</strong><small class="date"><Icon name="calendar" size={13}/>{dateLabel(target.bannerStart)} – {dateLabel(target.bannerEnd ?? target.bannerStart)}</small>
+      {#if projection && !paidOnly}<div class="at-pull" aria-label={`At pull date: ${ticketLabel}`}><small>At pull</small><span title={ticketLabel}><img src={itemIconPath(ticketKind === 'support' ? 111 : 41)} width="18" height="18" alt=""/><b>{ticketCount}</b>{#if projection.ticketPulls}<em>→ {ticketCount - projection.ticketPulls}</em>{/if}</span>{#if cardKind === 'support' && !stepUp}{#each ['rainbow', 'gold'] as kind}<span title={`${kind === 'rainbow' ? 'Rainbow' : 'Gold'} Uncap Crystals available at pull`}><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="18" height="18" alt=""/><b>{kind === 'rainbow' ? availableCrystals(projection.balanceBefore.rainbowFullCrystals, projection.balanceBefore.rainbowCrystals) : availableCrystals(projection.balanceBefore.goldFullCrystals, projection.balanceBefore.goldCrystals)}</b></span>{/each}{/if}</div>{/if}
     </div>
   </div>
   <div class="target-controls">
-    {#if paidOnly}<label class="step-progress">Step-up progress<select value={String(target.plannedPulls)} disabled={!stepUp} onchange={event => setPulls(Number(event.currentTarget.value))}>{#each stepOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></label>{:else}<div class="pull-count"><span>Pulls</span><div class="stepper" role="group" aria-label="Planned pulls"><Button variant="secondary" size="sm" ariaLabel="Add 100 pulls" disabled={target.plannedPulls >= 5000} onclick={() => setPulls(target.plannedPulls + 100)}>+100</Button><Button variant="secondary" size="sm" ariaLabel="Add 10 pulls" disabled={target.plannedPulls >= 5000} onclick={() => setPulls(target.plannedPulls + 10)}>+10</Button><TextField id={`pulls-${target.id}`} label="Planned pulls" hideLabel type="number" min={0} max={5000} step={10} value={String(target.plannedPulls)} oninput={event => setPulls(Number((event.currentTarget as HTMLInputElement).value))}/><Button variant="secondary" size="sm" ariaLabel="Remove 10 pulls" disabled={target.plannedPulls <= 0} onclick={() => setPulls(target.plannedPulls - 10)}>−10</Button><Button variant="secondary" size="sm" ariaLabel="Remove 100 pulls" disabled={target.plannedPulls <= 0} onclick={() => setPulls(target.plannedPulls - 100)}>−100</Button></div></div>{/if}
-    {#if target.bannerKind === 'support'}<div class="crystal-plan" role="group" aria-label="Uncap Crystals to use on this banner"><span><strong>Uncap crystals</strong><small>Replace extra copies after the first</small></span><div class="crystal-controls">{#each ['rainbow', 'gold'] as kind}{@const name = kind === 'rainbow' ? 'Rainbow' : 'Gold'}{@const key = kind === 'rainbow' ? 'rainbowCrystalsPlanned' : 'goldCrystalsPlanned'}<div class="crystal-control"><span><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="24" height="24" alt=""/><span><strong>{name}</strong><small>{kind === 'rainbow' ? 'SSR' : 'SR'} cards</small></span></span><div class="crystal-stepper" role="group" aria-label={`${name} Uncap Crystals to use on this banner`}><Button variant="ghost" size="sm" icon="minus" ariaLabel={`Use one fewer ${name} Uncap Crystal`} disabled={!target[key]} onclick={() => onupdate(value => value[key] = Math.max(0, (value[key] ?? 0) - 1))}/><output aria-label={`${name} Uncap Crystals planned`}>{target[key] ?? 0}</output><Button variant="ghost" size="sm" icon="add" ariaLabel={`Use one more ${name} Uncap Crystal`} disabled={(target[key] ?? 0) >= 20} onclick={() => onupdate(value => value[key] = Math.min(20, (value[key] ?? 0) + 1))}/></div></div>{/each}</div></div>{/if}
+    {#if stepUp}<div class="step-progress"><SelectField id={`step-${target.id}`} label="Step-up progress" options={stepOptions} value={String(target.plannedPulls)} onchange={value => setPulls(Number(value))}/></div>{:else}<div class="pull-count"><span>Pulls</span><div class="stepper" role="group" aria-label="Planned pulls"><Button variant="secondary" size="sm" ariaLabel="Add 100 pulls" disabled={target.plannedPulls >= maxPulls} onclick={() => setPulls(target.plannedPulls + 100)}>+100</Button><Button variant="secondary" size="sm" ariaLabel="Add 10 pulls" disabled={target.plannedPulls >= maxPulls} onclick={() => setPulls(target.plannedPulls + 10)}>+10</Button><TextField id={`pulls-${target.id}`} label="Planned pulls" hideLabel type="number" min={0} max={maxPulls} step={10} value={String(target.plannedPulls)} oninput={event => setPulls(Number((event.currentTarget as HTMLInputElement).value))}/><Button variant="secondary" size="sm" ariaLabel="Remove 10 pulls" disabled={target.plannedPulls <= 0} onclick={() => setPulls(target.plannedPulls - 10)}>−10</Button><Button variant="secondary" size="sm" ariaLabel="Remove 100 pulls" disabled={target.plannedPulls <= 0} onclick={() => setPulls(target.plannedPulls - 100)}>−100</Button></div></div>{/if}
+    {#if cardKind === 'support' && !stepUp}<div class="crystal-plan" role="group" aria-label="Uncap Crystals to use on this banner"><span><strong>Uncap crystals</strong><small>Replace extra copies after the first</small></span><div class="crystal-controls">{#each ['rainbow', 'gold'] as kind}{@const name = kind === 'rainbow' ? 'Rainbow' : 'Gold'}{@const key = kind === 'rainbow' ? 'rainbowCrystalsPlanned' : 'goldCrystalsPlanned'}<div class="crystal-control"><span><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="24" height="24" alt=""/><span><strong>{name}</strong><small>{kind === 'rainbow' ? 'SSR' : 'SR'} cards</small></span></span><div class="crystal-stepper" role="group" aria-label={`${name} Uncap Crystals to use on this banner`}><Button variant="ghost" size="sm" icon="minus" ariaLabel={`Use one fewer ${name} Uncap Crystal`} disabled={!target[key]} onclick={() => onupdate(value => value[key] = Math.max(0, (value[key] ?? 0) - 1))}/><output aria-label={`${name} Uncap Crystals planned`}>{target[key] ?? 0}</output><Button variant="ghost" size="sm" icon="add" ariaLabel={`Use one more ${name} Uncap Crystal`} disabled={(target[key] ?? 0) >= 20} onclick={() => onupdate(value => value[key] = Math.min(20, (value[key] ?? 0) + 1))}/></div></div>{/each}</div></div>{/if}
     <InspectPopover label="Target options" align="end">{#snippet trigger()}<span class="options-trigger"><Icon name="tune" size={16}/></span>{/snippet}<div class="target-options"><strong>Target options</strong><small>{paidOnly ? 'This banner uses paid Carats only.' : 'The recommended defaults use tickets first and pull at banner end.'}</small><SelectField id={`timing-${target.id}`} label="Pull on" options={[{value:'start',label:'Banner start'},{value:'end',label:'Banner end'},{value:'custom',label:'Custom date'}]} value={target.pullTiming} onchange={(value)=>onupdate((item)=>item.pullTiming=value as PlannerTarget['pullTiming'])}/>{#if target.pullTiming === 'custom'}<TextField id={`pull-date-${target.id}`} label="Pull date" type="date" value={target.customPullDate ?? ''} oninput={event => onupdate(value => value.customPullDate = (event.currentTarget as HTMLInputElement).value)}/>{/if}{#if !paidOnly}<Checkbox id={`tickets-${target.id}`} label="Use tickets first" checked={target.useTickets} onchange={(checked)=>onupdate((value)=>value.useTickets=checked)}/><Checkbox id={`paid-${target.id}`} label="Allow paid Carats" checked={target.allowPaidJewels} onchange={(checked)=>onupdate((value)=>value.allowPaidJewels=checked)}/>{#if target.useTickets}<TextField id={`ticket-limit-${target.id}`} label="Ticket limit" type="number" min={0} placeholder="No limit" value={String(target.ticketLimit??'')} oninput={(event)=>onupdate((value)=>value.ticketLimit=(event.currentTarget as HTMLInputElement).value===''?undefined:Math.max(0,Number((event.currentTarget as HTMLInputElement).value)||0))}/>{/if}{/if}</div></InspectPopover>
     <Button variant="secondary" size="sm" icon="trash" ariaLabel={`Remove ${target.title}`} onclick={onremove}/>
   </div>
   {#if past}<div class="past-note" role="note"><Icon name="timeline" size={16}/><span><strong>Before plan start</strong><small>Kept for editing, but excluded from this projection.</small></span></div>{/if}
-  {#if paidOnly}<div class="step-up-summary" role="status">
-    {#if stepUp}
-      <strong>{projection?.fundedPulls ?? 0} / {target.plannedPulls} pulls funded · Paid Carats only</strong>
-      {#if projection?.shortfallJewels}<span>{projection.shortfallJewels.toLocaleString()} paid Carats short</span>{/if}
-      <ol>{#each stepUp.steps as step, index}<li><b>Step {index + 1}</b> · {step.cost.toLocaleString()} paid Carats · {step.pulls} pulls{#if step.selectable} · Choose the guaranteed {step.guaranteed_rarity === 3 ? '3★ / SSR' : 'reward'}{:else if step.guaranteed_rarity === 3} · Guaranteed 3★ / SSR{/if}</li>{/each}</ol>
-      <small>{stepUp.rounds} {stepUp.rounds === 1 ? 'round' : 'rounds'} available. Step-up pickup probabilities are not calculated.</small>
-    {:else}<span>Step-up costs are unavailable. This banner is excluded from the projection until its data loads.</span>{/if}
+  {#if paidOnly && !past && (stepUp || !maxPulls)}<div class="step-up-summary" role="status">
+    {#if maxPulls > 0 && projection}
+      <strong>{projection.fundedPulls} / {projection.plannedPulls} pulls funded · Paid Carats only</strong>
+      <span>{projection.shortfallJewels.toLocaleString()} paid Carats short</span>
+      {#if stepUp}
+        <div class="step-goal">
+          <TextField id={'step-copies-' + target.id} label="Desired copies of one chosen card" type="number" min={1} max={cardKind === 'support' ? 5 : 20} step={1} value={String(target.desiredCopies)} oninput={event => onupdate(value => value.desiredCopies = Math.max(1, Math.min(cardKind === 'support' ? 5 : 20, Number((event.currentTarget as HTMLInputElement).value) || 1)))}/>
+          <strong aria-label="Step-up goal odds">{projection.pickupProbability === undefined ? 'Odds unavailable' : (projection.pickupProbability * 100).toFixed(1) + '% chance'}</strong>
+        </div>
+        <small>For one desired card in your chosen pool{#if stepUp.selection_pool_size} of {stepUp.selection_pool_size}{/if}, using {projection.fundedPulls} funded pulls. Includes guaranteed draws and choosing that card at the final step.</small>
+        <details><summary>Step costs and guarantees · {stepUp.rounds} {stepUp.rounds === 1 ? 'round' : 'rounds'} available</summary><ol>{#each stepUp.steps as step, index}<li><b>Step {index + 1}</b> · {step.cost.toLocaleString()} paid Carats · {step.pulls} pulls{#if step.selectable} · Choose the guaranteed {cardKind === 'support' ? 'SSR' : '3★'}{:else if step.guaranteed_rarity === 3} · Guaranteed {cardKind === 'support' ? 'SSR' : '3★'}{/if}</li>{/each}</ol></details>
+      {/if}
+    {:else}<span>Paid banner costs are unavailable. Funding and odds will appear when its data loads.</span>{/if}
   </div>{/if}
-  {#if !paidOnly && !past && projection}<PlannerTargetGoals {target} {projection} {resources} {events} {catalog} {pickupCopyMemory} {onupdate}/>{/if}
+  {#if !stepUp && !past && projection}<PlannerTargetGoals {target} {projection} {resources} {events} {catalog} {pickupCopyMemory} {onupdate}/>{/if}
 </article>
 
 <style>
-  .target{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--border-subtle);background:var(--surface-1);content-visibility:auto;contain-intrinsic-block-size:auto 150px}
-  .step-progress{display:grid;gap:4px;min-width:0;max-width:100%;font-size:10px;color:var(--text-secondary)}.step-progress select{width:100%;min-width:0;min-height:var(--touch-target);padding:8px;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm);background:var(--factor-field-bg);color:var(--text-primary);font:inherit;font-size:12px}.step-progress select:focus-visible{outline:2px solid var(--accent-primary)}
+  .target{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--border-subtle);background:var(--surface-1);content-visibility:auto;contain-intrinsic-block-size:auto 150px}
+  .target:has(:global([aria-expanded=true])){content-visibility:visible;position:relative;z-index:2}
+  .step-progress{min-width:0;width:320px;max-width:100%}.step-progress :global(.field>label){font-size:10px}.step-goal{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.step-goal :global(.field){max-width:240px}.step-goal>strong{padding-bottom:9px;color:var(--accent-primary)}
   .step-up-summary{grid-column:1/-1;display:grid;gap:6px;padding:10px;border-top:1px solid var(--border-subtle);font-size:12px}.step-up-summary ol{margin:0;padding-left:20px;display:grid;gap:4px}.step-up-summary small{color:var(--text-secondary)}
   .target.past{color:var(--text-secondary)}
   .target-title{min-width:0;min-height:66px;display:grid;align-items:center;gap:11px;padding:7px 10px}
@@ -85,6 +95,7 @@
   .target-title>img{display:block;width:148px;height:48px;object-fit:contain;border:1px solid var(--border-subtle);border-radius:3px;background:var(--surface-2)}
   .target-title>div{min-width:0;display:grid;gap:4px}
   .target-title strong{font-size:.84rem;line-height:1.25;overflow-wrap:anywhere}
+  .target-title strong.paid{display:flex;align-items:center;gap:5px;color:var(--color-gold)}.paid>span{display:flex;flex:none}
   .date{display:flex;align-items:center;flex-wrap:wrap;gap:3px 5px;color:var(--text-secondary);font-size:10px}
   .date :global(svg){color:var(--accent-primary);flex:none}
   .at-pull{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:10px}
@@ -121,6 +132,7 @@
     .target-controls,.target-controls:has(.crystal-plan){max-width:none;border-left:0;padding:6px;gap:6px}
     .pull-count{flex:1}.stepper{display:block}.stepper :global(.ui-button){display:none}.stepper :global(.field){--control-height:var(--touch-target)}
 
+    .step-progress{flex:1}.step-progress :global(.field){--control-height:var(--touch-target)}
     .options-trigger,.target-controls>:global(.ui-button){width:var(--touch-target);height:var(--touch-target)}
     .crystal-stepper :global(.ui-button){min-width:var(--touch-target);min-height:var(--touch-target)}
     .crystal-controls{flex-wrap:wrap}.crystal-control{flex:1;justify-content:space-between}

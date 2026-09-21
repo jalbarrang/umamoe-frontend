@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isPaidBanner, plannerCardKind } from '@/lib/timeline/planner-paid-banners';
   import { findGacha, plannerPickupGoals, type PlannerDataBundle, type PlannerGoalProjection, type PlannerTarget, type TargetProjection } from '@/lib/timeline/carat-planner';
   import { plannerPickupOptions } from '@/lib/timeline/planner-presentation';
   import { calculatePullDistribution, pullOutcomeSegments } from '@/lib/timeline/planner-pull-probability';
@@ -22,6 +23,8 @@
   let pickupSearch = $state('');
   let viewportWidth = $state<number>();
   const gacha = $derived(findGacha(target, resources));
+  const paidOnly = $derived(isPaidBanner(target, gacha));
+  const cardKind = $derived(plannerCardKind(target, gacha));
   const options = $derived(plannerPickupOptions(target, gacha, events, catalog));
   const filteredOptions = $derived(options.filter(option => `${option.name} ${option.subLabel}`.toLocaleLowerCase().includes(pickupSearch.trim().toLocaleLowerCase())));
   const goals = $derived(plannerPickupGoals(target).map(goal => ({ ...goal, option: options.find(option => option.pickupId === goal.pickupId)!, odds: projection.pickupGoals.find(odds => odds.pickupId === goal.pickupId) })));
@@ -40,8 +43,8 @@
     projection.sparkCopies ? `${projection.sparkCopies} shared exchange ${projection.sparkCopies === 1 ? 'copy' : 'copies'}` : '',
     projection.rainbowCrystalsUsed + projection.goldCrystalsUsed ? `${projection.rainbowCrystalsUsed + projection.goldCrystalsUsed} Uncap Crystal${projection.rainbowCrystalsUsed + projection.goldCrystalsUsed === 1 ? '' : 's'}` : ''
   ].filter(Boolean).map((part, index, parts) => index === parts.length - 1 ? `${part} included` : part).join(' + ') || 'Exact joint chance');
-  const fundingLabel = $derived([projection.shortfallJewels ? `${projection.shortfallJewels.toLocaleString()} Carats short` : '', `${projection.ticketPulls + projection.freeJewelPulls + projection.paidJewelPulls} from resources`, projection.freePullsUsed ? `${projection.freePullsUsed} free` : ''].filter(Boolean).join(' · '));
-  const topRarity = $derived(target.bannerKind === 'support' ? 'SSR' : '3★');
+  const fundingLabel = $derived([paidOnly ? 'Paid Carats only' : '', paidOnly || projection.shortfallJewels ? `${projection.shortfallJewels.toLocaleString()} ${paidOnly ? 'paid ' : ''}Carats short` : '', `${projection.ticketPulls + projection.freeJewelPulls + projection.paidJewelPulls} from resources`, projection.freePullsUsed ? `${projection.freePullsUsed} free` : ''].filter(Boolean).join(' · '));
+  const topRarity = $derived(cardKind === 'support' ? 'SSR' : '3★');
 
   function percent(value?: number, digits = 1): string { return value === undefined || !Number.isFinite(value) ? 'Unavailable' : `${(value * 100).toFixed(value > 0 && value < .001 ? 2 : digits)}%`; }
   function copies(value: number): string { return value.toFixed(value >= 10 ? 1 : 2).replace(/\.?0+$/, ''); }
@@ -59,7 +62,7 @@
       const index = selected.findIndex(goal => goal.pickupId === pickupId);
       const key = `${value.id}:${pickupId}`;
       if (change !== undefined && index >= 0) {
-        selected[index]!.desiredCopies = Math.max(1, Math.min(value.bannerKind === 'support' ? 5 : 20, selected[index]!.desiredCopies + change));
+        selected[index]!.desiredCopies = Math.max(1, Math.min(cardKind === 'support' ? 5 : 20, selected[index]!.desiredCopies + change));
         pickupCopyMemory.set(key, selected[index]!.desiredCopies);
       } else if (index >= 0) {
         pickupCopyMemory.set(key, selected[index]!.desiredCopies);
@@ -91,7 +94,7 @@
   <summary class="pickup-summary" aria-label={`Pickup goals for ${target.title}`}>
     <span class="funding" class:short={projection.shortfallJewels > 0}>
       <Icon name={projection.shortfallJewels > 0 ? 'warning' : 'check'} size={16}/>
-      <span><strong>{projection.fundedPulls}{#if projection.shortfallJewels} / {target.plannedPulls}{/if} funded</strong><small>{fundingLabel}{#if projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
+      <span><strong>{projection.fundedPulls}{#if projection.shortfallJewels} / {target.plannedPulls}{/if} funded</strong><small>{fundingLabel}{#if !paidOnly && projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
     </span>
     <small class="goals-label">Goals</small>
     <span class="goal-previews">
@@ -132,7 +135,7 @@
               <div class="goal-copies"><small>Copies</small><div class="copy-stepper" role="group" aria-label={`Copies of ${goal.option.name}`}>
                 <Button variant="ghost" size="sm" icon="minus" ariaLabel={`Decrease desired copies of ${goal.option.name}`} disabled={goal.desiredCopies <= 1} onclick={() => editGoal(goal.pickupId, -1)}/>
                 <output aria-label={`${goal.desiredCopies} desired copies`}>{goal.desiredCopies}</output>
-                <Button variant="ghost" size="sm" icon="add" ariaLabel={`Increase desired copies of ${goal.option.name}`} disabled={goal.desiredCopies >= (target.bannerKind === 'support' ? 5 : 20)} onclick={() => editGoal(goal.pickupId, 1)}/>
+                <Button variant="ghost" size="sm" icon="add" ariaLabel={`Increase desired copies of ${goal.option.name}`} disabled={goal.desiredCopies >= (cardKind === 'support' ? 5 : 20)} onclick={() => editGoal(goal.pickupId, 1)}/>
               </div></div>
               <strong class="individual-chance" aria-label={oddsLabel(goal.option.name, goal.odds)}>{percent(goal.odds?.probability)}</strong>
               <Button variant="ghost" size="sm" icon="close" ariaLabel={`Remove ${goal.option.name} from rate-up goals`} onclick={() => editGoal(goal.pickupId)}/>
@@ -143,9 +146,9 @@
       </section>
       {#if goals.length}
         <details class="advanced-odds" open={(viewportWidth ?? 1024) > 768}>
-          <summary><span><strong>Detailed odds</strong><small>Pool rates, outcome ranges, and averages</small></span><strong>{percent(projection.pickupProbability)}</strong><Icon name="chevron" size={16}/></summary>
+          <summary><span><strong>Detailed odds</strong><small>{paidOnly ? 'Includes guaranteed draws' : 'Pool rates, outcome ranges, and averages'}</small></span><strong>{percent(projection.pickupProbability)}</strong><Icon name="chevron" size={16}/></summary>
           <div class="goal-rollup">
-            {#if ratesAvailable}
+            {#if paidOnly && ratesAvailable}<p>Goal odds include the guaranteed draws in your {projection.fundedPulls} funded pulls.</p>{:else if ratesAvailable}
               <header><span><h4>Selected pickup outcomes at {distribution.pulls.toLocaleString()} pulls</h4><p>{#if inferred}Estimated from standard banner rates · {/if}Only selected featured cards count here{#if distribution.guaranteedHits} · totals include {distribution.guaranteedHits} shared exchange {distribution.guaranteedHits === 1 ? 'copy' : 'copies'}{/if}</p></span>
                 <span class="all-goals" class:strong={(projection.pickupProbability ?? 0) >= .5} role="status"><span>All goals</span><strong>{totalLabel}</strong><small>{allGoalsStatus}</small></span>
               </header>

@@ -1,6 +1,7 @@
 import { plannerRewardAvailabilityWindow, timelineEventIndex } from './planner-reward-availability';
 import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 import { parseResourceDate } from './timeline-prediction-types';
+import { isPaidBanner, paidBannerType, paidBannerSteps, paidBannerDrawRates, plannerCardKind } from './planner-paid-banners';
 import { calculateMultiPickupProbability } from './planner-pull-probability';
 import { plannerRewardBundles, plannerSourceItemTotals } from './planner-reward-currencies';
 import {
@@ -34,8 +35,8 @@ export interface PlannerEventBenefit { id: string; event_id: string; gacha_id?: 
 export interface PlannerFreePullCampaign { id: string; label: string; total_pulls: number; pulls_per_day?: number; allocation_mode?: string; stockable?: boolean; eligible_gacha_ids?: number[]; default_allocations: PlannerFreePullCampaignAllocation[]; provenance?: string; confidence?: string; source_url?: string; }
 export interface PlannerPickupRate { pickup_id: number; label?: string; rate: number; exchangeable?: boolean; }
 export interface PlannerRarityRate { rarity: number; rate: number; }
-export interface PlannerStepUp { rounds: number; steps: { gacha_id: number; pulls: number; cost: number; guaranteed_rarity: number; selectable: boolean }[]; }
-export interface PlannerGachaEntry { step_up?: PlannerStepUp; event_id?: string; gacha_id: number; gacha_type?: number; banner_kind: PlannerTarget['bannerKind']; start_date: string; end_date: string; jewel_cost_per_pull?: number; spark_pulls?: number; free_pulls?: number; free_pulls_source_url?: string; ticket_currency?: Extract<PlannerCurrency, 'uma_ticket' | 'support_ticket'>; pickups?: PlannerPickupRate[]; featured_pickups?: PlannerPickupRate[]; rarity_rates?: PlannerRarityRate[]; provenance?: string; confidence?: string; rates_provenance?: string; rates_confidence?: string; }
+export interface PlannerStepUp { selection_pool_size?: number; selection_pickup_rate?: number; rounds: number; steps: { gacha_id: number; pulls: number; cost: number; guaranteed_rarity: number; selectable: boolean }[]; }
+export interface PlannerGachaEntry { paid_draw?: { limit: number; guaranteed_rarity: number; guaranteed_count: number }; step_up?: PlannerStepUp; event_id?: string; gacha_id: number; gacha_type?: number; banner_kind: PlannerTarget['bannerKind']; start_date: string; end_date: string; jewel_cost_per_pull?: number; spark_pulls?: number; free_pulls?: number; free_pulls_source_url?: string; ticket_currency?: Extract<PlannerCurrency, 'uma_ticket' | 'support_ticket'>; pickups?: PlannerPickupRate[]; featured_pickups?: PlannerPickupRate[]; rarity_rates?: PlannerRarityRate[]; provenance?: string; confidence?: string; rates_provenance?: string; rates_confidence?: string; }
 export interface PlannerGachaResource { version?: string | number; shard?: string; gachas: PlannerGachaEntry[]; }
 export interface PlannerGlobalRewardComparison { speculative_method?: string; observation_end: string; speculative_monthly_carats: number; speculative_recent_median_monthly_carats?: number; }
 export interface PlannerCompetitiveRewardVariant { master_event_id?: number; id: string; competition: string; event_id: string; label: string; source_items: PlannerSourceItem[]; available_at?: string; default_enabled?: boolean; provenance?: string; source_url?: string; }
@@ -186,7 +187,7 @@ export function enabledPlannerTargets(plan: CaratPlan): PlannerTarget[] {
   const disabled = new Set(plan.disabledEventIds);
   return plan.targets.filter(target => !disabled.has(target.eventId));
 }
-export function bannerKind(event: Pick<TimelineRecord, 'eventType'>): PlannerTarget['bannerKind'] { if (event.eventType.includes('character')) return 'character'; if (event.eventType.includes('support')) return 'support'; if (event.eventType.includes('paid')) return 'paid'; return 'other'; }
+export function bannerKind(event: Pick<TimelineRecord, 'eventType'> & Partial<Pick<TimelineRecord, 'gachaType'>>): PlannerTarget['bannerKind'] { if (event.eventType.includes('paid') || paidBannerType(event.gachaType)) return 'paid'; if (event.eventType.includes('character')) return 'character'; if (event.eventType.includes('support')) return 'support'; return 'other'; }
 export type PlannerGachaEvent = Pick<TimelineRecord, 'id' | 'title' | 'eventType'> & Partial<Pick<TimelineRecord, 'date' | 'estimatedEndDate' | 'gachaId' | 'gachaIds' | 'gachaType' | 'pickupCardIds'>>;
 function normalizedEventId(id: string): string { return id.trim().replaceAll('_', '-').replace(/-+/g, '-').toLowerCase(); }
 export function findPlannerEvent(id: string, events: readonly TimelineRecord[]): TimelineRecord | undefined {
@@ -214,7 +215,7 @@ export function synchronizePlannerTargets(plan: CaratPlan, events: readonly Time
     if (event) {
       next.title = event.title;
       const kind = bannerKind(event);
-      if (kind === 'character' || kind === 'support') next.bannerKind = kind;
+      if (kind !== 'other') next.bannerKind = kind;
       if (event.image) next.imagePath = event.image; else delete next.imagePath;
       if (event.gachaId !== undefined) next.gachaId = event.gachaId;
       if (event.gachaIds.length) next.gachaIds = event.gachaIds; else delete next.gachaIds;
@@ -246,7 +247,7 @@ export function setTimelineEvent(
   plan.disabledEventIds = [...disabled];
   const existing = plan.targets.find((item) => item.eventId === event.id);
   const kind = bannerKind(event);
-  if (selected && (kind === 'character' || kind === 'support' || event.gachaType === 14)) {
+  if (selected && (kind === 'character' || kind === 'support' || kind === 'paid')) {
     const start = (event.date ?? new Date()).toISOString().slice(0, 10);
     const end = event.estimatedEndDate?.toISOString().slice(0, 10) ?? start;
     const pickupId = event.pickupCardIds?.[0];
@@ -261,7 +262,7 @@ export function setTimelineEvent(
         existing.pickupGoals = [{ pickupId, desiredCopies: 1 }];
       }
     } else {
-      plan.targets.push({ id: id('target'), eventId: event.id, gachaId: event.gachaId, gachaIds: event.gachaIds?.length ? [...event.gachaIds] : undefined, title: event.title, bannerKind: kind, imagePath: event.image, bannerStart: start, bannerEnd: end, pullTiming: 'end', plannedPulls: event.gachaType === 14 ? 50 : 200, desiredCopies: 1, pickupId, pickupGoals: pickupId === undefined ? [] : [{ pickupId, desiredCopies: 1 }], useTickets: event.gachaType !== 14, allowPaidJewels: event.gachaType === 14 });
+      plan.targets.push({ id: id('target'), eventId: event.id, gachaId: event.gachaId, gachaIds: event.gachaIds?.length ? [...event.gachaIds] : undefined, title: event.title, bannerKind: kind, imagePath: event.image, bannerStart: start, bannerEnd: end, pullTiming: 'end', plannedPulls: event.gachaType === 14 ? 50 : kind === 'paid' ? 10 : 200, desiredCopies: 1, pickupId, pickupGoals: pickupId === undefined ? [] : [{ pickupId, desiredCopies: 1 }], useTickets: kind !== 'paid', allowPaidJewels: kind === 'paid' });
     }
   }
   if (event.plannerRewardAvailable) {
@@ -445,8 +446,9 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
     const balanceBefore = { ...current };
     const gacha = findGacha(target, bundle);
     const stepUp = gacha?.step_up;
-    const steps = stepUp ? Array.from({ length: stepUp.rounds }, () => stepUp.steps).flat() : [];
-    const paidOnly = target.bannerKind === 'paid' || gacha?.gacha_type === 14;
+    const steps = paidBannerSteps(gacha);
+    const paidOnly = isPaidBanner(target, gacha);
+    const cardKind = plannerCardKind(target, gacha);
     const planned = paidOnly ? Math.min(Math.floor(number(target.plannedPulls, 5000) / 10) * 10, steps.reduce((sum, step) => sum + step.pulls, 0)) : number(target.plannedPulls, 5000);
     plannedPulls += planned;
     const freePullsAvailable = campaignPulls.has(target.id) ? campaignPulls.get(target.id)! : number(gacha?.free_pulls, 5000);
@@ -478,31 +480,30 @@ export function projectPlan(plan: CaratPlan, costOrBundle: number | PlannerDataB
     }
     remaining -= paidJewelPulls;
     const fundedPulls = planned - remaining;
-    const sparkPulls = paidOnly ? 0 : number(gacha?.spark_pulls ?? bundle?.core.default_spark_pulls ?? 200);
-    // ponytail: budget step-ups only; model their selectable pools before exposing pickup odds.
-    const goals = paidOnly ? [] : plannerPickupGoals(target, target.pickupId ?? gacha?.pickups?.[0]?.pickup_id);
+    const sparkPulls = number(gacha?.spark_pulls ?? (paidOnly ? 0 : bundle?.core.default_spark_pulls ?? 200));
+    const goals = stepUp ? [{ pickupId: 0, desiredCopies: Math.max(1, number(target.desiredCopies, cardKind === 'support' ? 5 : 20)) }] : plannerPickupGoals({ ...target, bannerKind: cardKind }, target.pickupId ?? gacha?.pickups?.[0]?.pickup_id);
     let rainbowCrystalsUsed = 0;
     let goldCrystalsUsed = 0;
     const adjustedGoals = goals.map((goal) => {
-      const rarity = target.bannerKind === 'support' ? bundle?.supportCardRarities?.[String(goal.pickupId)] : undefined;
+      const rarity = !stepUp && cardKind === 'support' ? bundle?.supportCardRarities?.[String(goal.pickupId)] : undefined;
       const desiredCopies = goal.desiredCopies;
-      const crystalKind = target.bannerKind !== 'support' || rarity === 1 ? undefined : rarity === 2 ? 'gold' as const : 'rainbow' as const;
+      const crystalKind = stepUp || cardKind !== 'support' || rarity === 1 ? undefined : rarity === 2 ? 'gold' as const : 'rainbow' as const;
       let crystalCopies = 0;
       if (rarity === 2) {
         crystalCopies = Math.max(0, Math.min(desiredCopies - 1, number(target.goldCrystalsPlanned, 20) - goldCrystalsUsed, availableCrystals(current.goldFullCrystals, current.goldCrystals) - goldCrystalsUsed));
         goldCrystalsUsed += crystalCopies;
-      } else if (target.bannerKind === 'support' && rarity !== 1) {
+      } else if (!stepUp && cardKind === 'support' && rarity !== 1) {
         crystalCopies = Math.max(0, Math.min(desiredCopies - 1, number(target.rainbowCrystalsPlanned, 20) - rainbowCrystalsUsed, availableCrystals(current.rainbowFullCrystals, current.rainbowCrystals) - rainbowCrystalsUsed));
         rainbowCrystalsUsed += crystalCopies;
       }
       const pickup = (gacha?.pickups ?? gacha?.featured_pickups)?.find(item => item.pickup_id === goal.pickupId);
-      return { pickupId: goal.pickupId, desiredCopies, crystalKind, crystalCopiesApplied: crystalCopies, requestedCopies: Math.max(1, desiredCopies - crystalCopies), rate: pickup?.rate ?? Number.NaN, exchangeable: pickup?.exchangeable !== false };
+      return { pickupId: goal.pickupId, desiredCopies, crystalKind, crystalCopiesApplied: crystalCopies, requestedCopies: Math.max(1, desiredCopies - crystalCopies), rate: stepUp?.selection_pickup_rate ?? pickup?.rate ?? Number.NaN, exchangeable: !stepUp && pickup?.exchangeable !== false };
     });
-    if (target.bannerKind === 'support') {
+    if (cardKind === 'support') {
       consumeCrystals(current, 'rainbow', rainbowCrystalsUsed);
       consumeCrystals(current, 'gold', goldCrystalsUsed);
     }
-    const goalProbability = adjustedGoals.length ? calculateMultiPickupProbability(fundedPulls, adjustedGoals, sparkPulls) : undefined;
+    const goalProbability = adjustedGoals.length ? calculateMultiPickupProbability(fundedPulls, adjustedGoals, sparkPulls, paidOnly ? paidBannerDrawRates(gacha, fundedPulls, adjustedGoals.map(goal => goal.rate)) : undefined) : undefined;
     const pickupProbability = goalProbability?.jointProbability;
     const pickupGoals = adjustedGoals.map(goal => {
       const odds = goalProbability?.goals.find(item => item.pickupId === goal.pickupId);

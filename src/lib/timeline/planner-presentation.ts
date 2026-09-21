@@ -1,3 +1,4 @@
+import { plannerCardKind } from './planner-paid-banners';
 import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 import { bannerKind, enabledPlannerTargets, findPlannerEvent, plannerPickupGoals, resolvePlannerPullDate, type CaratPlan, type PlannerGachaEntry, type PlannerTarget } from './carat-planner';
 import { timelinePickup, type TimelinePickupCatalog } from './timeline-pickups';
@@ -12,7 +13,7 @@ export function plannerPickupOptions(target: PlannerTarget, gacha: PlannerGachaE
   return ids.filter(id => Number.isFinite(id) && id > 0).map(id => {
     const source = published.find(pickup => pickup.pickup_id === id);
     const index = event?.pickupCardIds.indexOf(id) ?? -1;
-    const kind = target.bannerKind === 'support' ? 'support' : 'character';
+    const kind = plannerCardKind(target, gacha);
     const relatedName = (kind === 'support' ? event?.relatedSupportCards : event?.relatedCharacters)?.[index];
     const pickup = timelinePickup(id, catalog, relatedName ?? source?.label, kind);
     const title = kind === 'support' ? event?.relatedSupportCardNames[index] : undefined;
@@ -28,9 +29,8 @@ export function filterPlannerBanners(events: readonly TimelineRecord[], query: s
   const reference = [today, projectionStart].sort().at(-1)!;
   const ranks = new Map<string, number>();
   return events.filter(event => {
-    if (event.gachaType === 14 && !event.canPlan) return false;
     const kind = bannerKind(event);
-    if (kind !== 'character' && kind !== 'support' && !(event.gachaType === 14 && event.canPlan)) return false;
+    if (kind !== 'character' && kind !== 'support' && kind !== 'paid') return false;
     if (!needle) return true;
     const rerun = [event.title, event.eventType, event.gachaTypeName, ...event.tags].some(value => /rerun|re-run|revival|returning|encore/i.test(value ?? ''));
     const values = [event.title, ...event.relatedCharacters, ...event.relatedSupportCards, ...event.relatedSupportCardNames,

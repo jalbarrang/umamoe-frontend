@@ -313,7 +313,7 @@
 {#if shareNotice}<div class="share-notice" role="status"><Icon name={shareUrl ? 'share' : 'info'} size={18}/><span>{shareNotice}</span>{#if shareUrl}<a href={shareUrl} target="_blank" rel="noopener noreferrer">Open link</a><Button size="sm" variant="ghost" icon="copy" onclick={() => void copyShareUrl()}>Copy link</Button>{/if}</div>{/if}
   <div class="workbench">
 <div class="picker">
-<Combobox id="planner-banner" label="Search character or support banners" hideLabel prefixIcon="search" action filter={false} batchSize={40} bind:query={eventSearch} options={bannerOptions} placeholder="Search names, banner types, or reruns…" clearLabel="Clear banner search" emptyText={events.length ? 'No banners match this search and type.' : 'Waiting for banner data…'} onchange={value => { const event = eventsById.get(value); if (event) addEvent(event); }}>
+<Combobox id="planner-banner" label="Search character, support, or paid banners" hideLabel prefixIcon="search" action filter={false} batchSize={40} bind:query={eventSearch} options={bannerOptions} placeholder="Search names, banner types, or reruns…" clearLabel="Clear banner search" emptyText={events.length ? 'No banners match this search and type.' : 'Waiting for banner data…'} onchange={value => { const event = eventsById.get(value); if (event) addEvent(event); }}>
   {#snippet optionContent(option)}
     {@const event = eventsById.get(option.value)!}
     <span class="banner-option">
@@ -389,7 +389,7 @@
   <SelectField id="planner-all-paid" label={regularTargets.length < activeTargets.length ? "Paid Carats (regular banners)" : "Paid Carats"} disabled={!regularTargets.length} options={[{value:'',label:'Mixed'},{value:'free-only',label:'Do not use'},{value:'allow',label:'Allowed'}]} value={globalPaidCarats} onchange={applyGlobalPaidCarats}/>
 </div>{/if}
 </div>
-</header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. We will start with 200 pulls at banner end and select the first featured rate-up for you.</p></div></div>{:else}<div class="target-list">{#each pullItems as item, index (item.id)}
+</header>{#if !activeTargets.length}<div class="empty-targets"><span><Icon name="calendar" size={24}/></span><div><strong>Your plan is ready for its first banner</strong><p>Search above to add one. Regular banners start with 200 pulls, paid banners with one draw, and Step-Ups with one round.</p></div></div>{:else}<div class="target-list">{#each pullItems as item, index (item.id)}
 {#if item.kind === 'anniversary'}<div class="anniversary-marker" role="separator" aria-label={`${item.label} on ${item.date}`}><span></span><strong><Icon name="cake" size={14}/>{item.label}</strong><span></span></div>
 {:else}{@const target = item.target}<LazyContent height={150} eager={index < 2}><PlannerTargetRow {target} past={item.past} projection={projectionByTarget.get(target.id)} {resources} {events} {catalog} {pickupCopyMemory} onupdate={(mutator) => updateTarget(target.id, mutator)} onremove={() => removeTarget(target.id)}/></LazyContent>{/if}
 {/each}</div>
