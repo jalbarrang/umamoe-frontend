@@ -1,7 +1,7 @@
-import { expect, test } from './fixtures/test';
+import { expect, test, type Page } from './fixtures/test';
 import { mockDatabase, mockTimeline } from './fixtures/api';
 
-test('footer follows creative refreshes, survives navigation, and stays closed until a fresh load', async ({ page, isMobile }) => {
+async function mockFooter(page: Page) {
   await mockDatabase(page);
   await page.route('https://cdn.fuseplatform.net/**/fuse.js', route => route.fulfill({
     contentType: 'application/javascript',
@@ -11,6 +11,14 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
       window.footerRefreshes = 0;
       let refresh;
       const name = 'publift-widget-scrolling_sticky_footer';
+      window.addEventListener('message', event => {
+        const container = document.querySelector('.' + name + '-container');
+        const frame = container?.querySelector('iframe');
+        if (event.data !== 'fixture:close-footer' || event.source !== frame?.contentWindow) return;
+        if (window.footerCloseMode === 'widget') container.querySelector('.' + name + '-button').click();
+        else if (window.footerCloseMode === 'collapsed') frame.style.height = '0px';
+        else frame.parentElement.style.display = 'none';
+      });
       window.injectFooter = () => {
         clearInterval(refresh);
         document.querySelector('.' + name + '-container')?.remove();
@@ -36,13 +44,14 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
           frame.width = width;
           frame.height = height;
           frame.style.cssText = 'border:0;vertical-align:bottom';
-          frame.srcdoc = '<body style="margin:0;background:#183342;color:white;display:grid;place-items:center;height:100vh;font:16px system-ui">Advertisement</body>';
+          frame.setAttribute('sandbox', 'allow-scripts');
+          frame.srcdoc = '<body style="margin:0;background:#183342;color:white;display:grid;place-items:center;height:100vh;font:16px system-ui">Advertisement<button aria-label="Close creative" style="position:absolute;left:4px;top:4px;width:24px;height:24px" onclick="parent.postMessage(&quot;fixture:close-footer&quot;,&quot;*&quot;)">×</button></body>';
           container.querySelector('.fuse-slot > div').replaceChildren(frame);
           container.querySelector('.' + name).style.alignItems = height > 126 ? 'baseline' : 'end';
           container.style.display = 'block';
           window.footerRefreshes++;
         };
-        window.refreshFooter(innerWidth < 768 ? 320 : 728, 90);
+        window.refreshFooter(innerWidth < 768 ? 320 : 728, innerWidth < 768 ? 50 : 90);
         refresh = setInterval(() => window.refreshFooter(innerWidth < 768 ? 300 : 970, innerWidth < 768 ? 100 : 250), 30000);
       };
       window.fusetag = {
@@ -52,6 +61,10 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
       };
     `
   }));
+}
+
+test('footer follows creative refreshes, survives navigation, and stays closed until a fresh load', async ({ page, isMobile, browserName }) => {
+  await mockFooter(page);
   await page.clock.install();
   await page.goto('/database');
   const footer = page.locator('.uma-footer-ad');
@@ -70,13 +83,22 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
     expect(wrapper.y + wrapper.height).toBeCloseTo(page.viewportSize()!.height, 0);
     expect(ad.y).toBeCloseTo(wrapper.y - offset, 0);
     expect(ad.x + ad.width / 2).toBeCloseTo(page.viewportSize()!.width / 2, 0);
-    expect(button.x + button.width).toBeCloseTo(ad.x + ad.width - 4, 0);
-    expect(button.y).toBeCloseTo(wrapper.y + 4, 0);
+    const inset = isMobile ? 2 : 4;
+    expect(button.width).toBe(isMobile ? 28 : 32);
+    expect(button.height).toBe(isMobile ? 28 : 32);
+    expect(button.x + button.width).toBeCloseTo(ad.x + ad.width - inset, 0);
+    expect(button.y).toBeCloseTo(wrapper.y + inset, 0);
     await close.click({ trial: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   };
   await expect(close).toBeVisible();
-  await checkGeometry(isMobile ? 320 : 728, 90);
+  await checkGeometry(isMobile ? 320 : 728, isMobile ? 50 : 90);
+  // A refresh may remove the old iframe before the next creative arrives.
+  await frame.evaluate(element => element.remove());
+  await expect(close).toBeHidden();
+  await page.clock.fastForward(1000);
+  await page.evaluate(() => (window as any).refreshFooter(innerWidth < 768 ? 320 : 728, innerWidth < 768 ? 50 : 90));
+  await checkGeometry(isMobile ? 320 : 728, isMobile ? 50 : 90);
   await expect(footer.locator('[class$="-container-background"]')).toBeHidden();
   await expect(footer.locator('[class$="-button"]')).toBeHidden();
   await footer.evaluate(element => element.setAttribute('data-original-instance', 'true'));
@@ -136,6 +158,10 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
   await page.goto('/timeline');
   await expect(close).toBeVisible();
   if (isMobile) {
+    if (browserName === 'chromium') {
+      const session = await page.context().newCDPSession(page);
+      await session.send('Emulation.setSafeAreaInsetsOverride', { insets: { bottom: 24 } });
+    }
     const toolbar = page.getByRole('navigation', { name: 'Timeline actions' });
     await page.getByRole('button', { name: 'Search & filters', exact: true }).evaluate((button: HTMLButtonElement) => button.click());
     for (const width of [390, 1024]) {
@@ -143,10 +169,21 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
       await page.evaluate(() => scrollTo(0, 200));
       await expect(toolbar).toBeVisible();
       await expect.poll(async () => {
+        const bar = (await toolbar.boundingBox())!;
+        return Math.abs(bar.y + bar.height - page.viewportSize()!.height);
+      }).toBeLessThan(1);
+      await expect(toolbar).toHaveCSS('height', browserName === 'chromium' ? '82px' : '58px');
+      await expect.poll(async () => {
         const ad = (await footer.boundingBox())!, bar = (await toolbar.boundingBox())!;
         return Math.abs(ad.y + ad.height - bar.y);
       }).toBeLessThan(1);
+      await page.screenshot({ path: test.info().outputPath(`timeline-footer-${width}.png`) });
     }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Close filters', exact: true }).click();
+    await expect(toolbar).toBeVisible();
+    await close.click({ trial: true });
+    await page.screenshot({ path: test.info().outputPath('timeline-footer-closed-filters.png') });
   } else {
     const board = page.locator('.timeline-board.desktop');
     await expect(board).toBeVisible();
@@ -169,3 +206,25 @@ test('footer follows creative refreshes, survives navigation, and stays closed u
     await expect(close).toBeVisible();
   }
 });
+
+for (const mode of ['widget', 'hidden', 'collapsed']) {
+  test(`publisher close (${mode}) dismisses the whole footer for this document`, async ({ page }) => {
+    await mockFooter(page);
+    await page.clock.install();
+    await page.goto('/database');
+    const footer = page.locator('.uma-footer-ad');
+    await expect(page.getByRole('button', { name: 'Close footer ad', exact: true })).toBeVisible();
+    await page.evaluate(mode => { (window as any).footerCloseMode = mode; }, mode);
+    await footer.frameLocator('iframe').getByRole('button', { name: 'Close creative' }).click();
+    await expect(footer).toBeHidden();
+    expect(await page.evaluate(() => (window as any).adDestroyed)).toContain('fuse-injected-scrolling_sticky_footer-1');
+    const refreshes = await page.evaluate(() => (window as any).footerRefreshes);
+    await page.locator('.veterans-action').click();
+    await expect(page).toHaveURL(/\/veterans/);
+    await page.clock.fastForward(30_000);
+    expect(await page.evaluate(() => (window as any).footerRefreshes)).toBe(refreshes);
+    await expect(footer).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Close footer ad', exact: true })).toBeVisible();
+  });
+}

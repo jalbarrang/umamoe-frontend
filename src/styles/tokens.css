@@ -245,6 +245,7 @@
   --rail-compact: 64px;
   --utility-height: 60px;
   --bottom-nav-height: 68px;
+  --timeline-toolbar-height: calc(58px + env(safe-area-inset-bottom));
   --z-rail: 30;
   --z-header: 40;
   --z-overlay: 80;

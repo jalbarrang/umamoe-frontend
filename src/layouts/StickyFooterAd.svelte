@@ -8,13 +8,22 @@
   onMount(() => {
     if (!fuseEnabled()) return;
     const destroyed = new WeakSet<HTMLElement>();
+    const observed = new WeakSet<HTMLElement>();
+    const shown = new WeakSet<Element>();
     const frames = new Set<HTMLIFrameElement>();
-    const sizes = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        if (entry.contentRect.height > 0) entry.target.closest<HTMLElement>(containers)?.style.setProperty('--footer-creative-height', `${entry.contentRect.height}px`);
-      }
+    let resizeFrame = 0;
+    const sizes = new ResizeObserver(() => {
+      // Closing changes layout; apply it outside the observer's delivery cycle.
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(sync);
     });
     const dismissed = () => document.documentElement.classList.contains('footer-ad-dismissed');
+    const dismiss = () => {
+      if (dismissed()) return;
+      // Document state survives SPA navigation, but resets on a fresh page load.
+      document.documentElement.classList.add('footer-ad-dismissed');
+      sync();
+    };
     const destroy = (container: Element) => {
       // Let Publift stop rotation/refresh and restore any page offsets before destroying the zone.
       if (!container.classList.contains('closed')) container.querySelector<HTMLElement>(providerButton)?.click();
@@ -31,9 +40,28 @@
           // Publift retains scroll handlers referencing this wrapper; keep its hidden DOM intact.
           return;
         }
-        container.classList.add('uma-footer-ad');
-        const frame = container.querySelector('iframe');
-        if (frame && !frames.has(frame)) { frames.add(frame); sizes.observe(frame); }
+        if (!observed.has(container)) {
+          observed.add(container);
+          container.classList.add('uma-footer-ad');
+          observer.observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
+        }
+        const creatives = [...container.querySelectorAll('iframe')];
+        const visible = creatives.filter(frame => frame.clientWidth > 1 && frame.clientHeight > 1 && frame.checkVisibility({ visibilityProperty: true }));
+        // A retained creative that is hidden/collapsed is a close, not a replacement during refresh.
+        if (shown.has(container) && (container.classList.contains('closed') ||
+          !visible.length && creatives.some(frame => shown.has(frame)) && container.checkVisibility({ visibilityProperty: true }))) {
+          dismiss();
+          return;
+        }
+        if (visible.length && !container.classList.contains('closed')) {
+          shown.add(container);
+          visible.forEach(frame => shown.add(frame));
+          const height = `${Math.max(...visible.map(frame => frame.clientHeight))}px`;
+          if (container.style.getPropertyValue('--footer-creative-height') !== height) container.style.setProperty('--footer-creative-height', height);
+        }
+        const empty = !visible.length || container.classList.contains('closed');
+        if (container.classList.contains('footer-ad-empty') !== empty) container.classList.toggle('footer-ad-empty', empty);
+        for (const frame of creatives) if (!frames.has(frame)) { frames.add(frame); sizes.observe(frame); }
         if (container.querySelector('.footer-ad-close')) return;
         const close = document.createElement('button');
         close.type = 'button';
@@ -41,18 +69,18 @@
         close.setAttribute('aria-label', 'Close footer ad');
         close.title = 'Close footer ad';
         close.textContent = '×';
-        close.onclick = () => {
-          // Document state survives SPA navigation, but resets on a fresh page load.
-          document.documentElement.classList.add('footer-ad-dismissed');
-          sync();
-        };
+        close.onclick = dismiss;
         container.append(close);
       });
       for (const frame of frames) {
         if (!frame.isConnected) { sizes.unobserve(frame); frames.delete(frame); }
       }
     };
-    const observer = new MutationObserver(sync);
+    const observer = new MutationObserver(records => {
+      // Scrolling creatives change margin-top continuously; only visibility changes need a rescan.
+      if (records.some(record => record.type === 'childList' || record.attributeName !== 'style' ||
+        record.target instanceof HTMLElement && (record.target.style.display === 'none' || record.target.style.visibility === 'hidden'))) sync();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
     const positions = new WeakMap<HTMLElement, { x: number; y: number }>();
     const scrollTimeline = (event: Event) => {
@@ -76,7 +104,7 @@
     };
     document.addEventListener('scroll', scrollTimeline, true);
     sync();
-    return () => { observer.disconnect(); sizes.disconnect(); document.removeEventListener('scroll', scrollTimeline, true); };
+    return () => { observer.disconnect(); sizes.disconnect(); cancelAnimationFrame(resizeFrame); document.removeEventListener('scroll', scrollTimeline, true); };
   });
 </script>
 
@@ -121,6 +149,7 @@
     overflow: hidden !important;
   }
   :global(.uma-footer-ad iframe) { vertical-align: bottom; }
+  :global(.uma-footer-ad.footer-ad-empty) { opacity: 0 !important; pointer-events: none !important; }
   :global(.uma-footer-ad > [class$='-container-background']),
   :global(.uma-footer-ad > [class$='-button']),
   :global(.uma-footer-ad:not(:has(iframe))),
@@ -145,12 +174,9 @@
   }
   :global(.footer-ad-close:hover) { background: var(--surface-2); color: var(--text-primary); }
   :global(html:has(.mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) {
-    bottom: calc(58px + var(--bottom-nav-height) + env(safe-area-inset-bottom)) !important;
-  }
-  @media (min-width: 768px) {
-    :global(html:has(.mobile-bottom-toolbar:not(.is-footer-visible)) .uma-footer-ad) { bottom: 58px !important; }
+    bottom: var(--timeline-toolbar-height) !important;
   }
   @media (max-width: 767px) {
-    :global(.footer-ad-close) { width: 44px; height: 44px; }
+    :global(.footer-ad-close) { top: 2px; right: 2px; width: 28px; height: 28px; border-radius: 4px; font-size: 20px; }
   }
 </style>
