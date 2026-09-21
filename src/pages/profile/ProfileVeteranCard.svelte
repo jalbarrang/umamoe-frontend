@@ -101,7 +101,7 @@
   .count { margin-left:3px; color:var(--color-text-muted); font-size:10px; font-weight:400; }
   .skill-list { min-width:0; display:flex; flex-wrap:wrap; gap:4px; }
   .skill-filter { max-width:100%; display:flex; align-items:center; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
-  .skill-filter.matched { outline:2px solid var(--color-accent); outline-offset:1px; }
+  .skill-filter.matched :global(.skill-body) { border-color:var(--color-gold); box-shadow:0 0 8px rgb(255 215 0 / .3); background:linear-gradient(45deg,rgb(255 215 0 / .1),rgb(255 215 0 / .05)); }
   .card-affinity { display:grid; gap:6px; padding-bottom:8px; }
   .card-affinity header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px; }.card-affinity header small { font-size:10px; color:var(--color-text-muted); }
   .skill-list { gap:4px; }.skill-filter:hover { filter:brightness(1.15); }
