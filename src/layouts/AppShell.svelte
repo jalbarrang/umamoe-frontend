@@ -87,8 +87,14 @@
         <IconButton icon={$theme === 'dark' ? 'sun' : 'moon'} label="Toggle theme" onclick={toggleTheme}/>
         {#if $authUser}
           <div class="signed-in-account">
-            <Menu label={`Account menu for ${accountName}`} menuLabel="Your account" iconOnly items={accountItems} onselect={id => { if (id === 'logout') logout(); }}>
-              {#snippet trigger()}<span class="account-avatar" aria-hidden="true">{accountInitials}{#if $authUser.avatar_url}<img src={$authUser.avatar_url} alt="" class:ready={loadedAvatar === $authUser.avatar_url} loading="eager" decoding="async" onload={event => loadedAvatar = event.currentTarget.getAttribute('src') ?? ''} onerror={() => loadedAvatar = ''}/>{/if}<span class="account-status"></span></span>{/snippet}
+            <Menu label={`Account menu for ${accountName}`} menuLabel="Your account" items={accountItems} onselect={id => { if (id === 'logout') logout(); }}>
+              {#snippet trigger()}
+                <span class="account-trigger">
+                  <span class="account-avatar" aria-hidden="true">{accountInitials}{#if $authUser.avatar_url}<img src={$authUser.avatar_url} alt="" class:ready={loadedAvatar === $authUser.avatar_url} loading="eager" decoding="async" onload={event => loadedAvatar = event.currentTarget.getAttribute('src') ?? ''} onerror={() => loadedAvatar = ''}/>{/if}</span>
+                  <span class="account-name">{accountName}</span>
+                  <Icon name="chevron" size={12}/>
+                </span>
+              {/snippet}
               {#snippet header()}<div class="account-identity"><small>Signed in as</small><strong>{accountName}</strong>{#if ownProfile}<span>{ownProfile.label}</span>{/if}</div>{/snippet}
             </Menu>
           </div>
@@ -140,10 +146,13 @@
   .header-navigation { flex-shrink:0; margin-left:auto; }
   .account-action { width: 38px; height: 38px; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: transparent; color: var(--color-text-muted); cursor: pointer; }
   .account-action:hover { background: var(--surface-2); color: var(--color-text); }
-  .signed-in-account :global(.trigger) { border-color:rgb(var(--accent-primary-rgb)/.4); background:rgb(var(--accent-primary-rgb)/.08); }
-  .account-avatar { position:relative; display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:rgb(var(--accent-primary-rgb)/.15); color:var(--accent-primary); font-size:11px; font-weight:700; }
+  .signed-in-account :global(.trigger) { height:38px; padding:0 8px 0 5px; border-radius:var(--radius-md); border-color:var(--border-primary); background:var(--surface-1); }
+  .signed-in-account :global(.trigger:hover),.signed-in-account :global(.trigger[aria-expanded='true']) { border-color:var(--accent-primary); background:var(--surface-3); }
+  .account-trigger { display:flex; align-items:center; gap:8px; color:var(--text-secondary); }
+  .account-trigger :global(svg) { flex:none; }
+  .account-name { display:none; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); }
+  .account-avatar { position:relative; display:grid; flex:0 0 28px; place-items:center; width:28px; height:28px; border-radius:50%; background:rgb(var(--accent-primary-rgb)/.15); color:var(--accent-primary); font-size:11px; font-weight:700; }
   .account-avatar img { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; visibility:hidden; }.account-avatar img.ready { visibility:visible; }
-  .account-status { position:absolute; right:-1px; bottom:-1px; width:8px; height:8px; border:2px solid var(--navbar-bg); border-radius:50%; background:var(--accent-success); }
   .account-identity { display:grid; gap:3px; max-width:240px; overflow-wrap:anywhere; }
   .account-identity strong { font-size:var(--font-sm); }.account-identity small,.account-identity>span { color:var(--text-secondary); font-size:11px; }
   .veterans-action { width:auto; display:flex; align-items:center; gap:8px; padding:0 12px; font-size:var(--font-sm); font-weight:600; text-decoration:none; }
@@ -156,6 +165,7 @@
   @media(max-width:767px) { .utility-bar { background:var(--bg-secondary); } .mobile-brand strong { display:none; } }
 
   @container app-viewport (min-width: 768px) {
+    .account-name { display:block; }
     .app-shell { grid-template-columns: var(--rail-compact) minmax(0, 1fr); grid-template-rows: var(--utility-height) minmax(0, 1fr); }
     .utility-bar { grid-column: 2; grid-row: 1; padding-inline: var(--page-gutter-compact); }
     .mobile-heading { display: none; }

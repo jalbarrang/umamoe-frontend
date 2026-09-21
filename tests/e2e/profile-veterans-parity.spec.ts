@@ -1,6 +1,34 @@
 import { expect, test, setSliderValue } from './fixtures/test';
 import { mockVeteranProfile as mockProfile, profile, veteran } from './fixtures/api';
 import { completion } from '../performance/completion';
+import factorCatalog from '../fixtures/resources/factors.json' with { type:'json' };
+
+test('Veterans defaults to three cards at Full HD and retains an explicit column choice', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop responsive default');
+  await mockProfile(page);
+  await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({ json: { ...profile,
+    veterans: Array.from({ length: 3 }, (_, index) => ({ ...veteran, id: index + 1, trained_chara_id: index + 1 }))
+  } }));
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/veterans/123456789012');
+  const grid = page.locator('.veteran-grid');
+  await expect(grid.locator('.veteran-card')).toHaveCount(3);
+  const columns = () => grid.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length);
+  for (const width of [1920, 2560, 1919, 1536, 390, 1920]) {
+    await page.setViewportSize({ width, height: 1080 });
+    await expect.poll(columns).toBe(width >= 1920 ? 3 : width < 768 ? 1 : 2);
+    expect(await grid.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  }
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  const perRow = page.getByRole('combobox', { name: 'Per row', exact: true });
+  await expect(perRow).toContainText('3');
+  await perRow.click();
+  await page.getByRole('option', { name: '2', exact: true }).click();
+  for (const width of [1536, 2560, 1920]) {
+    await page.setViewportSize({ width, height: 1080 });
+    await expect.poll(columns).toBe(2);
+  }
+});
 
 test('standalone Veterans exposes search, removable spark chips and compact veteran details', async ({ page }, testInfo) => {
   await mockProfile(page);
@@ -56,13 +84,21 @@ test('account Veterans is page-overflow safe at 390px', async ({ page }) => {
 
 test('Veteran comparison table keeps aptitudes readable, sorts stats and opens details',async({page},testInfo)=>{
   await mockProfile(page);
-  await page.route('**/api/v4/user/profile/123456789012',route=>route.fulfill({json:{...profile,veterans:[veteran,{...veteran,id:2,trained_chara_id:2,card_id:101301,speed:1400}]}}));
+  const whites = factorCatalog.filter(factor => ![0,1,5].includes(factor.type)).slice(0,4).map(factor => Number(factor.id)*10+2);
+  const comparisonVeteran = {...veteran,factors:[...whites,1203,10010103,103]};
+  await page.route('**/api/v4/user/profile/123456789012',route=>route.fulfill({json:{...profile,veterans:[comparisonVeteran,{...comparisonVeteran,id:2,trained_chara_id:2,card_id:101301,speed:1400}]}}));
   await page.goto('/veterans/123456789012');
+  const card = page.locator('.veteran-card').first();
+  await expect(card.locator('.white-count')).toContainText('4 white');
+  const identity = await card.locator('.veteran-identity').innerText();
+  const sparks = await card.locator('.spark-groups').innerText();
   await page.getByRole('button',{name:'Display options',exact:true}).click();
   await page.getByRole('combobox',{name:'View',exact:true}).click();
   await page.getByRole('option',{name:'Table',exact:true}).click();
   const table=page.getByRole('region',{name:'Veteran comparison',exact:true});
   await expect(table.locator('tbody .table-character')).toHaveCount(2);
+  await expect(table.locator('.veteran-identity').first()).toHaveText(identity, {useInnerText:true});
+  await expect(table.locator('.spark-groups').first()).toHaveText(sparks, {useInnerText:true});
   await expect(table.locator('thead th')).toHaveCount(6);
   await expect(table.locator('.table-stats').first().getByRole('term')).toHaveText(['Speed','Stamina','Power','Guts','Wit']);
   await expect(table.locator('.table-aptitudes').first().getByRole('listitem')).toHaveCount(10);
@@ -84,9 +120,22 @@ test('Veteran comparison table keeps aptitudes readable, sorts stats and opens d
     await page.getByRole('button',{name:'Show 2 veterans',exact:true}).click();
   }else await page.getByRole('button',{name:'Sort ascending',exact:true}).click();
   await expect(table.locator('.table-stats [data-stat="speed"] dd').first()).toHaveText('1,210');
-  await expect(table.locator('.table-totals').first()).toContainText('5,020 Total Stats');
-  await expect(table.locator('.table-totals').first()).toContainText('200 SP');
+  await expect(table.locator('.table-totals').first()).toHaveText('Total Stats5,020');
+  await expect(table.locator('thead th').last()).toHaveText('SP total');
+  await expect(table.locator('tbody tr').first().locator('td').last().locator('strong')).toHaveText('200');
+  await expect(table.locator('.table-character .veteran-identity')).toHaveCount(2);
+  await expect(table.locator('.table-factors .spark-group').first()).toHaveAttribute('data-tone','blue');
   if(page.viewportSize()!.width>=1400) expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  if(page.viewportSize()!.width<768) for (const width of [390,320]) {
+    await page.setViewportSize({width,height:844});
+    expect(await table.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    const row=table.locator('tbody tr').first();
+    const areas=await row.locator('th,td').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
+    expect(areas[0].bottom).toBeLessThanOrEqual(areas[1].top);
+    expect(areas[4].bottom).toBeLessThanOrEqual(areas[5].top);
+    expect(areas[5].right).toBeLessThanOrEqual(width);
+    await row.screenshot({path:testInfo.outputPath(`table-row-${width}.png`)});
+  }
   await table.evaluate(el=>el.scrollLeft=0);
   await page.screenshot({path:testInfo.outputPath('veteran-table.png'),fullPage:true});
   await table.screenshot({path:testInfo.outputPath('table-region.png')});

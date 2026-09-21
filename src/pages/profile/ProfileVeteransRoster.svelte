@@ -25,7 +25,6 @@
   import Icon from '@/components/Icon.svelte';
   import IconButton from '@/components/IconButton.svelte';
   import LineageTree from '@/components/LineageTree.svelte';
-  import RankBadge from '@/components/RankBadge.svelte';
   import RaceBadge from '@/components/RaceBadge.svelte';
   import SelectField from '@/components/SelectField.svelte';
   import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
@@ -33,7 +32,6 @@
   import TextField from '@/components/TextField.svelte';
   import Combobox from '@/components/Combobox.svelte';
   import Slider from '@/components/Slider.svelte';
-  import SparkItem from '@/components/SparkItem.svelte';
   import SkillChip from '@/components/SkillChip.svelte';
   import StatStrip from '@/components/StatStrip.svelte';
   import type { VeteranUiRecord } from '@/components/veteran-ui-types';
@@ -50,6 +48,8 @@
   import { profileRepository } from './profile-repository';
   import { loadG1SaddleGroups, loadRaceQueryValues, type RaceQueryValue } from '@/lib/catalog/race-catalog';
   import ProfileVeteranCard from './ProfileVeteranCard.svelte';
+  import ProfileVeteranIdentity from './ProfileVeteranIdentity.svelte';
+  import ProfileVeteranSparks from './ProfileVeteranSparks.svelte';
   import { veteranDatabaseUrl } from '@/lib/veterans/veteran-links';
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
   import { profileVeteranAffinity } from '@/lib/profile/profile-veteran-metrics';
@@ -99,7 +99,10 @@
   const toggleChoice=(choices:string[],value:string)=>choices.includes(value) ? choices.filter(choice=>choice!==value) : [...choices,value].sort();
   let query=$state(''),distance=$state<string[]>([...allDistances]),style=$state<string[]>([...allStyles]),minTotal=$state(0),sortField=$state<CollectionSortField>('total'),sortDirection=$state<'asc'|'desc'>('desc');
   const sortDirectionOptions=$derived(sortField==='creation_time' ? [{value:'desc',label:'Newest first'},{value:'asc',label:'Oldest first'}] : [{value:'desc',label:'Highest first'},{value:'asc',label:'Lowest first'}]);
-  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),gridColumns=$state(2),visibleCount=$state(6);
+  const fullHd = new MediaQuery('(min-width:1920px)');
+  let preferredColumns = $state<number>();
+  const gridColumns = $derived(preferredColumns ?? (fullHd.current ? 3 : 2));
+  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),visibleCount=$state(6);
   let expandedSection=$state<'sparks'|'skills'|'compact'>('skills'),sparkSource=$state<'family'|'parent'|'p1'|'p2'>('family');
   let aptitudeFilters=$state<Partial<Record<AptitudeField,string>>>({}), selectedSkills=$state<number[]>([]), skillQuery=$state(''), skillCatalog=$state<Map<number,SkillCatalogEntry>>(new Map());
   let selectedFactors=$state<VeteranFactorFilter[]>([]),factorCategory=$state('all');
@@ -362,7 +365,7 @@
             {#if displayTab === 'cards' && viewMode === 'grid'}
             <SelectField id="veteran-stat-view" label="Stats" options={[{value:'displayed',label:'Displayed'},{value:'base',label:'Base stats'}]} bind:value={statView}/>
             {#if statView === 'base'}<SelectField id="veteran-card-mood" label="Mood" options={moodOptions} bind:value={cardMood}/>{/if}
-            <SelectField id="veteran-columns" label="Per row" options={[4,3,2,1].map(count => ({value:String(count),label:String(count)}))} value={String(gridColumns)} onchange={value => gridColumns = Number(value)}/>
+            <SelectField id="veteran-columns" label="Per row" options={[4,3,2,1].map(count => ({value:String(count),label:String(count)}))} value={String(gridColumns)} onchange={value => preferredColumns = Number(value)}/>
           {/if}</section>{/if}
         {/if}
 
@@ -386,26 +389,25 @@
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (The comparison table supports keyboard scrolling.) -->
       <div class="table-wrap" role="region" aria-label="Veteran comparison" tabindex="0">
         <table>
-          <colgroup><col class="character-column"/><col class="stats-column"/><col class="affinity-column"/><col class="aptitude-column"/><col/><col class="action-column"/></colgroup>
+          <colgroup><col class="character-column"/><col class="stats-column"/><col class="affinity-column"/><col class="aptitude-column"/><col/><col class="sp-column"/></colgroup>
           <thead><tr><th scope="col">Veteran</th>
             <th scope="col" aria-sort={sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" ariaLabel="Sort by Total Stats" onclick={()=>sortTable('total')}>Stats {sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th>
-            <th scope="col" title={target ? 'Affinity for '+target.name : 'Veteran and parent affinity'} aria-sort={sortField==='affinity' ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onclick={()=>sortTable('affinity')}>Affinity {sortField==='affinity' ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th><th scope="col">Aptitudes</th><th scope="col" title="Combined stars from Own + P1 + P2">Combined sparks</th><th scope="col"><span class="sr-only">Details</span></th>
+            <th scope="col" title={target ? 'Affinity for '+target.name : 'Veteran and parent affinity'} aria-sort={sortField==='affinity' ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onclick={()=>sortTable('affinity')}>Affinity {sortField==='affinity' ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th><th scope="col">Aptitudes</th><th scope="col" title="Combined stars from Own + P1 + P2">Combined sparks</th><th scope="col" title="Base cost of learned skills including prerequisites, before hint discounts">SP total</th>
           </tr></thead>
           <tbody>{#each displayed as item (item.veteran.trained_chara_id ?? item.veteran.id)}
             {@const matches=queryMatches.get(item.veteran) ?? []}
             {@const affinity=affinityByVeteran.get(item.veteran)?.main}
             {@const factors=veteranFactorTotals(item.veteran)}
-            {@const white=factors.filter(factor=>factor.tone==='white')}
             <tr>
-              <th scope="row"><button class="table-character" aria-label={'View '+item.name+' details'} onclick={()=>showDetail(item.veteran)}>{#if item.image}<img src={item.image} alt=""/>{/if}<span class="table-copy"><strong>{item.name}</strong><small class="scenario">{item.scenario}</small><small>{item.distance} · {item.style}</small></span><span class="table-rank"><RankBadge score={item.veteran.rank_score ?? 0} size="sm"/><small>{item.veteran.rank_score?.toLocaleString() ?? '—'}</small></span></button></th>
+              <th scope="row"><button class="table-character" aria-label={'View '+item.name+' details'} onclick={()=>showDetail(item.veteran)}><ProfileVeteranIdentity summary={veteranSummary(item)} rarity={item.veteran.rarity} score={item.veteran.rank_score}/></button></th>
               <td class="table-stats">
                 <StatStrip label={item.name+' stats'} items={statFields.map(field=>({id:field.id,label:field.label,value:(item.veteran[field.id] ?? 0).toLocaleString(),icon:'/assets/images/icon/stats/'+(field.id==='wiz' ? 'wit' : field.id)+'.webp'}))} compact presentation="icons"/>
-                <div class="table-totals"><span><strong>{item.total.toLocaleString()}</strong> Total Stats</span><span>{spByVeteran.get(item.veteran)?.toLocaleString() ?? '—'} SP</span></div>
+                <div class="table-totals"><span>Total Stats</span><strong>{item.total.toLocaleString()}</strong></div>
               </td>
-              <td class="numeric table-affinity">{#if affinity!=null}<AffinityStat value={affinity} label={targetId ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span aria-label="Affinity unavailable">—</span>{/if}</td>
-              <td class="table-aptitudes"><AptitudeGrid items={aptitudes(item.veteran)} compact stretch gradeFirst/></td>
-              <td><div class="table-factors">{#each [...factors.filter(factor=>factor.tone!=='white'),...white.slice(0,2)] as factor}<button class="table-spark" aria-label={'Filter by '+factor.name+': '+factor.level+' stars (family total)'} onclick={()=>addFactor({factorId:factor.id,minLevel:factor.level,scope:'family',mode:'total'})}><SparkItem name={factor.name} level={factor.level} tone={factor.tone} mainStars={factor.ownStars} matched={selectedFactors.some(filter=>filter.factorId===factor.id) || matches.some(match=>match.factor?.id===factor.id && match.factor.level>0)} compact/></button>{/each}{#if white.length>2}<Button variant="ghost" size="sm" onclick={()=>showDetail(item.veteran)}>+{white.length-2} white sparks</Button>{/if}</div></td>
-              <td class="table-action"><IconButton icon="arrow-right" label={'Open '+item.name+' details'} onclick={()=>showDetail(item.veteran)}/></td>
+              <td class="numeric table-affinity" data-label="Affinity">{#if affinity!=null}<AffinityStat value={affinity} label={targetId ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span aria-label="Affinity unavailable">—</span>{/if}</td>
+              <td class="table-aptitudes" data-label="Aptitudes"><AptitudeGrid items={aptitudes(item.veteran)} compact stretch gradeFirst/></td>
+              <td class="table-factors" data-label="Combined sparks"><ProfileVeteranSparks items={factors} {selectedFactors} queryMatches={matches} onfactor={addFactor} onmore={()=>showDetail(item.veteran)}/></td>
+              <td class="table-sp" data-label="SP total"><div><strong>{spByVeteran.get(item.veteran)?.toLocaleString() ?? '—'}</strong><IconButton icon="arrow-right" label={'Open '+item.name+' details'} onclick={()=>showDetail(item.veteran)}/></div></td>
             </tr>
             {#if matches.length}<tr class="query-row"><td colspan="6"><ProfileVeteranQueryMatches {matches}/></td></tr>{/if}
           {/each}</tbody>
@@ -604,7 +606,7 @@
   @media (max-width:767px) { .aptitude-choice :global(.select-panel button),.aptitude-choice :global(.select-panel button:first-child) { min-height:var(--touch-target); } }
   .facet-content>:global(.segments) { width:100%; }.facet-content :global(.segments button) { flex:1; padding:2px 6px; min-height:30px; font-size:10px; }
   .filter-search { min-width:0; }.filter-search :global(.combo-panel) { position:static; margin-top:4px; box-shadow:none; }.filter-search :global(input) { height:34px; font-size:12px; }
-  .selected-list,.table-factors { display:flex; flex-wrap:wrap; gap:6px; }.selected-list :global(.wrap) { max-width:100%; font-size:10px; }.selected-list :global(.wrap>button:first-child) { min-width:0; white-space:normal; text-align:left; }
+  .selected-list { display:flex; flex-wrap:wrap; gap:6px; }.selected-list :global(.wrap) { max-width:100%; font-size:10px; }.selected-list :global(.wrap>button:first-child) { min-width:0; white-space:normal; text-align:left; }
   .selected-skills { display:grid; gap:6px; min-width:0; }
   .schedule-filter { display:grid; gap:10px; min-width:0; }.schedule-filter>div,.schedule-filter>p { color:var(--color-text-muted); font-size:11px; }
   .selected-races :global(.race.inline) { width:max-content; flex:0 1 auto; }.race-search :global(.combo-panel img) { width:48px; height:24px; }.race-search :global(.combo-panel button) { padding:6px 8px; }
@@ -614,22 +616,19 @@
   .uma-rules { min-width:0; display:grid; gap:12px; }.uma-rules>:global(.tree-box+.tree-box) { padding-top:12px; border-top:1px solid var(--border-primary); }
   .table-wrap { position:relative; min-width:0; overflow:auto; border:1px solid var(--border-primary); border-radius:var(--radius-lg); background:var(--card-surface-bg); }
   table { width:100%; min-width:1024px; table-layout:fixed; border-collapse:separate; border-spacing:0; font-size:12px; }
-  .character-column { width:220px; }.stats-column { width:198px; }.affinity-column { width:64px; }.aptitude-column { width:304px; }.action-column { width:44px; }
+  .character-column { width:252px; }.stats-column { width:198px; }.affinity-column { width:64px; }.aptitude-column { width:284px; }.sp-column { width:96px; }
   th,td { padding:10px 8px; border-bottom:1px solid var(--border-subtle); text-align:left; vertical-align:middle; }
   thead th { color:var(--color-text-muted); font-size:11px; font-weight:500; background:var(--card-surface-bg); }
   thead th { padding-block:6px; }thead th :global(.ui-button) { justify-content:flex-start; width:100%; min-height:32px; padding:0; gap:4px; font-size:11px; font-weight:500; }
   tbody th { position:sticky; left:0; z-index:1; background:var(--card-surface-bg); border-right:1px solid var(--border-subtle); }
   tbody tr:hover>td,tbody tr:hover>th { background:var(--surface-2); }tbody tr:last-child>* { border-bottom:0; }
-  .table-character { display:grid; grid-template-columns:36px minmax(0,1fr) auto; width:100%; align-items:center; gap:8px; padding:0; border:0; background:transparent; color:var(--color-text); text-align:left; cursor:pointer; }
-  .table-character img { width:36px; height:52px; object-fit:contain; }.table-copy { display:grid; gap:3px; min-width:0; }.table-character strong { font-size:13px; font-weight:600; }.table-character small { color:var(--color-text-muted); font-size:10px; font-weight:400; }.table-character .scenario { color:var(--accent-secondary); }
+  .table-character { display:block; width:100%; padding:0; border:0; background:transparent; color:var(--color-text); text-align:left; cursor:pointer; }
   .numeric { text-align:center; font-size:13px; font-variant-numeric:tabular-nums; }
-  .table-rank { display:grid; justify-items:center; gap:3px; }.table-rank small { font-size:10px; font-variant-numeric:tabular-nums; }
   .table-stats :global(.stats) { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px 6px; border:0; background:transparent; }.table-stats :global(.stats>div) { flex-direction:row; justify-content:flex-start; align-items:center; gap:4px; padding:0; border:0; }.table-stats :global(.stats img) { width:13px; height:13px; }.table-stats :global(.stats dd) { font-size:12px; line-height:1.4; font-variant-numeric:tabular-nums; }
-  .table-totals { display:flex; align-items:baseline; gap:10px; margin-top:8px; color:var(--color-text-muted); font-size:10px; white-space:nowrap; font-variant-numeric:tabular-nums; }.table-totals strong { color:var(--color-text); font-size:12px; font-weight:600; }
+  .table-totals { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:6px; padding-top:6px; border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:10px; font-variant-numeric:tabular-nums; }.table-totals strong { color:var(--color-text); font-size:12px; font-weight:600; }
   .table-affinity :global(.affinity) { padding:0; border:0; background:transparent; }
-  .table-action { padding-inline:0; text-align:center; }
-  .table-factors { display:flex; flex-wrap:wrap; gap:5px; }.table-spark { max-width:100%; padding:0; border:0; border-radius:var(--radius-sm); background:transparent; cursor:pointer; }.table-factors :global(.name) { white-space:normal; line-height:1.25; }
-  .query-row td { padding:8px 12px; }.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .table-sp>div { display:flex; align-items:center; justify-content:space-between; gap:4px; font-variant-numeric:tabular-nums; }.table-sp strong { font-size:12px; font-weight:600; }
+  .query-row td { padding:8px 12px; }
   .more { min-height:70px; display:flex; justify-content:center; align-items:center; gap:12px; color:var(--color-text-muted); font-size:12px; }
   .light-filters { display:grid; grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,1fr)); gap:8px; }.compact-roster { padding:0; }
   .preview-pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-2); padding-top:var(--space-2); border-top:1px solid var(--border-subtle); color:var(--color-text-muted); font-size:var(--font-xs); }.preview-pagination strong { color:var(--color-text); font-weight:600; }
@@ -638,6 +637,21 @@
   @container veteran-results (max-width:870px) { .veteran-grid { grid-template-columns:repeat(min(2,var(--grid-columns)),minmax(0,1fr)); } }
   @container veteran-results (max-width:570px) { .veteran-grid { grid-template-columns:minmax(0,1fr); } }
   @media(max-width:767px) {
+    .table-wrap { overflow:visible; border:0; background:transparent; }
+    table { display:block; min-width:0; }
+    colgroup { display:none; }
+    thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+    tbody { display:grid; gap:10px; }
+    tbody tr:not(.query-row) { display:grid; grid-template-columns:minmax(0,1fr) 120px; grid-template-areas:'veteran veteran' 'stats stats' 'aptitudes aptitudes' 'sparks sparks' 'affinity sp'; border:1px solid var(--border-primary); border-radius:8px; background:var(--card-surface-bg); }
+    tbody th,tbody td { min-width:0; padding:8px 10px; border:0; }
+    tbody th { position:static; grid-area:veteran; border-bottom:1px solid var(--border-subtle); }
+    td[data-label]::before { content:attr(data-label); display:block; margin-bottom:5px; color:var(--color-text-muted); font-size:10px; font-weight:500; }
+    .table-stats { grid-area:stats; }.table-stats :global(.stats) { grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+    .table-aptitudes { grid-area:aptitudes; }.table-factors { grid-area:sparks; }
+    .table-affinity { grid-area:affinity; text-align:left; }.table-sp { grid-area:sp; }
+    .table-affinity,.table-sp { border-top:1px solid var(--border-subtle); }
+    .table-affinity :global(.affinity) { min-height:var(--touch-target); }
+    .query-row,.query-row td { display:block; }
     .veterans-page { gap:12px; }.collection-toolbar>:global(.ui-button) { padding-inline:10px; }
     .collection-results { gap:12px; }.results-toolbar { position:sticky; top:var(--utility-height,60px); z-index:20; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px; gap:6px; padding:8px 0; }.result-count { grid-column:1/3; min-height:26px; margin:0; font-size:11px; }.result-count>strong { font-size:16px; }.result-count :global(.ui-button) { min-height:26px; padding-inline:4px; font-size:11px; }.results-toolbar>:global(.ui-button:last-child) { grid-column:3; grid-row:1/3; height:var(--touch-target); align-self:end; padding:0; }.results-toolbar>:global(.ui-button) { width:100%; font-size:12px; }
     .desktop-sort { display:none; }.mobile-sort { display:block; }.mobile-sort>:global(.ui-button) { width:100%; font-size:12px; }.display-label { display:none; }

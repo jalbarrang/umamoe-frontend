@@ -2,7 +2,7 @@
   import { totalStats } from '@/lib/profile/profile-display';
   import type { ProfileVeteran } from './profile-repository';
   import type { VeteranUiRecord } from '@/components/veteran-ui-types';
-  import { encodedSkills, veteranBaseStat, veteranFactors, veteranFactorTotals, type VeteranFactorFilter, type ResolvedVeteranFactor } from '@/lib/profile/profile-veterans';
+  import { encodedSkills, veteranBaseStat, veteranFactors, veteranFactorTotals, type VeteranFactorFilter } from '@/lib/profile/profile-veterans';
   import { resolveEncodedSkill, skillPointTotal, skillImage, skillRarity, sortEncodedSkills, type SkillCatalogEntry } from '@/lib/catalog/skill-catalog';
   import Icon from '@/components/Icon.svelte';
   import ProfileVeteranAffinity from './ProfileVeteranAffinity.svelte';
@@ -10,7 +10,7 @@
   import ProfileVeteranIdentity from './ProfileVeteranIdentity.svelte';
   import StatStrip from '@/components/StatStrip.svelte';
   import AptitudeGrid from '@/components/AptitudeGrid.svelte';
-  import SparkItem from '@/components/SparkItem.svelte';
+  import ProfileVeteranSparks from './ProfileVeteranSparks.svelte';
   import SkillChip from '@/components/SkillChip.svelte';
   import ProfileVeteranQueryMatches from './ProfileVeteranQueryMatches.svelte';
   import type { VeteranQueryMatch } from '@/lib/profile/profile-veteran-query';
@@ -23,7 +23,6 @@
     expandedSection?: 'sparks'|'skills'|'compact'; sparkSource?: 'family'|'parent'|'p1'|'p2';
     onfactor?: (filter: VeteranFactorFilter) => void; onskill?: (id:number) => void; ondetails?: () => void;
   } = $props();
-  type CardSpark = ResolvedVeteranFactor & { ownStars?: number };
   const id = $props.id();
   const sourceLabel = $derived(({family:'family total',parent:'Own',p1:'P1',p2:'P2'})[sparkSource]);
   const skills = $derived(sortEncodedSkills(skillCatalog,encodedSkills(veteran)));
@@ -66,7 +65,7 @@
 
     <section class="sparks" aria-label="Veteran sparks">
       <header><h4>{sparkSource === 'family' ? 'Combined sparks' : sourceLabel + ' sparks'} <span class="count">{sparks.length}</span></h4></header>
-      {@render sparkList(sparks)}
+      <ProfileVeteranSparks items={sparks} id={id+'-sparks'} source={sparkSource} expanded={expandedSection === 'sparks'} {selectedFactors} {queryMatches} {onfactor}/>
       {#if !sparks.length}<small>No sparks recorded.</small>{/if}
     </section>
 
@@ -86,23 +85,6 @@
 </article>
 
 
-{#snippet sparkButton(factor:CardSpark)}
-  {@const matched=selectedFactors.some(filter => filter.factorId === factor.id) || queryMatches.some(match=>match.factor?.id===factor.id && match.factor.level>0)}
-  {#snippet spark()}<SparkItem {matched} name={factor.name} level={factor.level} tone={factor.tone} mainStars={factor.ownStars ?? 0} compact/>{/snippet}
-  {#if onfactor}<button class="spark-filter" class:matched aria-label={`Filter by ${factor.name}: ${factor.level} stars (${sourceLabel})`} onclick={() => onfactor?.({factorId:factor.id,minLevel:factor.level,scope:sparkSource,mode:'total'})}>{@render spark()}</button>{:else}<span class="spark-filter">{@render spark()}</span>{/if}
-{/snippet}
-
-{#snippet sparkList(items:CardSpark[])}
-  {@const white = items.filter(factor => factor.tone === 'white')}
-  <div class="spark-groups" id={id+'-sparks'}>
-    {#each ['blue','pink','green','white'] as tone}
-      {@const group = items.filter(factor => factor.tone === tone && (expandedSection === 'sparks' || tone !== 'white' || white.length <= 3 || selectedFactors.some(filter => filter.factorId === factor.id) || queryMatches.some(match=>match.factor?.id===factor.id && match.factor.level>0)))}
-      {#if group.length}<div class="spark-group" data-tone={tone}>{#each group as factor}{@render sparkButton(factor)}{/each}</div>{/if}
-    {/each}
-    {#if white.length > 3 && expandedSection !== 'sparks'}<span class="white-count"><span>★</span><strong>{white.length}</strong> white</span>{/if}
-  </div>
-{/snippet}
-
 <style>
   .veteran-card { min-width:0; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border-primary); border-radius:10px; background:var(--card-surface-bg); container-type:inline-size; }
   .veteran-card:hover { border-color:var(--border-secondary); }
@@ -111,20 +93,15 @@
   .card-annotations :global(.badge) { max-width:100%; min-height:20px; padding:3px 6px; font-size:10px; font-weight:500; line-height:1.2; overflow-wrap:anywhere; }
   .sticker { width:24px; height:24px; object-fit:contain; }
   .card-open { display:block; width:100%; padding:10px 12px; border:0; background:transparent; color:var(--color-text); text-align:left; cursor:pointer; }
-  .card-open:not(button),.spark-filter:not(button),.skill-filter:not(button){cursor:default}
+  .card-open:not(button),.skill-filter:not(button){cursor:default}
   .card-body { min-width:0; display:grid; gap:8px; padding:10px 12px; }
   .sparks,.learned-skills { min-width:0; display:grid; gap:5px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
   h4 { margin:0; color:var(--text-primary); font-size:10px; font-weight:600; }
   .count { margin-left:3px; color:var(--color-text-muted); font-size:10px; font-weight:400; }
-  .spark-groups,.spark-group,.skill-list { min-width:0; display:flex; flex-wrap:wrap; gap:4px; }
-  .spark-group[data-tone='white'] { flex-basis:100%; }
-  .spark-filter,.skill-filter { max-width:100%; display:flex; align-items:center; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
-  .spark-filter :global(.name) { white-space:normal; overflow:visible; overflow-wrap:anywhere; line-height:1.2; }
-  .spark-filter:hover :global(.spark) { border-color:var(--spark-border-color,currentColor); }
+  .skill-list { min-width:0; display:flex; flex-wrap:wrap; gap:4px; }
+  .skill-filter { max-width:100%; display:flex; align-items:center; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
   .skill-filter.matched { outline:2px solid var(--color-accent); outline-offset:1px; }
-  .white-count { display:inline-flex; align-items:center; gap:4px; min-height:22px; padding:3px 6px; border:1px solid var(--border-secondary); border-radius:4px; color:var(--color-text-muted); background:var(--surface-2); font-size:11px; }
-  .white-count strong { color:var(--color-text); font-weight:600; }
   .card-affinity { display:grid; gap:6px; padding-bottom:8px; }
   .card-affinity header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px; }.card-affinity header small { font-size:10px; color:var(--color-text-muted); }
   .skill-list { gap:4px; }.skill-filter:hover { filter:brightness(1.15); }
