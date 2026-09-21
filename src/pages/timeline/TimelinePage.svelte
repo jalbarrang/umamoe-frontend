@@ -89,7 +89,7 @@
   {#if tab === 'timeline'}
     {#if !mobile}
       <div class="toolbar-shell"><section class="toolbar">
-        <div class="search" data-timeline-control="search"><TextField id="timeline-search" label="Search timeline pickups" hideLabel prefixIcon="search" type="search" placeholder="Search pickups…" bind:value={search} />{#if search.trim()}<span>{status.searchPosition}</span>{/if}</div>
+        <div class="search" data-timeline-control="search"><TextField id="timeline-search" label="Search timeline pickups or banner types" hideLabel prefixIcon="search" type="search" placeholder="Search pickups or banner types…" bind:value={search} />{#if search.trim()}<span>{status.searchPosition}</span>{/if}</div>
         {#if search.trim()}<div class="search-navigation"><IconButton icon="arrow-left" label="Previous search result" disabled={!status.filtered} onclick={() => jumpSearch(-1)}/><IconButton icon="arrow-right" label="Next search result" disabled={!status.filtered} onclick={() => jumpSearch(1)}/></div>{/if}
         <span class="timeline-count">{status.filtered} / {status.total}</span>
         <div class="view">
@@ -108,7 +108,7 @@
     {#if mobile && filtersOpen}<button type="button" class="filter-backdrop" aria-label="Close timeline filters" onclick={() => setFilters(false)}></button>{/if}
     <aside bind:this={filterPanel} popover="manual" class="filter-popover" class:mobile-filter-sheet={mobile} aria-label={mobile ? 'Search & filters' : 'Visible event types'}>
       <header><strong>{mobile ? 'Search & filters' : 'Visible event types'}</strong><div><Button variant="secondary" size="sm" onclick={() => { visibleTypes = visibleTypes.length ? [] : filterOptions.map(option => option.type); }}>{visibleTypes.length ? 'Unselect all' : 'Select all'}</Button><IconButton icon="close" label="Close filters" onclick={() => setFilters(false)}/></div></header>
-      {#if mobile}<div class="search" data-timeline-control="search"><TextField id="timeline-mobile-search" label="Search timeline pickups" hideLabel prefixIcon="search" type="search" placeholder="Search pickups…" bind:value={search} /></div>{/if}
+      {#if mobile}<div class="search" data-timeline-control="search"><TextField id="timeline-mobile-search" label="Search timeline pickups or banner types" hideLabel prefixIcon="search" type="search" placeholder="Search pickups or banner types…" bind:value={search} /></div>{/if}
       <div class="filter-options">{#each filterOptions as option, index}<div class="filter-option" style:--color-accent={option.color}><Checkbox id={`timeline-filter-${option.type}`} label={option.label} icon={mobile ? undefined : filterIcons[index]} checked={visibleTypes.includes(option.type)} onchange={() => toggleType(option.type)}/></div>{/each}</div>
     </aside>
 

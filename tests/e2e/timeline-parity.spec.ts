@@ -3,6 +3,31 @@ import { mockTimeline } from './fixtures/api';
 import { detailRewards, detailTimeline, mockTimelineDetails } from './fixtures/timeline-details';
 import { createPlan } from '../../src/lib/timeline/carat-planner';
 
+test('Timeline searches rerun tags and step-up or Pick 2 types without requiring matching titles', async ({ page, isMobile }) => {
+  await mockTimeline(page);
+  const events = [
+    { id: 'step', title: 'Premium support banner', type: 'paid_banner', gacha_type: 14 },
+    { id: 'pick', title: 'Support selection', type: 'support_card_banner', gacha_type_name: 'pick_2' },
+    { id: 'return', title: 'Oguri Cap', type: 'character_banner', tags: ['rerun-banner'] },
+    { id: 'jp', title: 'オグリキャップ', type: 'character_banner' }
+  ].map(event => ({ ...event, global_release_date: '2026-09-18', is_confirmed: true }));
+  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: { events } }));
+  await page.goto('/timeline');
+  if (isMobile) await page.getByRole('button', { name: 'Search & filters', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Search timeline pickups or banner types', exact: true });
+  for (const [id, queries] of [['return', ['rerun', 're-run', 'Oguri Cap']], ['step', ['stepup', 'step up', 'STEP-UP']], ['pick', ['pick2', 'pick 2', 'pick-2']], ['jp', ['オグリキャップ']]] as const) {
+    for (const query of queries) {
+      await search.fill(query);
+      await expect(page.locator('.event-card')).toHaveCount(1);
+      await expect(page.locator(`#timeline-event-${id}`)).toBeAttached();
+    }
+  }
+  await search.fill('stepup');
+  if (!isMobile) await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Paid banners', exact: true }).uncheck();
+  await expect(page.locator('.event-card')).toHaveCount(0);
+});
+
 test('Timeline retains exact event filters, date lanes, search navigation, and planner actions', async ({ page, isMobile }) => {
   await mockTimeline(page);
   await page.goto('/timeline');

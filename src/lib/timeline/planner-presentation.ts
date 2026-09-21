@@ -2,6 +2,7 @@ import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 import { bannerKind, enabledPlannerTargets, findPlannerEvent, plannerPickupGoals, resolvePlannerPullDate, type CaratPlan, type PlannerGachaEntry, type PlannerTarget } from './carat-planner';
 import { timelinePickup, type TimelinePickupCatalog } from './timeline-pickups';
 import { normalizeRate } from './planner-pull-probability';
+import { searchKey } from './timeline-search';
 
 /** Include unresolved saved goals so a missing rate never hides an editable goal. */
 export function plannerPickupOptions(target: PlannerTarget, gacha: PlannerGachaEntry | undefined, events: TimelineRecord[], catalog: TimelinePickupCatalog) {
@@ -20,14 +21,10 @@ export function plannerPickupOptions(target: PlannerTarget, gacha: PlannerGachaE
   });
 }
 
-function searchKey(value: string): string {
-  return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
-}
-
 /** Angular's token/name ranking, then upcoming-first and most-recent-past order. */
 export function filterPlannerBanners(events: readonly TimelineRecord[], query: string, projectionStart: string, today = new Date().toISOString().slice(0, 10)): TimelineRecord[] {
   const needle = searchKey(query.trim());
-  const tokens = query.trim().split(/[^a-z0-9]+/i).map(searchKey).filter(Boolean);
+  const tokens = query.trim().split(/[^\p{L}\p{N}]+/u).map(searchKey).filter(Boolean);
   const reference = [today, projectionStart].sort().at(-1)!;
   const ranks = new Map<string, number>();
   return events.filter(event => {
@@ -38,7 +35,7 @@ export function filterPlannerBanners(events: readonly TimelineRecord[], query: s
     const rerun = [event.title, event.eventType, event.gachaTypeName, ...event.tags].some(value => /rerun|re-run|revival|returning|encore/i.test(value ?? ''));
     const values = [event.title, ...event.relatedCharacters, ...event.relatedSupportCards, ...event.relatedSupportCardNames,
       ...(event.pickups ?? []).flatMap(pickup => [pickup.name, pickup.subLabel ?? '', ...(pickup.searchTerms ?? [])]),
-      ...event.tags, event.eventType, event.gachaTypeName ?? '',
+      ...event.tags, event.eventType, event.gachaTypeName ?? '', event.gachaLabel ?? '',
       kind === 'character' ? 'uma character trainee scout banner' : 'support card scout banner',
       rerun ? 'rerun re-run revival returning encore' : ''
     ].map(searchKey);

@@ -21,6 +21,7 @@
   import { timelineDisplayTitle, type TimelinePickupCatalog } from '@/lib/timeline/timeline-pickups';
   import { buildTimelineRewardSummaries } from '@/lib/timeline/timeline-reward-summary';
   import { timelineCardContext, timelineCardRaceLines } from '@/lib/timeline/timeline-race-facts';
+  import { searchKey } from '@/lib/timeline/timeline-search';
 
   import { filterOptions, type FilterType, type TimelineStatus } from './timeline-controls';
   let { tab, mobile, view = $bindable('horizontal'), compactGaps = $bindable(true), search, visibleTypes, status = $bindable() }: {
@@ -55,11 +56,13 @@
 
   const plannedIds = $derived([...new Set([...activePlan(collection).targets.map((target) => target.eventId), ...activePlan(collection).enabledRewardEventIds])].filter(id => !activePlan(collection).disabledEventIds.includes(id)));
   const plannerEventCount = $derived(enabledPlannerTargets(activePlan(collection)).length);
+  const searchTerm = $derived(searchKey(search));
   const filtered = $derived(events.filter((event) => {
     const knownType = filterOptions.some((option) => option.type === event.eventType);
     if (knownType && !visibleTypes.includes(event.eventType as FilterType)) return false;
-    const term = search.trim().toLowerCase();
-    return !term || `${event.title} ${event.context ?? ''} ${event.typeLabel} ${event.pickups?.map(p => p.name + ' ' + p.subLabel).join(' ') ?? ''}`.toLowerCase().includes(term);
+    return !searchTerm || [event.title, event.context ?? '', event.typeLabel, event.gachaLabel ?? '', event.gachaTypeName ?? '', ...event.tags,
+      ...(event.pickups ?? []).flatMap(pickup => [pickup.name, pickup.subLabel ?? '', ...(pickup.searchTerms ?? [])])
+    ].some(value => searchKey(value).includes(searchTerm));
   }));
   const endDate = $derived(timelineEndDate(events, mobile));
   const dateLanes = $derived(buildTimelineLanes(filtered, anniversaries, endDate, compactGaps, Boolean(search.trim())));

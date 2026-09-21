@@ -16,6 +16,17 @@ describe('Angular Planner search and pull-plan presentation', () => {
     const missing = event('future-step-up', 'Select Step-Up', '2026-10-01', { eventType: 'support_card_banner', gachaType: 14, canPlan: false });
     expect(filterPlannerBanners([ready, missing], 'step up', '2026-08-01', '2026-08-01')).toEqual([ready]);
   });
+  it('searches banner labels and tags regardless of spaces or hyphens', () => {
+    const events = [
+      event('step', 'Premium banner', '2026-09-01', { eventType: 'paid_banner', gachaType: 14, gachaLabel: 'Select step-up', canPlan: true }),
+      event('pick', 'Support selection', '2026-09-01', { eventType: 'support_card_banner', gachaType: 12, gachaLabel: 'Pick 2' }),
+      event('return', 'Oguri Cap', '2026-09-01', { tags: ['rerun-banner'] }),
+      event('jp', 'オグリキャップ', '2026-09-01')
+    ];
+    for (const [id, queries] of [['step', ['stepup', 'step up', 'step-up']], ['pick', ['pick2', 'pick 2', 'pick-2']], ['return', ['rerun', 're-run']], ['jp', ['オグリキャップ']]] as const) {
+      for (const query of queries) expect(filterPlannerBanners(events, query, '2026-08-01', '2026-08-01').map(item => item.id)).toEqual([id]);
+    }
+  });
   it('keeps all rate-up options and saved goals within Angular’s 20-goal storage boundary', () => {
     const item = target('banner', '2026-09-01', '2026-09-02', { pickupId: 999, desiredCopies: 7, pickupGoals: Array.from({ length: 22 }, (_, index) => ({ pickupId: 101301 + index, desiredCopies: index + 1 })) });
     const plan = createPlan(); plan.targets = [item];
