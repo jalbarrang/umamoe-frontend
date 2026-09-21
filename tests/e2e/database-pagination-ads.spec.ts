@@ -77,7 +77,7 @@ test('database pagination keeps small result sets in one centered control', asyn
   }
 });
 
-test('database follows the publisher 1700px rail breakpoint and registers only visible placements', async ({ page }) => {
+test('database follows publisher viewport breakpoints with a scrollbar and registers only visible placements', async ({ page, isMobile }) => {
   await page.setViewportSize({ width: 1699, height: 900 });
   await mockDatabase(page);
   await page.route('**/search/query?*', route => route.fulfill({ json: {
@@ -98,6 +98,8 @@ test('database follows the publisher 1700px rail breakpoint and registers only v
     }, pageInit() { window.adPages.push(location.pathname); }, destroyZone(id) { window.adDestroyed.push(id); } };
   ` }));
   await page.goto('/database');
+  await page.addStyleTag({ content: 'html{overflow-y:scroll;scrollbar-gutter:stable}::-webkit-scrollbar{width:15px}' });
+  if (!isMobile) expect((await page.locator('[data-app-shell]').boundingBox())!.width).toBeLessThan(1699);
   const inline = page.locator('[data-ad-kind="inline"]');
   const top = page.locator('[data-ad-kind="leaderboard"]');
   const right = page.locator('[data-ad-position="right-rail"]');
@@ -111,7 +113,7 @@ test('database follows the publisher 1700px rail breakpoint and registers only v
   await expect.poll(() => page.evaluate(() => (window as unknown as { adRegistrations: Array<{ id: string }> }).adRegistrations?.map(item => item.id))).toEqual(['ad-database_content_top', 'ad-database_interscroller_2']);
   const middle = page.locator('.inheritance-list [data-ad-kind="inline"]');
   expect(await middle.evaluate(element => [...element.parentElement!.children].slice(0, [...element.parentElement!.children].indexOf(element)).filter(sibling => sibling.matches('.inheritance-card')).length)).toBe(6);
-  for (const width of [1700, 1699, 1536, 1301, 390, 1920, 2560, 1699, 1700]) {
+  for (const width of [1700, 1714, 1715, 1799, 1800, 1815, 2199, 2200, 2214, 2215, 2560, 1699, 1536, 1301, 390, 1700]) {
     await page.setViewportSize({ width, height: 900 });
     if (width >= 1700) {
       await expect(right).toBeVisible(); await expect(inline.first()).toBeHidden(); await expect(top).toBeHidden();
@@ -123,7 +125,7 @@ test('database follows the publisher 1700px rail breakpoint and registers only v
       const left = page.locator('[data-ad-position="left-rail"]');
       await expect(left.getByText('Rail advertisement')).toBeVisible();
       expect(await left.locator('[data-ad-target]').evaluate(element => [getComputedStyle(element).maxWidth, getComputedStyle(element).maxHeight])).toEqual(['160px', '600px']);
-    }
+    } else await expect(page.locator('[data-ad-position="left-rail"]')).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   const registrations = await page.evaluate(() => (window as unknown as { adRegistrations: Array<{ width: number }> }).adRegistrations);

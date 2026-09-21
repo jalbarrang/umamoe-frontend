@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { onDestroy } from 'svelte';
+  import { privacyUiOpen } from '@/services/ads/privacy-ui';
   import DialogPanel from './DialogPanel.svelte';
   import type { IconName } from './icon-types';
   interface Props { id?: string; open?: boolean; title: string; description?: string; icon?: IconName; image?: string; children: Snippet; headerIdentity?: Snippet<[string | undefined, string | undefined]>; headerActions?: Snippet; eyebrow?: Snippet; actions?: Snippet; mobileSheet?: boolean; mobileActionsStack?: boolean; maxWidth?: string; maxHeight?: string; mobileMaxHeight?: string; mobileInset?: string; height?: string; stretchContent?: boolean; contentPadding?: string; mobileContentPadding?: string; onclose?: () => void; }
@@ -11,7 +12,7 @@
   let backdropPointerDown = false;
   let mounted = $state(false);
   function restoreFocus() {
-    if (element?.open) return;
+    if (element?.open || $privacyUiOpen) return;
     // Wait for native close processing before retrying a focus lost by WebKit.
     // Do not take focus from a new control or a subsequently opened dialog.
     if (returnFocus?.isConnected && (document.activeElement === document.body || element?.contains(document.activeElement))) {
@@ -22,18 +23,18 @@
   function closeElement() {
     if (!element?.open) return;
     element.close();
-    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+    if (!$privacyUiOpen && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
   }
   function close() { closeElement(); open = false; onclose?.(); }
   onDestroy(() => { closeElement(); restoreFocus(); });
   $effect(() => {
     if (!element) return;
-    if (open && !element.open) {
+    if (open && !$privacyUiOpen && !element.open) {
       mounted = true;
-      returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+      returnFocus ??= document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
       element.showModal();
     }
-    if (!open && element.open) closeElement();
+    if ((!open || $privacyUiOpen) && element.open) closeElement();
   });
 </script>
 

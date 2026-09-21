@@ -74,7 +74,7 @@
     .ad-region--leaderboard { height:var(--ad-leaderboard-height); max-height:var(--ad-leaderboard-height); }
   }
 
-  @container app-viewport (min-width: 1700px) {
+  @media (min-width: 1700px) {
     .rail-alternative { display: none; }
   }
 </style>

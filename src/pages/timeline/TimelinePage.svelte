@@ -125,7 +125,7 @@
 
   .timeline-tabs{display:flex;align-items:center;gap:8px;justify-content:flex-end}.timeline-tabs :global(.tabs){min-width:226px}
   @media(max-width:1280px){.timeline-tabs :global(.tab){min-width:82px;padding-inline:9px}}
-  @container app-viewport (min-width:1700px){.toolbar-shell .toolbar{padding-right:184px}}
+  @media (min-width:1700px){.toolbar-shell .toolbar{padding-right:184px}}
   .toolbar-shell{border-block:1px solid var(--border-primary)}.toolbar{--control-height:44px;display:flex;align-items:center;gap:12px;min-width:0;width:min(100%,var(--page-content-wide));margin-inline:auto;padding:10px var(--page-gutter-current)}
   .search{min-width:0;display:flex;flex:1;align-items:center;gap:6px;position:relative}.search :global(.field){flex:1}.search>span{position:absolute;right:9px;color:var(--text-muted);font-size:11px;white-space:nowrap;pointer-events:none}.search:has(>span) :global(input){padding-right:85px}.search-navigation{display:flex;gap:4px}.timeline-count{margin-right:auto;color:var(--text-muted);font-size:11px;white-space:nowrap}
   .view{display:flex;align-items:center;gap:10px;flex:none}.view [data-timeline-control="spacing"]{padding-inline:4px}.view :global(.ui-button){white-space:nowrap}

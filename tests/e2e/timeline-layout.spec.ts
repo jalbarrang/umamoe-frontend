@@ -193,6 +193,14 @@ test('Timeline uses the Angular mobile feed up to 1149px without overwriting des
   await expect(page.getByRole('radio', { name: 'Vertical', exact: true })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('button', { name: 'Compact gaps', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.addStyleTag({ content: 'html{overflow-y:scroll;scrollbar-gutter:stable}::-webkit-scrollbar{width:15px}' });
+  for (const width of [1699, 1700, 1714, 1715, 1699]) {
+    await page.setViewportSize({ width, height: 1080 });
+    const rail = page.locator('[data-ad-placement="timeline_sticky_vrec_right"]');
+    if (width >= 1700) await expect(rail).toBeVisible();
+    else await expect(rail).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
 });
 
 test('Timeline retains its full-width track and planner retains the wide container across tab changes', async ({ page, isMobile }, testInfo) => {
