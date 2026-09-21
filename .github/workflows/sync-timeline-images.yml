@@ -22,11 +22,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - branch: beta
+          - branch: svelte-rewrite
+            # Match the resources currently deployed to beta until promotion to main.
+            resources_ref: codex/timeline-resource-fixes
             timeline_url: https://beta.uma.moe/resources/current/banner_timeline.json.gz
             site_origin: https://beta.uma.moe
-            deploy: false
+            deploy: true
           - branch: main
+            resources_ref: main
             timeline_url: https://uma.moe/resources/current/banner_timeline.json.gz
             site_origin: https://uma.moe
             deploy: true
@@ -40,7 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: uma-moe/umamoe-resources
-          ref: main
+          ref: ${{ matrix.resources_ref }}
           path: .sync/umamoe-resources
 
       - uses: actions/setup-node@v4
@@ -93,9 +96,9 @@ jobs:
           git push origin "HEAD:${{ matrix.branch }}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy updated production artwork
+      - name: Deploy updated artwork
         if: steps.commit.outputs.changed == 'true' && matrix.deploy
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run docker-image.yml --ref main --field deploy_assets=true
+        run: gh workflow run docker-image.yml --ref "${{ matrix.branch }}" --field deploy_assets=true

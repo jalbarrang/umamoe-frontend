@@ -1,6 +1,31 @@
 import { expect, test } from './fixtures/test';
 import { detailTimeline, mockTimelineDetails } from './fixtures/timeline-details';
 
+test('confirmed story and campaign artwork matches the linked English news posts', async ({ page }) => {
+  await mockTimelineDetails(page);
+  const events = [{ ...detailTimeline.events[2], id: 'news-event-campaign-1002', type: 'campaign',
+    title: 'Bonus Star Piece rewards in Career!', is_confirmed: true,
+    image: 'https://prd-info-umamusume.akamaized.net/announce/1002/Thumbnail/banner_25800002.png',
+    image_path: 'assets/timeline-images/events/campaign/1002.webp',
+    umapyoi_url: 'https://umapyoi.net/en/news/1002', expectedImage: '/assets/timeline-images/en/events/campaign/1002.webp' },
+  { ...detailTimeline.events[3], id: 'story-event-10_intertwined_memories_banner',
+    title: 'Intertwined Memories, Galloping Thoughts', image_path: 'assets/images/story/10_intertwined_memories_banner.webp',
+    umapyoi_url: 'https://umapyoi.net/en/news/1023', expectedImage: '/assets/timeline-images/en/images/story/10_intertwined_memories_banner.webp' },
+  { ...detailTimeline.events[2], id: 'campaign-199', type: 'campaign',
+    title: 'Fall G1 Celebration Missions, Part 2: JBC Series', image_path: 'assets/images/campaign/199.webp',
+    umapyoi_url: 'https://umapyoi.net/en/news/1001', expectedImage: '/assets/timeline-images/en/images/campaign/199.webp' }];
+  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: { events } }));
+  await page.goto('/timeline');
+  for (const event of events) {
+    await page.locator(`.event-card[data-event-id="${event.id}"]`).getByRole('button', { name: /^Open details for / }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('link', { name: 'News post' })).toHaveAttribute('href', event.umapyoi_url);
+    await expect(dialog.locator('img.banner')).toHaveAttribute('src', event.expectedImage);
+    await expect.poll(() => dialog.locator('img.banner').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  }
+});
+
 test('Gray Week shows all published rates at their original precision', async ({ page }) => {
   await mockTimelineDetails(page);
   const pickups = [100601, 100602, 100702, 100703, 101301, 101302, 101303, 102001, 102002,
