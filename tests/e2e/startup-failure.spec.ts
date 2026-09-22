@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { build } from 'vite';
 import { mockAdvertising, mockResources } from './fixtures/api';
 
 test.beforeEach(async ({ context }) => {
@@ -22,6 +24,10 @@ test('a failed entry script offers recovery without losing the URL or saved plan
   await expect(error.locator('pre')).toContainText('could not be downloaded');
   await expect(error.locator('pre')).toContainText('Browser:');
   await expect(error.locator('pre')).toContainText('Build:');
+  await expect(error.locator('pre')).toContainText('Page: /tools');
+  await expect(error.locator('pre')).toContainText('Source:');
+  await expect(error.locator('pre')).toContainText(/(?:\/app\/index-[\w-]+\.js|\/src\/main\.ts)/);
+  await expect(error.locator('pre')).not.toContainText('keep=1');
   failing = false;
   await error.getByRole('button', { name: 'Reload page' }).click();
   await expect(page.getByRole('heading', { name: 'Tools & Calculators', exact: true })).toBeVisible();
@@ -40,24 +46,64 @@ test('render failures show the independent fallback', async ({ page }) => {
   await expect(error).toBeVisible();
   await error.locator('summary').click();
   await expect(error.locator('pre')).toContainText('A browser feature is unavailable');
+  await expect(error.locator('pre')).toContainText('TypeError:');
+  await expect(error.locator('pre')).toContainText('Stack trace:');
+  await expect(error.locator('pre')).toContainText('PrivacyPage');
   expect(await page.evaluate(() => localStorage.getItem('lineage-planner-saves-v1'))).toBe('{"Keep me":[]}');
 });
 
 test('app runtime errors are visible while unrelated third-party errors are ignored', async ({ page }) => {
-  await page.goto('/tools');
+  await page.goto('/tools?report=route-private#route-secret');
   await expect(page.getByRole('heading', { name: 'Tools & Calculators', exact: true })).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new ErrorEvent('error', {
     filename: 'https://third-party.invalid/ad.js', message: 'An ad failed'
   })));
   await expect(page.locator('#app-error')).toBeHidden();
-  await page.evaluate(() => window.dispatchEvent(new ErrorEvent('error', {
-    filename: location.origin + '/app/index-test.js',
-    error: new TypeError('Failed: ' + location.origin + '/app/file.js?token=private#secret')
-  })));
+  await page.evaluate(() => {
+    const error = new TypeError('Failed: ' + location.origin + '/app/file.js?token=private#secret');
+    error.stack = error.toString() + '\n    at failedControl (' + location.origin + '/app/filter.js?token=stack-private#stack-secret:27:9)';
+    window.dispatchEvent(new ErrorEvent('error', {
+      filename: location.origin + '/app/index-test.js?token=source-private#source-secret', lineno: 12, colno: 34, error
+    }));
+  });
   const error = page.locator('#app-error');
   await expect(error).toBeVisible();
   await error.locator('summary').click();
   await expect(error.locator('pre')).toContainText('/app/file.js');
+  await expect(error.locator('pre')).toContainText('Page: /tools');
+  await expect(error.locator('pre')).toContainText('/app/index-test.js:12:34');
+  await expect(error.locator('pre')).toContainText('Stack trace:');
+  await expect(error.locator('pre')).toContainText('failedControl');
+  await expect(error.locator('pre')).toContainText('/app/filter.js:27:9');
   await expect(error.locator('pre')).not.toContainText('private');
   await expect(error.locator('pre')).not.toContainText('secret');
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('umamoe:app-error', { detail: new Error('Secondary failure') })));
+  await expect(error.locator('pre')).not.toContainText('Secondary failure');
+});
+
+test('production Svelte errors report the actual bound property and stack', async ({ page }) => {
+  // Compile a real Svelte error using the production config, without shipping a broken component.
+  const entry = '\0svelte-error-test';
+  const errors = fileURLToPath(new URL('../../node_modules/svelte/src/internal/client/errors.js', import.meta.url));
+  const result = await build({
+    configFile: fileURLToPath(new URL('../../vite.config.ts', import.meta.url)), configLoader: 'runner', mode: 'production', logLevel: 'silent',
+    plugins: [{
+      name: 'svelte-error-test',
+      resolveId: id => id === entry ? entry : undefined,
+      load: id => id === entry ? `import { props_invalid_value } from ${JSON.stringify(errors)}; export default function FailedFilter() { props_invalid_value('filterValue'); }` : undefined
+    }],
+    build: { write: false, copyPublicDir: false, manifest: false, rollupOptions: { input: entry, preserveEntrySignatures: 'strict' } }
+  });
+  if (Array.isArray(result) || !('output' in result)) throw new Error('Expected a single production bundle');
+  const failure = result.output.find(chunk => chunk.type === 'chunk' && chunk.isEntry && chunk.facadeModuleId === entry);
+  if (!failure || failure.type !== 'chunk') throw new Error('Missing compiled Svelte error');
+  await page.route(/\/PrivacyPage(?:-[\w-]+\.js|\.svelte)(?:\?.*)?$/, route => route.fulfill({ contentType: 'application/javascript', body: failure.code }));
+  await page.goto('/privacy-policy');
+  const error = page.locator('#app-error');
+  await expect(error).toBeVisible();
+  await error.locator('summary').click();
+  await expect(error.locator('pre')).toContainText('props_invalid_value');
+  await expect(error.locator('pre')).toContainText('Cannot do `bind:filterValue={undefined}` when `filterValue` has a fallback value');
+  await expect(error.locator('pre')).toContainText('Stack trace:');
+  await expect(error.locator('pre')).toContainText('PrivacyPage');
 });

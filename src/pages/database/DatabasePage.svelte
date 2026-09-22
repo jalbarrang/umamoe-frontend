@@ -830,7 +830,7 @@
         {#await import('./DatabaseUqlEditor.svelte')}
           <Spinner label="Loading UQL editor…"/>
         {:then editor}
-          <editor.default bind:value={filters.uql} validation={uqlValidation} {characters} {supports} catalog={uqlCatalog} loading={uqlCatalogLoading} legacyParents={uqlLegacyParents} onpicklegacy={() => uqlLegacyPickerOpen = true} onclear={clearFilters}/>
+          <editor.default bind:value={() => filters.uql ?? '', value => filters.uql = value} validation={uqlValidation} {characters} {supports} catalog={uqlCatalog} loading={uqlCatalogLoading} legacyParents={uqlLegacyParents} onpicklegacy={() => uqlLegacyPickerOpen = true} onclear={clearFilters}/>
         {:catch}
           <Banner tone="warning" title="UQL suggestions unavailable">You can still edit and run your query below. <Button size="sm" variant="secondary" onclick={() => { persist(); location.reload(); }}>Retry editor</Button></Banner>
           <div class="uql-fallback">

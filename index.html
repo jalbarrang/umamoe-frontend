@@ -29,13 +29,21 @@
       // Keep this independent of the app bundle and compatible with older parsers.
       (function () {
         var panel = document.getElementById('app-error');
-        function show(error) {
+        function show(error, event) {
+          // Keep the original failure when later errors cascade from it.
+          if (!panel.hidden) return;
           var message = error && error.message ? error.message : String(error || 'Unknown error');
           var version = document.querySelector('meta[name="app-build-version"]');
+          var details = (error && error.name ? error.name + ': ' : '') + message + '\nPage: ' + location.pathname;
+          if (event && event.filename) details += '\nSource: ' + event.filename.split(/[?#]/)[0] + (event.lineno ? ':' + event.lineno + ':' + (event.colno || 0) : '');
+          details += '\nBrowser: ' + navigator.userAgent + '\nBuild: ' + (version ? version.content : 'unknown');
+          if (error && error.stack) details += '\n\nStack trace:\n' + error.stack;
           // Do not include query strings (which may contain sign-in tokens) in reports.
-          message = message.replace(/(https?:\/\/[^\s?#]+)[?#][^\s]*/g, '$1');
-          document.getElementById('app-error-details').textContent = message + '\nBrowser: ' + navigator.userAgent + '\nBuild: ' + (version ? version.content : 'unknown');
-          if (panel.hidden) { panel.hidden = false; panel.focus(); }
+          document.getElementById('app-error-details').textContent = details.replace(/(https?:\/\/[^\s?#)]+)[?#]([^\s)]*)/g, function (_, url, suffix) {
+            var position = suffix.match(/:\d+:\d+$/);
+            return url + (position ? position[0] : '');
+          });
+          panel.hidden = false; panel.focus();
         }
         function isAppSource(source) {
           return typeof source === 'string' && (source.indexOf(location.origin + '/app/') !== -1 || source.indexOf(location.origin + '/src/') !== -1 || source.indexOf(location.origin + '/node_modules/') !== -1);
@@ -43,8 +51,8 @@
         window.addEventListener('umamoe:app-error', function (event) { show(event.detail); });
         window.addEventListener('error', function (event) {
           var script = event.target;
-          if (script && script.tagName === 'SCRIPT' && script.type === 'module' && isAppSource(script.src)) show('An application file could not be downloaded. Check your connection and reload.');
-          else if (isAppSource(event.filename) || isAppSource(event.error && event.error.stack)) show(event.error || event.message);
+          if (script && script.tagName === 'SCRIPT' && script.type === 'module' && isAppSource(script.src)) show('An application file could not be downloaded. Check your connection and reload.', { filename: script.src });
+          else if (isAppSource(event.filename) || isAppSource(event.error && event.error.stack)) show(event.error || event.message, event);
         }, true);
         window.addEventListener('unhandledrejection', function (event) {
           if (isAppSource(event.reason && event.reason.stack)) show(event.reason);

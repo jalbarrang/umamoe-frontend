@@ -22,6 +22,16 @@ export default defineConfig(async ({ mode }) => {
         mode === 'production' || mode === 'beta'
           ? `<script>if((${fuseAllowed.toString()})(true))(${insertFuseScript.toString()})(${JSON.stringify(environment.fuse.scriptUrl)});</script>`
           : '')
+    }, {
+      name: 'svelte-runtime-error-details',
+      enforce: 'pre',
+      transform(code, id) {
+        if (!/\/svelte\/src\/internal\/(client|shared)\/errors\.js$/.test(id.replaceAll('\\', '/'))) return;
+        // Retain parameterized error messages without enabling Svelte's dev runtime.
+        const devImport = "import { DEV } from 'esm-env';";
+        if (!code.includes(devImport)) this.error('Svelte runtime error format changed; update the diagnostic transform.');
+        return { code: code.replace(devImport, 'const DEV = true;'), map: null };
+      }
     }, legacy({
       // Last Windows 7 browser generations, plus the existing Safari baseline.
       modernTargets: ['Chrome >= 109', 'Edge >= 109', 'Firefox >= 115', 'Safari >= 16.4', 'iOS >= 16.4'],

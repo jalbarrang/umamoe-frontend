@@ -4,6 +4,44 @@ import { resourceFixtures } from '../fixtures/resource-data';
 
 const veteran = { id:'veteran-uuid', member_id:42, trainer_id:'123456789012', card_id:101101, trained_chara_id:991, factors:[103], win_saddle_id_array:[30,31], speed:1200, stamina:900, power:1000, guts:700, wiz:900, rank_score:15000 };
 const path = (uql: string) => `/database?filters=${encodeURIComponent(Buffer.from(JSON.stringify({uql})).toString('base64'))}`;
+
+test('empty UQL filters reopen after reload, clearing, and loading a preset', async ({ page }) => {
+  await prepare(page);
+  await page.goto('/database');
+  const filters = page.getByRole('button', { name: 'Filters', exact: true });
+  const editor = page.getByRole('textbox', { name: 'UQL query', exact: true });
+  await filters.click();
+  await expect(page.getByRole('radio', { name: 'Basic', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Pick target character', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Active filters', exact: true })).toBeHidden();
+  await page.getByRole('radio', { name: 'UQL', exact: true }).click();
+  await expect(editor).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('database-filter-mode-v1'))).toBe('uql');
+  await page.reload();
+  await filters.click();
+  await expect(editor).toBeVisible();
+  await expect(editor.locator('.cm-placeholder')).toBeVisible();
+
+  await page.locator('.presets summary').click();
+  await page.getByLabel('Preset name').fill('Empty UQL');
+  await page.getByRole('button', { name: 'Save current filters' }).click();
+  await page.locator('.presets summary').click();
+  await replaceQuery(editor, 'speed >= 1000');
+  await page.getByRole('button', { name: 'Clear UQL', exact: true }).click();
+  await filters.click();
+  await filters.click();
+  await expect(editor.locator('.cm-placeholder')).toBeVisible();
+
+  await replaceQuery(editor, 'speed >= 1000');
+  await page.locator('.presets summary').click();
+  await page.getByRole('button', { name: /Empty UQL.*filters/ }).click();
+  await filters.click();
+  await filters.click();
+  await expect(editor).toBeVisible();
+  await expect(editor.locator('.cm-placeholder')).toBeVisible();
+  await expect(page.locator('#app-error')).toBeHidden();
+});
+
 async function prepare(page: Page) {
   await mockDatabase(page); await mockAffinity(page);
   await page.route('**/resources/*/character.json*', route => route.fulfill({ json: resourceFixtures.character }));
