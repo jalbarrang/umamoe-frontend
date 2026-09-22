@@ -8,6 +8,25 @@ import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
 import type { VeteranRecord } from '@/lib/veterans/generated/veteran-record';
 
 describe('Angular factor encoding and owner display', () => {
+  it('highlights Any by star range and limits main-parent Any to its matching contribution', () => {
+    for (const [color, main, group] of [['blue', 'mainBlue', 0], ['pink', 'mainPink', 1], ['green', 'mainGreen', 5]] as const) {
+      const filters = emptyInheritanceFilters();
+      const factor: InheritanceFactor = { ...decodeFactor(1000103), group, copies: 1, mainStars: 3, sources: [{ side: 'p1', owner: 'main', level: 3 }] };
+      filters[color] = [{ factorId: 0, minimumStars: 2, maximumStars: 3 }];
+      expect(inheritanceFactorMatched(factor, filters)).toBe(true);
+      expect(inheritanceFactorMatched({ ...factor, level: 1 }, filters)).toBe(false);
+      expect(inheritanceFactorMatched({ ...factor, level: 4 }, filters)).toBe(false);
+      filters[color] = [];
+      filters[main] = [{ factorId: 0, minimumStars: 3, maximumStars: 3 }];
+      expect(inheritanceFactorMatched({ ...factor, level: 6 }, filters)).toBe(true);
+      for (const source of [{ side: 'p1', owner: 'main', level: 2 }, { side: 'p1', owner: 'left', level: 3 }, { side: 'p2', owner: 'main', level: 3 }] as const) {
+        expect(inheritanceFactorMatched({ ...factor, sources: [source] }, filters)).toBe(false);
+      }
+    }
+    const filters = emptyInheritanceFilters();
+    filters.white = filters.mainWhite = [{ factorId: 0, minimumStars: 1 }];
+    expect(inheritanceFactorMatched({ ...decodeFactor(2000103), group: 3, copies: 1, mainStars: 3, sources: [{ side: 'p1', owner: 'main', level: 3 }] }, filters)).toBe(false);
+  });
   it('preserves nine-star totals and separates the three original contributions', () => {
     expect(decodeFactor(109)).toMatchObject({ id: 10, level: 9, name: 'Speed' });
     const record = normalizeInheritanceSearch({ items: [{ account_id: '123', trainer_name: 'Trainer', inheritance: { inheritance_id: 1, main_parent_id: 100101, parent_left_id: 100201, parent_right_id: 100301, parent_rank: 10000, parent_rarity: 10, blue_sparks: [109], main_blue_factors: 103, left_blue_factors: 103, right_blue_factors: 103 } }], total: 1, page: 1, limit: 20, total_pages: 1 }).records[0]!;

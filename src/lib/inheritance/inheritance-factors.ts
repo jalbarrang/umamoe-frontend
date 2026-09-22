@@ -12,10 +12,10 @@ export interface InheritanceFactor extends DecodedFactor { group: number; owner?
 export function inheritanceFactorMatched(factor: InheritanceFactor, filters?: InheritanceSearchFilters): boolean {
   if (!filters) return false;
   const color = factor.group === 0 ? 'blue' : factor.group === 1 ? 'pink' : factor.group === 5 ? 'green' : 'white';
-  if (filters[color].some((requirement) => encodedFactorLevels(requirement).includes(factor.id * 10 + factor.level))) return true;
+  if (filters[color].some((requirement) => (color !== 'white' || requirement.factorId > 0) && encodedFactorLevels(requirement).includes(requirement.factorId === 0 ? factor.level : factor.id * 10 + factor.level))) return true;
   const hasMain = factor.sources.some((source) => source.side === 'p1' && source.owner === 'main');
   const main = color === 'blue' ? filters.mainBlue : color === 'pink' ? filters.mainPink : color === 'green' ? filters.mainGreen : filters.mainWhite;
-  if (hasMain && main.some((requirement) => requirement.factorId === factor.id)) return true;
+  if (hasMain && main.some((requirement) => requirement.factorId === factor.id || (color !== 'white' && requirement.factorId === 0 && factor.sources.some((source) => source.side === 'p1' && source.owner === 'main' && encodedFactorLevels(requirement, 3).includes(source.level))))) return true;
   if (color !== 'white') return false;
   return filters.optionalWhite.some((requirement) => requirement.factorId === factor.id) || filters.optionalWhiteIds.includes(factor.id)
     || (factor.sources.some((source) => source.side === 'p1') && (filters.lineageWhite.some((requirement) => requirement.factorId === factor.id) || filters.lineageWhiteIds.includes(factor.id)))
