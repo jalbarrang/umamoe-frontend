@@ -9,16 +9,14 @@
   import Spinner from './Spinner.svelte';
   import { matchesSupportSearch } from '@/lib/supports/support-card';
   import type { SupportCardPickerOption } from './picker-types';
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
   interface Props { id?: string; label?: string; options: SupportCardPickerOption[]; selectedOption?: SupportCardPickerOption; value?: string; maxVisible?: number; compact?: boolean; loading?: boolean; error?: string; cached?: boolean; onclear?: () => void; onopen?: () => void; onretry?: () => void; onselect?: (id: string) => void; }
   let { id = 'support-card-picker', label = 'Select support card', options, selectedOption, value = $bindable(''), maxVisible = 8, compact = false, loading = false, error = '', cached = false, onclear, onopen, onretry, onselect }: Props = $props();
   let query = $state('');
   let type = $state('All');
   let rarity = $state('All');
-  let visibleLimit = $state(0);
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
   let open = $state(false);
-  const batchSize = $derived(compact ? 36 : maxVisible);
-  const effectiveLimit = $derived(visibleLimit || batchSize);
   const types: SelectOption[] = ['All','Speed','Stamina','Power','Guts','Wit','Friend'].map(value => ({ value, label:value === 'All' ? 'All types' : value === 'Wit' ? 'Wisdom' : value, ...(value === 'Friend' ? { icon:'user' as const } : value === 'All' ? {} : { image:`/assets/images/icon/stats/${value.toLowerCase()}.webp` }) }));
   const rarities = ['All','R','SR','SSR'].map(value => ({ value, label:value === 'All' ? 'All rarities' : value, ...(value === 'All' ? {} : { image:`/game-assets/support-rarity/${value.toLowerCase()}.png` }) }));
   const filtered = $derived(options.filter((option) => {
@@ -26,19 +24,19 @@
   }));
   const selected = $derived(options.find((option) => option.id === value) ?? (selectedOption?.id === value ? selectedOption : undefined));
   function select(id: string) { value = id; onselect?.(id); if (compact) open = false; }
-  function show() { query = ''; type = 'All'; rarity = 'All'; visibleLimit = 0; open = true; onopen?.(); }
+  function show() { query = ''; type = 'All'; rarity = 'All'; open = true; onopen?.(); }
 </script>
 
 {#snippet browser()}
   <div class="tools">
-    <div class="search"><Icon name="search" size={18}/><input type="text" role="searchbox" aria-label="Search support cards" bind:value={query} placeholder="Search by character or card name..." oninput={() => visibleLimit = 0}/>{#if query}<button type="button" aria-label="Clear support search" onclick={() => query = ''}><Icon name="close" size={16}/></button>{/if}</div>
+    <div class="search"><Icon name="search" size={18}/><input type="text" role="searchbox" aria-label="Search support cards" bind:value={query} placeholder="Search by character or card name..."/>{#if query}<button type="button" aria-label="Clear support search" onclick={() => query = ''}><Icon name="close" size={16}/></button>{/if}</div>
     {#if loading}<div class="resource-status" role="status"><Spinner size={16}/><span>{cached ? 'Using cached resources; refreshing...' : 'Still fetching resources...'}</span></div>{/if}
     {#if error}<Banner tone="danger" title={cached ? 'Resource refresh failed' : 'Resource fetch failed'}><p class="resource-error">{error}</p>{#if onretry}<Button variant="secondary" onclick={onretry}>Retry support data</Button>{/if}</Banner>{/if}
     <div class="quick-filters"><SelectField id={`${id}-type`} label="Type" hideLabel options={types} bind:value={type}/><SelectField id={`${id}-rarity`} label="Rarity" hideLabel options={rarities} bind:value={rarity}/></div>
   </div>
-  <div class="cards" role="radiogroup" aria-label={label} onfocusin={event => { if (event.target === event.currentTarget.lastElementChild && filtered.length > effectiveLimit) visibleLimit = effectiveLimit + batchSize; }}>
-    {#each filtered.slice(0, effectiveLimit) as option (option.id)}
-      <button type="button" role="radio" aria-checked={value === option.id} class:selected={value === option.id} disabled={option.disabled} onclick={() => select(option.id)}>
+  <div class="cards" role="radiogroup" aria-label={label} use:virtualScroll={{ items: filtered, key: option => option.id, root: 'closest', estimate: 140, onrange: range => virtualRange = range }}>
+    {#each filtered.slice(virtualRange.start, virtualRange.end) as option, index (option.id)}
+      <button data-virtual-index={virtualRange.start + index} type="button" role="radio" aria-checked={value === option.id} class:selected={value === option.id} disabled={option.disabled} onclick={() => select(option.id)}>
         <Artwork src={option.image} fallbackSrc="/assets/images/placeholder-card.webp" alt="" kind="card"/>
         <span class="card-copy">
           <strong class="card-name">{option.character || option.title}</strong>
@@ -48,7 +46,6 @@
       </button>
     {:else}{#if !loading && !error}<p class="empty">No support cards match these filters.</p>{/if}{/each}
   </div>
-  {#if filtered.length > effectiveLimit}{#key effectiveLimit}<div class="lazy-more" aria-hidden="true" use:loadWhenVisible={() => visibleLimit = effectiveLimit + batchSize}></div>{/key}{/if}
 {/snippet}
 
 <section class="support-picker" class:compact class:has-selection={Boolean(selected)} aria-label={label}>
@@ -96,7 +93,6 @@
   .card-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; color:var(--text-secondary); font-size:11px; line-height:1.35; }
   .meta { display:flex; align-items:center; gap:6px; margin-top:auto; padding-top:3px; color:var(--accent-primary); }.meta img { display:block; object-fit:contain; }.meta span { display:flex; }.selection-check { margin-left:auto; }
   .empty { grid-column: 1 / -1; margin: 0; padding: 20px 8px; color: var(--color-text-muted); text-align: center; }
-  .lazy-more { height:1px; }
 
   @container support-cards (max-width:540px) { .cards { gap:6px; }.cards button{padding:8px}.card-name{font-size:12px} }
   @media(max-width:600px){.compact-trigger{width:100%}.quick-filters{gap:6px}}

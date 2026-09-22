@@ -353,8 +353,8 @@ test('Spark operators stay centered and switch a large collection promptly', asy
   await test.info().attach('interaction-metrics',{body:JSON.stringify(await page.evaluate(()=>(window as any).__stress)),contentType:'application/json'});
   if(isMobile) await page.getByRole('dialog',{name:'Filter veterans'}).getByRole('button',{name:/^Show .* veterans$/}).click();
   await expect(page.getByRole('button',{name:/Show \d+ more/})).toHaveCount(0);
-  const before=await page.locator('.veteran-card').count();
-  expect(before).toBeLessThan(24);
-  await page.locator('.more').last().scrollIntoViewIfNeeded();
-  await expect.poll(()=>page.locator('.veteran-card').count()).toBeGreaterThan(before);
+  expect(await page.locator('.veteran-card').count()).toBeLessThan(50);
+  await page.locator('.veteran-grid').evaluate(node=>window.scrollTo({top:node.getBoundingClientRect().top+scrollY+node.scrollHeight*.8,behavior:'instant'}));
+  await expect.poll(async()=>Number(await page.locator('.veteran-grid [data-virtual-index]').first().getAttribute('data-virtual-index'))).toBeGreaterThan(500);
+  expect(await page.locator('.veteran-card').count()).toBeLessThan(50);
 });

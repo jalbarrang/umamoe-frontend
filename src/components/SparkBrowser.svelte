@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
   import { factorImage, factorOptions, type FactorMetadata } from '@/lib/catalog/factor-catalog';
   import type { CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
   import WhiteFactorTypePicker from '@/pages/database/WhiteFactorTypePicker.svelte';
@@ -17,8 +18,6 @@
   // Unique factor IDs contain the outfit card ID followed by a zero.
   const uniqueSparks = $derived(factors.filter(factor => factor.type === 5).map(factor => ({factor, character:characters.get(Number(factor.id)/10)})).sort((a,b) => a.factor.text.localeCompare(b.factor.text)));
   const visibleUniques = $derived(uniqueSparks.filter(({factor,character}) => ((character?.name ?? '')+' '+factor.text).toLocaleLowerCase().includes(uniqueSearch.trim().toLocaleLowerCase())));
-  let visibleCount = $state(24);
-  $effect(() => { visibleUniques; visibleCount = 24; });
 </script>
 
 {#snippet choice(factor: FactorMetadata, stat = false)}
@@ -41,13 +40,13 @@
   {:else if category === '5'}
     <div class="unique-sparks" role="group" aria-label="Add a unique spark">
       <TextField id={id+'-unique-search'} label="Search unique sparks" hideLabel type="search" prefixIcon="search" placeholder="Character or skill name…" bind:value={uniqueSearch}/>
-      <div class="unique-options">{#each visibleUniques.slice(0,visibleCount) as {factor}}
+      <div class="unique-options" use:virtualScroll={{ items: visibleUniques, key: item => item.factor.id, root: 'closest', estimate: 48, onrange: range => virtualRange = range }}>{#each visibleUniques.slice(virtualRange.start,virtualRange.end) as {factor}, index (factor.id)}
         {@const image = factorImage(Number(factor.id))}
+        <div data-virtual-index={virtualRange.start + index}>
         <Button variant="secondary" ariaLabel={'Add '+factor.text+' spark'} ariaPressed={selectedFactorIds.includes(Number(factor.id))} onclick={() => onchoose(Number(factor.id))}>
           <span class="unique-choice">{#if image}<img src={image} alt="" loading="lazy"/>{:else}<Icon name="star" size={24}/>{/if}<span>{factor.text}</span><Icon name={selectedFactorIds.includes(Number(factor.id)) ? 'check' : 'add'} size={15}/></span>
         </Button>
-      {:else}<p class="no-unique-matches">No characters or unique skills match.</p>{/each}</div>
-      {#if visibleUniques.length > visibleCount}{#key visibleCount}<div aria-hidden="true" use:loadWhenVisible={() => visibleCount += 24}></div>{/key}{/if}
+      </div>{/each}</div>{#if !visibleUniques.length}<p class="no-unique-matches">No characters or unique skills match.</p>{/if}
     </div>
   {:else if category === 'white'}
     <WhiteFactorTypePicker id={id+'-white'} mode="browse" {selectedFactorIds} onadd={ids => onchoose(ids[0]!)}/>
@@ -55,6 +54,7 @@
 </div>
 
 <style>
+  .unique-options > [data-virtual-index] { display:grid; min-width:0; }
   .spark-browser-choices { --control-height:34px; min-width:0; }
   .spark-choice :global(.ui-button) { width:100%; min-height:32px; padding:5px 9px; border-color:var(--border-secondary); border-radius:5px; font-size:11px; font-weight:400; }
   .spark-choice :global(.ui-button:hover),.unique-options :global(.ui-button:hover) { background:var(--surface-3); border-color:var(--accent-primary); }

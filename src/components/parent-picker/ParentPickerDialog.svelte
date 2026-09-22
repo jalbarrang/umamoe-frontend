@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
+
   import { onMount, untrack } from 'svelte';
-  import { loadWhenVisible } from '@/lib/load-when-visible';
   import { loadCharacterCatalog, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
   import { watchFactorCatalog, factorCatalogState } from '@/lib/catalog/factor-catalog';
   import SparkFilterDialog from './SparkFilterDialog.svelte';
@@ -53,7 +55,7 @@
   let busy = $state<Record<string,boolean>>({}); let errors = $state<Record<string,string>>({}); let manuals = $state<ManualParent[]>([]); let manualReadError = $state('');
   let editing = $state(false); let editedEntry = $state<ManualParent>(); let manualError = $state('');
   let partnerId = $state(''); let partnerPhase = $state<PartnerPhase>(); let lookupResult = $state<SelectableParent>(); let lookupError = $state(''); let lookupTimedOut = $state(false); let lookupController: AbortController | undefined;
-  let renderLimit = $state(16); let accountGeneration=0; let partnerReloadPending=false; let live=true;
+  let accountGeneration=0; let partnerReloadPending=false; let live=true;
   const accountRequests = new Map<string, number>();
   const sortOptions = $derived([{value:'total',label:'Total'},...(targetId?[{value:'affinity',label:'Affinity'}]:[]),{value:'creation_time',label:'Newest first'},{value:'blue',label:'Blue ★'},{value:'pink',label:'Pink ★'},{value:'green',label:'Green ★'},{value:'name',label:'Name'}]);
   const scope = $derived(draftScope(pickerState.accountId, $authUser?.id));
@@ -146,7 +148,7 @@
   });
   $effect(() => { pickerState.accountId = $authUser ? $activeWorkspace.accountId ?? '' : ''; });
   $effect(()=>{const account=pickerState.accountId; const revision=$veteranLibraryRevision; if($authReady&&$authUser&&account)untrack(()=>void loadAccount(account,revision>0));});
-  $effect(()=>{JSON.stringify(pickerState);renderLimit=16;if(sessionScope)parentPickerSessions.set(sessionScope,JSON.parse(JSON.stringify({...pickerState,factors:pickerState.factors.filter((factor)=>factor.factorId)})));});
+  $effect(()=>{JSON.stringify(pickerState);if(sessionScope)parentPickerSessions.set(sessionScope,JSON.parse(JSON.stringify({...pickerState,factors:pickerState.factors.filter((factor)=>factor.factorId)})));});
 </script>
 
 <div class="parent-picker"><Dialog bind:open title="Select Parent" icon="veterans" maxWidth="1280px" height="var(--parent-picker-height)" maxHeight="var(--parent-picker-height)" mobileInset="16px" contentPadding="0" mobileContentPadding="0">
@@ -209,8 +211,7 @@
       {:else}
         {#if pickerState.tab==='saved'&&lookupResult}<h3 class="partner-heading"><Icon name="search" size={16}/>Lookup result</h3><ParentPickerRow parent={lookupResult} {characters} affinity={parentAffinityDetails(lookupResult,targetId,engine,groups)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>lookupResult&&choose(lookupResult)}/>{/if}
         {#if pickerState.tab==='saved'&&partners.length}<h3 class="partner-heading"><Icon name="save" size={16}/>Saved partners</h3>{/if}
-        <div class="parent-list" role="list" aria-label="Available parents" onfocusin={event => { if (event.currentTarget.lastElementChild?.contains(event.target as Node)) renderLimit = Math.min(filtered.length, renderLimit + 16); }}>{#each filtered.slice(0,renderLimit) as parent (parent.pickerId)}<div role="listitem"><ParentPickerRow {parent} {characters} affinity={affinities.get(parent.pickerId)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
-        {#if filtered.length>renderLimit}{#key renderLimit}<div style="height:1px" aria-hidden="true" use:loadWhenVisible={() => renderLimit += 16}></div>{/key}{/if}
+        <div class="parent-list" role="list" aria-label="Available parents" use:virtualScroll={{ items: filtered, key: parent => parent.pickerId, root: 'closest', estimate: 180, onrange: range => virtualRange = range }}>{#each filtered.slice(virtualRange.start,virtualRange.end) as parent, index (parent.pickerId)}<div role="listitem" data-virtual-index={virtualRange.start + index} aria-posinset={virtualRange.start + index + 1} aria-setsize={filtered.length}><ParentPickerRow {parent} {characters} affinity={affinities.get(parent.pickerId)} combined={sparkView==='combined'} filters={pickerState.factors} onselect={()=>choose(parent)} onedit={parent.share_source==='manual'?()=>{editedEntry=manuals.find((entry)=>entry.id===parent.share_local_id);editing=true;}:undefined} ondelete={parent.share_source==='manual'||parent.share_source==='partner'&&!!$authUser?()=>deleteParent(parent):undefined}/></div>{/each}</div>
         {#if !filtered.length&&!editing&&!(pickerState.tab==='saved'&&lookupResult&&!partners.length)}<div class="empty" class:empty-upload={pickerState.tab==='veterans' && !current.length}>
           {#if current.length}<Icon name="search" size={48}/><h3>No results</h3><Button variant="secondary" onclick={clearFilters}>Clear filters</Button>
           {:else if pickerState.tab==='veterans'}{@render dropZone()}

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let normalRange = $state<VirtualRange>({ start: 0, end: 0 }), upgradedRange = $state<VirtualRange>({ start: 0, end: 0 });
   import Icon from '@/components/Icon.svelte';
   import SelectFieldSlim from '@/components/SelectFieldSlim.svelte';
   import NumberStepper from '@/components/NumberStepper.svelte';
@@ -171,8 +172,6 @@
   });
   const normalMatches = $derived(selectedCategoryKeys.includes('special') ? matchingFactors.filter((factor) => factor.categoryKey !== 'special-upgraded') : matchingFactors);
   const upgradedMatches = $derived(selectedCategoryKeys.includes('special') ? matchingFactors.filter((factor) => factor.categoryKey === 'special-upgraded') : []);
-  let visibleCount = $state(40);
-  $effect(() => { matchingFactors; visibleCount = 40; });
 
   function toggleCategory(key: string): void {
     if (selectedCategoryKeys.includes(key)) selectedCategoryKeys = selectedCategoryKeys.filter((entry) => entry !== key && !(key === 'special' && entry === 'special-upgraded'));
@@ -186,9 +185,9 @@
   }
 </script>
 
-{#snippet factorResult(factor: BrowseableFactor)}
+{#snippet factorResult(factor: BrowseableFactor, index: number)}
   {@const selected = selectedFactorIds.includes(factor.id)}
-  <button type="button" class="factor-result" class:selected disabled={selected && !hiding} aria-pressed={hiding ? selected : undefined} title={selected ? hiding ? 'Show this spark again' : 'Already selected' : hiding ? 'Hide' : browsing ? 'Add spark' : `Add to P${priority}`} onclick={() => addFactor(factor)}>
+  <button data-virtual-index={index} type="button" class="factor-result" class:selected disabled={selected && !hiding} aria-pressed={hiding ? selected : undefined} title={selected ? hiding ? 'Show this spark again' : 'Already selected' : hiding ? 'Hide' : browsing ? 'Add spark' : `Add to P${priority}`} onclick={() => addFactor(factor)}>
     {#if factor.icon}<img src={factor.icon} alt="" loading="lazy"/>{:else}<Icon name="star" size={16}/>{/if}
     <span>{factor.text}</span><Icon name={hiding ? selected ? 'eye-off' : 'eye' : selected ? 'check' : 'add'} size={15}/>
   </button>
@@ -243,18 +242,18 @@
         <div class="result-summary"><strong>{matchingFactors.length}</strong> {matchingFactors.length === 1 ? 'factor' : 'factors'}</div>
         {#if matchingFactors.length}
           <div class="factor-result-groups">
-            <div class="factor-results">
-              {#each normalMatches.slice(0,visibleCount) as factor (factor.id)}
-                {@render factorResult(factor)}
+            <div class="factor-results" use:virtualScroll={{ items: normalMatches, key: factor => factor.id, root: 'closest', estimate: 40, onrange: range => normalRange = range }}>
+              {#each normalMatches.slice(normalRange.start,normalRange.end) as factor, index (factor.id)}
+                {@render factorResult(factor, normalRange.start + index)}
               {/each}
             </div>
-            {#if normalMatches.length > visibleCount}{#key visibleCount}<div aria-hidden="true" use:loadWhenVisible={() => visibleCount += 40}></div>{/key}{/if}
+
             {#if upgradedMatches.length}
-              <section class="upgraded-result-section"><div class="result-section-divider"><span>Upgraded</span></div><div class="factor-results">
-                {#each upgradedMatches.slice(0,visibleCount) as factor (factor.id)}
-                  {@render factorResult(factor)}
+              <section class="upgraded-result-section"><div class="result-section-divider"><span>Upgraded</span></div><div class="factor-results" use:virtualScroll={{ items: upgradedMatches, key: factor => factor.id, root: 'closest', estimate: 40, onrange: range => upgradedRange = range }}>
+                {#each upgradedMatches.slice(upgradedRange.start,upgradedRange.end) as factor, index (factor.id)}
+                  {@render factorResult(factor, upgradedRange.start + index)}
                 {/each}
-              </div>{#if upgradedMatches.length > visibleCount}{#key visibleCount}<div aria-hidden="true" use:loadWhenVisible={() => visibleCount += 40}></div>{/key}{/if}</section>
+              </div></section>
             {/if}
           </div>
         {:else}<div class="empty-browser-state"><Icon name="search" size={17}/><span>No white factors match these types and search terms.</span></div>{/if}

@@ -9,7 +9,7 @@
   import Spinner from '@/components/Spinner.svelte';
   import TextField from '@/components/TextField.svelte';
   import CircleCard from '@/components/CircleCard.svelte';
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
   import { clubPolicyLabels as policyLabels } from '@/lib/clubs/club-display';
   import { communityRepository } from './community-repository';
   import type { ClubQuery, ClubSummary, PagedResult } from './community-types';
@@ -43,8 +43,7 @@
     if (openSpots && club.members >= 30) return false;
     return policy === 'all' || club.policy === Number(policy);
   }));
-  let visibleLimit = $state(12);
-  $effect(() => { void visibleClubs; visibleLimit = 12; });
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
 
 
   async function load(refresh = false): Promise<void> {
@@ -121,12 +120,11 @@
   {:else if !error && visibleClubs.length === 0}<div class="no-results"><Icon name="search" size={42}/><p>No clubs match your filters.</p><Button variant="secondary" size="sm" onclick={clearFilters}>Clear all filters</Button></div>
   {:else if visibleClubs.length}
     <ContentAd routeId="clubs" top/>
-    <section class="club-list" aria-label="Club results">
-      {#each visibleClubs.slice(0, visibleLimit) as club, index (club.circleId)}
+    <section use:virtualScroll={{ items: visibleClubs, key: club => club.circleId, estimate: 120, onrange: range => virtualRange = range }} class="club-list" aria-label="Club results">
+      {#each visibleClubs.slice(virtualRange.start, virtualRange.end) as club, localIndex (club.circleId)}{@const index = virtualRange.start + localIndex}<div data-virtual-index={index}>
         <CircleCard circle={club}/>
-        {#if index % 20 === 19 && index < visibleClubs.length - 1 && index < 60}<ContentAd routeId="clubs" index={2 + Math.floor(index / 20)}/>{/if}
-      {/each}
-      {#if visibleLimit < visibleClubs.length}{#key visibleLimit}<div class="lazy-more" aria-hidden="true" use:loadWhenVisible={() => visibleLimit += 12}></div>{/key}{/if}
+        {#if index % 20 === 19 && index < visibleClubs.length - 1 && index < 60}<ContentAd routeId="clubs" index={2 + Math.floor(index / 20)}/>{/if}</div>{/each}
+
     </section>
   {/if}
   <div class="mat-paginator"><span>Items per page:</span><SelectField id="club-page-size" label="Items per page" hideLabel options={pageSizeOptions} bind:value={pageSize} onchange={changeRemoteFilter}/><strong>{result?.total ? `${(page - 1) * Number(pageSize) + 1}–${Math.min(page * Number(pageSize), result.total)} of ${result.total}` : '0 of 0'}</strong><button type="button" aria-label="Previous page" disabled={page <= 1} onclick={() => { page -= 1; writeQuery(); void load(); }}><Icon name="chevron" size={17}/></button><button class="next" type="button" aria-label="Next page" disabled={page >= (result?.totalPages ?? 1)} onclick={() => { page += 1; writeQuery(); void load(); }}><Icon name="chevron" size={17}/></button></div>
@@ -152,7 +150,6 @@
   .loading { min-height: 220px; display: flex; align-items: center; justify-content: center; gap: var(--space-3); color: var(--color-text-muted); }.no-results { min-height: 230px; display: grid; place-items: center; align-content: center; gap: 5px; text-align: center; }.no-results :global(svg) { color: var(--text-disabled); }.no-results p { margin: 0 0 8px; color: var(--text-secondary); }
   .results-heading { color:var(--text-muted); font-size:11px; }
   .club-list { display:grid; gap:6px; }
-  .lazy-more { height:1px; }
   .mat-paginator { display:flex; align-items:center; justify-content:flex-end; gap:10px; padding-top:8px; border-top:1px solid var(--border-subtle); color:var(--text-muted); font-size:12px; --control-height:30px; }.mat-paginator :global(.field) { width:72px; }.mat-paginator strong { min-width:82px; font-weight:500; text-align:center; font-variant-numeric:tabular-nums; }.mat-paginator>button { width:30px; height:30px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:var(--text-secondary); cursor:pointer; }.mat-paginator>button:hover:not(:disabled) { background:var(--surface-2); }.mat-paginator>button:first-of-type :global(svg) { transform:rotate(90deg); }.mat-paginator>button.next :global(svg) { transform:rotate(-90deg); }.mat-paginator>button:disabled { opacity:.28; }
   @media (max-width:768px) {
     .search-row { grid-template-columns:minmax(0,1fr) 140px; gap:6px; }

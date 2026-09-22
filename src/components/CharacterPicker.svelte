@@ -7,7 +7,7 @@
   import CharacterSortMenu from './CharacterSortMenu.svelte';
   import Icon from './Icon.svelte';
   import type { CharacterPickerOption } from './picker-types';
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
 
   type Mode = 'target' | 'include' | 'exclude';
   export type CharacterPickerSort = 'default' | 'name' | 'affinity';
@@ -32,7 +32,7 @@
   let { label = 'Select character', options, loading = false, error = '', onretry, selected = $bindable([]), existing = [], mode = 'target', multiple = false, maxVisible = 36, sort = $bindable<CharacterPickerSort>('default'), showSort = true, showSelectionCount = true, searchPlaceholder = 'Search by name...', onselect }: Props = $props();
   let query = $state('');
   const id = $props.id();
-  let visibleLimit = $state(0);
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
   const filtered = $derived.by(() => {
     const needle = query.trim().toLocaleLowerCase();
     const matches = options.filter((option) => !needle || `${option.name} ${option.subtitle ?? ''} ${option.id}`.toLocaleLowerCase().includes(needle));
@@ -40,8 +40,7 @@
     if (sort === 'affinity') return [...matches].sort((a, b) => (b.affinity ?? -1) - (a.affinity ?? -1));
     return matches;
   });
-  const effectiveLimit = $derived(visibleLimit || maxVisible);
-  const visible = $derived(filtered.slice(0, effectiveLimit));
+  const visible = $derived(filtered.slice(virtualRange.start, virtualRange.end));
 
   function toggle(id: string) {
     if (multiple) selected = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id];
@@ -52,25 +51,24 @@
 
 <section class="picker picker--{mode}" aria-label={label}>
   <div class="picker-tools">
-    <div class="search"><Icon name="search" size={18}/><input type="text" role="searchbox" aria-label="Search characters" bind:value={query} placeholder={searchPlaceholder} oninput={() => visibleLimit = 0}/>{#if query}<button type="button" class="clear-search" aria-label="Clear character search" onclick={() => { query = ''; visibleLimit = 0; }}><Icon name="close" size={16}/></button>{/if}</div>
+    <div class="search"><Icon name="search" size={18}/><input type="text" role="searchbox" aria-label="Search characters" bind:value={query} placeholder={searchPlaceholder}/>{#if query}<button type="button" class="clear-search" aria-label="Clear character search" onclick={() => { query = ''; }}><Icon name="close" size={16}/></button>{/if}</div>
     {#if showSort}<CharacterSortMenu bind:value={sort} hasAffinity={options.some((option) => option.affinity !== undefined)}/>{/if}
     {#if multiple && showSelectionCount && selected.length}<span class="selection-count">{selected.length} selected</span>{/if}
   </div>
   {#if error}<Banner title="Character data unavailable" tone="danger"><p>{error}</p>{#if onretry}<Button variant="secondary" onclick={onretry}>Retry character data</Button>{/if}</Banner>{/if}
   {#if loading}<Spinner label="Loading characters…"/>{/if}
-  <div class="character-grid" role={multiple ? 'group' : 'radiogroup'} aria-label={label} onfocusin={event => { if (event.target === event.currentTarget.lastElementChild && filtered.length > effectiveLimit) visibleLimit = effectiveLimit + maxVisible; }}>
+  <div class="character-grid" role={multiple ? 'group' : 'radiogroup'} aria-label={label} use:virtualScroll={{ items: filtered, key: option => option.id, root: 'closest', estimate: 116, onrange: range => virtualRange = range }}>
     {#each visible as option, index (option.id)}
       {@const isSelected = selected.includes(option.id) || existing.includes(option.id)}
-      <button type="button" class:selected={isSelected} aria-label={option.name} aria-describedby={`${id}-${option.id}-description`} aria-pressed={multiple ? isSelected : undefined} role={multiple ? undefined : 'radio'} aria-checked={multiple ? undefined : isSelected} disabled={option.disabled} onclick={() => toggle(option.id)}>
+      <button data-virtual-index={virtualRange.start + index} type="button" class:selected={isSelected} aria-label={option.name} aria-describedby={`${id}-${option.id}-description`} aria-pressed={multiple ? isSelected : undefined} role={multiple ? undefined : 'radio'} aria-checked={multiple ? undefined : isSelected} disabled={option.disabled} onclick={() => toggle(option.id)}>
         <span class="sr-only" id={`${id}-${option.id}-description`}>Outfit {option.id}{option.affinity !== undefined ? ` · Affinity ${option.affinity}` : ''}</span>
-        <span class="avatar"><Artwork src={option.image} alt={option.name} size="sm" shape="circle" loading={index < 35 ? 'eager' : 'lazy'}/>{#if multiple && isSelected}<span class="selected-mark" aria-hidden="true"><Icon name={mode === 'exclude' ? 'close' : 'check'} size={24}/></span>{/if}{#if option.affinity !== undefined}<span class="affinity-badge" class:zero={option.affinity === 0}><AffinityStat value={option.affinity} compact/></span>{/if}</span>
+        <span class="avatar"><Artwork src={option.image} alt={option.name} size="sm" shape="circle" loading="eager"/>{#if multiple && isSelected}<span class="selected-mark" aria-hidden="true"><Icon name={mode === 'exclude' ? 'close' : 'check'} size={24}/></span>{/if}{#if option.affinity !== undefined}<span class="affinity-badge" class:zero={option.affinity === 0}><AffinityStat value={option.affinity} compact/></span>{/if}</span>
         <span class="copy"><strong>{option.name}</strong>{#if option.subtitle}<small>{option.subtitle}</small>{/if}</span>
       </button>
     {:else}
       {#if !loading && !error}<p class="empty">{query ? `No characters match “${query}”.` : 'No characters available.'}</p>{/if}
     {/each}
   </div>
-  {#if filtered.length > effectiveLimit}{#key effectiveLimit}<div class="lazy-more" aria-hidden="true" use:loadWhenVisible={() => visibleLimit = effectiveLimit + maxVisible}></div>{/key}{/if}
 </section>
 
 <style>
@@ -83,7 +81,6 @@
   input { min-width: 0; width: 100%; padding:4px 0; border: 0; outline: 0; background: transparent; color: var(--dialog-input-text); font-family:inherit; font-size:14px; }
   input::placeholder { color:var(--dialog-placeholder); opacity:1; }
   .selection-count, .remaining { color: var(--color-text-subtle); font-size: 9px; white-space: nowrap; }
-  .lazy-more { height: 1px; }
   .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; }
   .character-grid button { position: relative; min-width: 0; min-height: 104px; display: flex; align-items: center; flex-direction: column; gap: 5px; padding: 8px 4px 6px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-1); color: var(--color-text); cursor: pointer; text-align: center; transition:background-color var(--duration-fast),border-color var(--duration-fast),transform var(--duration-fast); }
   .character-grid button:hover:not(:disabled) { border-color: rgb(var(--picker-accent-rgb)/.3); background: var(--dialog-card-hover-bg,var(--dialog-muted-bg)); }

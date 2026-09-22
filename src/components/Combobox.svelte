@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { tick, type Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
   import { popoverPosition } from '@/lib/popover-position';
   import Icon from './Icon.svelte';
   import type { IconName } from './icon-types';
@@ -35,7 +37,6 @@
   let open = $state(false);
   let editing = $state(false);
   let activeIndex = $state(0);
-  let renderCount = $state(0);
   const selected = $derived(options.find((option) => option.value === value));
   const expanded = $derived(open && query.trim().length >= minQueryLength);
   const filtered = $derived.by(() => {
@@ -43,7 +44,7 @@
     if (!filter || !needle || (!editing && selected?.label === query)) return options.slice(0,maxResults);
     return options.filter((option) => `${option.label} ${option.keywords ?? ''}`.toLocaleLowerCase().includes(needle)).slice(0,maxResults);
   });
-  const visible = $derived(filtered.slice(0, Math.max(batchSize, renderCount)));
+  const visible = $derived(filtered.slice(virtualRange.start, virtualRange.end));
 
   $effect(() => {
     if (!expanded || !popupAnchor || !panel) return;
@@ -74,21 +75,13 @@
 
   $effect(() => {
     if (expanded && (!filtered[activeIndex] || filtered[activeIndex]?.disabled)) activeIndex = filtered.findIndex(option => !option.disabled);
-    if (open && Number.isFinite(batchSize)) renderCount = Math.max(renderCount, Math.ceil((activeIndex + 1) / batchSize) * batchSize);
-  });
-  $effect(() => {
-    if (!expanded || activeIndex < 0) return;
-    const requested = activeIndex;
-    void tick().then(() => {
-      if (open && activeIndex === requested && root?.isConnected) root.querySelectorAll('[role="option"]')[requested]?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-    });
   });
   function close() {
     if (editing && !query.trim() && emptyValue !== undefined && value !== emptyValue) {
       value = emptyValue;
       onchange?.(emptyValue);
     }
-    open = false; editing = false; renderCount = 0; if (!action) query = selected?.label ?? '';
+    open = false; editing = false; if (!action) query = selected?.label ?? '';
   }
   function choose(option: ComboboxOption) {
     if (option.disabled) return;
@@ -98,7 +91,7 @@
     input.focus();
     editing = false;
     open = false;
-    renderCount = 0;
+
   }
   function move(direction: 1 | -1) {
     if (!filtered.length) return;
@@ -110,12 +103,8 @@
     }
     activeIndex = next;
   }
-  function handleInput() { editing = true; activeIndex = -1; renderCount = batchSize; open = true; }
+  function handleInput() { editing = true; activeIndex = -1; open = true; }
   function clear() { query = ''; handleInput(); input.focus(); }
-  function loadMore(event: Event) {
-    const panel = event.currentTarget as HTMLElement;
-    if (panel.scrollHeight - panel.scrollTop - panel.clientHeight <= 80) renderCount = Math.min(filtered.length, Math.max(batchSize, renderCount) + batchSize);
-  }
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
@@ -165,9 +154,14 @@
     />
     {#if action && query}<button class="clear-query" type="button" aria-label={clearLabel} onclick={clear}><Icon name="close" size={16}/></button>{/if}
     {#if expanded}
-      <div bind:this={panel} popover={popupAnchor ? 'manual' : undefined} id="{id}-options" class="combo-panel" role="listbox" tabindex="-1" aria-label="{label} suggestions" onscroll={loadMore}>
-        {#each visible as option, index}
+      <div bind:this={panel} popover={popupAnchor ? 'manual' : undefined} id="{id}-options" class="combo-panel" role="listbox" tabindex="-1" aria-label="{label} suggestions">
+        <div use:virtualScroll={{ items: filtered, key: option => option.value, root: 'closest', estimate: 44, navigateTo: activeIndex, onrange: range => virtualRange = range }}>
+        {#each visible as option, localIndex (option.value)}
+          {@const index = virtualRange.start + localIndex}
           <button
+            data-virtual-index={index}
+            aria-posinset={index + 1}
+            aria-setsize={filtered.length}
             id="{id}-option-{index}"
             type="button"
             role="option"
@@ -180,9 +174,10 @@
             onmousedown={(event) => event.preventDefault()}
             onclick={() => choose(option)}
           >{#if optionContent}{@render optionContent(option)}{:else}{#if option.image}<img src={option.image} alt="" width="28" height="28" loading="lazy"/>{/if}<span>{option.label}</span>{/if}</button>
-        {:else}
+        {/each}</div>
+        {#if !filtered.length}
           <div class="empty" role="status">{emptyText}</div>
-        {/each}
+        {/if}
       </div>
     {/if}
   </div>

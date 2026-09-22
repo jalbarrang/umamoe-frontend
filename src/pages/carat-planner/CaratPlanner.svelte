@@ -37,7 +37,7 @@
   const pickupCopyMemory = new Map<string, number>();
   const incomeSelectionMemory = new Map<string, Record<string, string>>();
   let expandedIncomeSections = $state(new Set<string>());
-  let rewardSearch = $state(''), showPastRewards = $state(false), rewardRenderLimit = $state(0);
+  let rewardSearch = $state(''), showPastRewards = $state(false);
   let eventSearch = $state(''); let setup = $state<'' | 'resources' | 'income' | 'rewards'>(''); let importInput: HTMLInputElement;
   // Resource loads replace the snapshot; individual entries are never edited.
   let resources = $state.raw<PlannerDataBundle>({ core: {}, income: { rules: [] }, rewards: { rewards: [] } });
@@ -107,7 +107,6 @@
     { id:'rewards',label:'Rewards',icon:'gift',description:rewardSummary.count+' counted automatically'+(rewardSummary.totalLabel?' · '+rewardSummary.totalLabel:'') },
   ]);
   const rewardViewKey = $derived(JSON.stringify([plan.projectionStartDate, plan.scenarioSelections, plan.variableRewardSelections]));
-  $effect(() => { rewardSearch; showPastRewards; rewardViewKey; effectiveRewards; events; rewardRenderLimit = 0; });
   function publish(next: CaratPlanCollection): void {
     collection = resourcesReady ? compactPlannerCollectionResourceState(next, { ...resources, rewards: effectiveRewards }, events) : next;
     onchange(collection);
@@ -371,7 +370,7 @@
         {:else if setup === 'income'}
           <PlannerIncomePanel {plan} groups={incomeGroups} rules={resources.income.rules} rewards={effectiveRewards.rewards} competitiveVariants={resources.rewards.competitive_variants ?? []} {events} comparison={resources.rewards.global_reward_comparison} bind:expandedSections={expandedIncomeSections} selectionMemory={incomeSelectionMemory} oncommit={commit}/>
         {:else}
-          <PlannerRewardsPanel {plan} groups={rewardGroups} campaignViews={rewardCampaigns} resources={effectiveRewards} bind:search={rewardSearch} bind:showPast={showPastRewards} bind:renderLimit={rewardRenderLimit} oncommit={commit}/>
+          <PlannerRewardsPanel {plan} groups={rewardGroups} campaignViews={rewardCampaigns} resources={effectiveRewards} bind:search={rewardSearch} bind:showPast={showPastRewards} oncommit={commit}/>
         {/if}
       </div>
     {/if}

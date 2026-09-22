@@ -12,12 +12,15 @@ test('large factor menus load automatically and search their complete catalog', 
   const input = page.locator('#white-factors-factor-0');
   await input.click();
   const menu = page.getByRole('listbox', { name: 'Factor suggestions', exact: true });
-  await expect(menu.getByRole('option')).toHaveCount(40);
+  await expect.poll(() => menu.getByRole('option').count()).toBeGreaterThan(0);
+  await expect.poll(() => menu.getByRole('option').count()).toBeLessThan(40);
   await menu.evaluate(element => element.scrollTop = element.scrollHeight);
-  await expect(menu.getByRole('option')).toHaveCount(80);
+  await expect(menu.getByRole('option', { name: 'Stress Factor 1199', exact: true })).toBeAttached();
+  await expect.poll(() => menu.getByRole('option').count()).toBeLessThan(40);
   await input.press('Escape');
   await input.click();
-  await expect(menu.getByRole('option')).toHaveCount(40);
+  await expect.poll(() => menu.getByRole('option').count()).toBeGreaterThan(0);
+  await expect.poll(() => menu.getByRole('option').count()).toBeLessThan(40);
   await input.fill('Stress Factor 1199');
   await expect(menu.getByRole('option')).toHaveCount(1);
   await input.press('ArrowDown');

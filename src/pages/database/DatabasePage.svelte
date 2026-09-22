@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
+
   import ContentAd from '@/layouts/ContentAd.svelte';
   import PageHeading from '@/layouts/PageHeading.svelte';
   import { copyText } from '@/lib/clipboard';
@@ -722,7 +725,7 @@
     initialized = true;
     infiniteObserver = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting) && listMode === 'infinite' && !inheritanceLoading && !inheritanceError && page < inheritance.totalPages) page += 1;
-    }, { rootMargin: '600px 0px' });
+    }, { rootMargin: `${innerHeight * 2}px 0px` });
     if (infiniteSentinel) infiniteObserver.observe(infiniteSentinel);
     scheduleSearch(true);
   }
@@ -954,7 +957,7 @@
       {#if affinityError && !inheritanceError}{@render affinityFailure()}{/if}
       {#if inheritanceLoading && !appendingResults}<div class="loading"><Spinner size={30}/><span>Searching inheritance records…</span></div>
       {:else if inheritanceError && !appendingResults}<div class="result-error" role="alert"><EmptyState icon="warning" title="Inheritance search unavailable" description={inheritanceError}>{#snippet actions()}<div class="error-actions"><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry</Button><Button href={DISCORD_SUPPORT_URL} target="_blank" variant="secondary" size="sm" icon="discord">Report on Discord</Button></div>{/snippet}</EmptyState></div>
-      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list">{#each inheritance.records as record, index (record.id)}<InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
+      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list" use:virtualScroll={{ items: inheritance.records, key: record => record.id, estimate: 640, onrange: range => virtualRange = range }}>{#each inheritance.records.slice(virtualRange.start, virtualRange.end) as record, localIndex (record.id)}{@const index = virtualRange.start + localIndex}<div data-virtual-index={index}><InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}</div>{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
       {:else}<EmptyState icon="search" title="No records found" description="Try adjusting your search criteria or submit your Trainer ID to help the community.">{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</EmptyState>{/if}
       {#if appendingResults && inheritanceLoading}<div class="loading" role="status"><Spinner size={30}/><span>Loading more records…</span></div>
       {:else if appendingResults && inheritanceError}<Banner title="More records could not be loaded" tone="danger"><p>{inheritanceError}</p><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry loading more</Button></Banner>{/if}

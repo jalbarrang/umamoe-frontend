@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { loadWhenVisible } from '@/lib/load-when-visible';
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
+
   import { onDestroy, onMount, tick } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { characterImagePath, loadReleasedCharacterCatalog, type CharacterCatalogEntry } from '@/lib/catalog/character-catalog';
@@ -102,7 +104,7 @@
   const fullHd = new MediaQuery('(min-width:1920px)');
   let preferredColumns = $state<number>();
   const gridColumns = $derived(preferredColumns ?? (fullHd.current ? 3 : 2));
-  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid'),visibleCount=$state(6);
+  let displayTab=$state<'cards'|'inheritance'>('cards'),viewMode=$state<'grid'|'table'>('grid');
   let expandedSection=$state<'sparks'|'skills'|'compact'>('skills'),sparkSource=$state<'family'|'parent'|'p1'|'p2'>('family');
   let aptitudeFilters=$state<Partial<Record<AptitudeField,string>>>({}), selectedSkills=$state<number[]>([]), skillQuery=$state(''), skillCatalog=$state<Map<number,SkillCatalogEntry>>(new Map());
   let selectedFactors=$state<VeteranFactorFilter[]>([]),factorCategory=$state('all');
@@ -216,7 +218,7 @@
   let previewPage = $state(1);
   const previewPages = $derived(Math.max(1, Math.ceil(filtered.length / 3)));
   const currentPreviewPage = $derived(Math.min(previewPage, previewPages));
-  const displayed = $derived(filtered.slice(compact ? (currentPreviewPage - 1) * 3 : 0, compact ? currentPreviewPage * 3 : visibleCount).map((veteran)=>veteranDisplay(veteran,characters)));
+  const displayed = $derived(filtered.slice(compact ? (currentPreviewPage - 1) * 3 : virtualRange.start, compact ? currentPreviewPage * 3 : virtualRange.end).map((veteran)=>veteranDisplay(veteran,characters)));
   const queryMatches=$derived(new Map(displayed.map(({veteran:v})=>[v,appliedUql ? queryApplied.explain(databaseRows.get(v)!) : []])));
   const activeCount = $derived(activeVeteranFilterCount(filterState(),bounds)+[minSp||maxSp,minAffinity,minWhites,scenarioFilter,appliedUql].filter(Boolean).length);
   const skillOptions = $derived([...skillCatalog.values()].filter(skill=>!selectedSkills.includes(skill.skill_id)).map(skill=>({value:String(skill.skill_id),label:skill.name,image:skillImage(skill.icon)})));
@@ -232,7 +234,7 @@
     if(initialized!==key){ bounds=computeVeteranStatBounds(next); resetStatRanges(bounds); initialized=key; }
   });
   $effect(() => { void Promise.all([loadSkillCatalog(), loadFactorArtwork()]).then(([catalog])=>skillCatalog=catalog).catch(()=>catalogError='Skill and race data could not be loaded. Reload the page to try again.'); });
-  $effect(() => { accountId; profile; query; distance; style; minTotal; sortField; sortDirection; targetId; minSp;maxSp;minAffinity;minWhites;scenarioFilter;appliedUql; speedMin; speedMax; staminaMin; staminaMax; powerMin; powerMax; gutsMin; gutsMax; wizMin; wizMax; aptitudeFilters; selectedSkills; selectedFactors; include; exclude; visibleCount=6; previewPage=1; });
+  $effect(() => { accountId; profile; query; distance; style; minTotal; sortField; sortDirection; targetId; minSp;maxSp;minAffinity;minWhites;scenarioFilter;appliedUql; speedMin; speedMax; staminaMin; staminaMax; powerMin; powerMax; gutsMin; gutsMax; wizMin; wizMax; aptitudeFilters; selectedSkills; selectedFactors; include; exclude; previewPage=1; });
 
   function statValue(field:StatField,end=false):number { const values:{[key:string]:number}={speedMin,speedMax,staminaMin,staminaMax,powerMin,powerMax,gutsMin,gutsMax,wizMin,wizMax}; return values[`${field}${end?'Max':'Min'}`] ?? 0; }
   function changeStat(field:StatField,start:number,end?:number):void { if(field==='speed'){speedMin=start;speedMax=end??start}else if(field==='stamina'){staminaMin=start;staminaMax=end??start}else if(field==='power'){powerMin=start;powerMax=end??start}else if(field==='guts'){gutsMin=start;gutsMax=end??start}else{wizMin=start;wizMax=end??start} }
@@ -378,11 +380,11 @@
       </section>
     {/if}
     {#if filtered.length===0}<EmptyState compact icon="filter" title="No veterans match your filters." description="Try another name or distance.">{#snippet actions()}<Button variant="secondary" onclick={clearFilters}>Clear all filters</Button>{/snippet}</EmptyState>
-    {:else if displayTab==='inheritance'}<div class="inheritance-list">{#each displayed as item (item.veteran.trained_chara_id??item.veteran.id)}{@const tree=lineage(item.veteran)}<article><LineageTree root={tree.root} branches={tree.branches} onselect={()=>showDetail(item.veteran)}/><Button variant="secondary" size="sm" onclick={() => openDetailPlanner(item.veteran)} icon="external">Open in planner</Button></article>{/each}</div>
+    {:else if displayTab==='inheritance'}<div class="inheritance-list" use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id??item.veteran.id)}{@const tree=lineage(item.veteran)}<article data-virtual-index={virtualRange.start + index}><LineageTree root={tree.root} branches={tree.branches} onselect={()=>showDetail(item.veteran)}/><Button variant="secondary" size="sm" onclick={() => openDetailPlanner(item.veteran)} icon="external">Open in planner</Button></article>{/each}</div>
     {:else if viewMode==='grid'}
-      <div class="veteran-grid" style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
-        {#each displayed as item (item.veteran.trained_chara_id ?? item.veteran.id)}
-          <ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} legacyUrl={veteranDatabaseUrl(item.veteran, accountId, targetId)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/>
+      <div class="veteran-grid" use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }} style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
+        {#each displayed as item, index (item.veteran.trained_chara_id ?? item.veteran.id)}
+          <div data-virtual-index={virtualRange.start + index}><ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} legacyUrl={veteranDatabaseUrl(item.veteran, accountId, targetId)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/></div>
         {/each}
       </div>
     {:else}
@@ -394,11 +396,11 @@
             <th scope="col" aria-sort={sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" ariaLabel="Sort by Total Stats" onclick={()=>sortTable('total')}>Stats {sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th>
             <th scope="col" title={target ? 'Affinity for '+target.name : 'Veteran and parent affinity'} aria-sort={sortField==='affinity' ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onclick={()=>sortTable('affinity')}>Affinity {sortField==='affinity' ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th><th scope="col">Aptitudes</th><th scope="col" title="Combined stars from Own + P1 + P2">Combined sparks</th><th scope="col"><span class="visually-hidden">Details</span></th>
           </tr></thead>
-          <tbody>{#each displayed as item (item.veteran.trained_chara_id ?? item.veteran.id)}
+          <tbody use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id ?? item.veteran.id)}
             {@const matches=queryMatches.get(item.veteran) ?? []}
             {@const summary=veteranSummary(item)}
             {@const factors=veteranFactorTotals(item.veteran)}
-            <tr>
+            <tr data-virtual-index={virtualRange.start + index}>
               <th scope="row"><button class="table-character" aria-label={'View '+item.name+' details'} onclick={()=>showDetail(item.veteran)}><ProfileVeteranIdentity {summary} rarity={item.veteran.rarity} score={item.veteran.rank_score}/></button></th>
               <td class="table-stats">
                 <StatStrip label={item.name+' stats'} items={[...statFields.map(field=>({id:field.id,label:field.label,value:(item.veteran[field.id] ?? 0).toLocaleString(),icon:'/assets/images/icon/stats/'+(field.id==='wiz' ? 'wit' : field.id)+'.webp'})),{id:'sp',label:'SP',value:spByVeteran.get(item.veteran)?.toLocaleString() ?? '—'},{id:'total',label:'Total Stats',value:item.total.toLocaleString()}]} compact presentation="icons"/>
@@ -408,13 +410,12 @@
               <td class="table-factors" data-label="Combined sparks"><ProfileVeteranSparks items={factors} {selectedFactors} queryMatches={matches} onfactor={addFactor} onmore={()=>showDetail(item.veteran)}/></td>
               <td class="table-details"><IconButton icon="arrow-right" label={'Open '+item.name+' details'} onclick={()=>showDetail(item.veteran)}/></td>
             </tr>
-            {#if matches.length}<tr class="query-row"><td colspan="6"><ProfileVeteranQueryMatches {matches}/></td></tr>{/if}
+            {#if matches.length}<tr class="query-row" data-virtual-index={virtualRange.start + index}><td colspan="6"><ProfileVeteranQueryMatches {matches}/></td></tr>{/if}
           {/each}</tbody>
         </table>
       </div>
     {/if}
     {#if compact && filtered.length > 3}<div class="preview-pagination"><span aria-live="polite">Showing <strong>{(currentPreviewPage - 1) * 3 + 1}–{Math.min(currentPreviewPage * 3, filtered.length)}</strong> of {filtered.length} veterans</span><Pagination page={currentPreviewPage} pages={previewPages} label="Veterans preview pages" onchange={page => previewPage = page}/></div>{/if}
-    {#if !compact && displayed.length<filtered.length}{#key visibleCount}<div class="more" use:loadWhenVisible={() => visibleCount += 6}><span>{displayed.length} of {filtered.length}</span></div>{/key}{/if}
       </div>
     </div>
   {/if}
@@ -535,6 +536,7 @@
 <CharacterSelectDialog id="veteran-target-select" bind:open={targetOpen} options={targetOptions} loading={targetLoading} error={targetError} onretry={loadTargets} selected={targetId ? [String(targetId)] : []} bind:sort={targetSort} onselect={values=>selectTarget(values[0]??'')}/>
 
 <style>
+  .veteran-grid > [data-virtual-index] { display:grid; min-width:0; }
   .card-display{display:grid;gap:10px;padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border-subtle)}.card-display h3{margin:0 0 6px;font-size:11px;font-weight:600;color:var(--text-secondary)}.card-display :global(.segments){width:100%;padding:2px}.card-display :global(button){flex:1;min-width:0;padding-inline:6px;font-size:11px}
   .veterans-page { min-width:0; width:100%; display:grid; gap:20px; }
   .collection-header { min-width:0; display:grid; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--border-subtle); }

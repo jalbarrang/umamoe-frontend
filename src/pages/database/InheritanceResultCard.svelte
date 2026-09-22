@@ -59,7 +59,6 @@
   }
   let { record, activeFilters, uqlHighlight, reportText = 'Outdated', reportIcon = 'warning', reportTooltip = 'Report this trainer as unavailable', targetId, affinityEngine, raceGroups = new Map(), partner, sparkPerRun = $bindable(false), showOccurrences = $bindable(false), showP2Sparks = $bindable(false), collapsedWhiteSections = $bindable([]), characters, supports, defaultFocus = 'all', splitSparks = false, sparkPortraits = false, sparkOrder = 'main', hiddenSparkFactorIds = [], bookmarked = false, actionBusy = false, partnerWinSaddles = [], oncopy, onbookmark, onreport, onshare, onplanner, onvisible }: Props = $props();
   let cardElement: HTMLElement;
-  let factorsVisible = $state(false);
   let raceResultsOpen = $state(false);
   let optimalRacesOpen = $state(false);
   let optimalRecommendations = $state.raw<OptimalRaceRecommendation[]>([]);
@@ -112,11 +111,10 @@
   }
   $effect(() => {
     if (!cardElement) return;
-    if (typeof IntersectionObserver === 'undefined') { factorsVisible = true; return; }
+    if (typeof IntersectionObserver === 'undefined') return;
     const visibleRecord = record;
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return;
-      factorsVisible = true;
       onvisible?.(visibleRecord); observer.disconnect();
     }, { rootMargin: '160px 0px', threshold: .2 });
     observer.observe(cardElement);
@@ -181,7 +179,6 @@
     </div>
 
     <section class="spark-arrays" aria-label="Main Veteran factors">
-      {#if factorsVisible}
       {#if affinity.total !== null}<div class="spark-modes"><button type="button" class="count-mode" aria-pressed={sparkPerRun} title={sparkPerRun ? 'Two inheritance rolls per run' : 'One inheritance roll'} onclick={() => sparkPerRun = !sparkPerRun}>{sparkPerRun ? 'Per Run' : 'Per Inh.'}</button>{#if !splitSparks && !activeFocus}<button type="button" class="count-mode" aria-pressed={showOccurrences} onclick={() => showOccurrences = !showOccurrences}>{showOccurrences ? '× Occurrences' : '★ Stars'}</button>{#if hasP2Sparks}<button type="button" class="count-mode" aria-pressed={showP2Sparks} onclick={() => showP2Sparks = !showP2Sparks}>P2 Sparks {showP2Sparks ? 'ON' : 'OFF'}</button>{/if}{/if}</div>{/if}
       {#each groups as group}
         {@const values = groupFactors(group.type)}
@@ -196,7 +193,6 @@
           </div></div>
         {/if}
       {/each}
-      {:else}<div class="spark-placeholder" aria-hidden="true"></div>{/if}
     </section>
   </div>
 
@@ -230,8 +226,6 @@
 
 <style>
   .inheritance-card {
-    content-visibility: auto;
-    contain-intrinsic-block-size: auto 650px;
     min-width: 0;
     padding: clamp(.75rem, 1.5vw, 1.5rem);
     border: 1px solid var(--entry-card-border);
@@ -240,7 +234,6 @@
     container: inheritance-card / inline-size;
   }
   .inheritance-card.modified { border-color: rgb(255 183 77 / .45); }
-  .spark-placeholder { min-height: 220px; }
   :global([data-theme='light']) .inheritance-card { border-color: var(--card-surface-border); }
   .record-header { display: grid; gap: 8px; }
   .record-toolbar { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }

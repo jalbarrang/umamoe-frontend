@@ -4,6 +4,9 @@
 </script>
 
 <script lang="ts">
+  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
+
   import type { CaratPlan, PlannerRewardResource } from '@/lib/timeline/carat-planner';
   import { cycleRewardOption, rewardBannerPlanned, rewardGroupActive, rewardGroupSelectable, updateRewardGroup, type PlannerRewardGroup } from '@/lib/timeline/planner-reward-groups';
   import { activateRewardEvents, campaignState, selectPlannerCampaign, type PlannerCampaign } from '@/lib/timeline/planner-campaigns';
@@ -13,23 +16,20 @@
   import Icon from '@/components/Icon.svelte';
   import InspectPopover from '@/components/InspectPopover.svelte';
   import TextField from '@/components/TextField.svelte';
-  import { loadWhenVisible } from '@/lib/load-when-visible';
 
   interface Props {
     plan: CaratPlan; resources: PlannerRewardResource; groups: PlannerRewardGroup[]; campaignViews: PlannerCampaign[];
-    search: string; showPast: boolean; renderLimit: number;
+    search: string; showPast: boolean;
     oncommit: (mutator: (plan: CaratPlan) => void) => void;
   }
-  let { plan, resources, groups, campaignViews, search = $bindable(), showPast = $bindable(), renderLimit = $bindable(), oncommit }: Props = $props();
+  let { plan, resources, groups, campaignViews, search = $bindable(), showPast = $bindable(), oncommit }: Props = $props();
   const items = $derived([
     ...groups.map(group => ({ id: 'group:' + group.id, availableAt: group.availableAt, isPast: group.isPast, searchText: group.searchText, group, campaign: undefined })),
     ...campaignViews.map(campaign => ({ id: 'campaign:' + campaign.id, availableAt: campaign.availableAt, isPast: campaign.isPast, searchText: campaign.searchText, campaign, group: undefined }))
   ].filter(item => item.searchText.includes(search.trim().toLowerCase())));
   const upcomingCount = $derived(items.filter(item => !item.isPast).length), pastCount = $derived(items.length - upcomingCount);
   const matching = $derived(items.filter(item => item.isPast === showPast).sort((a, b) => a.availableAt && b.availableAt ? (showPast ? -1 : 1) * a.availableAt.localeCompare(b.availableAt) || a.id.localeCompare(b.id) : a.availableAt ? -1 : b.availableAt ? 1 : a.id.localeCompare(b.id)));
-  const limit = $derived(renderLimit || 12);
-  const visible = $derived(matching.slice(0, limit));
-  function loadMore() { renderLimit = Math.min(matching.length, limit + 12); }
+  const visible = $derived(matching.slice(virtualRange.start, virtualRange.end));
   const date = (value: string, year = true) => value ? (year ? fullDate : shortDate).format(new Date(value + 'T00:00:00Z')) : '';
   function dateLabel(group: PlannerRewardGroup): string {
     return group.availableUntil && group.availableUntil !== group.availableAt ? date(group.availableAt, false) + ' – ' + date(group.availableUntil) : date(group.availableAt);
@@ -59,8 +59,9 @@
       <Button variant={showPast ? 'secondary' : 'ghost'} size="sm" ariaPressed={showPast} onclick={() => showPast = true}>Past <span>{pastCount}</span></Button>
     </div>
   </header>
-  <div class="reward-viewport" aria-label={showPast ? 'Past event rewards, newest first' : 'Current and upcoming event rewards, earliest first'} onfocusin={event => { if (event.currentTarget.querySelector('article:last-of-type')?.contains(event.target as Node)) loadMore(); }}>
-    {#each visible as item (item.id)}
+  <div class="reward-viewport" aria-label={showPast ? 'Past event rewards, newest first' : 'Current and upcoming event rewards, earliest first'}>
+    <div use:virtualScroll={{ items: matching, key: item => item.id, root: 'closest', estimate: 65, onrange: range => virtualRange = range }}>
+    {#each visible as item, index (item.id)}<div data-virtual-index={virtualRange.start + index}>
       {#if item.campaign}
         {@const campaign = item.campaign}
         {@const state = campaignState(plan, campaign)}
@@ -105,8 +106,8 @@
           </div>
         </article>
       {/if}
-    {:else}<p class="empty">{#if search.trim()}No {showPast ? 'past' : 'upcoming'} rewards match this search.{:else}{showPast ? 'No historical rewards are available.' : 'No usable rewards are scheduled from the plan start date.'}{/if}</p>{/each}
-    {#if visible.length < matching.length}{#key limit}<div class="more" use:loadWhenVisible={loadMore}><small>{visible.length} of {matching.length}</small></div>{/key}{/if}
+    </div>{/each}</div>
+    {#if !matching.length}<p class="empty">{#if search.trim()}No {showPast ? 'past' : 'upcoming'} rewards match this search.{:else}{showPast ? 'No historical rewards are available.' : 'No usable rewards are scheduled from the plan start date.'}{/if}</p>{/if}
   </div>
 </div>
 
@@ -141,7 +142,7 @@
   .current-result{min-width:100px;max-width:260px;display:grid;align-content:center;gap:2px;padding:3px 7px;border:0;background:transparent;color:var(--text-primary);font:inherit;text-align:center;cursor:pointer}
   .current-result strong{font-size:10px;line-height:1.3}.current-result small{color:var(--text-secondary);font-size:9px;line-height:1.3}
   .breakdown{white-space:pre-line;font-size:11px;line-height:1.6}
-  .more{display:grid;justify-items:center;gap:5px;padding:10px}.more small,.empty{color:var(--text-secondary);font-size:10px}.empty{margin:0;padding:20px;text-align:center}
+  .empty{color:var(--text-secondary);font-size:10px}.empty{margin:0;padding:20px;text-align:center}
   @media(max-width:900px){.query{flex:1}.hint>span{display:grid}.actions{flex-wrap:wrap;max-width:390px}.current-result{max-width:220px}}
   @media(max-width:760px){
     .toolbar{flex-wrap:wrap;gap:6px}.query{flex-basis:100%}.hint{width:100%}.hint>span{gap:2px}

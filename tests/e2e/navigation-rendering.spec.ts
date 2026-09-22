@@ -64,7 +64,7 @@ test('background-cached planner paints its tree without waiting for catalogs', a
   } finally { release(); }
 });
 
-for (const kind of ['clubs', 'rankings', 'activity'] as const) test(`${kind} lazily renders every result as it is scrolled into view`, async ({ page }) => {
+for (const kind of ['clubs', 'rankings', 'activity'] as const) test(`${kind} bounds its mounted results when scrolling to the end`, async ({ page }) => {
   await mockCommunity(page); await mockActivity(page);
   const pattern = kind === 'clubs' ? '**/api/v4/circles/list?*' : kind === 'rankings' ? '**/api/v4/rankings/*?*' : '**/api/v4/shame/hall*';
   const rows = Array.from({ length: 100 }, (_, i) => ({
@@ -79,11 +79,9 @@ for (const kind of ['clubs', 'rankings', 'activity'] as const) test(`${kind} laz
   await page.goto(path);
   await expect(page.locator(selector).first()).toBeVisible();
   expect(await page.locator(selector).count()).toBeLessThan(100);
-  for (let batch = 0; batch < 15 && await page.locator(selector).count() < 100; batch++) {
-    const count = await page.locator(selector).count();
-    await page.locator(selector).last().scrollIntoViewIfNeeded();
-    await expect.poll(() => page.locator(selector).count()).toBeGreaterThan(count);
-  }
-  await expect(page.locator(selector)).toHaveCount(100);
+  const host=page.locator(kind==='clubs'?'.club-list':kind==='rankings'?'.leaderboard':'.activity-list');
+  await host.evaluate(node=>window.scrollTo({top:node.getBoundingClientRect().top+scrollY+node.scrollHeight,behavior:'instant'}));
+  await expect.poll(async()=>Number(await host.locator('[data-virtual-index]').first().getAttribute('data-virtual-index'))).toBeGreaterThan(60);
+  expect(await page.locator(selector).count()).toBeLessThan(60);
   await expect(page.getByRole('button', { name: /show more/i })).toHaveCount(0);
 });

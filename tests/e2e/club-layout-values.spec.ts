@@ -5,13 +5,11 @@ import { clubExportFixture } from './fixtures/club-exports';
 test.use({ locale:'en-US', timezoneId:'UTC' });
 
 async function loadMembers(page: Page, selector: string, total: number) {
-  await expect.poll(() => page.locator(selector).count()).toBeGreaterThanOrEqual(Math.min(total,12));
-  while (await page.locator(selector).count() < total) {
-    const before = await page.locator(selector).count();
-    await page.locator('.members-more').scrollIntoViewIfNeeded();
-    await expect.poll(() => page.locator(selector).count()).toBeGreaterThan(before);
-  }
-  await expect(page.locator(selector)).toHaveCount(total);
+  const rows=page.locator(selector).filter({visible:true}).and(page.locator('[data-virtual-index]'));
+  if(!total){await expect(rows).toHaveCount(0);return;}
+  await page.locator('.members-section').evaluate(node=>window.scrollTo({top:node.getBoundingClientRect().top+scrollY-100,behavior:'instant'}));
+  await expect(rows.first()).toBeVisible();
+  expect(await rows.count()).toBeLessThanOrEqual(total);
 }
 
 test('Mobile member table keeps compact columns and expands the remaining metrics', async ({ page }) => {
