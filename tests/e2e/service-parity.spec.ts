@@ -70,7 +70,10 @@ test('status details, build notification, and changelog work on desktop and mobi
   await expect(page.getByText('Carat Planner Accuracy and Sync', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'What’s new', exact: true }).click();
   await expect(updates).toBeVisible();
-  await updates.getByRole('button', { name: 'Got it', exact: true }).click();
+  const currentUrl = page.url();
+  await updates.getByRole('button', { name: 'Explore 2.0', exact: true }).click();
+  await expect(updates).toBeHidden();
+  await expect(page).toHaveURL(currentUrl);
   expect(await page.evaluate(() => localStorage.getItem('lastSeenUpdateVersion'))).toBe('17');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
 });
