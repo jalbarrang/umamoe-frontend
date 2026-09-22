@@ -16,11 +16,13 @@ test('Step-ups can be planned from the timeline, budget paid steps and survive r
   const target = page.locator('article.target').filter({ hasText: event.title });
   await expect(target.getByRole('status')).toContainText('50 planned pulls');
   await expect(target.getByRole('status')).toContainText('Requires 2,801 paid Carats');
-  await expect(page.getByRole('group', { name: 'Projection summary' })).toContainText('Requires 2,801 paid Carats');
+  await expect(page.getByRole('group', { name: 'Projection summary' }).locator('strong').first()).toHaveText('2,801');
+  await expect(page.getByRole('group', { name: 'Projection summary' })).toContainText('Requires paid Carats');
   await expect(target.locator('.pickup-details')).toHaveCount(0);
   await expect(target.getByLabel('Paid banner', { exact: true })).toBeVisible();
   await expect(target.getByLabel('Step-up goal odds')).toHaveText('100.0% chance of at least 1 copy');
   await expect(target.getByRole('status')).toContainText('1 copy is guaranteed');
+  await target.screenshot({ path: info.outputPath('step-up-planner.png') });
   await target.getByLabel('Desired copies of one chosen card', { exact: true }).fill('2');
   await expect(target.getByLabel('Step-up goal odds')).toHaveText('29.7% chance of at least 2 copies');
   await page.getByRole('group', { name: 'Projection summary' }).screenshot({ path: info.outputPath('paid-requirement-summary.png') });
@@ -36,7 +38,6 @@ test('Step-ups can be planned from the timeline, budget paid steps and survive r
   await expect(progress).toContainText('Step 2 · 20 pulls');
   await expect(target.getByLabel('Desired copies of one chosen card', { exact: true })).toHaveValue('2');
   await expect(target.getByRole('status')).toContainText('20 planned pulls');
-  await target.screenshot({ path: info.outputPath('step-up-planner.png') });
   const controls = await Promise.all([progress.boundingBox(), target.getByRole('button', { name: `Remove ${event.title}`, exact: true }).boundingBox()]);
   expect(Math.abs(controls[0]!.height - controls[1]!.height)).toBeLessThanOrEqual(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -57,7 +58,8 @@ test('ordinary paid banners can be added, show paid shortfalls and respect their
   await expect(target.locator('.funding')).toContainText('10 planned pulls');
   await expect(target.locator('.funding')).toContainText('Requires 1 paid Carats');
   await expect(target.locator('.goal-chance')).toContainText('56.4%');
-  await expect(page.getByRole('group', { name: 'Projection summary' })).toContainText('Requires 1 paid Carats');
+  await expect(page.getByRole('group', { name: 'Projection summary' }).locator('strong').first()).toHaveText('1');
+  await expect(page.getByRole('group', { name: 'Projection summary' })).toContainText('Requires paid Carats');
   await expect(target.getByLabel('Paid banner', { exact: true })).toBeVisible();
   await expect(target.getByRole('spinbutton', { name: 'Planned pulls', exact: true })).toHaveAttribute('max', '10');
   await expect(target.getByRole('combobox', { name: 'Step-up progress' })).toHaveCount(0);
@@ -70,6 +72,6 @@ test('ordinary paid banners can be added, show paid shortfalls and respect their
   });
   await page.reload();
   await expect(target.locator('.funding')).toContainText('Requires 1,500 paid Carats');
-  await expect(page.getByRole('group', { name: 'Projection summary' })).toContainText('Requires 1,500 paid Carats');
+  await expect(page.getByRole('group', { name: 'Projection summary' }).locator('strong').first()).toHaveText('1,500');
   await expect(target.locator('.goal-chance')).toContainText('56.4%');
 });

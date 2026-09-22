@@ -327,8 +327,9 @@
 <div class:short={projection.totalShortfallJewels > 0}>
 <Icon name={projection.totalShortfallJewels ? 'warning' : 'check'}/>
 <span>
-<strong>{projection.requiredPaidJewels ? `Requires ${projection.requiredPaidJewels.toLocaleString()} paid Carats` : projection.totalShortfallJewels ? `${projection.totalShortfallJewels.toLocaleString()} Carats short` : 'Funded'}</strong>
-<small>{projection.requiredPaidJewels && projection.totalShortfallJewels > projection.requiredPaidJewels ? `Plus ${(projection.totalShortfallJewels - projection.requiredPaidJewels).toLocaleString()} Carats short` : 'Plan status'}</small>
+<strong>{projection.requiredPaidJewels ? projection.requiredPaidJewels.toLocaleString() : projection.totalShortfallJewels ? projection.totalShortfallJewels.toLocaleString() : 'Funded'}</strong>
+<small>{projection.requiredPaidJewels ? 'Requires paid Carats' : projection.totalShortfallJewels ? 'Carats short' : 'Plan status'}</small>
+{#if projection.requiredPaidJewels && projection.totalShortfallJewels > projection.requiredPaidJewels}<small>Plus {(projection.totalShortfallJewels - projection.requiredPaidJewels).toLocaleString()} Carats short</small>{/if}
 </span>
 </div>
 <div><Icon name="diamond" size={18}/><span><strong>{projection.balances.freeJewels.toLocaleString()}</strong><small>Carats left</small></span></div>
@@ -420,11 +421,11 @@
 .banner-copy strong,.banner-copy time{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .banner-copy time{color:var(--text-secondary);font-size:10px}
 .banner-action{display:flex;align-items:center;gap:3px;color:var(--accent-primary);font-size:10px}
-.overview{min-width:0;display:grid;grid-template-columns:minmax(150px,1.5fr) repeat(4,minmax(100px,1fr));border-left:1px solid var(--border-subtle)}
+.overview{min-width:0;display:grid;grid-template-columns:repeat(5,minmax(100px,1fr));border-left:1px solid var(--border-subtle)}
 .overview>div{min-width:0;min-height:58px;display:flex;align-items:center;gap:7px;padding:7px 10px;border-right:1px solid var(--border-subtle)}
 .overview>div:first-child{color:var(--accent-secondary)}.overview>div:last-child{border-right:0}
 .overview span{min-width:0;display:grid}
-.overview strong{overflow:hidden;font-family:var(--font-mono);font-size:14px;text-overflow:ellipsis}
+.overview strong{overflow:hidden;font-size:14px;font-variant-numeric:tabular-nums;text-overflow:ellipsis}
 .overview small{color:var(--text-secondary);font-size:9px;white-space:nowrap}
 .overview .crystal-art{width:31px;display:flex;align-items:center;flex-shrink:0}.crystal-art img{width:20px;height:20px;object-fit:contain}.crystal-art img+img{margin:8px 0 0 -9px}
 .overview .crystal-values{display:grid;overflow:visible;font-size:11px;line-height:1.12;gap:1px}.crystal-values>span{display:grid;grid-template-columns:24px auto minmax(0,1fr);gap:3px;align-items:baseline}.crystal-values b{color:var(--text-secondary);font-size:10px}

@@ -148,7 +148,7 @@
         <details class="advanced-odds" open={(viewportWidth ?? 1024) > 768}>
           <summary><span><strong>Detailed odds</strong><small>{paidOnly ? 'Includes guaranteed draws' : 'Pool rates, outcome ranges, and averages'}</small></span><strong>{percent(projection.pickupProbability)}</strong><Icon name="chevron" size={16}/></summary>
           <div class="goal-rollup">
-            {#if paidOnly && ratesAvailable}<p>Odds use all {projection.plannedPulls} planned pulls, including guaranteed draws.{#if projection.shortfallJewels} Assumes you add the required paid Carats before pulling.{/if}</p>{:else if ratesAvailable}
+            {#if paidOnly && ratesAvailable}<p>Odds use all {projection.plannedPulls} planned pulls, including guaranteed draws.{#if projection.shortfallJewels}{' '}Assumes you add the required paid Carats before pulling.{/if}</p>{:else if ratesAvailable}
               <header><span><h4>Selected pickup outcomes at {distribution.pulls.toLocaleString()} pulls</h4><p>{#if inferred}Estimated from standard banner rates · {/if}Only selected featured cards count here{#if distribution.guaranteedHits} · totals include {distribution.guaranteedHits} shared exchange {distribution.guaranteedHits === 1 ? 'copy' : 'copies'}{/if}</p></span>
                 <span class="all-goals" class:strong={(projection.pickupProbability ?? 0) >= .5} role="status"><span>All goals</span><strong>{totalLabel}</strong><small>{allGoalsStatus}</small></span>
               </header>
