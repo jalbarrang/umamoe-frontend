@@ -121,7 +121,6 @@
     .requirement.with-priority { grid-template-columns:minmax(0,1fr) 66px 44px; }
     .relation, .relation :global(.segments) { height:var(--touch-target); }
     .relation :global(.segments) { padding:0; }
-    .relation :global(.segments button) { min-height:42px; }
     .requirement :global(.select-control), .requirement :global(input[role="combobox"]) { height:var(--touch-target); }
     .requirement > :global(.icon-button) { width:var(--touch-target); min-width:var(--touch-target); height:var(--touch-target); min-height:var(--touch-target); }
     .factor-range{grid-column:1/-1}

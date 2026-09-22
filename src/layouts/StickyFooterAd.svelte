@@ -34,6 +34,7 @@
       });
     };
     const sync = () => {
+      let footerHeight = 0;
       document.querySelectorAll<HTMLElement>(containers).forEach(container => {
         if (dismissed()) {
           destroy(container);
@@ -61,6 +62,7 @@
         }
         const empty = !visible.length || container.classList.contains('closed');
         if (container.classList.contains('footer-ad-empty') !== empty) container.classList.toggle('footer-ad-empty', empty);
+        if (!empty) footerHeight = Math.max(footerHeight, container.getBoundingClientRect().height);
         for (const frame of creatives) if (!frames.has(frame)) { frames.add(frame); sizes.observe(frame); }
         if (container.querySelector('.footer-ad-close')) return;
         const close = document.createElement('button');
@@ -72,6 +74,7 @@
         close.onclick = dismiss;
         container.append(close);
       });
+      document.documentElement.style.setProperty('--footer-ad-height', `${footerHeight}px`);
       for (const frame of frames) {
         if (!frame.isConnected) { sizes.unobserve(frame); frames.delete(frame); }
       }
@@ -104,7 +107,7 @@
     };
     document.addEventListener('scroll', scrollTimeline, true);
     sync();
-    return () => { observer.disconnect(); sizes.disconnect(); cancelAnimationFrame(resizeFrame); document.removeEventListener('scroll', scrollTimeline, true); };
+    return () => { observer.disconnect(); sizes.disconnect(); cancelAnimationFrame(resizeFrame); document.removeEventListener('scroll', scrollTimeline, true); document.documentElement.style.removeProperty('--footer-ad-height'); };
   });
 </script>
 

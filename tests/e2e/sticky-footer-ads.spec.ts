@@ -63,6 +63,23 @@ async function mockFooter(page: Page) {
   }));
 }
 
+test('database scroll shortcut stays above the footer ad as it resizes and closes', async ({ page }) => {
+  await mockFooter(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/database');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  await page.locator('[data-filter-group="inheritance"] .group-title').click();
+  const shortcut = page.locator('.floating-scroll-btn');
+  await expect(shortcut).toBeInViewport();
+  for (const height of [50, 100, 250]) {
+    await page.evaluate(height => (window as any).refreshFooter(320, height), height);
+    await expect(shortcut).toHaveCSS('bottom', `${16 + Math.min(height, 126)}px`);
+    await shortcut.click({ trial: true });
+  }
+  await page.getByRole('button', { name: 'Close footer ad', exact: true }).click();
+  await expect(shortcut).toHaveCSS('bottom', '16px');
+});
+
 test('footer follows creative refreshes, survives navigation, and stays closed until a fresh load', async ({ page, isMobile, browserName }) => {
   await mockFooter(page);
   await page.clock.install();

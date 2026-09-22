@@ -86,6 +86,37 @@
 
   let filterMode = $state<InheritanceFilterMode>('basic');
   let filterExpanded = $state(false);
+  let filterStart: HTMLDivElement;
+  let resultsStart: HTMLDivElement;
+  let scrollShortcut = $state<'' | 'results' | 'top'>('');
+
+  function trackScrollShortcut(node: HTMLElement) {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (!resultsStart) return;
+      scrollShortcut = filterExpanded && resultsStart.getBoundingClientRect().top > window.innerHeight
+        ? 'results' : node.getBoundingClientRect().top < -200 ? 'top' : '';
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(node);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return { destroy() {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    } };
+  }
+
+  function useScrollShortcut(): void {
+    (scrollShortcut === 'results' ? resultsStart : filterStart).scrollIntoView({
+      block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+    });
+  }
+
   let displayOptionsOpen = $state(false);
   const compactFilters = new MediaQuery('(max-width:900px)');
   let tourPanels = $state<Record<string, boolean>>({ inheritance: innerWidth > 600, main: innerWidth > 600, general: innerWidth > 600, total: innerWidth > 600, races: innerWidth > 600, characters: false, support: false, search: false });
@@ -252,6 +283,9 @@
   const filteredBookmarks = $derived(filterAndSortBookmarks(bookmarks, filters, bookmarkFilter, includeMaxFollowers));
   const bookmarkPages = $derived(Math.max(1, Math.ceil(filteredBookmarks.length / pageSize)));
   const visibleBookmarks = $derived(filteredBookmarks.slice((bookmarkPage - 1) * pageSize, bookmarkPage * pageSize));
+  const shortcutLoading = $derived(activeTab === 'database' ? inheritanceLoading && !appendingResults : bookmarksLoading);
+  const shortcutError = $derived(activeTab === 'database' ? inheritanceError : bookmarksError);
+  const shortcutCount = $derived(activeTab === 'database' ? inheritance.total : filteredBookmarks.length);
   const trainerDigits = $derived(trainerSubmission.replace(/\D/g, '').slice(0, 12));
   const veteranView = $derived.by(() => {
     $factorCatalogState;
@@ -760,7 +794,7 @@
 
 <svelte:head><title>Database · uma.moe</title><meta name="description" content="Search the uma.moe inheritance database and browse characters, support cards, skills, and factors."/></svelte:head>
 <SourcePage routeId="database" title="Database" width="wide">
-  <div class="inheritance-database"><PageHeading eyebrow="Inheritance" title="Database" description="Find optimal inheritance pairings and support cards for Uma Musume." flush>{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</PageHeading><div class="content-container">
+  <div class="inheritance-database"><PageHeading eyebrow="Inheritance" title="Database" description="Find optimal inheritance pairings and support cards for Uma Musume." flush>{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</PageHeading><div class="content-container" bind:this={filterStart} use:trackScrollShortcut>
     <FilterShell title="Filters" activeCount={activeCount} modes={['Basic', 'Advanced', 'UQL']} mode={filterMode} onmodechange={setFilterMode} bind:expanded={filterExpanded} onclear={clearFilters}>
       {#snippet tools()}<FilterPresetMenu bind:draft={presetDraft} message={presetMessage} presets={presetViews} onsave={savePreset} onload={loadPreset} ondelete={deletePreset} onexport={() => void exportPresets()} onimport={importPresets}/>{/snippet}
       {#if filterMode === 'uql'}
@@ -870,7 +904,7 @@
       </section>
     {/if}
 
-    <div class="database-tabs">
+    <div class="database-tabs" bind:this={resultsStart}>
       <Tabs variant="pills" label="Database results" items={[{ id: 'database', label: 'Database', icon: 'database' }, { id: 'bookmarks', label: 'Bookmarks', icon: 'veterans', badge: bookmarks.length ? String(bookmarks.length) : undefined }]} value={activeTab} onchange={(value) => void switchTab(value as typeof activeTab)}/>
       {#if activeTab === 'bookmarks' && $authUser}<span class="bookmark-limit">{bookmarks.length} / 500</span>{/if}
     </div>
@@ -933,6 +967,12 @@
   </Dialog>
   <ToastRegion {toasts} ondismiss={(id) => toasts = toasts.filter((toast) => toast.id !== id)}/>
 </SourcePage>
+{#if scrollShortcut}
+  <button type="button" class="floating-scroll-btn" class:results-mode={scrollShortcut === 'results'} onclick={useScrollShortcut}>
+    <span class="scroll-arrow" class:up={scrollShortcut === 'top'}><Icon name="arrow-right" size={18}/></span>
+    <span aria-live="polite">{#if scrollShortcut === 'top'}Back to Top{:else if shortcutLoading}Searching…{:else if shortcutError}Results unavailable{:else}Results ({shortcutCount.toLocaleString()}){/if}</span>
+  </button>
+{/if}
 {#if uqlLegacyPickerOpen}<ParentPickerDialog bind:open={uqlLegacyPickerOpen} targetId={uqlContext.targetId ?? filters.playerCharaId} selectedAccountId={selectedParent?.trainer_id} sessionScope="database-uql" onselect={chooseUqlLegacy}/>{/if}
 
 {#snippet affinityFailure()}
@@ -940,6 +980,10 @@
 {/snippet}
 
 <style>
+  .floating-scroll-btn { position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:calc(16px + env(safe-area-inset-bottom) + var(--footer-ad-height,0px)); z-index:var(--z-rail); display:flex; align-items:center; gap:6px; min-height:44px; padding:8px 16px; border:1px solid var(--border-secondary); border-radius:24px; background:var(--surface-2); color:var(--text-primary); box-shadow:var(--shadow-lg); font-size:12px; font-weight:700; cursor:pointer; }
+  .floating-scroll-btn.results-mode { border-color:var(--accent-primary); color:var(--accent-primary); }
+  .floating-scroll-btn:hover { background:var(--surface-3); }
+  .scroll-arrow { transform:rotate(90deg); }.scroll-arrow.up { transform:rotate(-90deg); }
   .uql-fallback { display:grid; gap:8px; padding-block:12px; }
   .uql-fallback textarea { box-sizing:border-box; width:100%; min-height:100px; padding:12px; resize:vertical; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--surface-1); color:var(--text-primary); font:16px/1.5 monospace; }
   .uql-fallback span { font-size:12px; color:var(--text-secondary); }
