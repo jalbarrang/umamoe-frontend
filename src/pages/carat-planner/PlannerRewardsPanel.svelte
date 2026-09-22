@@ -60,7 +60,7 @@
     </div>
   </header>
   <div class="reward-viewport" aria-label={showPast ? 'Past event rewards, newest first' : 'Current and upcoming event rewards, earliest first'}>
-    <div use:virtualScroll={{ items: matching, key: item => item.id, root: 'closest', estimate: 65, onrange: range => virtualRange = range }}>
+    <div use:virtualScroll={{ items: matching, searchText: item => item.searchText, key: item => item.id, root: 'closest', estimate: 65, onrange: range => virtualRange = range }}>
     {#each visible as item, index (item.id)}<div data-virtual-index={virtualRange.start + index}>
       {#if item.campaign}
         {@const campaign = item.campaign}

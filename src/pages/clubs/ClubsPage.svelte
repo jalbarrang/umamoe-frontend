@@ -120,7 +120,7 @@
   {:else if !error && visibleClubs.length === 0}<div class="no-results"><Icon name="search" size={42}/><p>No clubs match your filters.</p><Button variant="secondary" size="sm" onclick={clearFilters}>Clear all filters</Button></div>
   {:else if visibleClubs.length}
     <ContentAd routeId="clubs" top/>
-    <section use:virtualScroll={{ items: visibleClubs, key: club => club.circleId, estimate: 120, onrange: range => virtualRange = range }} class="club-list" aria-label="Club results">
+    <section use:virtualScroll={{ items: visibleClubs, searchText: club => [club.name, club.circleId, club.leaderName, club.comment, club.monthlyFans, club.monthlyFans.toLocaleString()].join(' '), key: club => club.circleId, estimate: 120, onrange: range => virtualRange = range }} class="club-list" aria-label="Club results">
       {#each visibleClubs.slice(virtualRange.start, virtualRange.end) as club, localIndex (club.circleId)}{@const index = virtualRange.start + localIndex}<div data-virtual-index={index}>
         <CircleCard circle={club}/>
         {#if index % 20 === 19 && index < visibleClubs.length - 1 && index < 60}<ContentAd routeId="clubs" index={2 + Math.floor(index / 20)}/>{/if}</div>{/each}

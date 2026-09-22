@@ -1,4 +1,10 @@
 import { virtualScrolling } from '@/stores/virtual-scrolling';
+import { registerFindSource } from '@/lib/find-loaded';
+
+const revealers = new WeakMap<HTMLElement, (index: number) => Promise<HTMLElement | undefined>>();
+export function revealVirtualItem(host: HTMLElement, index: number): Promise<HTMLElement | undefined> {
+  return revealers.get(host)?.(index) ?? Promise.resolve(undefined);
+}
 
 export interface VirtualRange { start: number; end: number }
 interface Options<T> {
@@ -10,6 +16,7 @@ interface Options<T> {
   onrange: (range: VirtualRange) => void;
   onend?: () => void;
   navigateTo?: number;
+  searchText?: (item: T) => string;
 }
 
 /** Measured rows, with one viewport prepared in idle time on either side. */
@@ -17,6 +24,8 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
   let options = initial, items: readonly T[] = [], start = 0, end = 0;
   let columns = 1, gap = 0, width = 0, offsets = [0], dirty = true;
   let frame = 0, idle = 0, destroyed = false, navigation = -1;
+  let findIndex: number | undefined;
+  let revealGeneration = 0;
   const heights = new Map<number, number>();
   let observed = new Set<HTMLElement>();
   const savedAnchor = host.style.overflowAnchor;
@@ -38,6 +47,29 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
   window.addEventListener('resize', schedule, { passive: true });
   let enabled = true;
   const unsubscribe = virtualScrolling.subscribe(value => { enabled = value; dirty = true; schedule(); });
+  async function reveal(index: number): Promise<HTMLElement | undefined> {
+    const current = ++revealGeneration;
+    findIndex = index; navigation = -1; schedule();
+    for (let attempt = 0; attempt < 8 && !destroyed; attempt++) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      if (current !== revealGeneration || destroyed) return;
+      const node = host.querySelector<HTMLElement>('[data-virtual-index="' + index + '"]');
+      if (!node) continue;
+      node.scrollIntoView({ block:'center', behavior:'instant' }); schedule();
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      if (current !== revealGeneration || destroyed) return;
+      findIndex = undefined; navigation = options.navigateTo ?? -1;
+      return host.querySelector<HTMLElement>('[data-virtual-index="' + index + '"]') ?? undefined;
+    }
+    findIndex = undefined;
+    return undefined;
+  }
+  revealers.set(host, reveal);
+  const finder = initial.searchText ? registerFindSource({ host,
+    count: () => options.active === false ? 0 : items.length,
+    text: index => options.searchText?.(items[index]!) ?? '',
+    reveal,
+  }) : undefined;
   update(initial);
 
   function total() { return Math.max(0, offsets[offsets.length - 1]! - gap); }
@@ -57,6 +89,7 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
         heights.clear(); start = end = 0; navigation = -1;
       }
       rebuild(); dirty = true;
+      finder?.update();
     }
     schedule();
   }
@@ -72,6 +105,7 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
   function render(prepare = false) {
     if (options.active === false || !host.getClientRects().length || !host.clientWidth) return;
     let view = geometry();
+    const navigateTo = findIndex ?? options.navigateTo;
     if (!enabled) {
       for (const node of observed) resize.unobserve(node);
       observed.clear();
@@ -79,9 +113,9 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
       if (start !== 0 || end !== items.length) {
         start = 0; end = items.length; options.onrange({ start, end }); schedule(); return;
       }
-      if (options.navigateTo !== undefined && options.navigateTo >= 0 && options.navigateTo !== navigation) {
-        const target = host.querySelector<HTMLElement>('[data-virtual-index="' + options.navigateTo + '"]');
-        if (target) { navigation = options.navigateTo; target.scrollIntoView({ block: 'nearest', behavior: 'instant' }); }
+      if (navigateTo !== undefined && navigateTo >= 0 && navigateTo !== navigation) {
+        const target = host.querySelector<HTMLElement>('[data-virtual-index="' + navigateTo + '"]');
+        if (target) { navigation = navigateTo; target.scrollIntoView({ block: 'nearest', behavior: 'instant' }); }
       }
       if (items.length && view.top + 3 * view.height >= host.getBoundingClientRect().height / view.scale) options.onend?.();
       return;
@@ -107,8 +141,8 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
     }
     const correction = view.top > 0 && view.top < total() ? (offsets[Math.floor(anchorItem / columns)] ?? anchorOffset) - anchorOffset : 0;
     view.top += correction;
-    if (options.navigateTo !== undefined && options.navigateTo >= 0 && options.navigateTo !== navigation && items.length) {
-      navigation = options.navigateTo;
+    if (navigateTo !== undefined && navigateTo >= 0 && navigateTo !== navigation && items.length) {
+      navigation = navigateTo;
       const row = Math.floor(Math.min(navigation, items.length - 1) / columns);
       const rowTop = offsets[row]!, rowBottom = offsets[row + 1]! - gap;
       if (rowTop < view.top || rowBottom > view.top + view.height) {
@@ -174,7 +208,7 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
     for (const [node, height] of [[topSpacer, before], [bottomSpacer, after]] as const) { node.style.height = `${height}px`; node.style.display = height > 0 ? '' : 'none'; }
   }
   return { update, destroy() {
-    destroyed = true; unsubscribe(); cancelAnimationFrame(frame);
+    destroyed = true; unsubscribe(); finder?.destroy(); revealers.delete(host); cancelAnimationFrame(frame);
     if (typeof cancelIdleCallback === 'function') cancelIdleCallback(idle); else clearTimeout(idle);
     resize.disconnect(); mutation.disconnect();
     scroller.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule);

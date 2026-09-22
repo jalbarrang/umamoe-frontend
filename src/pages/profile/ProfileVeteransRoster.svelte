@@ -284,6 +284,13 @@
   function characterImage(id:number):string { return characterImagePath(id); }
 
   function aptitudes(v:ProfileVeteran):AptitudeItem[]{return aptitudeFields.map((field)=>({id:field.id,label:field.label,group:field.group,grade:aptitudeGrade(v[field.id])}));}
+  function findVeteranText(veteran: ProfileVeteran): string {
+    const item = veteranDisplay(veteran, characters), summary = veteranSummary(item);
+    return [summary.id, summary.name, summary.rank, summary.score, item.scenario, item.distance, item.style,
+      ...(summary.stats ?? []).flatMap(stat => [stat.label, stat.value]), ...item.factors.map(factor => factor.name),
+      ...item.skills.map(skill => skillCatalog.get(Math.floor(skill / 10))?.name),
+      ...(veteran.succession_chara_array ?? []).flatMap(parent => [characters.get(parent.card_id)?.name, ...resolveVeteranFactors(parent).map(factor => factor.name)])].join(' ');
+  }
   function veteranSummary(item: ReturnType<typeof veteranDisplay>): VeteranUiRecord {
     const v = item.veteran;
     const affinity = affinityByVeteran.get(v);
@@ -380,9 +387,9 @@
       </section>
     {/if}
     {#if filtered.length===0}<EmptyState compact icon="filter" title="No veterans match your filters." description="Try another name or distance.">{#snippet actions()}<Button variant="secondary" onclick={clearFilters}>Clear all filters</Button>{/snippet}</EmptyState>
-    {:else if displayTab==='inheritance'}<div class="inheritance-list" use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id??item.veteran.id)}{@const tree=lineage(item.veteran)}<article data-virtual-index={virtualRange.start + index}><LineageTree root={tree.root} branches={tree.branches} onselect={()=>showDetail(item.veteran)}/><Button variant="secondary" size="sm" onclick={() => openDetailPlanner(item.veteran)} icon="external">Open in planner</Button></article>{/each}</div>
+    {:else if displayTab==='inheritance'}<div class="inheritance-list" use:virtualScroll={{ items: filtered, searchText: findVeteranText, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id??item.veteran.id)}{@const tree=lineage(item.veteran)}<article data-virtual-index={virtualRange.start + index}><LineageTree root={tree.root} branches={tree.branches} onselect={()=>showDetail(item.veteran)}/><Button variant="secondary" size="sm" onclick={() => openDetailPlanner(item.veteran)} icon="external">Open in planner</Button></article>{/each}</div>
     {:else if viewMode==='grid'}
-      <div class="veteran-grid" use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }} style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
+      <div class="veteran-grid" use:virtualScroll={{ items: filtered, searchText: findVeteranText, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }} style={'--grid-columns:' + (compact ? 3 : gridColumns)}>
         {#each displayed as item, index (item.veteran.trained_chara_id ?? item.veteran.id)}
           <div data-virtual-index={virtualRange.start + index}><ProfileVeteranCard veteran={item.veteran} summary={veteranSummary(item)} legacyUrl={veteranDatabaseUrl(item.veteran, accountId, targetId)} {skillCatalog} {expandedSection} {sparkSource} baseStats={statView === 'base'} mood={Number(cardMood)} {selectedFactors} {selectedSkills} queryMatches={queryMatches.get(item.veteran) ?? []} onfactor={compact ? undefined : addFactor} onskill={compact ? undefined : addSkill} ondetails={() => showDetail(item.veteran)}/></div>
         {/each}
@@ -396,7 +403,7 @@
             <th scope="col" aria-sort={sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" ariaLabel="Sort by Total Stats" onclick={()=>sortTable('total')}>Stats {sortField==='total' || statFields.some(field=>field.id===sortField) ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th>
             <th scope="col" title={target ? 'Affinity for '+target.name : 'Veteran and parent affinity'} aria-sort={sortField==='affinity' ? sortDirection==='asc' ? 'ascending' : 'descending' : 'none'}><Button variant="ghost" size="sm" onclick={()=>sortTable('affinity')}>Affinity {sortField==='affinity' ? sortDirection==='asc' ? '↑' : '↓' : ''}</Button></th><th scope="col">Aptitudes</th><th scope="col" title="Combined stars from Own + P1 + P2">Combined sparks</th><th scope="col"><span class="visually-hidden">Details</span></th>
           </tr></thead>
-          <tbody use:virtualScroll={{ items: filtered, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id ?? item.veteran.id)}
+          <tbody use:virtualScroll={{ items: filtered, searchText: findVeteranText, key: veteran => veteran.trained_chara_id ?? veteran.id, active: !compact, onrange: range => virtualRange = range }}>{#each displayed as item, index (item.veteran.trained_chara_id ?? item.veteran.id)}
             {@const matches=queryMatches.get(item.veteran) ?? []}
             {@const summary=veteranSummary(item)}
             {@const factors=veteranFactorTotals(item.veteran)}

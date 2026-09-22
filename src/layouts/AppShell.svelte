@@ -18,6 +18,7 @@
   import MoeFooter from './MoeFooter.svelte';
   import Spinner from '@/components/Spinner.svelte';
   import ServiceNotices from './ServiceNotices.svelte';
+  import FindLoadedResults from './FindLoadedResults.svelte';
   import StickyFooterAd from './StickyFooterAd.svelte';
   import { startAnalytics, trackPageView } from '@/services/analytics';
   import { syncFusePage } from '@/services/ads/fuse-ads';
@@ -126,6 +127,7 @@
 
 {#if PageTour}<PageTour startRequest={tourRequest}/>{/if}
 <ServiceNotices/>
+<FindLoadedResults/>
 <StickyFooterAd/>
 {#if tourLoadError}<Dialog open title="Tour unavailable" onclose={() => tourLoadError = false}><p>The guided tour could not be loaded. Reload this page, then use the help button to try again.</p><Button size="sm" variant="secondary" onclick={() => location.reload()}>Reload page</Button></Dialog>{/if}
 

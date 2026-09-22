@@ -8,6 +8,7 @@
   import Checkbox from '@/components/Checkbox.svelte';
   import Dialog from '@/components/Dialog.svelte';
   import { virtualScrolling, setVirtualScrolling } from '@/stores/virtual-scrolling';
+  import { availableFindSources, findRequested, findSources } from '@/lib/find-loaded';
   let privacyUnavailable = $state(false);
   let settingsOpen = $state(false);
   let copied = $state(false);
@@ -28,6 +29,7 @@
         <a href="https://status.uma.moe/" target="_blank" rel="noopener noreferrer">Open status page ↗</a>
       </InspectPopover>
       <a href="/privacy-policy">Privacy</a>
+      {#if availableFindSources($findSources).length}<button type="button" onclick={() => findRequested.update(value => value + 1)}><Icon name="search" size={16}/>Find loaded results</button>{/if}
       <button type="button" aria-haspopup="dialog" onclick={() => settingsOpen = true}><Icon name="tune" size={16}/>Global settings</button>
       <button type="button" onclick={() => window.dispatchEvent(new Event('uma:show-updates'))}>What’s new</button>
       <button type="button" onclick={() => privacyUnavailable = !openFusePrivacyControls()}>Privacy Choices</button>

@@ -11,8 +11,8 @@
   <table>
     <caption class="sr-only">{caption}</caption>
     <thead><tr>{#each columns as column}<th class:secondary={column.priority === 'secondary'} class:numeric={column.numeric} scope="col">{column.label}</th>{/each}</tr></thead>
-    <tbody use:virtualScroll={{ items: rows, estimate: 40, onrange: range => virtualRange = range }}>
-      {#each rows.slice(virtualRange.start, virtualRange.end) as row, index}
+    <tbody use:virtualScroll={{ items: rows, searchText: row => columns.map(column => row[column.key]).join(' '), estimate: 40, onrange: range => virtualRange = range }}>
+      {#each rows.slice(virtualRange.start, virtualRange.end) as row, index (virtualRange.start + index)}
         <tr data-virtual-index={virtualRange.start + index}>{#each columns as column}<td class:secondary={column.priority === 'secondary'} class:numeric={column.numeric} data-label={column.label}>{#if cell}{@render cell(row, column)}{:else}{row[column.key]}{/if}</td>{/each}</tr>
       {:else}
         <tr><td colspan={columns.length} class="empty">{emptyMessage}</td></tr>

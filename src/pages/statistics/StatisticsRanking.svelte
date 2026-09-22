@@ -32,7 +32,7 @@
     {/if}
     {#if matching.length}
       <div class="column-labels" aria-hidden="true"><span>{items[0]?.composition ? 'Deck composition' : 'Name'}</span><span class="numeric-labels"><span>Uses</span><span>Share</span></span></div>
-      <ol aria-label={title} use:virtualScroll={{ items: listed, key: item => item.id, estimate: 48, onrange: range => virtualRange = range }}>
+      <ol aria-label={title} use:virtualScroll={{ items: listed, searchText: item => [item.name, item.id, item.detail, item.value, item.value.toLocaleString()].join(' '), key: item => item.id, estimate: 48, onrange: range => virtualRange = range }}>
         {#each listed.slice(virtualRange.start, virtualRange.end) as item, index (item.id)}
           <li data-virtual-index={virtualRange.start + index} aria-posinset={virtualRange.start + index + 1} aria-setsize={listed.length}>
             {#snippet row()}

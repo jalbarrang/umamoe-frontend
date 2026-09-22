@@ -2,7 +2,8 @@
   import { onMount, tick, untrack, type Snippet } from 'svelte';
   import Icon from '@/components/Icon.svelte';
   import { virtualScrolling } from '@/stores/virtual-scrolling';
-  import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
+  import { virtualScroll, revealVirtualItem, type VirtualRange } from '@/lib/virtual-scroll';
+  import { registerFindSource } from '@/lib/find-loaded';
   import AdRegion from '@/layouts/AdRegion.svelte';
   import { buildTimelineFeed, LANE_STEP, LANE_WIDTH, timelineDateKey, timelineMonths, timelinePosition, type TimelineAnniversary, type TimelineLane, type TimelineMarker } from '@/lib/timeline/timeline-layout';
   import type { TimelineRecord } from './timeline-repository';
@@ -85,6 +86,37 @@
   const finish = $derived($virtualScrolling ? Math.min(rows.length, indexAt(Math.max(0, pageY - feedTop) + 2 * viewportHeight) + 2) : rows.length);
   const visibleRows = $derived(rows.slice(start, finish));
   const behavior = (): ScrollBehavior => matchMedia('(pointer: coarse), (prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+
+  $effect(() => {
+    const host = mobile ? feed : board, searchable = events;
+    if (!active || !host) return;
+    const source = registerFindSource({ host, count: () => searchable.length,
+      text: index => { const event = searchable[index]!; return [event.title, event.typeLabel, event.dateLabel, event.context, event.description,
+        ...event.relatedCharacters, ...event.relatedSupportCardNames, ...(event.pickups ?? []).flatMap(pickup => [pickup.name, pickup.subLabel]),
+        ...(event.raceLines ?? []), ...event.tags].join(' '); },
+      reveal: index => revealEvent(searchable[index]!),
+    });
+    return source.destroy;
+  });
+  async function revealEvent(event: TimelineRecord): Promise<HTMLElement | undefined> {
+    cancelAnimationFrame(momentum);
+    if (mobile && feed) {
+      const index = rows.findIndex(row => row.events.some(item => item.id === event.id));
+      if (index < 0) return;
+      window.scrollTo({ top: feedTop + offsets[index]!, behavior:'instant' }); updateViewport(); await tick();
+    } else {
+      const lane = lanes.find(lane => lane.events.some(item => item.id === event.id));
+      if (!lane || !board) return;
+      await scrollToLane(lane.key, false); await tick();
+      if (view === 'horizontal') {
+        const host = board.querySelector<HTMLElement>(`[data-lane-key="${CSS.escape(lane.key)}"] .lane-events`);
+        if (host) await revealVirtualItem(host, lane.events.findIndex(item => item.id === event.id));
+      }
+    }
+    const node = (mobile ? feed : board)?.querySelector<HTMLElement>(`[data-event-id="${CSS.escape(event.id)}"]`);
+    node?.scrollIntoView({ block:'center', inline:'center', behavior:'instant' }); updateViewport();
+    return node ?? undefined;
+  }
 
   function updateViewport() {
     if (!active) return;
