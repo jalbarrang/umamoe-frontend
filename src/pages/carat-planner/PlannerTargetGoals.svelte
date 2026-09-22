@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isPaidBanner, plannerCardKind } from '@/lib/timeline/planner-paid-banners';
+  import { isPaidBanner, paidBannerSteps, plannerCardKind } from '@/lib/timeline/planner-paid-banners';
   import { findGacha, plannerPickupGoals, type PlannerDataBundle, type PlannerGoalProjection, type PlannerTarget, type TargetProjection } from '@/lib/timeline/carat-planner';
   import { plannerPickupOptions } from '@/lib/timeline/planner-presentation';
   import { calculatePullDistribution, pullOutcomeSegments } from '@/lib/timeline/planner-pull-probability';
@@ -25,9 +25,11 @@
   const gacha = $derived(findGacha(target, resources));
   const paidOnly = $derived(isPaidBanner(target, gacha));
   const cardKind = $derived(plannerCardKind(target, gacha));
-  const options = $derived(plannerPickupOptions(target, gacha, events, catalog));
+  const stepUp = $derived(gacha?.step_up);
+  const chosenCopies = $derived(paidBannerSteps(gacha).slice(0, projection.plannedPulls / 10).filter(step => step.selectable).length);
+  const options = $derived(stepUp ? [{ id: 'step-up-choice', pickupId: 0, kind: cardKind, image: '', name: 'Chosen card', subLabel: stepUp.selection_pool_size ? `From your pool of ${stepUp.selection_pool_size}` : 'From your selected pool', rate: stepUp.selection_pickup_rate, exchangeable: false }] : plannerPickupOptions(target, gacha, events, catalog));
   const filteredOptions = $derived(options.filter(option => `${option.name} ${option.subLabel}`.toLocaleLowerCase().includes(pickupSearch.trim().toLocaleLowerCase())));
-  const goals = $derived(plannerPickupGoals(target).map(goal => ({ ...goal, option: options.find(option => option.pickupId === goal.pickupId)!, odds: projection.pickupGoals.find(odds => odds.pickupId === goal.pickupId) })));
+  const goals = $derived((stepUp ? [{ pickupId: 0, desiredCopies: target.desiredCopies }] : plannerPickupGoals(target)).map(goal => ({ ...goal, option: options.find(option => option.pickupId === goal.pickupId)!, odds: projection.pickupGoals.find(odds => odds.pickupId === goal.pickupId) })));
   const ratesAvailable = $derived(goals.length > 0 && goals.every(goal => goal.odds?.pickupRate !== undefined));
   const inferred = $derived(gacha?.rates_confidence === 'inferred_standard');
   const source = $derived(gacha?.pickups ?? gacha?.featured_pickups ?? []);
@@ -54,10 +56,11 @@
   }
   function oddsLabel(name: string, odds?: PlannerGoalProjection): string {
     if (odds?.probability === undefined) return `Odds unavailable for ${name}`;
-    return `${percent(odds.probability)} chance of at least ${odds.copiesNeededFromPulls} copies of ${name}${odds.crystalCopiesApplied ? `; ${odds.crystalCopiesApplied} ${odds.crystalKind === 'gold' ? 'Gold' : 'Rainbow'} Uncap Crystals supply the remaining limit breaks toward ${odds.desiredCopies} copies` : ''}`;
+    return `${percent(odds.probability)} chance of at least ${odds.copiesNeededFromPulls} ${odds.copiesNeededFromPulls === 1 ? 'copy' : 'copies'} of ${name}${odds.crystalCopiesApplied ? `; ${odds.crystalCopiesApplied} ${odds.crystalKind === 'gold' ? 'Gold' : 'Rainbow'} Uncap Crystals supply the remaining limit breaks toward ${odds.desiredCopies} copies` : ''}`;
   }
   function editGoal(pickupId: number, change?: number): void {
     onupdate(value => {
+      if (stepUp) { value.desiredCopies = Math.max(1, Math.min(cardKind === 'support' ? 5 : 20, value.desiredCopies + (change ?? 0))); return; }
       const selected = plannerPickupGoals(value);
       const index = selected.findIndex(goal => goal.pickupId === pickupId);
       const key = `${value.id}:${pickupId}`;
@@ -85,7 +88,7 @@
 
 {#snippet art(option: typeof options[number], size: number)}
   <span class="pickup-art" class:support={option.kind === 'support'} style:width={`${size}px`} style:height={`${size}px`}>
-    <img src={option.image} width={size} height={size} alt="" loading="lazy" onerror={imageError}/>
+    {#if option.image}<img src={option.image} width={size} height={size} alt="" loading="lazy" onerror={imageError}/>{/if}
     <Icon name={option.kind === 'support' ? 'grid' : 'user'} size={Math.min(size, 22)}/>
   </span>
 {/snippet}
@@ -110,9 +113,9 @@
   </summary>
   {#if expanded}
     <div class="goal-workspace">
-      <section class="goal-editor" aria-label={`Rate-up goals for ${target.title}`}>
-        <header><span><strong>Rate-up goals</strong><small>Choose who you want and how many copies.</small></span>
-          {#if options.length}<InspectPopover label="Choose rate-ups" align="end" onopenchange={open => { if (!open) pickupSearch = ''; }}>
+      <section class="goal-editor" aria-label={`${stepUp ? 'Step-Up' : 'Rate-up'} goals for ${target.title}`}>
+        <header><span><strong>{stepUp ? 'Step-Up goal' : 'Rate-up goals'}</strong><small>{stepUp ? 'Set how many copies of one chosen card you want.' : 'Choose who you want and how many copies.'}</small></span>
+          {#if !stepUp && options.length}<InspectPopover label="Choose rate-ups" align="end" onopenchange={open => { if (!open) pickupSearch = ''; }}>
             {#snippet trigger()}<span class="picker-trigger"><Icon name="add" size={16}/><span>Choose rate-ups</span><small>{goals.length} selected</small></span>{/snippet}
             <div class="pickup-picker"><header><strong>Featured on this banner</strong><small>Select one or more pickups.</small></header>
               {#if options.length > 6}<input class="pickup-search" type="search" aria-label="Search featured pickups" placeholder="Search name or variant…" bind:value={pickupSearch}/>{/if}
@@ -131,14 +134,14 @@
           {#each goals as goal (goal.pickupId)}
             <article class="selected-goal" aria-label={goal.option.name} data-pickup-id={goal.pickupId}>
               {@render art(goal.option, 40)}
-              <span class="goal-name"><strong title={goal.option.name}>{goal.option.name}</strong><small>{goal.option.subLabel} · {percent(goal.odds?.pickupRate, 2)} {inferred ? 'estimated ' : ''}per pull</small></span>
+              <span class="goal-name"><strong title={goal.option.name}>{goal.option.name}</strong><small>{goal.option.subLabel} · {percent(goal.odds?.pickupRate, 2)} {stepUp ? 'per random pull' : inferred ? 'estimated per pull' : 'per pull'}</small></span>
               <div class="goal-copies"><small>Copies</small><div class="copy-stepper" role="group" aria-label={`Copies of ${goal.option.name}`}>
                 <Button variant="ghost" size="sm" icon="minus" ariaLabel={`Decrease desired copies of ${goal.option.name}`} disabled={goal.desiredCopies <= 1} onclick={() => editGoal(goal.pickupId, -1)}/>
                 <output aria-label={`${goal.desiredCopies} desired copies`}>{goal.desiredCopies}</output>
                 <Button variant="ghost" size="sm" icon="add" ariaLabel={`Increase desired copies of ${goal.option.name}`} disabled={goal.desiredCopies >= (cardKind === 'support' ? 5 : 20)} onclick={() => editGoal(goal.pickupId, 1)}/>
               </div></div>
               <strong class="individual-chance" aria-label={oddsLabel(goal.option.name, goal.odds)}>{percent(goal.odds?.probability)}</strong>
-              <Button variant="ghost" size="sm" icon="close" ariaLabel={`Remove ${goal.option.name} from rate-up goals`} onclick={() => editGoal(goal.pickupId)}/>
+              {#if !stepUp}<Button variant="ghost" size="sm" icon="close" ariaLabel={`Remove ${goal.option.name} from rate-up goals`} onclick={() => editGoal(goal.pickupId)}/>{/if}
             </article>
           {:else}<p>No rate-up selected yet. Use <strong>Choose rate-ups</strong> to add one or more.</p>{/each}
         </div>
@@ -167,6 +170,10 @@
               <ul class="outcome-legend" aria-label="Selected rate-up outcome probabilities">{#each segments as segment}<li><i data-outcome={segment.tone}></i><span><strong>{segment.semanticLabel}</strong><small>{segment.rangeLabel}</small></span><b>{percent(segment.probability)}</b></li>{/each}</ul>
               <div class="outcome-summary"><span><small>Avg selected copies</small><strong>{copies(distribution.expectedHits)}</strong></span><span><small>Median copies</small><strong>{distribution.medianHits}</strong></span><span><small>Median first rate-up</small><strong>{distribution.medianFirstHitPull === undefined ? '-' : `Pull ${distribution.medianFirstHitPull}`}</strong></span></div>
             {:else}<p>Published pickup rates are unavailable for the selected goals.</p>{/if}
+            {#if stepUp}
+              <p>{#if chosenCopies}Choose that card at each reached selection step: {chosenCopies} {chosenCopies === 1 ? 'copy is' : 'copies are'} guaranteed.{:else}Your selected steps do not reach a guaranteed card choice.{/if}</p>
+              <details class="step-costs"><summary><span>Step costs and guarantees · {stepUp.rounds} {stepUp.rounds === 1 ? 'round' : 'rounds'} available</span><Icon name="chevron" size={16}/></summary><ol>{#each stepUp.steps as step, index}<li><b>Step {index + 1}</b> · {step.cost.toLocaleString()} paid Carats · {step.pulls} pulls{#if step.selectable} · Choose the guaranteed {topRarity}{:else if step.guaranteed_rarity === 3} · Guaranteed {topRarity}{/if}</li>{/each}</ol></details>
+            {/if}
           </div>
         </details>
       {/if}
@@ -190,6 +197,7 @@
   .pickup-picker{display:flex;flex-direction:column;gap:8px;max-height:min(520px,calc(100dvh - 48px))}.pickup-picker header{padding-right:34px}.pickup-search{flex:none;width:100%;min-height:40px;padding:8px;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm);background:var(--factor-field-bg);color:var(--text-primary);font:inherit;font-size:12px}.pickup-options{min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:4px;padding:2px;scrollbar-gutter:stable}.picker-count{flex:none;border-top:1px solid var(--border-subtle);padding-top:8px}.pickup-picker button{display:grid;grid-template-columns:40px minmax(0,1fr) 16px;align-items:center;gap:7px;min-height:52px;padding:5px;border:1px solid transparent;border-radius:var(--radius-sm);background:transparent;color:var(--text-primary);text-align:left;cursor:pointer}.pickup-picker button>span:nth-child(2){min-width:0;display:grid;gap:3px}.pickup-picker button strong{font-size:12px}.pickup-picker button.selected{background:var(--color-accent-soft);border-color:var(--accent-primary)}.pickup-picker button:hover{background:var(--factor-option-hover)}.pickup-picker button:focus-visible,.pickup-search:focus-visible{outline:2px solid var(--accent-primary)}
   .selected-goals{display:grid;gap:5px}.selected-goal{min-width:0;min-height:60px;display:grid;grid-template-columns:40px minmax(0,1fr) auto auto 28px;align-items:center;gap:5px;border-top:1px solid var(--border-subtle)}.goal-name{min-width:0;display:grid;gap:3px}.goal-name strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.goal-name small{font-size:9px}.goal-copies{display:grid;justify-items:center;gap:3px}.copy-stepper{display:flex;align-items:center;overflow:hidden;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm)}.copy-stepper :global(.ui-button){width:28px;min-height:28px;padding:0;border-radius:0}.copy-stepper output{min-width:22px;text-align:center;font-weight:700}.individual-chance{font-size:11px;color:var(--accent-primary)}.selected-goal>:global(.ui-button){width:28px;min-height:30px;padding:0}.selected-goal>.pickup-art{width:40px!important;height:40px!important}
   .advanced-odds{min-width:0;border-left:1px solid var(--border-subtle)}.advanced-odds>summary{display:none}
+  .step-costs{font-size:10px}.step-costs>summary{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:32px}.step-costs[open]>summary>:global(svg){transform:rotate(180deg)}.step-costs ol{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
   .goal-rollup{display:grid;gap:10px;padding:10px 12px;background:color-mix(in srgb,var(--surface-1) 84%,var(--surface-2))}.goal-rollup>header{display:flex;justify-content:space-between;align-items:start;gap:12px}.goal-rollup h4{font-size:12px;margin:0 0 4px}.all-goals{display:grid;grid-template-columns:auto auto;align-items:baseline;justify-content:end;gap:2px 7px;text-align:right;flex:none;max-width:180px;padding-left:12px;border-left:1px solid var(--border-primary)}.all-goals>span{color:var(--text-secondary);font-size:10px}.all-goals>small{grid-column:1/-1}.all-goals>strong{font-size:14px;color:var(--accent-primary)}.all-goals.strong>strong,.goal-chance.strong>strong{color:var(--accent-secondary)}
   .pool-summary{display:grid;gap:5px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle)}.pool-summary>header{display:flex;justify-content:space-between;align-items:center;gap:10px}.pool-summary>header>span{display:flex;align-items:baseline;gap:7px}.pool-summary dl{display:flex;gap:14px;margin:0;text-align:right}.pool-summary dl>div{display:flex;align-items:baseline;gap:5px}.pool-summary dt{font-size:10px;color:var(--text-secondary)}.pool-summary dd{margin:0;font-weight:700;font-size:11px}
   .pool-stack,.outcome-stack{display:flex;height:9px;overflow:hidden;border-radius:3px;background:var(--surface-3)}.outcome-stack{height:12px}.pool-stack>span,.outcome-stack>span{height:100%}

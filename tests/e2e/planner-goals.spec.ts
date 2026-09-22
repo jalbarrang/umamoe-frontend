@@ -64,7 +64,7 @@ test('Planner rate-up goals preserve copies, crystal details and shared odds acr
   const pool = target.locator('.pool-stack');
   expect(await pool.locator('span').evaluateAll(items => items.reduce((sum, item) => sum + parseFloat((item as HTMLElement).style.width), 0))).toBeCloseTo(100);
   await expect(target.getByText('Avg selected copies', { exact: true })).toBeVisible();
-  await expect(target.locator('.individual-chance').first()).toHaveAttribute('aria-label', /chance of at least .*copies of Special Week/);
+  await expect(target.locator('.individual-chance').first()).toHaveAttribute('aria-label', /chance of at least .*cop(?:y|ies) of Special Week/);
   await expect.poll(() => selected.locator('img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0))).toBe(true);
   await target.screenshot({ path: testInfo.outputPath('planner-goals.png') });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
