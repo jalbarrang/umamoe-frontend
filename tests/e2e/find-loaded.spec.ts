@@ -28,8 +28,11 @@ test('Find reaches unmounted Database cards, wraps matches, and updates after pa
   await expect(page.locator('[data-find-current]')).toContainText('Needle Trainer 599');
   await expect(page.locator('[data-find-current]')).toBeInViewport();
   expect(await page.locator('.inheritance-card').count()).toBeLessThan(25);
+  await expect.poll(() => page.evaluate(() => Array.from(CSS.highlights.get('loaded-result-find') ?? [], range => range.toString()))).toEqual(['Needle Trainer']);
+  expect(await page.evaluate(() => Array.from(CSS.highlights.get('loaded-result-find') ?? []).every(range => document.querySelector('[data-find-current]')?.contains(range.startContainer)))).toBe(true);
   expect(requests).toEqual([0]);
   await bar.screenshot({ path:test.info().outputPath('find-bar.png') });
+  await page.locator('[data-find-current]').screenshot({ path:test.info().outputPath('highlighted-result.png') });
   const bounds = (await bar.boundingBox())!;
   expect(bounds.x).toBeGreaterThanOrEqual(0);
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
@@ -38,13 +41,37 @@ test('Find reaches unmounted Database cards, wraps matches, and updates after pa
   await page.getByRole('button', { name:'Next page', exact:true }).click();
   await expect(bar.getByRole('status')).toHaveText('No matches');
   await expect(page.locator('[data-find-current]')).toHaveCount(0);
+  expect(await page.evaluate(() => CSS.highlights.has('loaded-result-find'))).toBe(false);
   await input.fill('Different page'); await expect(bar.getByRole('status')).toHaveText('1 / 1');
   await expect(page.locator('[data-find-current]')).toContainText('Different page');
   await input.press('Escape'); await expect(bar).toHaveCount(0);
   await expect(page.locator('[data-find-current]')).toHaveCount(0);
+  expect(await page.evaluate(() => CSS.highlights.has('loaded-result-find'))).toBe(false);
   expect(await page.evaluate(() => localStorage.getItem('uma-virtual-scrolling'))).not.toBe('false');
   await page.keyboard.press('Meta+f'); await expect(input).toBeFocused();
   await bar.getByRole('button', { name:'Close find', exact:true }).click();
+});
+
+test('Find highlights spark text through card updates without adding DOM wrappers', async ({ page }) => {
+  await mockDatabase(page); await mockAffinity(page);
+  await page.addInitScript(() => localStorage.setItem('db-list-mode', 'paginated'));
+  await page.goto('/database'); await expect(page.locator('.inheritance-card').first()).toBeVisible();
+  const nodes = await page.locator('.inheritance-card').first().locator('*').count();
+  await page.keyboard.press('Control+f');
+  const input = page.getByRole('searchbox', { name:'Find in loaded results' });
+  const highlighted = () => page.evaluate(() => Array.from(CSS.highlights.get('loaded-result-find') ?? [], range => range.toString()));
+  await input.fill('right-handed');
+  await expect.poll(highlighted).toEqual(['Right-Handed']);
+  const card = page.locator('[data-find-current] .inheritance-card');
+  expect(await card.locator('*').count()).toBe(nodes);
+  const section = card.locator('details').filter({ has:page.locator('summary', { hasText:'Normal whites' }) });
+  await section.locator('summary').click(); await expect(section).not.toHaveAttribute('open');
+  await section.locator('summary').click(); await expect(section).toHaveAttribute('open');
+  await expect.poll(highlighted).toEqual(['Right-Handed']);
+  await card.getByRole('button', { name:'★ Stars', exact:true }).click();
+  await expect.poll(highlighted).toEqual(['Right-Handed']);
+  await input.fill('speed'); await expect.poll(highlighted).toEqual(['Speed']);
+  await input.fill(''); await expect.poll(highlighted).toEqual([]);
 });
 
 test('Find searches resolved Veterans names and Profile history without mounting every result', async ({ page }) => {
