@@ -75,7 +75,7 @@
           </div>
         {/if}
         {#if searchable}
-          <Combobox id={`${id}-factor-${index}`} label="Factor" hideLabel placeholder={category === 'unique' ? 'Search Green Factor' : 'Search White Factor'} {options} value={String(requirement.factorId)} onchange={(value) => update(index, { factorId: Number(value) })}/>
+          <Combobox id={`${id}-factor-${index}`} label="Factor" hideLabel emptyValue={category === 'unique' ? '0' : undefined} placeholder={category === 'unique' ? 'Search Green Factor' : 'Search White Factor'} {options} value={String(requirement.factorId)} onchange={(value) => update(index, { factorId: Number(value) })}/>
         {:else}
           <SelectField id={`${id}-factor-${index}`} label="Factor" hideLabel {options} value={String(requirement.factorId)} onchange={(value) => update(index, { factorId: Number(value) })}/>
         {/if}

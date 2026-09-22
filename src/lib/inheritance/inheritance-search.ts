@@ -189,7 +189,7 @@ function appendList(query: URLSearchParams, name: string, values: number[]): voi
 
 export function encodedFactorLevels(requirement: FactorRequirement, maximumCap = 9): number[] {
   const id = Math.trunc(requirement.factorId);
-  if (id <= 0) return [];
+  if (!Number.isFinite(id) || id < 0) return [];
   const minimum = Math.max(1, Math.min(maximumCap, Math.trunc(requirement.minimumStars || 1)));
   const maximum = Math.max(minimum, Math.min(maximumCap, Math.trunc(requirement.maximumStars ?? maximumCap)));
   return Array.from({ length: maximum - minimum + 1 }, (_, index) => Number(`${id}${minimum + index}`));
@@ -199,6 +199,7 @@ function appendFactorGroups(query: URLSearchParams, name: string, requirements: 
   const groups: number[][] = [];
   let hasAlternatives = false;
   for (const requirement of requirements) {
+    if (requirement.factorId === 0 && name.includes('white')) continue;
     const levels = encodedFactorLevels(requirement, maximumCap);
     if (!levels.length) continue;
     if (requirement.operator === 'or' && groups.length) { groups[groups.length - 1]!.push(...levels); hasAlternatives = true; }
@@ -340,8 +341,8 @@ export function activeInheritanceFilterCount(filters: InheritanceSearchFilters):
   if (filters.trainerName?.trim()) count++;
   const arrays: unknown[][] = [filters.mainParentIds, filters.includeParentIds, filters.excludeParentIds, filters.excludeMainParentIds, filters.scenarioIds, filters.raceSchedule];
   count += arrays.reduce((sum, values) => sum + values.length, 0);
-  const factors = [filters.blue, filters.pink, filters.green, filters.white, filters.mainBlue, filters.mainPink, filters.mainGreen, filters.mainWhite, filters.optionalWhite, filters.optionalMainWhite, filters.lineageWhite];
-  count += factors.reduce((sum, values) => sum + values.filter((requirement) => Number.isFinite(requirement.factorId) && requirement.factorId > 0).length, 0);
+  const factors = [filters.blue, filters.pink, filters.green, filters.mainBlue, filters.mainPink, filters.mainGreen, ...[filters.white, filters.mainWhite, filters.optionalWhite, filters.optionalMainWhite, filters.lineageWhite].map(values => values.filter(item => item.factorId > 0))];
+  count += factors.reduce((sum, values) => sum + values.filter((requirement) => Number.isFinite(requirement.factorId) && requirement.factorId >= 0).length, 0);
   const optionalScalars = [filters.playerCharaId, filters.parentLeftId, filters.parentRightId, filters.supportCardId, filters.minLimitBreak, filters.minWinCount, filters.minWhiteCount, filters.minBlueStarsSum, filters.minPinkStarsSum, filters.minGreenStarsSum, filters.minWhiteStarsSum, filters.minCommonWhiteCount, filters.minCommonWhiteStarsSum, filters.minScenarioWhiteCount, filters.minScenarioWhiteStarsSum, filters.minRaceWhiteCount, filters.minRaceWhiteStarsSum, filters.minMainCommonWhiteCount, filters.minMainCommonWhiteStarsSum, filters.minMainScenarioWhiteCount, filters.minMainScenarioWhiteStarsSum, filters.minMainRaceWhiteCount, filters.minMainRaceWhiteStarsSum, filters.minMainWhiteCount, filters.p2MainCharaId];
   count += optionalScalars.filter((value) => value !== undefined && value !== 0).length;
   if ((filters.minParentRank ?? 1) > 1) count++;

@@ -77,7 +77,9 @@ function predicate(source: string): Expression {
         left=row=>{
           const first=list(args[0]!(row)), second=list(args[1]!(row));
           if(name === 'spark_sum') return first.reduce<number>((sum,value)=>Math.floor(Number(value)/10) === Number(second[0]) ? sum+Number(value)%10 : sum,0);
-          return ['has_all','contains_all','all'].includes(name) ? second.every(value=>first.includes(value)) : second.some(value=>first.includes(value));
+          const sparkField = references(args[0]!,row).some(reference=>/^(blue|pink|green|white)_sparks$|^(main|left|right)_white_factors$/.test(reference.field));
+          const matches = (value: Value) => first.includes(value) || sparkField && typeof value === 'number' && value >= 1 && value <= 9 && first.some(actual=>Number(actual) >= 10 && Number(actual)%10 === value);
+          return ['has_all','contains_all','all'].includes(name) ? second.every(matches) : second.some(matches);
         };
         const call=left;
         left=traced(call,args,row=>references(args[0]!,row).map(reference=>name==='spark_sum'

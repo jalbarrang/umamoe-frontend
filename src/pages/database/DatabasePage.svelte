@@ -295,9 +295,9 @@
     for (const [key, prefix, tone] of factorGroups) {
       const requirements = filters[key] as FactorRequirement[];
       requirements.forEach((requirement, index) => {
-        if (!Number.isFinite(requirement.factorId) || requirement.factorId <= 0) return;
+        if (!Number.isFinite(requirement.factorId) || requirement.factorId < 0 || requirement.factorId === 0 && tone === 'white') return;
         const range = requirement.maximumStars && requirement.maximumStars !== requirement.minimumStars ? `${requirement.minimumStars}–${requirement.maximumStars}★` : `${requirement.minimumStars}★`;
-        add(`${String(key)}-${requirement.factorId}-${index}`, `${prefix}: ${factorLabels.get(String(requirement.factorId)) ?? requirement.factorId} ${range}`, tone, () => { (filters[key] as FactorRequirement[]) = requirements.filter((_, itemIndex) => itemIndex !== index); });
+        add(`${String(key)}-${requirement.factorId}-${index}`, `${prefix}: ${requirement.factorId === 0 ? 'Any' : factorLabels.get(String(requirement.factorId)) ?? requirement.factorId} ${range}`, tone, () => { (filters[key] as FactorRequirement[]) = requirements.filter((_, itemIndex) => itemIndex !== index); });
       });
     }
     if (filters.supportCardId) add('support', `Support: ${supportOptions.find((option) => Number(option.id) === filters.supportCardId)?.title ?? filters.supportCardId}${filters.minLimitBreak ? ` · LB${filters.minLimitBreak}` : ''}`, 'support', () => { filters.supportCardId = undefined; filters.minLimitBreak = undefined; });

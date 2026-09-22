@@ -30,13 +30,13 @@ function factorMatches(encoded: number, requirement: FactorRequirement): boolean
   const factor = decodeFactor(Math.abs(encoded));
   const minimum = Math.max(1, requirement.minimumStars || 1);
   const maximum = Math.max(minimum, requirement.maximumStars ?? 9);
-  return factor.id === requirement.factorId && factor.level >= minimum && factor.level <= maximum;
+  return (requirement.factorId === 0 ? Math.abs(encoded) >= 10 : factor.id === requirement.factorId) && factor.level >= minimum && factor.level <= maximum;
 }
 
 function matchesRequirements(values: Array<number | undefined>, requirements: FactorRequirement[]): boolean {
   const factors = values.filter((value): value is number => Number.isFinite(value));
   const groups: FactorRequirement[][] = [];
-  for (const requirement of requirements.filter((entry) => entry.factorId > 0)) {
+  for (const requirement of requirements.filter((entry) => Number.isFinite(entry.factorId) && entry.factorId >= 0)) {
     if (requirement.operator === 'or' && groups.length) groups[groups.length - 1]!.push(requirement);
     else groups.push([requirement]);
   }
@@ -63,11 +63,11 @@ export function bookmarkMatchesFilters(record: InheritanceRecord, filters: Inher
   if (!matchesRequirements(record.blueSparks, filters.blue)) return false;
   if (!matchesRequirements(record.pinkSparks, filters.pink)) return false;
   if (!matchesRequirements(record.greenSparks, filters.green)) return false;
-  if (!matchesRequirements(record.whiteSparks, filters.white)) return false;
+  if (!matchesRequirements(record.whiteSparks, filters.white.filter(item => item.factorId > 0))) return false;
   if (!matchesRequirements([record.mainBlue], filters.mainBlue)) return false;
   if (!matchesRequirements([record.mainPink], filters.mainPink)) return false;
   if (!matchesRequirements([record.mainGreen], filters.mainGreen)) return false;
-  if (!matchesRequirements(record.mainWhite, filters.mainWhite)) return false;
+  if (!matchesRequirements(record.mainWhite, filters.mainWhite.filter(item => item.factorId > 0))) return false;
   if (filters.supportCardId && record.supportCardId !== filters.supportCardId) return false;
   if (filters.minLimitBreak != null && (record.supportLimitBreak ?? 0) < filters.minLimitBreak) return false;
   if (filters.minWinCount != null && (record.winCount ?? 0) < filters.minWinCount) return false;

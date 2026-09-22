@@ -3,6 +3,20 @@ import { activeInheritanceFilterCount, emptyInheritanceFilters, inheritanceSearc
 import { validateInheritanceUql } from './uql';
 
 describe('inheritance search contract', () => {
+  it('sends Any star levels without enumerating factor IDs, including mixed groups', () => {
+    const filters = emptyInheritanceFilters();
+    filters.green = [{ factorId: 0, minimumStars: 2, maximumStars: 3 }];
+    filters.mainGreen = [{ factorId: 0, minimumStars: 2, maximumStars: 3 }];
+    filters.white = [{ factorId: 0, minimumStars: 1 }];
+    let query = inheritanceSearchQuery(filters, 0, 12);
+    expect(query.get('green_sparks')).toBe('2,3');
+    expect(query.get('main_parent_green_sparks')).toBe('2,3');
+    expect(query.has('white_sparks')).toBe(false);
+    expect(activeInheritanceFilterCount(filters)).toBe(2);
+    filters.green.push({ factorId: 100010, minimumStars: 1, maximumStars: 1, operator: 'or' }, { factorId: 0, minimumStars: 3, maximumStars: 3 });
+    query = inheritanceSearchQuery(filters, 0, 12);
+    expect(query.get('uql')).toBe('overlaps(green_sparks, (2,3,1000101)) and overlaps(green_sparks, (3))');
+  });
   it('keeps UQL requests independent of structured controls while retaining target and legacy context', () => {
     const filters = emptyInheritanceFilters();
     filters.blue = [{ factorId: 10, minimumStars: 2, maximumStars: 2 }]; filters.minWinCount = 9; filters.supportCardId = 30137; filters.trainerName = 'Hidden form value';

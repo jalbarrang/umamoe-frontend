@@ -30,6 +30,13 @@ function memoryStorage(): Storage {
 }
 
 describe('Angular-compatible database preferences', () => {
+  it('round-trips Any star ranges while ignoring unselected white factors', () => {
+    const compact = { g: [[0, 2, 3]], mg: [[0, 3, 3]], b: [[0, 2, 5]], w: [[0, 1, 9]] };
+    const filters = filtersFromCompactState(compact, 'advanced');
+    expect(filters.green).toEqual([{ factorId: 0, minimumStars: 2, maximumStars: 3 }]);
+    expect(compactStateFromFilters(filters)).toMatchObject({ g: compact.g, mg: compact.mg, b: compact.b });
+    expect(filters.white).toEqual([]);
+  });
   it('keeps unselected Angular tree slots absent rather than inventing character zero', () => {
     const filters = filtersFromCompactState({ t: [1013, null, null, null, null, null, null], mwc: 0, sc: '', pr: null as unknown as number }, 'advanced');
     expect(filters).toMatchObject({ playerCharaId: 1013, mainParentIds: [], parentLeftId: undefined, parentRightId: undefined, minWinCount: 0, supportCardId: undefined, minParentRank: undefined });

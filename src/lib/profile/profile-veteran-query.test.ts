@@ -16,6 +16,12 @@ const groups=new Map([[1,1],[2,2],[3,1]]);
 const engine=new VeteranAffinityEngine({chars:[1011,1067,1088],aff2:[0,10,15,10,0,20,15,20,0],aff3:Array(27).fill(0)});
 
 describe('veteran card metrics and collection queries',()=>{
+  it('matches wildcard star levels in factor arrays without treating race IDs as stars',()=>{
+    const query=compileVeteranQuery('overlaps(green_sparks, (2,1000101)) and overlaps(green_sparks, (3))');
+    expect(query.matches({green_sparks:[1000102,1000203]})).toBe(true);
+    expect(query.matches({green_sparks:[1000101]})).toBe(false);
+    expect(compileVeteranQuery('overlaps(main_win_saddles, (3))').matches({main_win_saddles:[13]})).toBe(false);
+  });
   it('uses database affinity for each source, preserving unknown values and a real zero',()=>{
     expect(profileVeteranAffinity(subject,engine,groups)).toMatchObject({main:31,p1:13,p2:18,race:6,recorded:false});
     expect(profileVeteranAffinity(subject)).toMatchObject({main:83,p1:null,p2:null,recorded:true});

@@ -7,6 +7,11 @@ function record(patch: Partial<InheritanceRecord> = {}): InheritanceRecord {
 }
 
 describe('Angular Database local result behavior', () => {
+  it('applies Any green star ranges to bookmarks and excludes missing factors', () => {
+    const filters = emptyInheritanceFilters(); filters.green = [{ factorId: 0, minimumStars: 2, maximumStars: 2 }];
+    const records = [record({id:1}), record({id:2, greenSparks:[1000101]}), record({id:3, greenSparks:[1000102]}), record({id:4, greenSparks:[1000203]})];
+    expect(filterAndSortBookmarks(records, filters, 'all', true).map(item=>item.id)).toEqual([3]);
+  });
   it('excludes every costume of the selected legacy from local bookmarks', () => {
     const filters = emptyInheritanceFilters(); filters.p2MainCharaId = 1001;
     const records = [record({ id: 1, mainParentId: 100101 }), record({ id: 2, mainParentId: 100102 }), record({ id: 3, mainParentId: 100201 })];

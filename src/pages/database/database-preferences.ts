@@ -143,7 +143,7 @@ function restoreFactors(value: unknown, maximumCap = 9): FactorRequirement[] {
   return value.flatMap((entry) => {
     if (!Array.isArray(entry)) return [];
     const factorId = finiteNumber(entry[0]);
-    if (!factorId || factorId <= 0) return [];
+    if (factorId === undefined || factorId < 0) return [];
     const minimumStars = Math.max(1, Math.min(maximumCap, finiteNumber(entry[1]) ?? 1));
     const maximumStars = Math.max(minimumStars, Math.min(maximumCap, finiteNumber(entry[2]) ?? maximumCap));
     const requirement: FactorRequirement = { factorId, minimumStars, maximumStars };
@@ -164,7 +164,7 @@ function restorePriorityFactors(value: unknown): FactorRequirement[] {
 
 function compactFactors(requirements: FactorRequirement[]): (number | null)[][] | undefined {
   const result = requirements
-    .filter((requirement) => Number.isFinite(requirement.factorId) && requirement.factorId > 0)
+    .filter((requirement) => Number.isFinite(requirement.factorId) && requirement.factorId >= 0)
     .map((requirement) => {
       const compact: (number | null)[] = [
         Math.trunc(requirement.factorId),
@@ -197,11 +197,11 @@ export function filtersFromCompactState(state: CompactDatabaseFilterState, mode:
   filters.blue = restoreFactors(state.b);
   filters.pink = restoreFactors(state.p);
   filters.green = restoreFactors(state.g);
-  filters.white = restoreFactors(state.w);
+  filters.white = restoreFactors(state.w).filter(item => item.factorId > 0);
   filters.mainBlue = restoreFactors(state.mb, 3);
   filters.mainPink = restoreFactors(state.mp, 3);
   filters.mainGreen = restoreFactors(state.mg, 3);
-  filters.mainWhite = restoreFactors(state.mw, 3);
+  filters.mainWhite = restoreFactors(state.mw, 3).filter(item => item.factorId > 0);
   filters.optionalWhite = restorePriorityFactors(state.ow);
   filters.optionalMainWhite = restorePriorityFactors(state.omw);
   filters.lineageWhite = restorePriorityFactors(state.lw);
@@ -254,11 +254,11 @@ export function compactStateFromFilters(filters: InheritanceSearchFilters, previ
   setOrDelete(state, 'b', compactFactors(filters.blue));
   setOrDelete(state, 'p', compactFactors(filters.pink));
   setOrDelete(state, 'g', compactFactors(filters.green));
-  setOrDelete(state, 'w', compactFactors(filters.white));
+  setOrDelete(state, 'w', compactFactors(filters.white.filter(item => item.factorId > 0)));
   setOrDelete(state, 'mb', compactFactors(filters.mainBlue));
   setOrDelete(state, 'mp', compactFactors(filters.mainPink));
   setOrDelete(state, 'mg', compactFactors(filters.mainGreen));
-  setOrDelete(state, 'mw', compactFactors(filters.mainWhite));
+  setOrDelete(state, 'mw', compactFactors(filters.mainWhite.filter(item => item.factorId > 0)));
   setOrDelete(state, 'ow', compactPriorityFactors(filters.optionalWhite));
   setOrDelete(state, 'omw', compactPriorityFactors(filters.optionalMainWhite));
   setOrDelete(state, 'lw', compactPriorityFactors(filters.lineageWhite));

@@ -22,11 +22,12 @@
     batchSize?: number;
     emptyText?: string;
     clearLabel?: string;
+    emptyValue?: string;
     prefixIcon?: IconName;
     optionContent?: Snippet<[ComboboxOption]>;
     onchange?: (value: string) => void;
   }
-  let { id, label, options, value = $bindable(''), query = $bindable(''), placeholder = 'Search…', help, disabled = false, hideLabel = false, maxResults = Infinity, minQueryLength = 0, popupAnchor, filter = true, action = false, batchSize = 40, emptyText = 'No matching options', clearLabel = 'Clear search', prefixIcon, optionContent, onchange }: Props = $props();
+  let { id, label, options, value = $bindable(''), query = $bindable(''), placeholder = 'Search…', help, disabled = false, hideLabel = false, maxResults = Infinity, minQueryLength = 0, popupAnchor, filter = true, action = false, batchSize = 40, emptyText = 'No matching options', clearLabel = 'Clear search', emptyValue, prefixIcon, optionContent, onchange }: Props = $props();
 
   let root: HTMLDivElement;
   let input: HTMLInputElement;
@@ -82,7 +83,13 @@
       if (open && activeIndex === requested && root?.isConnected) root.querySelectorAll('[role="option"]')[requested]?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     });
   });
-  function close() { open = false; editing = false; renderCount = 0; if (!action) query = selected?.label ?? ''; }
+  function close() {
+    if (editing && !query.trim() && emptyValue !== undefined && value !== emptyValue) {
+      value = emptyValue;
+      onchange?.(emptyValue);
+    }
+    open = false; editing = false; renderCount = 0; if (!action) query = selected?.label ?? '';
+  }
   function choose(option: ComboboxOption) {
     if (option.disabled) return;
     value = action ? '' : option.value;
@@ -152,8 +159,8 @@
       aria-activedescendant={expanded && activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
       autocomplete="off"
       oninput={handleInput}
-      onclick={() => { editing = true; open = true; }}
-      onfocus={() => { editing = true; activeIndex = filtered.findIndex(option => !option.disabled); open = true; if (!action) input.select(); }}
+      onclick={() => { if (!editing && value === emptyValue) query = ''; editing = true; open = true; }}
+      onfocus={() => { if (value === emptyValue) query = ''; editing = true; activeIndex = filtered.findIndex(option => !option.disabled); open = true; if (!action) input.select(); }}
       onkeydown={handleKeydown}
     />
     {#if action && query}<button class="clear-query" type="button" aria-label={clearLabel} onclick={clear}><Icon name="close" size={16}/></button>{/if}
