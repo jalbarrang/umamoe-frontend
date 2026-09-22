@@ -20,10 +20,19 @@ test('Team Stadium decodes packed support cards into artwork, names and limit br
   }
 });
 
-test('profile overview retains every populated Angular section and owner visibility contract', async ({ page }) => {
+test('profile overview retains every populated Angular section and owner visibility contract', async ({ page }, testInfo) => {
   const visibilityBodies: unknown[] = []; await mockOwnerProfile(page, visibilityBodies);
+  await page.route(`**/api/v4/user/profile/${accountId}`, route => route.fulfill({ json: { ...profile, trainer: { ...profile.trainer, rank_score: 876800 } } }));
   await page.goto(`/profile/${accountId}`);
   await expect(page.getByRole('heading', { name: 'Parity Trainer' })).toBeVisible();
+  const header = page.locator('.trainer-summary');
+  await expect(header.getByText('Archive points', { exact: true })).toBeVisible();
+  await expect(header.getByText('Progress toward Archive level', { exact: true })).toBeVisible();
+  await expect(header.locator('.trainer-facts')).toContainText('876.8K');
+  await expect(header.locator('.rank')).toHaveCount(0);
+  await header.screenshot({ path: testInfo.outputPath('profile-header-dark.png') });
+  await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
+  await header.screenshot({ path: testInfo.outputPath('profile-header-light.png') });
   for (const heading of ['Fan activity', 'Rolling Gains', 'All-Time Stats', 'Current Circle', 'Circle History', 'Current borrow', 'Team Stadium']) await expect(page.getByRole('heading', { name: heading })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Victoire Pisa', exact: true })).toBeVisible();
   await expect(page.getByText('76', { exact: true })).toBeVisible();

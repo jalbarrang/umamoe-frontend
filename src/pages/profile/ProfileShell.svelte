@@ -8,7 +8,6 @@
   import { getAuthToken } from '@/services/auth/auth-token';
   import { HttpError } from '@/services/http/http-client';
   import { copyText } from '@/lib/clipboard';
-  import RankBadge from '@/components/RankBadge.svelte';
   import ToastRegion, { type Toast } from '@/components/ToastRegion.svelte';
   import IconButton from '@/components/IconButton.svelte';
   import Icon from '@/components/Icon.svelte';
@@ -148,24 +147,29 @@
         {@render children({ profile, isOwner, visibility, savingVisibility, visibilityReady, characters, sectionVisible, toggleSection })}
       {:else}
         <div class="profile-layout">
-          <Card padding="lg"><div class="trainer-summary">
+          <Card><div class="trainer-summary">
               <header class="profile-header">
                 <div class="identity">
                   <Artwork src={profile.inheritance ? image(profile.inheritance.main_parent_id) : undefined} alt="Trainer's shared character" size="lg" shape="circle"/>
-                  <div class="identity-copy"><div class="identity-meta"><span class="eyebrow">{isOwner ? 'Your trainer' : 'Trainer profile'}</span></div><h1>{profile.trainer.name || 'Unknown Trainer'}</h1><div class="trainer-id"><span>Trainer ID</span><code>{profile.trainer.account_id.replace(/(\d{3})(?=\d)/g, '$1 ')}</code><IconButton icon="copy" size="sm" label={`Copy trainer ID ${profile.trainer.account_id}`} title="Copy trainer ID" onclick={() => void copyTrainerId()}/></div>{#if profile.trainer.comment}<p class="comment">{profile.trainer.comment}</p>{/if}</div>
+                  <div class="identity-copy">
+                    <span class="eyebrow">{isOwner ? 'Your trainer' : 'Trainer profile'}</span>
+                    <h1>{profile.trainer.name || 'Unknown Trainer'}</h1>
+                    <div class="trainer-id"><span>Trainer ID</span><span class="id-number">{profile.trainer.account_id.replace(/(\d{3})(?=\d)/g, '$1 ')}</span><IconButton icon="copy" size="sm" label={`Copy trainer ID ${profile.trainer.account_id}`} title="Copy trainer ID" onclick={() => void copyTrainerId()}/></div>
+                    <div class="trainer-meta">
+                      {#if profile.circle && sectionVisible('circle')}<a class="trainer-club" href={'/circles/' + profile.circle.circle_id}><Icon name="community" size={16}/><strong>{profile.circle.name}</strong><Icon name="external" size={12}/></a>{/if}
+                      <div class="social">{#if profile.trainer.follower_num != null}<span><b>{format(profile.trainer.follower_num)}</b> followers</span>{/if}{#if profile.trainer.own_follow_num != null}<span><b>{format(profile.trainer.own_follow_num)}</b> following</span>{/if}</div>
+                    </div>
+                  </div>
                 </div>
+                {#if isOwner}<div class="owner-controls"><Button variant="secondary" size="sm" icon={visibility.profile_hidden ? 'eye-off' : 'eye'} disabled={!visibilityReady} ariaPressed={visibility.profile_hidden} onclick={() => persistVisibility({ ...visibility, profile_hidden: !visibility.profile_hidden })}>{visibility.profile_hidden ? 'Entire Profile Hidden' : 'Profile Visible'}</Button>{#if savingVisibility}<Spinner size={14}/>{/if}</div>{/if}
+              </header>
+              {#if profile.trainer.comment}<p class="comment">{profile.trainer.comment}</p>{/if}
               <dl class="trainer-facts">
                 {#if profile.trainer.team_evaluation_point != null}<div><dt>Team evaluation</dt><dd>{format(profile.trainer.team_evaluation_point)}</dd></div>{/if}
                 {#if profile.trainer.team_class != null}<div><dt>Stadium class</dt><dd>{teamClass(profile.trainer.team_class)}</dd></div>{/if}
-                {#if profile.trainer.best_team_class != null}<div><dt>Best class</dt><dd>{teamClass(profile.trainer.best_team_class)}</dd></div>{/if}
-                {#if profile.trainer.rank_score != null}<div><dt>Rank score</dt><dd class="trainer-rank"><RankBadge score={profile.trainer.rank_score} size="sm"/>{format(profile.trainer.rank_score)}</dd></div>{/if}
+                {#if profile.trainer.best_team_class != null}<div><dt>Best stadium class</dt><dd>{teamClass(profile.trainer.best_team_class)}</dd></div>{/if}
+                {#if profile.trainer.rank_score != null}<div><dt>Archive points</dt><dd>{format(profile.trainer.rank_score)}<span class="fact-note">Progress toward Archive level</span></dd></div>{/if}
               </dl>
-              </header>
-              <div class="trainer-meta">
-                {#if profile.circle && sectionVisible('circle')}<a class="trainer-club" href={'/circles/' + profile.circle.circle_id}><Icon name="community" size={18}/><strong>{profile.circle.name}</strong><Icon name="external" size={12}/></a>{/if}
-                <div class="social">{#if profile.trainer.follower_num != null}<span><b>{format(profile.trainer.follower_num)}</b> followers</span>{/if}{#if profile.trainer.own_follow_num != null}<span><b>{format(profile.trainer.own_follow_num)}</b> following</span>{/if}</div>
-              {#if isOwner}<div class="owner-controls"><Button variant="secondary" size="sm" icon={visibility.profile_hidden ? 'eye-off' : 'eye'} disabled={!visibilityReady} ariaPressed={visibility.profile_hidden} onclick={() => persistVisibility({ ...visibility, profile_hidden: !visibility.profile_hidden })}>{visibility.profile_hidden ? 'Entire Profile Hidden' : 'Profile Visible'}</Button>{#if savingVisibility}<Spinner size={14}/>{/if}</div>{/if}
-              </div>
               {#if visibilityError}<div class="visibility-error"><Banner tone="danger" title="Profile visibility"><p>{visibilityError}</p>{#if !visibilityReady}<Button variant="secondary" onclick={()=>void loadVisibility()}>Retry visibility</Button>{/if}</Banner></div>{/if}
             </div></Card>
           <div class="profile-main">
@@ -181,26 +185,26 @@
 
 <style>
   .profile-page { min-width:0; padding:var(--space-6) var(--page-gutter-current) var(--space-8); color:var(--color-text); }
-  .profile-layout,.trainer-summary { min-width:0; display:grid; gap:var(--space-5); }
+  .profile-layout,.trainer-summary { min-width:0; display:grid; gap:var(--space-4); }
   .profile-main { min-width:0; }.profile-tabs { margin-bottom:var(--space-6); }
-  .profile-header { display:flex; align-items:center; justify-content:space-between; gap:var(--space-6); }
-  .identity { min-width:0; display:flex; align-items:center; gap:var(--space-4); }.identity :global(.art) { flex-shrink:0; }.identity-copy { min-width:0; }
+  .profile-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:var(--space-3); }
+  .identity { min-width:0; display:flex; align-items:center; gap:var(--space-4); }.identity :global(.art) { flex-shrink:0; width:64px; height:64px; }.identity-copy { min-width:0; }
   .trainer-id { display:flex; align-items:center; flex-wrap:wrap; column-gap:var(--space-2); color:var(--color-text-muted); font-size:var(--font-xs); }
-  .trainer-id code { color:var(--color-text); font-size:var(--font-xs); font-weight:500; }
-  .identity-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-3); }
+  .id-number { color:var(--color-text); font-weight:500; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .eyebrow { color:var(--color-text-muted); font-size:var(--font-xs); font-weight:600; }
-  h1 { margin:var(--space-2) 0; font-size:clamp(24px,2.4vw,32px); line-height:1.15; letter-spacing:-.035em; overflow-wrap:anywhere; }
-  .trainer-rank { display:flex; align-items:center; gap:var(--space-2); }.comment { margin:0; max-width:60ch; color:var(--color-text-muted); font-size:var(--font-sm); line-height:1.6; white-space:pre-line; overflow-wrap:anywhere; }
-  .trainer-facts { margin:0; display:grid; grid-template-columns:repeat(4,max-content); gap:var(--space-6); }
-  .trainer-facts div { display:flex; flex-direction:column-reverse; gap:var(--space-1); }.trainer-facts dt { color:var(--color-text-subtle); font-size:var(--font-xs); }.trainer-facts dd { margin:0; font-size:var(--font-lg); font-weight:650; font-variant-numeric:tabular-nums; }
-  .trainer-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-4) var(--space-6); padding-top:var(--space-4); border-top:1px solid var(--color-border); }
+  h1 { margin:var(--space-1) 0; font-size:clamp(24px,2.4vw,30px); line-height:1.15; letter-spacing:-.035em; overflow-wrap:anywhere; }
+  .comment { margin:0; color:var(--color-text-muted); font-size:var(--font-sm); line-height:1.5; white-space:pre-line; overflow-wrap:anywhere; }
+  .trainer-facts { margin:0; padding-top:var(--space-4); border-top:1px solid var(--color-border); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-4); }
+  .trainer-facts:empty { display:none; }
+  .trainer-facts div { min-width:0; display:flex; flex-direction:column; gap:var(--space-1); }.trainer-facts dt { color:var(--color-text-muted); font-size:var(--font-xs); }.trainer-facts dd { margin:0; font-size:var(--font-lg); font-weight:650; font-variant-numeric:tabular-nums; }
+  .fact-note { display:block; margin-top:var(--space-1); color:var(--color-text-subtle); font-size:var(--font-xs); font-weight:400; }
+  .trainer-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2) var(--space-4); }
   .trainer-club { display:flex; align-items:center; gap:var(--space-2); color:var(--color-accent); text-decoration:none; font-size:var(--font-sm); }.trainer-club:hover { text-decoration:underline; }
   .social { display:flex; flex-wrap:wrap; gap:var(--space-4); color:var(--color-text-muted); font-size:var(--font-xs); }.social b { color:var(--color-text); font-weight:600; }
   .owner-controls { display:flex; align-items:center; gap:var(--space-2); margin-left:auto; }
   .state,.hidden-profile { min-height:60vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:var(--space-4); padding:var(--space-8); color:var(--color-text-muted); text-align:center; }.state.error { color:var(--color-danger); }.state a,.hidden-profile a { color:var(--color-accent); }.hidden-profile h2,.hidden-profile p { margin:0; }
   .browser-heading { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); margin-bottom:var(--space-6); }.browser-heading h1 { margin:var(--space-2) 0; }.browser-heading h2 { margin:0; color:var(--color-text-muted); font-size:var(--font-md); font-weight:500; }.browser-heading>div:last-child { display:flex; flex-wrap:wrap; gap:var(--space-2); }
-  @media(max-width:1150px) { .profile-header { align-items:flex-start; }.trainer-facts { grid-template-columns:repeat(2,max-content); gap:var(--space-3) var(--space-6); } }
-  @media(max-width:700px) { .profile-page { padding:var(--space-3) 0 var(--space-6); }.profile-header { flex-direction:column; gap:var(--space-5); }.trainer-facts { width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-2); }.trainer-facts dd { font-size:var(--font-md); }.trainer-facts dt { font-size:10px; }.identity { gap:var(--space-3); }.identity-meta { gap:var(--space-1); flex-direction:column; align-items:flex-start; }.owner-controls { margin-left:0; }.trainer-meta { gap:var(--space-3); }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
+  @media(max-width:700px) { .profile-page { padding:var(--space-3) 0 var(--space-6); }.trainer-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }.identity { gap:var(--space-3); }.owner-controls { margin-left:0; }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
   @media(max-width:700px) {
     .profile-tabs :global(.tabs) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; }
     .profile-tabs :global(.tab) { min-width:0; min-height:38px; justify-content:flex-start; gap:5px; padding:5px 8px; white-space:normal; font-size:11px; }
