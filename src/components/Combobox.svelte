@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick, type Snippet } from 'svelte';
+  import { popoverPosition } from '@/lib/popover-position';
   import Icon from './Icon.svelte';
   import type { IconName } from './icon-types';
   export interface ComboboxOption { value: string; label: string; keywords?: string; image?: string; disabled?: boolean; }
@@ -55,7 +56,8 @@
       const below = bottom - rect.bottom - 8, above = rect.top - top - 8;
       const up = below < Math.min(limit, popup.scrollHeight) && above > below;
       const height = Math.max(0, Math.min(limit, up ? above : below)), width = Math.min(rect.width, innerWidth - 16);
-      Object.assign(popup.style, {width:`${width}px`,maxHeight:`${height}px`,left:`${Math.max(8,Math.min(rect.left,innerWidth-width-8))}px`,top:`${up ? rect.top - Math.min(height,popup.scrollHeight) - 2 : rect.bottom + 2}px`});
+      const { left, top: popupTop } = popoverPosition(popup, Math.max(8,Math.min(rect.left,innerWidth-width-8)), up ? rect.top - Math.min(height,popup.scrollHeight) - 2 : rect.bottom + 2);
+      Object.assign(popup.style, {width:`${width}px`,maxHeight:`${height}px`,left:`${left}px`,top:`${popupTop}px`});
     };
     position();
     const resize = new ResizeObserver(position); resize.observe(anchor);

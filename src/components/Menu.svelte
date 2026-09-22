@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { popoverPosition } from '@/lib/popover-position';
   import Icon from './Icon.svelte';
   import type { IconName } from './icon-types';
   export interface MenuItem { id: string; label: string; href?: string; icon?: IconName; danger?: boolean; disabled?: boolean; checked?: boolean; separator?: boolean; }
@@ -13,8 +14,11 @@
     const anchor = control.getBoundingClientRect();
     panel.style.minWidth = Math.min(Math.max(200, anchor.width), innerWidth - 16) + 'px';
     const box = panel.getBoundingClientRect();
-    left = Math.max(8, Math.min(anchor.left, innerWidth - box.width - 8));
-    top = Math.max(8, anchor.bottom + box.height + 8 <= innerHeight ? anchor.bottom + 6 : anchor.top - box.height - 6);
+    const position = popoverPosition(panel,
+      Math.max(8, Math.min(anchor.left, innerWidth - box.width - 8)),
+      Math.max(8, anchor.bottom + box.height + 8 <= innerHeight ? anchor.bottom + 6 : anchor.top - box.height - 6));
+    left = position.left;
+    top = position.top;
   }
   function buttons() { return [...panel.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]')]; }
   function focusItem(last = false) { const enabled = buttons(); (last ? enabled.at(-1) : enabled.find(button => button.getAttribute('aria-checked') === 'true') ?? enabled[0])?.focus({ preventScroll:true }); }
@@ -58,7 +62,7 @@
   .trigger>span{min-width:0;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trigger.icon-only{width:var(--control-height);padding:0;justify-content:center}
   .trigger[aria-expanded=true]{border-color:var(--factor-field-focus-border)}
   .menu-panel { position:fixed; inset:auto; box-sizing:border-box; width:max-content; min-width:min(200px,calc(100vw - 16px)); max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px); overflow:auto; margin:0; padding:4px; border:1px solid var(--factor-panel-border); border-radius:var(--radius-md); background:var(--factor-panel-bg); color:var(--color-text); box-shadow:var(--shadow-dropdown); }
-  .menu-panel:popover-open{display:grid;gap:2px}
+  .menu-panel:is(:popover-open, :global(.\:popover-open)){display:grid;gap:2px}
   .menu-heading { padding:8px 12px 12px; margin-bottom:2px; border-bottom:1px solid var(--border-subtle); }
   .menu-item { min-height:36px; display:flex; align-items:center; gap:var(--space-2); padding:4px 12px; border:0; border-radius:var(--radius-sm); background:transparent; color:var(--factor-option-text); cursor:pointer; font-size:var(--font-sm); text-align:left; text-decoration:none; }
   .menu-item>span{overflow-wrap:anywhere}.menu-item:hover:not(:disabled),.menu-item:focus-visible{background:var(--factor-option-hover)}

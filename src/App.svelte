@@ -13,6 +13,7 @@
   }));
 </script>
 
+<svelte:boundary onerror={error => window.dispatchEvent(new CustomEvent('umamoe:app-error', { detail: error }))}>
 {#if import.meta.env.MODE === 'demo'}{#await import('./pages/ui/DemoNotice.svelte') then module}<module.default/>{/await}{/if}
 
 {#if isDirectUiLabRoute}
@@ -20,4 +21,5 @@
 {:else}
   <AppShell><Router/></AppShell>
 {/if}
+</svelte:boundary>
 

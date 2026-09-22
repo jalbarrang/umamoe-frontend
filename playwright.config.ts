@@ -12,8 +12,8 @@ export default defineConfig({
     screenshot: 'only-on-failure'
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1536, height: 960 } } },
-    { name: 'mobile-chromium', testIgnore: /ui-lab\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1536, height: 960 }, launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } } },
+    { name: 'mobile-chromium', testIgnore: /ui-lab\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } } },
     { name: 'mobile-webkit', testIgnore: /ui-lab\.spec\.ts/, use: { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } } }
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {

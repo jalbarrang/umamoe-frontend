@@ -1,4 +1,5 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import legacy from '@vitejs/plugin-legacy';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
 import { demoData } from './scripts/demo-data';
@@ -21,7 +22,12 @@ export default defineConfig(async ({ mode }) => {
         mode === 'production' || mode === 'beta'
           ? `<script>if((${fuseAllowed.toString()})(true))(${insertFuseScript.toString()})(${JSON.stringify(environment.fuse.scriptUrl)});</script>`
           : '')
-    }, svelte(), ...(mode === 'demo' ? [await demoData()] : [])],
+    }, legacy({
+      // Last Windows 7 browser generations, plus the existing Safari baseline.
+      modernTargets: ['Chrome >= 109', 'Edge >= 109', 'Firefox >= 115', 'Safari >= 16.4', 'iOS >= 16.4'],
+      modernPolyfills: true,
+      renderLegacyChunks: false
+    }), svelte(), ...(mode === 'demo' ? [await demoData()] : [])],
     optimizeDeps: {
       noDiscovery: true,
       include: ['exceljs'],
@@ -46,8 +52,7 @@ export default defineConfig(async ({ mode }) => {
       // Compiled code belongs to the shell artifact; /assets is deployed separately.
       assetsDir: 'app',
       manifest: true,
-      sourcemap: mode !== 'production',
-      target: 'es2022'
+      sourcemap: mode !== 'production'
     },
     server: {
       host: '127.0.0.1',

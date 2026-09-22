@@ -16,7 +16,10 @@ function collectStaticGraph(key) {
   for (const imported of entry.imports ?? []) collectStaticGraph(imported);
 }
 
-collectStaticGraph('index.html');
+// Include injected entry scripts such as the browser compatibility polyfills.
+for (const [key, entry] of Object.entries(manifest)) {
+  if (entry.isEntry) collectStaticGraph(key);
+}
 
 for (const file of files) {
   const kind = file.endsWith('.js') ? 'js' : file.endsWith('.css') ? 'css' : undefined;

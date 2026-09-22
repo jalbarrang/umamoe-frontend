@@ -6,7 +6,8 @@ test('landing and data pages preserve content widths, gutters and ad rails at ev
   await mockDatabase(page);
   for (const [path, maxContent] of [['/tools', 1080], ['/database', 1760]] as const) {
     await page.goto(path);
-    await expect(page.locator('[data-page-content]')).toBeVisible();
+    // Wait for the lazy page, not the temporary frame it replaces.
+    await expect(page.locator(path === '/tools' ? '.hero-content' : '.inheritance-database')).toBeVisible();
     for (const width of [320, 768, 1024, 1301, 1366, 1536, 1699, 1700, 1920, 2560]) {
       await page.setViewportSize({ width, height: 960 });
       const content = await page.locator(path === '/tools' ? '.hero-content' : '[data-page-content]').boundingBox();

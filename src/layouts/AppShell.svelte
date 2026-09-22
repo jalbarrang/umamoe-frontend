@@ -118,9 +118,10 @@
     </div>
   </div>
 
-  <div bind:this={mobileMenu} id="app-mobile-navigation" class="mobile-navigation" popover="auto" style:--menu-top={`${menuTop}px`} ontoggle={event => menuOpen = event.newState === 'open'}>
-    {#if menuOpen}<NavigationTree items={navigation.main} label="Mobile navigation" variant="sheet" onnavigate={closeNavigation}/>{/if}
-  </div>
+</div>
+
+<div bind:this={mobileMenu} id="app-mobile-navigation" class="mobile-navigation" popover="auto" style:--menu-top={`${menuTop}px`} ontoggle={event => menuOpen = event.newState === 'open'}>
+  {#if menuOpen}<NavigationTree items={navigation.main} label="Mobile navigation" variant="sheet" onnavigate={closeNavigation}/>{/if}
 </div>
 
 {#if PageTour}<PageTour startRequest={tourRequest}/>{/if}

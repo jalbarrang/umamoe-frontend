@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { popoverPosition } from '@/lib/popover-position';
   import Icon from './Icon.svelte';
   interface Props { label: string; trigger: Snippet; children: Snippet; align?: 'start' | 'end'; placement?: 'below' | 'over'; openOnHover?: boolean; onopenchange?: (open: boolean) => void; }
   let { label, trigger, children, align = 'start', placement = 'below', openOnHover = false, onopenchange }: Props = $props();
@@ -15,8 +16,11 @@
     if (!open) return;
     const anchor = control.getBoundingClientRect();
     const box = panel.getBoundingClientRect();
-    left = Math.max(8, Math.min(align === 'end' ? anchor.right - box.width : anchor.left, innerWidth - box.width - 8));
-    top = Math.max(8, Math.min(placement === 'over' ? anchor.top - 4 : anchor.bottom + box.height + 8 <= innerHeight ? anchor.bottom + 7 : anchor.top - box.height - 7, innerHeight - box.height - 8));
+    const position = popoverPosition(panel,
+      Math.max(8, Math.min(align === 'end' ? anchor.right - box.width : anchor.left, innerWidth - box.width - 8)),
+      Math.max(8, Math.min(placement === 'over' ? anchor.top - 4 : anchor.bottom + box.height + 8 <= innerHeight ? anchor.bottom + 7 : anchor.top - box.height - 7, innerHeight - box.height - 8)));
+    left = position.left;
+    top = position.top;
   }
   $effect(positionPanel);
   function close() { panel.hidePopover(); control.focus(); }
