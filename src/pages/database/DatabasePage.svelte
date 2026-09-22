@@ -1045,10 +1045,10 @@
     .results-info { grid-column:1; grid-row:1; }
     .sort-control { grid-column:2; grid-row:1; width:100%; margin:0; }
     .display-toggle { grid-column:3; grid-row:1; }
-    .results-controls { grid-column:1/-1; grid-row:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:end; gap:12px; padding:16px; border:1px solid var(--border-primary); border-radius:8px; background:var(--surface-1); }
-    .focus-control { grid-column:1/-1; margin:0; }
+    .results-controls { grid-column:1/-1; grid-row:2; display:flex; flex-wrap:wrap; align-items:end; gap:10px 12px; padding:10px 12px; border:1px solid var(--border-primary); border-radius:8px; background:var(--surface-1); }
+    .focus-control { margin:0; }
     .focus-options { width:max-content; max-width:100%; }
-    .results-controls > :global(.ui-toggle), .results-controls > :global(.field) { width:100%; }
+    .results-controls > :global(.field) { width:180px; }
   }
   @media (max-width:767px) {
     .content-container { padding:8px 4px; gap:8px; }
