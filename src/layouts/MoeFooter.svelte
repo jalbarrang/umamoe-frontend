@@ -5,6 +5,8 @@
   import { buildVersion, serviceStatus } from '@/services/site-services';
   import { copyText } from '@/lib/clipboard';
   import InspectPopover from '@/components/InspectPopover.svelte';
+  import Checkbox from '@/components/Checkbox.svelte';
+  import { virtualScrolling, setVirtualScrolling } from '@/stores/virtual-scrolling';
   let privacyUnavailable = $state(false);
   let copied = $state(false);
   const version = buildVersion();
@@ -24,6 +26,14 @@
         <a href="https://status.uma.moe/" target="_blank" rel="noopener noreferrer">Open status page ↗</a>
       </InspectPopover>
       <a href="/privacy-policy">Privacy</a>
+      <InspectPopover label="Global settings">
+        {#snippet trigger()}<span class="status-trigger"><Icon name="tune" size={16}/>Global settings</span>{/snippet}
+        <div class="global-settings">
+          <strong>Global settings</strong>
+          <small>Applies across the site. Saved on this device.</small>
+          <Checkbox id="global-virtual-scrolling" label="Virtual scrolling" ariaLabel="Virtual scrolling" checked={$virtualScrolling} onchange={setVirtualScrolling} description="Render nearby items to keep long lists fast. Turn off to keep all loaded items on the page."/>
+        </div>
+      </InspectPopover>
       <button type="button" onclick={() => window.dispatchEvent(new Event('uma:show-updates'))}>What’s new</button>
       <button type="button" onclick={() => privacyUnavailable = !openFusePrivacyControls()}>Privacy Choices</button>
     </nav>
@@ -34,6 +44,8 @@
 
 <style>
   .site-footer { flex:none; border-top:1px solid var(--border-primary); background:var(--navbar-bg); }
+  .global-settings { display:grid; gap:10px; font-size:13px; }
+  .global-settings > small { color:var(--text-secondary); line-height:1.4; }
   .status-trigger { min-height:32px; display:inline-flex; align-items:center; gap:6px; color:var(--text-muted); font-size:12px; }.status-dot { width:6px; height:6px; border-radius:50%; background:var(--text-muted); }.status-dot[data-status='operational'] { background:var(--color-success); }.status-dot[data-status='degraded'] { background:var(--color-warning); }.status-dot[data-status='down'] { background:var(--color-danger); }
   .endpoint { display:flex; justify-content:space-between; gap:16px; margin-top:8px; font-size:11px; }.build-version { display:block; margin-top:4px; padding:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
   .footer-inner { width:100%; max-width:1200px; min-height:64px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:'brand links meta'; align-items:center; gap:12px 32px; margin:auto; padding:12px 24px; }

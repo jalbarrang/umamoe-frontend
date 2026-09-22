@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { virtualScrolling, setVirtualScrolling } from '@/stores/virtual-scrolling';
-  import Checkbox from '@/components/Checkbox.svelte';
   import PageHeading from '@/layouts/PageHeading.svelte';
   import { copyText } from '@/lib/clipboard';
   import { onDestroy } from 'svelte';
@@ -194,11 +192,6 @@
     {:else if $authUser}
       <div class="content-container">
         {#if loadError}<Banner title={loadError} tone="danger" dismissible/>{/if}
-
-        <section class="settings-card">
-          <header class="card-header"><Icon name="tune" size={20}/><h2>Browsing Preferences</h2></header>
-          <div class="card-body"><Checkbox id="settings-virtual-scrolling" label="Virtual scrolling" ariaLabel="Virtual scrolling" checked={$virtualScrolling} onchange={setVirtualScrolling} description="Keep long lists fast by rendering nearby items. Turn off to keep all loaded items on the page. Applies across this site on this device."/></div>
-        </section>
 
         <section class="settings-card">
           <header class="card-header"><Icon name="veterans" size={20}/><h2>Linked Game Accounts</h2></header>

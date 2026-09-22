@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { virtualScrolling, setVirtualScrolling } from '@/stores/virtual-scrolling';
   import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
   let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
 
   import ContentAd from '@/layouts/ContentAd.svelte';
   import PageHeading from '@/layouts/PageHeading.svelte';
   import { copyText } from '@/lib/clipboard';
-  import Checkbox from '@/components/Checkbox.svelte';
   import { onMount, untrack } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { tourStepId, completeTourInteraction } from '@/components/tours/tour-state';
@@ -945,7 +943,6 @@
           <SelectField id="spark-display" label="Spark display" prefixIcon="lineage" value={splitSparks ? sparkPortraits ? 'portraits' : 'split' : 'combined'} options={[{value:'combined',label:'Combined sparks'},{value:'split',label:'Split sparks'},{value:'portraits',label:'Split + portraits'}]} onchange={(value)=>{splitSparks=value!=='combined';sparkPortraits=value==='portraits';}}/>
           <SelectField id="spark-order" label="Spark order" value={sparkOrder} options={sparkOrderOptions} onchange={changeSparkOrder}/>
           <ToggleButton pressed={includeMaxFollowers} icon="users" label="Max Followers" ariaLabel="Include accounts at the maximum follower limit" onclick={() => { includeMaxFollowers = !includeMaxFollowers; filters.maxFollowerNum = includeMaxFollowers ? 1000 : 999; }}/>
-          <Checkbox id="database-virtual-scrolling" label="Virtual scrolling" ariaLabel="Virtual scrolling" description="Across all pages on this device" checked={$virtualScrolling} onchange={setVirtualScrolling}/>
           <ToggleButton pressed={listMode === 'infinite'} icon="more" label={listMode === 'infinite' ? 'Infinite' : 'Pages'} onclick={toggleListMode}/>
           </div>
         </div>

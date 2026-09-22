@@ -154,9 +154,20 @@ test('global virtual scrolling preference updates loaded lists, survives reloads
     if(width===1920 || width===390) await page.locator('.results-header').screenshot({ path:info.outputPath('database-header-'+width+'.png') });
   }
   await display.click();
+  await expect(page.locator('#database-display-options').getByRole('checkbox', { name: 'Virtual scrolling', exact: true })).toHaveCount(0);
+  await page.locator('.results-header').screenshot({path:info.outputPath('database-display-options.png')});
+  const settings = page.locator('.site-footer').getByRole('button', { name: 'Global settings', exact: true });
+  await settings.click();
   const preference = page.getByRole('checkbox', { name: 'Virtual scrolling', exact: true });
   await expect(preference).toBeChecked();
-  await page.locator('.results-header').screenshot({path:info.outputPath('database-display-options.png')});
+  const menu = page.getByRole('dialog', { name: 'Global settings', exact: true });
+  await expect.poll(async () => (await menu.boundingBox())?.x ?? 0).toBeGreaterThanOrEqual(8);
+  await menu.screenshot({path:info.outputPath('global-settings.png'), animations:'disabled'});
+  const bounds = (await menu.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await preference.uncheck();
   await expect(page.locator('.inheritance-card')).toHaveCount(60);
   await page.reload();
@@ -170,7 +181,7 @@ test('global virtual scrolling preference updates loaded lists, survives reloads
     await expect(page.locator('.timeline-board.vertical .event-card')).toHaveCount(60);
   }
   await page.goto('/database');
-  await display.click(); await expect(preference).not.toBeChecked(); await preference.check();
+  await settings.click(); await expect(preference).not.toBeChecked(); await preference.check();
   await expect.poll(() => page.locator('.inheritance-card').count()).toBeLessThan(25);
-  await page.reload(); await display.click(); await expect(preference).toBeChecked();
+  await page.reload(); await settings.click(); await expect(preference).toBeChecked();
 });
