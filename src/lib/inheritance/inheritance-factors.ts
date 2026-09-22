@@ -6,6 +6,7 @@ import { encodedFactorLevels, type InheritanceRecord, type InheritanceSearchFilt
 import type { UqlSparkHighlight } from './uql-spark-highlight';
 
 export type FactorOwner = 'main' | 'left' | 'right';
+export type SparkOrder = 'main' | 'stars' | 'occurrences' | 'alphabetical';
 export interface FactorContribution { owner: FactorOwner; side: 'p1' | 'p2'; level: number; }
 export interface InheritanceFactor extends DecodedFactor { group: number; owner?: FactorOwner; copies: number; mainStars: number; sources: FactorContribution[]; }
 
@@ -31,7 +32,18 @@ export function inheritanceFactorMatched(factor: InheritanceFactor, filters?: In
     || (hasMain && filters.optionalMainWhite.some((requirement) => requirement.factorId === factor.id));
 }
 
-export function inheritanceFactors(record: InheritanceRecord, split = false, focus?: FactorOwner, partner?: VeteranRecord): InheritanceFactor[] {
+function orderFactors(factors: InheritanceFactor[], order: SparkOrder): InheritanceFactor[] {
+  if (order === 'main') return factors;
+  const occurrences = new Map<number, number>();
+  if (order === 'occurrences') for (const factor of factors) occurrences.set(factor.id, (occurrences.get(factor.id) ?? 0) + factor.copies);
+  return factors.sort((a, b) =>
+    (order === 'occurrences' ? (occurrences.get(b.id) ?? 0) - (occurrences.get(a.id) ?? 0) : 0)
+    || (order !== 'alphabetical' ? b.level - a.level : 0)
+    || a.name.localeCompare(b.name)
+  );
+}
+
+export function inheritanceFactors(record: InheritanceRecord, split = false, focus?: FactorOwner, partner?: VeteranRecord, order: SparkOrder = 'main'): InheritanceFactor[] {
   const sources: InheritanceFactor[] = [];
   const add = (encoded: number | undefined, owner: FactorOwner, side: 'p1' | 'p2', fallbackGroup?: number): void => {
     if (!encoded || !Number.isFinite(encoded)) return;
@@ -52,7 +64,7 @@ export function inheritanceFactors(record: InheritanceRecord, split = false, foc
       for (const factor of parent.factors) add(factor.id * 10 + factor.level, parent.positionId === 10 ? 'left' : 'right', 'p2');
     }
   }
-  if (split || focus) return sources;
+  if (split || focus) return orderFactors(sources, order);
   const merged = new Map<number, InheritanceFactor>();
   for (const factor of sources) {
     const current = merged.get(factor.id);
@@ -64,8 +76,8 @@ export function inheritanceFactors(record: InheritanceRecord, split = false, foc
     const factor = decodeFactor(encoded);
     if (!merged.has(factor.id)) merged.set(factor.id, { ...factor, group: factor.type >= 0 ? factor.type : group, copies: 0, mainStars: 0, sources: [] });
   }
-  // Preserve Angular's source order: main parent, grandparents, then P2.
-  return [...merged.values()];
+  // The default preserves Angular's source order: main parent, grandparents, then P2.
+  return orderFactors([...merged.values()], order);
 }
 
 export function inheritanceAffinity(record: InheritanceRecord, targetId: number | undefined, partner: VeteranRecord | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>, partnerWins?: readonly number[]) {

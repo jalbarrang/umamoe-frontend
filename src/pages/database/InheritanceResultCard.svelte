@@ -12,7 +12,7 @@
   import LimitBreak from '@/components/LimitBreak.svelte';
   import RankBadge from '@/components/RankBadge.svelte';
   import SparkItem, { type SparkTone } from '@/components/SparkItem.svelte';
-  import { inheritanceAffinity, inheritanceFactors, inheritanceFactorMatched, type InheritanceFactor } from '@/lib/inheritance/inheritance-factors';
+  import { inheritanceAffinity, inheritanceFactors, inheritanceFactorMatched, type InheritanceFactor, type SparkOrder } from '@/lib/inheritance/inheritance-factors';
   import { sparkMetrics } from '@/lib/inheritance/spark-probability';
   import type { UqlSparkHighlight } from '@/lib/inheritance/uql-spark-highlight';
   import { scenarios } from '@/lib/catalog/scenario-catalog';
@@ -45,6 +45,7 @@
     defaultFocus?: 'all' | 'main' | 'left' | 'right';
     splitSparks?: boolean;
     sparkPortraits?: boolean;
+    sparkOrder?: SparkOrder;
     hiddenSparkFactorIds?: number[];
     bookmarked?: boolean;
     actionBusy?: boolean;
@@ -56,7 +57,7 @@
     onplanner?: (record: InheritanceRecord) => void;
     onvisible?: (record: InheritanceRecord) => void;
   }
-  let { record, activeFilters, uqlHighlight, reportText = 'Outdated', reportIcon = 'warning', reportTooltip = 'Report this trainer as unavailable', targetId, affinityEngine, raceGroups = new Map(), partner, sparkPerRun = $bindable(false), showOccurrences = $bindable(false), showP2Sparks = $bindable(false), collapsedWhiteSections = $bindable([]), characters, supports, defaultFocus = 'all', splitSparks = false, sparkPortraits = false, hiddenSparkFactorIds = [], bookmarked = false, actionBusy = false, partnerWinSaddles = [], oncopy, onbookmark, onreport, onshare, onplanner, onvisible }: Props = $props();
+  let { record, activeFilters, uqlHighlight, reportText = 'Outdated', reportIcon = 'warning', reportTooltip = 'Report this trainer as unavailable', targetId, affinityEngine, raceGroups = new Map(), partner, sparkPerRun = $bindable(false), showOccurrences = $bindable(false), showP2Sparks = $bindable(false), collapsedWhiteSections = $bindable([]), characters, supports, defaultFocus = 'all', splitSparks = false, sparkPortraits = false, sparkOrder = 'main', hiddenSparkFactorIds = [], bookmarked = false, actionBusy = false, partnerWinSaddles = [], oncopy, onbookmark, onreport, onshare, onplanner, onvisible }: Props = $props();
   let cardElement: HTMLElement;
   let factorsVisible = $state(false);
   let raceResultsOpen = $state(false);
@@ -99,7 +100,7 @@
   }
   let expandedHidden = $state<number[]>([]);
   const activeFocus = $derived(selectedParent === 'all' ? undefined : selectedParent ?? (defaultFocus === 'all' ? undefined : defaultFocus));
-  const displayFactors = $derived(inheritanceFactors(record, splitSparks, activeFocus, showP2Sparks ? partner : undefined));
+  const displayFactors = $derived(inheritanceFactors(record, splitSparks, activeFocus, showP2Sparks ? partner : undefined, sparkOrder));
   const groups = [
     { type: 0, tone: 'blue', label: '' }, { type: 1, tone: 'pink', label: '' }, { type: 5, tone: 'green', label: '' },
     { type: 4, tone: 'white', label: 'Scenario whites' }, { type: 3, tone: 'white', label: 'Normal whites' }, { type: 2, tone: 'white', label: 'Race whites' }

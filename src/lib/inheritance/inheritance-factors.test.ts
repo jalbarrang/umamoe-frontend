@@ -41,6 +41,27 @@ describe('Angular factor encoding and owner display', () => {
     const gpHighlight = buildUqlSparkHighlight(validateInheritanceUql('GP1 Groundwork >= 3 or GP2 Stamina >= 2').compiled);
     expect(inheritanceFactors(record, true).filter(factor => inheritanceFactorMatched(factor, undefined, gpHighlight)).map(factor => [factor.owner, factor.id])).toEqual([['left', 201600], ['right', 20]]);
   });
+  it('orders sparks by parent, stars, occurrences or name without changing their totals', () => {
+    const record = normalizeInheritanceSearch({ items: [{ account_id: '123', trainer_name: 'Trainer', inheritance: {
+      inheritance_id: 1, main_parent_id: 100101, parent_left_id: 100201, parent_right_id: 100301, parent_rank: 10000, parent_rarity: 10,
+      main_white_factors: [2003603, 2016001, 2000101], left_white_factors: [2016001, 2000101], right_white_factors: [2000101]
+    } }], total: 1, page: 1, limit: 20, total_pages: 1 }).records[0]!;
+    for (const [order, ids] of [
+      ['main', [200360, 201600, 200010]], ['stars', [200010, 200360, 201600]],
+      ['occurrences', [200010, 201600, 200360]], ['alphabetical', [201600, 200010, 200360]]
+    ] as const) {
+      const factors = inheritanceFactors(record, false, undefined, undefined, order);
+      expect(factors.map(factor => factor.id), order).toEqual(ids);
+      expect(factors.reduce((sum, factor) => sum + factor.level, 0)).toBe(8);
+      expect(factors.reduce((sum, factor) => sum + factor.copies, 0)).toBe(6);
+    }
+    expect(inheritanceFactors(record, true, undefined, undefined, 'occurrences').map(factor => factor.id)).toEqual([200010, 200010, 200010, 201600, 201600, 200360]);
+    expect(inheritanceFactors(record, true, undefined, undefined, 'stars').map(factor => factor.level)).toEqual([3, 1, 1, 1, 1, 1]);
+    expect(inheritanceFactors(record, false, 'main', undefined, 'alphabetical').map(factor => factor.id)).toEqual([201600, 200010, 200360]);
+    const partner = { factors: [{ id: 200360, level: 1 }], parents: [{ positionId: 10, factors: [{ id: 200360, level: 1 }] }] } as unknown as VeteranRecord;
+    expect(inheritanceFactors(record, false, undefined, partner, 'occurrences').map(factor => factor.id)).toEqual([200360, 200010, 201600]);
+    expect(inheritanceFactors(record).map(factor => factor.id)).toEqual([200360, 201600, 200010]);
+  });
   it('extracts raw UQL ranges and scoring lists without highlighting exclusions, strings or scoring weights', () => {
     const highlight = buildUqlSparkHighlight("main_blue_factors >= 102 and contains(white_sparks, 2000102) and optional_main_white((200360, 201600), priority = 1) and optional_white(200020, type_weight = 999999) and lineage_white(200030) and optional_any_white(200040)");
     expect([...highlight.main]).toEqual([102, 103, 104, 105, 106, 107, 108, 109]);

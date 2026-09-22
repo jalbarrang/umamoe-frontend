@@ -42,6 +42,7 @@
   import { activeInheritanceFilterCount, emptyInheritanceFilters, inheritanceRequestFilters, type FactorRequirement, type InheritanceFilterMode, type InheritanceSearchFilters, type InheritanceSearchResult } from '@/lib/inheritance/inheritance-search';
   import { validateInheritanceUql, type UqlValidation } from '@/lib/inheritance/uql';
   import { buildUqlSparkHighlight } from '@/lib/inheritance/uql-spark-highlight';
+  import type { SparkOrder } from '@/lib/inheritance/inheritance-factors';
   import { UqlCompiler, type UqlQueryCatalog } from '@/lib/inheritance/uql-compiler';
   import { parseUqlContext, resolveUqlTarget, resolveUqlLegacy, uqlLegacyHints, setUqlLegacy, type UqlContextIssue } from '@/lib/inheritance/uql-context';
   import ParentPickerDialog from '@/components/parent-picker/ParentPickerDialog.svelte';
@@ -66,6 +67,7 @@
     DATABASE_FILTER_PRESETS_KEY,
     DATABASE_HIDDEN_SPARKS_KEY,
     DATABASE_LIST_MODE_KEY,
+    DATABASE_SPARK_ORDER_KEY,
     compactStateFromFilters,
     databasePresetFilterCount,
     decodeDatabaseFilterState,
@@ -154,6 +156,11 @@
   let defaultFocus = $state<'all' | 'main' | 'left' | 'right'>('all');
   let splitSparks = $state(false);
   let sparkPortraits = $state(false);
+  let sparkOrder = $state<SparkOrder>('main');
+  const sparkOrderOptions: { value: SparkOrder; label: string }[] = [
+    { value: 'main', label: 'Main parent first' }, { value: 'stars', label: 'Most stars' },
+    { value: 'occurrences', label: 'Most occurrences' }, { value: 'alphabetical', label: 'Alphabetical' }
+  ];
   let includeMaxFollowers = $state(false);
   let listMode = $state<'infinite' | 'paginated'>(lowEndDevice ? 'paginated' : 'infinite');
   let hiddenSparksOpen = $state(false);
@@ -569,6 +576,10 @@
     presets = readDatabasePresets(localStorage);
     const storedListMode = localStorage.getItem(DATABASE_LIST_MODE_KEY);
     if (storedListMode === 'infinite' || storedListMode === 'paginated') listMode = storedListMode;
+    try {
+      const storedSparkOrder = localStorage.getItem(DATABASE_SPARK_ORDER_KEY);
+      sparkOrder = sparkOrderOptions.find(option => option.value === storedSparkOrder)?.value ?? 'main';
+    } catch { sparkOrder = 'main'; }
     const requestedPage = Number(queryParameters.get('page'));
     if (Number.isInteger(requestedPage) && requestedPage > 0) { page = requestedPage; listMode = 'paginated'; }
     try {
@@ -616,6 +627,10 @@
     hiddenSparkFactorIds = factorIds;
   }
   function toggleListMode(): void { listMode = listMode === 'infinite' ? 'paginated' : 'infinite'; page = 1; localStorage.setItem(DATABASE_LIST_MODE_KEY, listMode); }
+  function changeSparkOrder(value: string): void {
+    sparkOrder = sparkOrderOptions.find(option => option.value === value)?.value ?? 'main';
+    try { localStorage.setItem(DATABASE_SPARK_ORDER_KEY, sparkOrder); } catch { /* Keep the selection for this session when storage is unavailable. */ }
+  }
 
   async function runInheritanceSearch(): Promise<void> {
     searchController?.abort(); searchController = new AbortController();
@@ -925,6 +940,7 @@
           </div></div>
           <ToggleButton action pressed={hiddenSparkFactorIds.length > 0} icon="eye-off" label="Hide Sparks" badge={hiddenSparkFactorIds.length ? `${hiddenSparkFactorIds.length} hidden` : undefined} ariaLabel={hiddenSparkFactorIds.length ? `Hide sparks, ${hiddenSparkFactorIds.length} currently hidden` : 'Choose sparks to hide'} onclick={() => hiddenSparksOpen = true}/>
           <SelectField id="spark-display" label="Spark display" hideLabel prefixIcon="lineage" value={splitSparks ? sparkPortraits ? 'portraits' : 'split' : 'combined'} options={[{value:'combined',label:'Combined sparks'},{value:'split',label:'Split sparks'},{value:'portraits',label:'Split + portraits'}]} onchange={(value)=>{splitSparks=value!=='combined';sparkPortraits=value==='portraits';}}/>
+          <SelectField id="spark-order" label="Spark order" value={sparkOrder} options={sparkOrderOptions} onchange={changeSparkOrder}/>
           <ToggleButton pressed={includeMaxFollowers} icon="users" label="Max Followers" ariaLabel="Include accounts at the maximum follower limit" onclick={() => { includeMaxFollowers = !includeMaxFollowers; filters.maxFollowerNum = includeMaxFollowers ? 1000 : 999; }}/>
           <ToggleButton pressed={listMode === 'infinite'} icon="more" label={listMode === 'infinite' ? 'Infinite' : 'Pages'} onclick={toggleListMode}/>
           </div>
@@ -938,7 +954,7 @@
       {#if affinityError && !inheritanceError}{@render affinityFailure()}{/if}
       {#if inheritanceLoading && !appendingResults}<div class="loading"><Spinner size={30}/><span>Searching inheritance records…</span></div>
       {:else if inheritanceError && !appendingResults}<div class="result-error" role="alert"><EmptyState icon="warning" title="Inheritance search unavailable" description={inheritanceError}>{#snippet actions()}<div class="error-actions"><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry</Button><Button href={DISCORD_SUPPORT_URL} target="_blank" variant="secondary" size="sm" icon="discord">Report on Discord</Button></div>{/snippet}</EmptyState></div>
-      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list">{#each inheritance.records as record, index (record.id)}<InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
+      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list">{#each inheritance.records as record, index (record.id)}<InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
       {:else}<EmptyState icon="search" title="No records found" description="Try adjusting your search criteria or submit your Trainer ID to help the community.">{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</EmptyState>{/if}
       {#if appendingResults && inheritanceLoading}<div class="loading" role="status"><Spinner size={30}/><span>Loading more records…</span></div>
       {:else if appendingResults && inheritanceError}<Banner title="More records could not be loaded" tone="danger"><p>{inheritanceError}</p><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry loading more</Button></Banner>{/if}
@@ -951,7 +967,7 @@
       {:else if bookmarks.length}
         <header class="bookmark-toolbar"><div><h2>Bookmarks</h2><p>{filteredBookmarks.length.toLocaleString()} bookmarked records{#if filteredBookmarks.length !== bookmarks.length} <span>(filtered from {bookmarks.length})</span>{/if}</p></div><div class="bookmark-filters"><SegmentedControl label="Bookmark status filter" value={bookmarkFilter} options={[{value:'all',label:`All (${bookmarks.length})`},{value:'unchanged',label:`Unchanged (${bookmarks.length - modifiedBookmarkCount})`},{value:'modified',label:`Modified (${modifiedBookmarkCount})`}]} onchange={value => { bookmarkFilter = value as typeof bookmarkFilter; bookmarkPage = 1; }}/></div><div class="bookmark-actions">{#if modifiedBookmarkCount}<Button variant="secondary" size="sm" onclick={() => void removeModifiedBookmarks()}>Remove modified ({modifiedBookmarkCount})</Button>{/if}<Button variant="danger" size="sm" onclick={() => void clearAllBookmarks()}>{clearBookmarksArmed ? 'Confirm clear all' : 'Clear all'}</Button></div></header>
         {#if affinityError}{@render affinityFailure()}{/if}
-        <ContentAd routeId="database" top/><div class="inheritance-list">{#each visibleBookmarks as record (record.id)}<InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{/each}</div>
+        <ContentAd routeId="database" top/><div class="inheritance-list">{#each visibleBookmarks as record (record.id)}<InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{/each}</div>
         {#if bookmarkPages > 1}<Pagination bind:page={bookmarkPage} pages={bookmarkPages} total={filteredBookmarks.length} {pageSize} jump/>{/if}
       {:else}<EmptyState icon="veterans" title="No bookmarks yet" description="Save records from the Database tab and they will appear here."/>{/if}
     </section>{/if}
@@ -1018,6 +1034,8 @@
   .selected-support-copy small{color:var(--text-secondary);font-size:11px}.lb-control{--slider-label-gap:0px}
   .display-controls { display:contents; }
   .display-toggle { display:none; }
+  .results-controls :global(label) { color:var(--text-secondary); font-size:.65rem; font-weight:700; }
+  @media (min-width:768px) { .sort-control { margin-left:auto; } }
   @media (max-width:767px) {
     .content-container { padding:8px 4px; gap:8px; }
     .results-header { display:grid; grid-template-columns:minmax(0,1fr) 124px auto; grid-template-rows:20px 28px; align-items:center; gap:4px 6px; padding:6px 0; }

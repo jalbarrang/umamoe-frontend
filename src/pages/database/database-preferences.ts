@@ -11,6 +11,7 @@ export const DATABASE_FILTER_MODE_KEY = 'database-filter-mode-v1';
 export const DATABASE_FILTER_PRESETS_KEY = 'database-filter-presets-v1';
 export const DATABASE_LIST_MODE_KEY = 'db-list-mode';
 export const DATABASE_HIDDEN_SPARKS_KEY = 'db-hidden-spark-factors';
+export const DATABASE_SPARK_ORDER_KEY = 'db-spark-order';
 
 type PriorityFactorState = number | [number, number];
 
