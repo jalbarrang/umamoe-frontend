@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uma.moe/contracts/feature-manifest.schema.json",
+  "title": "uma.moe feature manifest",
+  "type": "object",
+  "required": ["version", "features"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "path", "group", "icon", "status", "dataOwnership", "indexable", "adSurface", "width", "navigation", "source"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "path": { "type": "string", "pattern": "^/" },
+          "group": { "enum": ["main", "community", "tools", "system"] },
+          "icon": { "type": "string" },
+          "status": { "enum": ["available", "foundation", "migration", "planned"] },
+          "dataOwnership": { "enum": ["public", "local", "private", "mixed"] },
+          "indexable": { "type": "boolean" },
+          "adSurface": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              { "type": "null" }
+            ]
+          },
+          "width": { "enum": ["normal", "wide"] },
+          "navigation": { "enum": ["primary", "secondary", "hidden"] },
+          "source": { "enum": ["moe", "hakuraku", "merged"] }
+        }
+      }
+    }
+  }
+}

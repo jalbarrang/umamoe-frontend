@@ -13,13 +13,12 @@ const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' 
 
 try {
   for (const assets of [false, true]) {
-    for (const artwork of [false, true]) {
-      for (const manual of [false, true]) {
+    for (const manual of [false, true]) {
+      for (const force of [false, true]) {
         const values = {
           'steps.asset_changes.outputs.assets': String(assets),
-          'steps.timeline_artwork.outputs.changed': artwork ? 'true' : '',
           'github.event_name': manual ? 'workflow_dispatch' : 'push',
-          "github.event.inputs.deploy_assets || 'false'": String(manual),
+          "github.event.inputs.deploy_assets || 'false'": String(force),
         };
         const command = script.replace(/\$\{\{\s*(.*?)\s*\}\}/g, (_, key) => {
           assert.ok(key in values, `Unknown workflow expression: ${key}`);
@@ -29,7 +28,7 @@ try {
         execFileSync(bash, ['--noprofile', '--norc', '-eu', '-c', command], {
           env: { ...process.env, GITHUB_OUTPUT: output.replace(/\\/g, '/') },
         });
-        assert.equal(fs.readFileSync(output, 'utf8').trim(), `should_build=${assets || artwork || manual}`);
+        assert.equal(fs.readFileSync(output, 'utf8').trim(), `should_build=${assets || (manual && force)}`);
       }
     }
   }

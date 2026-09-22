@@ -1,5 +1,16 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
-import { AppComponent } from './app/app.component';
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+import { mount } from 'svelte';
+import App from './App.svelte';
+import { initializeTheme } from './stores/theme';
+import { initializeWorkspace } from './lib/workspaces/workspace-state';
+import { initializeAuth } from './services/auth/auth-state';
+import './styles/global.css';
+
+initializeTheme();
+initializeWorkspace();
+// The callback owns session verification; an old stored session must not race it.
+if (location.pathname !== '/signin' || !new URLSearchParams(location.search).get('token')) void initializeAuth();
+
+const target = document.getElementById('app');
+if (!target) throw new Error('The application mount point is missing.');
+
+mount(App, { target });

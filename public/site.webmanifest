@@ -1,0 +1,12 @@
+{
+  "name": "uma.moe",
+  "short_name": "uma.moe",
+  "description": "Mobile-first Umamusume database and tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "/logo.webp", "sizes": "any", "type": "image/webp", "purpose": "any" }
+  ]
+}

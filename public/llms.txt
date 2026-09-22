@@ -1,0 +1,38 @@
+# uma.moe
+
+> Mobile-first Umamusume database, Veteran workspace, race analysis, timeline, community data, and planning tools for the global version.
+
+## Site navigation
+
+### Main
+
+- [Home](https://uma.moe/): Umamusume resource hub for the global version.
+- [Database](https://uma.moe/database): Find optimal inheritance pairings and support cards for Uma Musume.
+- [Tierlist](https://uma.moe/tierlist): Support card tierlist.
+- [Timeline](https://uma.moe/timeline): Global content releases, pickups, and events.
+
+### Community
+
+- [Clubs](https://uma.moe/circles): Club database and fan progression.
+- [Rankings](https://uma.moe/rankings): Global trainer fan rankings.
+- [Activity](https://uma.moe/activity): Top 100 club activity reports.
+
+### Tools
+
+- [Tools](https://uma.moe/tools): Advanced tools and statistics.
+- [Statistics](https://uma.moe/tools/statistics): Team Stadium statistics.
+- [Lineage Planner](https://uma.moe/tools/lineage-planner): Optimize inheritance trees and parent pairings.
+
+### System
+
+- [Privacy](https://uma.moe/privacy-policy): Privacy policy.
+
+## Machine-readable navigation
+
+- [Feature metadata](https://uma.moe/meta/features.json)
+- [Route navigation graph](https://uma.moe/meta/navigation.json)
+- [Schema.org navigation](https://uma.moe/meta/navigation.jsonld)
+
+## Data and privacy
+
+Public metadata never contains private account, Veteran, race, or standalone-client payloads. Authentication is required before account-owned data is requested.

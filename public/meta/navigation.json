@@ -1,0 +1,106 @@
+{
+  "version": 3,
+  "groups": [
+    {
+      "id": "main",
+      "title": "Main",
+      "items": [
+        {
+          "id": "home",
+          "title": "Home",
+          "description": "Umamusume resource hub for the global version.",
+          "path": "/",
+          "adSurface": "home"
+        },
+        {
+          "id": "database",
+          "title": "Database",
+          "description": "Find optimal inheritance pairings and support cards for Uma Musume.",
+          "path": "/database",
+          "adSurface": "database"
+        },
+        {
+          "id": "tierlist",
+          "title": "Tierlist",
+          "description": "Support card tierlist.",
+          "path": "/tierlist",
+          "adSurface": "tierlist"
+        },
+        {
+          "id": "timeline",
+          "title": "Timeline",
+          "description": "Global content releases, pickups, and events.",
+          "path": "/timeline",
+          "adSurface": "timeline"
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "title": "Community",
+      "items": [
+        {
+          "id": "clubs",
+          "title": "Clubs",
+          "description": "Club database and fan progression.",
+          "path": "/circles",
+          "adSurface": "leaderboard"
+        },
+        {
+          "id": "rankings",
+          "title": "Rankings",
+          "description": "Global trainer fan rankings.",
+          "path": "/rankings",
+          "adSurface": "rankings"
+        },
+        {
+          "id": "activity",
+          "title": "Activity",
+          "description": "Top 100 club activity reports.",
+          "path": "/activity",
+          "adSurface": "activity"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Tools",
+      "items": [
+        {
+          "id": "tools",
+          "title": "Tools",
+          "description": "Advanced tools and statistics.",
+          "path": "/tools",
+          "adSurface": "tools"
+        },
+        {
+          "id": "statistics",
+          "title": "Statistics",
+          "description": "Team Stadium statistics.",
+          "path": "/tools/statistics",
+          "adSurface": "statistics"
+        },
+        {
+          "id": "lineage-planner",
+          "title": "Lineage Planner",
+          "description": "Optimize inheritance trees and parent pairings.",
+          "path": "/tools/lineage-planner",
+          "adSurface": "lineage_planner"
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": "System",
+      "items": [
+        {
+          "id": "privacy",
+          "title": "Privacy",
+          "description": "Privacy policy.",
+          "path": "/privacy-policy",
+          "adSurface": null
+        }
+      ]
+    }
+  ]
+}

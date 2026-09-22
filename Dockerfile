@@ -6,15 +6,19 @@ WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci --include=dev \
-	&& test -x node_modules/.bin/ng
+	&& test -x node_modules/.bin/vite
 
 FROM deps AS build
 
-COPY angular.json ./
+COPY index.html ./
+COPY vite.config.ts svelte.config.js vitest.setup.ts ./
 COPY tsconfig*.json ./
+COPY contracts ./contracts
+COPY public ./public
 COPY src ./src
-COPY timeline-image-sync ./timeline-image-sync
-COPY scripts/precompute-tierlist.js scripts/tierlist-calculation-engine.js scripts/compress-images.js scripts/generate-favicon.mjs scripts/generate-seo-pages.mjs ./scripts/
+COPY scripts ./scripts
+COPY tests/e2e/fixtures ./tests/e2e/fixtures
+COPY tests/fixtures ./tests/fixtures
 
 ARG BUILD_SCRIPT=build:prod
 ARG FRONTEND_CONFIG_FINGERPRINT=local
@@ -29,7 +33,7 @@ ARG APP_BUILD_COMMIT=local
 ARG APP_BUILD_ENVIRONMENT=local
 ARG APP_BUILD_TIME=
 
-COPY --from=build /app/dist/browser/ ./
+COPY --from=build /app/dist/ ./
 RUN set -eu; \
 	rm -rf assets; \
 	build_time="${APP_BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"; \
@@ -38,7 +42,7 @@ RUN set -eu; \
 		"$APP_BUILD_COMMIT" \
 		"$APP_BUILD_ENVIRONMENT" \
 		"$build_time" > version.json; \
-	sed -i "s|<meta name=\"app-build-version\" content=\"[^\"]*\">|<meta name=\"app-build-version\" content=\"$APP_BUILD_VERSION\">|" index.html
+	sed -i "s|<meta name=\"app-build-version\" content=\"[^\"]*\"[^>]*>|<meta name=\"app-build-version\" content=\"$APP_BUILD_VERSION\">|" index.html
 
 FROM scratch AS shell
 
@@ -46,4 +50,4 @@ COPY --from=shell-files /var/www/html/umamoe/ /var/www/html/umamoe/
 
 FROM scratch AS assets
 
-COPY --from=build /app/dist/browser/assets/ /assets/
+COPY --from=build /app/dist/assets/ /assets/

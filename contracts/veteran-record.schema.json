@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uma.moe/contracts/veteran-record.schema.json",
+  "title": "VeteranRecord",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "recordId", "cardId", "stats", "skills", "factors", "parents"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "recordId": { "type": "string", "minLength": 1 },
+    "trainedCharaId": { "type": ["integer", "null"] },
+    "cardId": { "type": "integer", "minimum": 1 },
+    "name": { "type": ["string", "null"] },
+    "createdAt": { "type": ["string", "null"] },
+    "scenarioId": { "type": ["integer", "null"] },
+    "rankScore": { "type": ["integer", "null"] },
+    "source": { "enum": ["uma-profile", "hakuraku-json", "horseact-json", "umaextractor-json", "client", "unknown"] },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speed", "stamina", "power", "guts", "wisdom"],
+      "properties": {
+        "speed": { "type": "integer", "minimum": 0 },
+        "stamina": { "type": "integer", "minimum": 0 },
+        "power": { "type": "integer", "minimum": 0 },
+        "guts": { "type": "integer", "minimum": 0 },
+        "wisdom": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "skills": { "type": "array", "items": { "type": "object", "required": ["id", "level"], "properties": { "id": { "type": "integer" }, "level": { "type": "integer", "minimum": 0 } } } },
+    "factors": { "type": "array", "items": { "type": "object", "required": ["id", "level"], "properties": { "id": { "type": "integer" }, "level": { "type": "integer", "minimum": 0 } } } },
+    "parents": { "type": "array", "items": { "type": "object", "required": ["positionId", "cardId", "factors"], "properties": { "positionId": { "type": "integer" }, "cardId": { "type": "integer" }, "factors": { "$ref": "#/$defs/factorList" } } } },
+    "rawSource": { "type": "object" }
+  },
+  "$defs": {
+    "factorList": { "type": "array", "items": { "type": "object", "required": ["id", "level"], "properties": { "id": { "type": "integer" }, "level": { "type": "integer", "minimum": 0 } } } }
+  }
+}

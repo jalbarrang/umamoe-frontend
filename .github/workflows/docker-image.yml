@@ -45,13 +45,15 @@ jobs:
       build_script: ${{ steps.plan.outputs.build_script }}
       deploy_target: ${{ steps.plan.outputs.deploy_target }}
       should_deploy_assets: ${{ steps.assets_plan.outputs.should_build }}
-      timeline_artwork_commit: ${{ steps.timeline_artwork.outputs.commit }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Check deployment decisions and asset permissions
+        run: node scripts/test-deploy-assets.cjs
 
       - name: Detect asset-affecting changes
         id: asset_changes
@@ -62,26 +64,12 @@ jobs:
               - '.github/workflows/docker-image.yml'
               - 'Dockerfile'
               - '.dockerignore'
-              - 'angular.json'
+              - 'vite.config.ts'
+              - 'src/**'
+              - 'public/**'
               - 'package.json'
               - 'package-lock.json'
               - 'scripts/**'
-              - 'src/assets/**'
-              - 'src/data/**'
-
-      - name: Use current app with beta timeline artwork
-        id: timeline_artwork
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF_NAME" == "beta" ]]; then
-            git checkout origin/main -- .
-          fi
-          git checkout origin/beta -- src/assets/timeline-images
-          echo "commit=$(git rev-parse origin/beta)" >> "$GITHUB_OUTPUT"
-          if ! git diff --quiet HEAD -- src/assets/timeline-images; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Choose deployment plan
         id: plan
@@ -143,20 +131,20 @@ jobs:
           validate_turnstile_site_key "BETA" "$BETA_TURNSTILE_SITE_KEY"
           validate_google_analytics_measurement_id "BETA" "$GOOGLE_ANALYTICS_MEASUREMENT"
 
-          SITE_KEY="$BETA_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/environments/environment.beta.ts
-          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/environments/environment.beta.ts
+          SITE_KEY="$BETA_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/config/environment.beta.ts
+          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/config/environment.beta.ts
 
-          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/config/environment.beta.ts; then
             echo "::error title=Invalid BETA Turnstile site key injection::The beta environment file still contains a placeholder-like siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "siteKey: ['\"]['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "siteKey: ['\"]['\"]" src/config/environment.beta.ts; then
             echo "::error title=Missing BETA Turnstile site key injection::The beta environment file still contains an empty siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "measurementId: ['\"]['\"]" src/environments/environment.beta.ts; then
+          if grep -Eq "measurementId: ['\"]['\"]" src/config/environment.beta.ts; then
             echo "::error title=Missing BETA Google Analytics measurement ID injection::The beta environment file still contains an empty measurementId after injection."
             exit 1
           fi
@@ -172,9 +160,6 @@ jobs:
           if [[ "${{ steps.asset_changes.outputs.assets }}" == "true" ]]; then
             should_build=true
           fi
-          if [[ "${{ steps.timeline_artwork.outputs.changed }}" == "true" ]]; then
-            should_build=true
-          fi
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.deploy_assets || 'false' }}" == "true" ]]; then
             should_build=true
           fi
@@ -188,7 +173,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "version=beta-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          version="$(node scripts/build-version.mjs)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build shell artifact
         uses: docker/build-push-action@v6
@@ -381,6 +367,8 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+          printf '%s\n' 'Host *' '  ControlMaster auto' '  ControlPersist 60s' '  ControlPath ~/.ssh/deploy-%C' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Ensure remote shell directory exists
         shell: bash
@@ -439,10 +427,6 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
         run: |
           # Avoid --inplace: stale remote files may not be writable by the deploy user.
-          rsync -az --no-perms --no-owner --no-group \
-            -e "ssh -o LogLevel=ERROR -p $DEPLOY_PORT" \
-            "${{ runner.temp }}/asset-site/data/precomputed-tierlist.json" \
-            "$DEPLOY_USER@$DEPLOY_HOST:${{ env.BETA_REMOTE_ASSETS_DIR }}/data/"
           for relative_dir in \
             images \
             timeline-images; do
@@ -470,12 +454,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use the artwork shipped in the assets artifact
-        shell: bash
-        env:
-          TIMELINE_ARTWORK_COMMIT: ${{ needs.build.outputs.timeline_artwork_commit }}
-        run: git checkout "$TIMELINE_ARTWORK_COMMIT" -- src/assets/timeline-images
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -484,7 +462,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "version=prod-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          version="$(node scripts/build-version.mjs)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Inject production frontend config from GitHub settings
         id: production_frontend_config
@@ -533,20 +512,20 @@ jobs:
           validate_turnstile_site_key "PROD" "$PROD_TURNSTILE_SITE_KEY"
           validate_google_analytics_measurement_id "PROD" "$GOOGLE_ANALYTICS_MEASUREMENT"
 
-          SITE_KEY="$PROD_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/environments/environment.prod.ts
-          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/environments/environment.prod.ts
+          SITE_KEY="$PROD_TURNSTILE_SITE_KEY" perl -0pi -e 'my $replacement = "siteKey: \x27$ENV{SITE_KEY}\x27,"; my $count = s/siteKey:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "siteKey property not found\n" unless $count;' src/config/environment.prod.ts
+          GA_MEASUREMENT_ID="$GOOGLE_ANALYTICS_MEASUREMENT" perl -0pi -e 'my $replacement = "measurementId: \x27$ENV{GA_MEASUREMENT_ID}\x27,"; my $count = s/measurementId:\s*[\x27"][^\x27"]*[\x27"],/$replacement/; die "Google Analytics measurementId property not found\n" unless $count;' src/config/environment.prod.ts
 
-          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "siteKey: ['\"][^'\"]*[{}][^'\"]*['\"]" src/config/environment.prod.ts; then
             echo "::error title=Invalid PROD Turnstile site key injection::The production environment file still contains a placeholder-like siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "siteKey: ['\"]['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "siteKey: ['\"]['\"]" src/config/environment.prod.ts; then
             echo "::error title=Missing PROD Turnstile site key injection::The production environment file still contains an empty siteKey after injection."
             exit 1
           fi
 
-          if grep -Eq "measurementId: ['\"]['\"]" src/environments/environment.prod.ts; then
+          if grep -Eq "measurementId: ['\"]['\"]" src/config/environment.prod.ts; then
             echo "::error title=Missing PROD Google Analytics measurement ID injection::The production environment file still contains an empty measurementId after injection."
             exit 1
           fi
@@ -769,10 +748,6 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
         run: |
           # Avoid --inplace: stale remote files may not be writable by the deploy user.
-          rsync -az --no-perms --no-owner --no-group \
-            -e "ssh -o LogLevel=ERROR -p $DEPLOY_PORT" \
-            "${{ runner.temp }}/asset-site/data/precomputed-tierlist.json" \
-            "$DEPLOY_USER@$DEPLOY_HOST:${{ env.PROD_REMOTE_ASSETS_DIR }}/data/"
           for relative_dir in \
             images \
             timeline-images; do

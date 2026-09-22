@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uma.moe/contracts/client-envelope.schema.json",
+  "title": "ClientEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocolVersion", "messageId", "sequence", "timestamp", "type", "mode", "payload"],
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "messageId": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "accountRef": { "type": ["string", "null"] },
+    "type": { "enum": ["client.status", "account.context", "veterans.snapshot", "veterans.delta", "race.lifecycle", "race.data", "import.progress", "persistence.status", "error"] },
+    "mode": { "enum": ["snapshot", "delta", "event"] },
+    "payload": { "type": "object" }
+  }
+}
