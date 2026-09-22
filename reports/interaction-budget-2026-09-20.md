@@ -1,4 +1,4 @@
-# Interaction budget audit — 20 September 2026
+# Interaction budget audit - 20 September 2026
 
 The 300 ms target is **not met everywhere**. The audit now checks native clicks, taps and keyboard interactions across the existing browser suite, with additional checks for completed dialogs, filtering and populated routes. The measured follow-ups contain 507 named control groups; 63 have at least one input-to-next-paint measurement over 300 ms. Full results, including every measured control group and workflow status, are retained in [the JSON inventory](interaction-budget-2026-09-20.json).
 

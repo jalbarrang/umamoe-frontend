@@ -30,7 +30,7 @@
   const stats = $derived((summary.stats ?? []).filter(stat => stat.id !== 'total').map(stat => {
     if (!baseStats) return stat;
     const value = veteranBaseStat(veteran[stat.id as 'speed'|'stamina'|'power'|'guts'|'wiz'],mood);
-    return {...stat,value:value?.toLocaleString(undefined,{maximumFractionDigits:1}) ?? '—'};
+    return {...stat,value:value?.toLocaleString(undefined,{maximumFractionDigits:1}) ?? '-'};
   }));
   const statTotal = $derived(baseStats ? (['speed','stamina','power','guts','wiz'] as const).reduce((sum,key) => sum + (veteranBaseStat(veteran[key],mood) ?? 0),0) : totalStats(veteran));
   const spTotal = $derived(skillPointTotal(skillCatalog,encodedSkills(veteran)));
@@ -81,7 +81,7 @@
     </section>{/if}
     <ProfileVeteranQueryMatches matches={queryMatches}/>
   </div>
-  <footer><span class="stat-total">{statTotal.toLocaleString(undefined,{maximumFractionDigits:1})} Total Stats</span><span class="sp-total" title="Base cost of learned skills including prerequisites, before hint discounts">{spTotal?.toLocaleString() ?? '—'} SP total</span>{#if veteran.fans != null}<span>{veteran.fans.toLocaleString()} fans</span>{:else if created}<span>{created}</span>{/if}<span class="footer-actions">{#if legacyUrl}<a class="text-action" href={legacyUrl}><Icon name="database" size={12}/>Use as legacy</a>{/if}{#if ondetails}<button class="text-action" onclick={openDetails}>Details <Icon name="arrow-right" size={12}/></button>{/if}</span></footer>
+  <footer><span class="stat-total">{statTotal.toLocaleString(undefined,{maximumFractionDigits:1})} Total Stats</span><span class="sp-total" title="Base cost of learned skills including prerequisites, before hint discounts">{spTotal?.toLocaleString() ?? '-'} SP total</span>{#if veteran.fans != null}<span>{veteran.fans.toLocaleString()} fans</span>{:else if created}<span>{created}</span>{/if}<span class="footer-actions">{#if legacyUrl}<a class="text-action" href={legacyUrl}><Icon name="database" size={12}/>Use as legacy</a>{/if}{#if ondetails}<button class="text-action" onclick={openDetails}>Details <Icon name="arrow-right" size={12}/></button>{/if}</span></footer>
 </article>
 
 

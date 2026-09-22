@@ -136,7 +136,7 @@
     return { ...item, image: card?.image, detail: [...(card?.tags ?? []), '#' + item.id].join(' · ') };
   }
   function statStrip(values: Record<string, number>): StatStripItem[] {
-    return statIds.map((id) => ({ id, label: statName(id), value: values[id] ?? '—', tone: (id === 'wiz' ? 'wit' : id) as StatStripItem['tone'], icon: '/assets/images/icon/stats/' + (id === 'wiz' ? 'wit' : id) + '.webp' }));
+    return statIds.map((id) => ({ id, label: statName(id), value: values[id] ?? '-', tone: (id === 'wiz' ? 'wit' : id) as StatStripItem['tone'], icon: '/assets/images/icon/stats/' + (id === 'wiz' ? 'wit' : id) + '.webp' }));
   }
   function showSection(id: string): void { activeSection = id; void changeSection(); }
   function exploreCharacter(id: string): void { activeSection = 'characters'; void selectCharacter(id); void changeSection(); }
@@ -295,7 +295,7 @@
       <section class="dataset-summary" aria-label="Dataset summary">
         <div class="sample-summary"><span class="summary-label">In your selection</span><strong data-testid="selected-samples">{compact(selectedSamples)}</strong><span>of {sampleTotal.toLocaleString()} training samples</span></div>
         <div><span class="summary-label">Umas represented</span><strong>{umaData.length}<small> / {availableCharacters.length}</small></strong><span>in the selected data</span></div>
-        <div><span class="summary-label">Most represented</span><strong>{commonClass?.name ?? '—'}</strong><span>{commonClass ? (commonClass.percentage ?? 0).toFixed(1) + '% of selected samples' : 'No samples selected'}</span></div>
+        <div><span class="summary-label">Most represented</span><strong>{commonClass?.name ?? '-'}</strong><span>{commonClass ? (commonClass.percentage ?? 0).toFixed(1) + '% of selected samples' : 'No samples selected'}</span></div>
       </section>
 
       <div class="workspace-navigation">

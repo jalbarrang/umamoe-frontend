@@ -410,7 +410,7 @@
             <tr data-virtual-index={virtualRange.start + index}>
               <th scope="row"><button class="table-character" aria-label={'View '+item.name+' details'} onclick={()=>showDetail(item.veteran)}><ProfileVeteranIdentity {summary} rarity={item.veteran.rarity} score={item.veteran.rank_score}/></button></th>
               <td class="table-stats">
-                <StatStrip label={item.name+' stats'} items={[...statFields.map(field=>({id:field.id,label:field.label,value:(item.veteran[field.id] ?? 0).toLocaleString(),icon:'/assets/images/icon/stats/'+(field.id==='wiz' ? 'wit' : field.id)+'.webp'})),{id:'sp',label:'SP',value:spByVeteran.get(item.veteran)?.toLocaleString() ?? '—'},{id:'total',label:'Total Stats',value:item.total.toLocaleString()}]} compact presentation="icons"/>
+                <StatStrip label={item.name+' stats'} items={[...statFields.map(field=>({id:field.id,label:field.label,value:(item.veteran[field.id] ?? 0).toLocaleString(),icon:'/assets/images/icon/stats/'+(field.id==='wiz' ? 'wit' : field.id)+'.webp'})),{id:'sp',label:'SP',value:spByVeteran.get(item.veteran)?.toLocaleString() ?? '-'},{id:'total',label:'Total Stats',value:item.total.toLocaleString()}]} compact presentation="icons"/>
               </td>
               <td class="table-affinity" data-label="Affinity"><ProfileVeteranAffinity {summary} compact/></td>
               <td class="table-aptitudes" data-label="Aptitudes"><AptitudeGrid items={aptitudes(item.veteran)} compact stretch gradeFirst/></td>

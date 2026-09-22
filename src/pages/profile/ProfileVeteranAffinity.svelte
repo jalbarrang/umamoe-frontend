@@ -8,7 +8,7 @@
         <div class="affinity-main" title={summary.affinityNote}>
           {#if compact && summary.image}<img src={summary.image} alt={summary.name} loading="lazy"/>{/if}
           <span class="affinity-label">{summary.affinityTarget ? 'Target total' : 'Main total'}</span>
-          {#if Number.isFinite(summary.affinity)}<AffinityStat value={summary.affinity} label={summary.affinityTarget ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span class="affinity-missing" aria-label={summary.affinityTarget ? 'Target affinity unavailable' : 'Main affinity unavailable'}>—</span>{/if}
+          {#if Number.isFinite(summary.affinity)}<AffinityStat value={summary.affinity} label={summary.affinityTarget ? 'Target affinity' : 'Main affinity'} compact/>{:else}<span class="affinity-missing" aria-label={summary.affinityTarget ? 'Target affinity unavailable' : 'Main affinity unavailable'}>-</span>{/if}
         </div>
         <div class="affinity-parents">
           {#each ['P1','P2'] as slot}
@@ -17,7 +17,7 @@
               <span class="parent-slot">{slot}</span>
               {#if parent?.image}<img src={parent.image} alt="" loading="lazy"/>{/if}
               <span class="affinity-parent-name">{parent?.name ?? 'Not recorded'}</span>
-              {#if parent && Number.isFinite(parent.affinity)}<AffinityStat value={parent.affinity} label={slot + ' affinity'} compact/>{:else}<span class="affinity-missing" aria-label={slot + ' affinity unavailable'}>—</span>{/if}
+              {#if parent && Number.isFinite(parent.affinity)}<AffinityStat value={parent.affinity} label={slot + ' affinity'} compact/>{:else}<span class="affinity-missing" aria-label={slot + ' affinity unavailable'}>-</span>{/if}
             </div>
           {/each}
         </div>

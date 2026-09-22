@@ -73,7 +73,7 @@
 
 <div class="veteran-details">
   <section class="stat-overview" aria-label="Stats and totals">
-    <header><h3>Stats</h3><dl class="totals"><div><dt>Total Stats</dt><dd>{totalStats(veteran).toLocaleString()}</dd></div><div title="Base cost of learned skills including prerequisites, before hint discounts"><dt>SP total</dt><dd>{spTotal?.toLocaleString() ?? '—'}</dd></div></dl></header>
+    <header><h3>Stats</h3><dl class="totals"><div><dt>Total Stats</dt><dd>{totalStats(veteran).toLocaleString()}</dd></div><div title="Base cost of learned skills including prerequisites, before hint discounts"><dt>SP total</dt><dd>{spTotal?.toLocaleString() ?? '-'}</dd></div></dl></header>
     <StatStrip items={stats} label="Displayed stats" presentation="inline" framed/>
   </section>
   <div class="compact-overview">

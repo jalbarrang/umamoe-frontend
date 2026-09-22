@@ -41,7 +41,7 @@
                   {/each}
                   {#if selectable && slot?.races.length && !slot.races.some((race) => selected(race, slot))}
                     <span class="add-race"><Button variant="secondary" size="sm" icon="add" ariaLabel={`Add race: ${year.label}, ${monthName} ${half === 1 ? 'Early' : 'Late'}`} onclick={() => openSlot(year, slot)}/></span>
-                  {:else if selectable && !slot?.races.length}<span class="unavailable-mark" aria-label="No races available">—</span>
+                  {:else if selectable && !slot?.races.length}<span class="unavailable-mark" aria-label="No races available">-</span>
                   {/if}
                 </div>
                 {#if !selectable}<time>{monthName} {half === 1 ? 'Early' : 'Late'}</time>{/if}

@@ -61,7 +61,7 @@ for (const scenario of ['full club', 'large values', 'zero values', 'missing fie
       fixture.response.circle.member_count = 30;
       fixture.response.circle.name = 'A club with a much longer name · 星のトレーナー';
       fixture.response.circle.leader_name = 'LeaderWithoutAnySpaces'.repeat(3);
-      fixture.response.circle.comment = 'Training together every day — '.repeat(5) + 'discord.gg/parity';
+      fixture.response.circle.comment = 'Training together every day - '.repeat(5) + 'discord.gg/parity';
       fixture.response.members = Array.from({length:31}, (_,i) => ({ ...fixture.response.members[i % 6]!, viewer_id:123456789000+i, trainer_name:i === 0 ? 'TrainerWithoutAnySpaces'.repeat(3) : `Trainer ${i + 1} · メジロマックイーン`, membership:i === 0 ? 3 : i === 1 ? 2 : 1, daily_fans:i === 30 ? [100,150] : Array.from({length:6},(_,day) => 1_000_000 + day * (i % 2 ? -100 : 1000) + i) }));
     }
     if (scenario === 'large values') {

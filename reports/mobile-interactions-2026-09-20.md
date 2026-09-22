@@ -1,4 +1,4 @@
-# Mobile interaction stress test — 20 September 2026
+# Mobile interaction stress test - 20 September 2026
 
 Database sparks, Timeline switching and Planner edits now do substantially less main-thread work. Character/support pickers, parent lists, Statistics rankings and planner rewards load additional entries automatically as they become visible. Pickers still search the complete catalog; keyboard navigation can reveal later entries without a “Show more” button.
 

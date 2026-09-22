@@ -4,7 +4,7 @@
 </script>
 
 <span class="lb-diamonds" role="img" aria-label={label} title={label}>
-  {#if value === null}<span aria-hidden="true">—</span>{:else}
+  {#if value === null}<span aria-hidden="true">-</span>{:else}
     {#each Array(4) as _, index}<svg class:filled={index < value} viewBox="0 -960 960 960" aria-hidden="true"><path d={index < value ? 'M480-64 224-480l256-416 256 416L480-64Z' : 'M480-64 224-480l256-416 256 416L480-64Zm0-139 170-277-170-278-169 278 169 277Zm0-277Z'}/></svg>{/each}
   {/if}
 </span>

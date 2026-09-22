@@ -5,7 +5,7 @@ export function clubDetailsFixture(year = 2026, month = 9) {
       member_count: 29, join_style: 1, monthly_rank: 12, monthly_point: 1000000,
       last_month_rank: 18, last_month_point: 700000, live_points: 1100000,
       last_live_update: '2026-09-06T11:55:00Z', last_updated: '2026-09-06T10:00:00Z',
-      comment: 'Daily players welcome — discord.gg/parity'
+      comment: 'Daily players welcome - discord.gg/parity'
     },
     club_rank: 5,
     fans_to_lower_tier: 500000 as number | null | undefined,

@@ -1,4 +1,4 @@
-# beta.uma.moe loading audit — 20 September 2026
+# beta.uma.moe loading audit - 20 September 2026
 
 The live site's largest loading problems were Timeline image downloads, oversized scenario logos, and data requests waiting unnecessarily for label catalogs. Focused fixes are implemented in the Svelte worktree and verified locally. They have **not been deployed**, so the live measurements below describe the existing beta release.
 
@@ -32,16 +32,16 @@ All times are seconds. These are the live, pre-deployment results.
 | Lineage Planner `/tools/lineage-planner` | 0.53 | 1.68 | 1.68 | 646 | Shared catalog/proof setup contributes to startup. Shift sum 0.185 warrants a follow-up with layout-shift attribution. |
 | Tools `/tools` | 0.57 | 0.97 | 0.96 | 307 | Small page; shared provider cost is the main opportunity. |
 | Privacy `/privacy-policy` | 0.49 | 0.78 | 0.76 | 282 | No route-specific optimization justified by this run. |
-| Login `/login` | 0.55 | 0.73 | — | 277 | Sign-in choices loaded; no OAuth interaction performed. No matching heading for the Ready heuristic. |
+| Login `/login` | 0.55 | 0.73 | - | 277 | Sign-in choices loaded; no OAuth interaction performed. No matching heading for the Ready heuristic. |
 | Veterans `/veterans` | 0.54 | 1.20 | 1.20 | 475 | Public landing/upload view measured, without a user collection. |
-| Settings `/settings` | 0.52 | 1.20 | — | 291 | Signed-out sign-in view only; authenticated settings were not measured. |
+| Settings `/settings` | 0.52 | 1.20 | - | 291 | Signed-out sign-in view only; authenticated settings were not measured. |
 | Club details `/circles/354170328` | 0.59 | 1.34 | 1.89 | 607 | Public club rendered successfully. Export actions were not triggered. |
 | Trainer activity `/activity/112852554709` | 0.55 | 0.94 | 1.49 | 349 | Public trainer activity rendered successfully. |
 | Trainer profile `/profile/112852554709` | 0.57 | 2.37 | 2.26 | 1,162 | **Partial load:** profile rendered, but eight circle-history requests returned 429. Ready does not mean complete history here. |
-| Trainer veterans `/veterans/112852554709` | 0.49 | — | — | 521 | **Failed load:** profile API returned 429; error appeared at 3.69 s. |
-| Champions Meeting `/profile/112852554709/cm` | 0.56 | — | — | 370 | **Failed load:** profile API returned 429; error appeared at 4.60 s. |
-| Achievements `/profile/112852554709/achievements` | 0.55 | — | — | 369 | **Failed load:** profile API returned 429; error appeared at 3.70 s. |
-| Titles `/profile/112852554709/titles` | 0.50 | — | — | 369 | **Failed load:** profile API returned 429; error appeared at 3.78 s. |
+| Trainer veterans `/veterans/112852554709` | 0.49 | - | - | 521 | **Failed load:** profile API returned 429; error appeared at 3.69 s. |
+| Champions Meeting `/profile/112852554709/cm` | 0.56 | - | - | 370 | **Failed load:** profile API returned 429; error appeared at 4.60 s. |
+| Achievements `/profile/112852554709/achievements` | 0.55 | - | - | 369 | **Failed load:** profile API returned 429; error appeared at 3.70 s. |
+| Titles `/profile/112852554709/titles` | 0.50 | - | - | 369 | **Failed load:** profile API returned 429; error appeared at 3.78 s. |
 
 The error-screen paints are deliberately not presented as successful profile loading times. Repeated cold profile testing was stopped after these rate-limit failures. The previous console-cleanup changes coordinate browser proof before protected requests; whether that also resolves these live history/profile failures requires deployment and a fresh live check. A server-side rate limit is also possible and cannot be ruled out from the browser trace alone.
 
