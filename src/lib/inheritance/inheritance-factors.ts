@@ -3,13 +3,22 @@ import { applyPlannerPayload, calculatePlannerAffinity, parsePlannerTransfer, pl
 import type { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
 import type { VeteranRecord } from '@/lib/veterans/generated/veteran-record';
 import { encodedFactorLevels, type InheritanceRecord, type InheritanceSearchFilters } from './inheritance-search';
+import type { UqlSparkHighlight } from './uql-spark-highlight';
 
 export type FactorOwner = 'main' | 'left' | 'right';
 export interface FactorContribution { owner: FactorOwner; side: 'p1' | 'p2'; level: number; }
 export interface InheritanceFactor extends DecodedFactor { group: number; owner?: FactorOwner; copies: number; mainStars: number; sources: FactorContribution[]; }
 
 /** Angular highlights selected requirements, not every spark in a matching record. */
-export function inheritanceFactorMatched(factor: InheritanceFactor, filters?: InheritanceSearchFilters): boolean {
+export function inheritanceFactorMatched(factor: InheritanceFactor, filters?: InheritanceSearchFilters, uql?: UqlSparkHighlight): boolean {
+  if (uql) {
+    if (uql.global.has(factor.id * 10 + factor.level)) return true;
+    if (factor.sources.some(source => source.side === 'p1' && uql[source.owner].has(factor.id * 10 + source.level))) return true;
+    if (![0, 1, 5].includes(factor.group) && (
+      uql.optionalWhite.has(factor.id) || uql.lineageWhite.has(factor.id)
+      || (uql.optionalMainWhite.has(factor.id) && factor.sources.some(source => source.side === 'p1' && source.owner === 'main'))
+    )) return true;
+  }
   if (!filters) return false;
   const color = factor.group === 0 ? 'blue' : factor.group === 1 ? 'pink' : factor.group === 5 ? 'green' : 'white';
   if (filters[color].some((requirement) => (color !== 'white' || requirement.factorId > 0) && encodedFactorLevels(requirement).includes(requirement.factorId === 0 ? factor.level : factor.id * 10 + factor.level))) return true;
@@ -55,7 +64,8 @@ export function inheritanceFactors(record: InheritanceRecord, split = false, foc
     const factor = decodeFactor(encoded);
     if (!merged.has(factor.id)) merged.set(factor.id, { ...factor, group: factor.type >= 0 ? factor.type : group, copies: 0, mainStars: 0, sources: [] });
   }
-  return [...merged.values()].sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+  // Preserve Angular's source order: main parent, grandparents, then P2.
+  return [...merged.values()];
 }
 
 export function inheritanceAffinity(record: InheritanceRecord, targetId: number | undefined, partner: VeteranRecord | undefined, engine: VeteranAffinityEngine | undefined, groups: ReadonlyMap<number, number>, partnerWins?: readonly number[]) {

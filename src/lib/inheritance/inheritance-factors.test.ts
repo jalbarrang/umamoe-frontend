@@ -6,8 +6,56 @@ import { inheritanceAffinity, inheritanceFactors, inheritanceFactorMatched, type
 import { normalizeInheritanceSearch, emptyInheritanceFilters } from './inheritance-search';
 import { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
 import type { VeteranRecord } from '@/lib/veterans/generated/veteran-record';
+import { validateInheritanceUql } from './uql';
+import { buildUqlSparkHighlight } from './uql-spark-highlight';
 
 describe('Angular factor encoding and owner display', () => {
+  it('keeps main-parent sparks first even when grandparents have more stars or earlier names', () => {
+    const record = normalizeInheritanceSearch({ items: [{ account_id: '123', trainer_name: 'Trainer', inheritance: {
+      inheritance_id: 1, main_parent_id: 100101, parent_left_id: 100201, parent_right_id: 100301, parent_rank: 10000, parent_rarity: 10,
+      main_pink_factors: 1102, left_pink_factors: 3403, right_pink_factors: 3402,
+      main_green_factors: 10030102, left_green_factors: 10010103, right_green_factors: 10020102,
+      main_white_factors: [2016001], left_white_factors: [2003603, 2016002], right_white_factors: [2003603]
+    } }], total: 1, page: 1, limit: 20, total_pages: 1 }).records[0]!;
+    const factors = inheritanceFactors(record);
+    expect(factors.filter(factor => factor.group === 1).map(factor => [factor.id, factor.level])).toEqual([[110, 2], [340, 5]]);
+    expect(factors.filter(factor => factor.group === 5).map(factor => factor.id)).toEqual([1003010, 1001010, 1002010]);
+    expect(factors.filter(factor => factor.group === 3).map(factor => [factor.id, factor.level])).toEqual([[201600, 3], [200360, 6]]);
+  });
+  it('highlights compiled UQL totals, scoped requirements and optional whites in combined and split views', () => {
+    const record = normalizeInheritanceSearch({ items: [{ account_id: '123', trainer_name: 'Trainer', inheritance: {
+      inheritance_id: 1, main_parent_id: 100101, parent_left_id: 100201, parent_right_id: 100301, parent_rank: 10000, parent_rarity: 10,
+      main_blue_factors: 203, left_blue_factors: 203, right_blue_factors: 202,
+      main_pink_factors: 3402, left_pink_factors: 3403,
+      main_white_factors: [2016001, 2003602], left_white_factors: [2016003, 2003601], right_white_factors: [2000102]
+    } }], total: 1, page: 1, limit: 20, total_pages: 1 }).records[0]!;
+    const validation = validateInheritanceUql('where Long >= 4 and Stamina >= 7 and Optional main white in (Straightaway Adept) and main white factors has all (Groundwork)');
+    expect(validation.state).toBe('valid');
+    const highlight = buildUqlSparkHighlight(validation.compiled);
+    const matched = (factor: InheritanceFactor) => inheritanceFactorMatched(factor, undefined, highlight);
+    expect(inheritanceFactors(record).filter(matched).map(factor => factor.id)).toEqual([20, 340, 201600, 200360]);
+    expect(inheritanceFactors(record, true).filter(matched).map(factor => [factor.owner, factor.id])).toEqual([['main', 201600], ['main', 200360]]);
+    expect(inheritanceFactors(record, false, 'left').filter(matched)).toEqual([]);
+    const mainWhite = inheritanceFactors(record, false, 'main').find(factor => factor.id === 200360)!;
+    expect(matched({ ...mainWhite, sources: [{ side: 'p2', owner: 'main', level: 2 }] })).toBe(false);
+    const gpHighlight = buildUqlSparkHighlight(validateInheritanceUql('GP1 Groundwork >= 3 or GP2 Stamina >= 2').compiled);
+    expect(inheritanceFactors(record, true).filter(factor => inheritanceFactorMatched(factor, undefined, gpHighlight)).map(factor => [factor.owner, factor.id])).toEqual([['left', 201600], ['right', 20]]);
+  });
+  it('extracts raw UQL ranges and scoring lists without highlighting exclusions, strings or scoring weights', () => {
+    const highlight = buildUqlSparkHighlight("main_blue_factors >= 102 and contains(white_sparks, 2000102) and optional_main_white((200360, 201600), priority = 1) and optional_white(200020, type_weight = 999999) and lineage_white(200030) and optional_any_white(200040)");
+    expect([...highlight.main]).toEqual([102, 103, 104, 105, 106, 107, 108, 109]);
+    expect([...highlight.global]).toEqual([2000102]);
+    expect([...highlight.optionalMainWhite]).toEqual([200360, 201600]);
+    expect([...highlight.optionalWhite]).toEqual([200020, 200040]);
+    expect([...highlight.lineageWhite]).toEqual([200030]);
+    for (const query of [
+      'not overlaps(white_sparks, (2000101, 2000102, 2000103))',
+      'not main_blue_factors in (101, 102, 103)', 'main_blue_factors not in (101, 102, 103)', 'main_blue_factors != 103',
+      'not (main_blue_factors = 103 or (overlaps(white_sparks, (2000101)) and optional_white(200010)))',
+      "trainer_name = 'optional_white(200010) and main_blue_factors = 103'"
+    ]) expect(Object.values(buildUqlSparkHighlight(query)).every(ids => ids.size === 0), query).toBe(true);
+    expect([...buildUqlSparkHighlight('not (main_blue_factors = 103) and left_blue_factors = 102').left]).toEqual([102]);
+  });
   it('highlights Any by star range and limits main-parent Any to its matching contribution', () => {
     for (const [color, main, group] of [['blue', 'mainBlue', 0], ['pink', 'mainPink', 1], ['green', 'mainGreen', 5]] as const) {
       const filters = emptyInheritanceFilters();

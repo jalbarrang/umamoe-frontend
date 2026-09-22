@@ -14,6 +14,7 @@
   import SparkItem, { type SparkTone } from '@/components/SparkItem.svelte';
   import { inheritanceAffinity, inheritanceFactors, inheritanceFactorMatched, type InheritanceFactor } from '@/lib/inheritance/inheritance-factors';
   import { sparkMetrics } from '@/lib/inheritance/spark-probability';
+  import type { UqlSparkHighlight } from '@/lib/inheritance/uql-spark-highlight';
   import { scenarios } from '@/lib/catalog/scenario-catalog';
   import { supportCardImagePath } from '@/lib/catalog/support-card-catalog';
   import type { VeteranAffinityEngine } from '@/lib/veterans/affinity-engine';
@@ -27,6 +28,7 @@
   interface Props {
     record: InheritanceRecord;
     activeFilters?: InheritanceSearchFilters;
+    uqlHighlight?: UqlSparkHighlight;
     reportText?: string;
     reportIcon?: IconName;
     reportTooltip?: string;
@@ -54,7 +56,7 @@
     onplanner?: (record: InheritanceRecord) => void;
     onvisible?: (record: InheritanceRecord) => void;
   }
-  let { record, activeFilters, reportText = 'Outdated', reportIcon = 'warning', reportTooltip = 'Report this trainer as unavailable', targetId, affinityEngine, raceGroups = new Map(), partner, sparkPerRun = $bindable(false), showOccurrences = $bindable(false), showP2Sparks = $bindable(false), collapsedWhiteSections = $bindable([]), characters, supports, defaultFocus = 'all', splitSparks = false, sparkPortraits = false, hiddenSparkFactorIds = [], bookmarked = false, actionBusy = false, partnerWinSaddles = [], oncopy, onbookmark, onreport, onshare, onplanner, onvisible }: Props = $props();
+  let { record, activeFilters, uqlHighlight, reportText = 'Outdated', reportIcon = 'warning', reportTooltip = 'Report this trainer as unavailable', targetId, affinityEngine, raceGroups = new Map(), partner, sparkPerRun = $bindable(false), showOccurrences = $bindable(false), showP2Sparks = $bindable(false), collapsedWhiteSections = $bindable([]), characters, supports, defaultFocus = 'all', splitSparks = false, sparkPortraits = false, hiddenSparkFactorIds = [], bookmarked = false, actionBusy = false, partnerWinSaddles = [], oncopy, onbookmark, onreport, onshare, onplanner, onvisible }: Props = $props();
   let cardElement: HTMLElement;
   let factorsVisible = $state(false);
   let raceResultsOpen = $state(false);
@@ -206,7 +208,7 @@
 
 {#snippet factorChip(factor: InheritanceFactor, groupTone: SparkTone)}
   {@const source = factor.sources[0]}
-  {@const matched = inheritanceFactorMatched(factor, activeFilters)}
+  {@const matched = inheritanceFactorMatched(factor, activeFilters, uqlHighlight)}
   {@const portrait = source?.side === 'p2' ? character(source.owner === 'main' ? partner?.cardId ?? 0 : partner?.parents.find(parent=>parent.positionId===(source.owner==='left'?10:20))?.cardId ?? 0) : factor.owner === 'main' ? main : factor.owner === 'left' ? left : right}
   {@const p2Stars = factor.sources.filter((source) => source.side === 'p2').reduce((total, source) => total + source.level, 0)}
   <span class="factor-source" title={splitSparks ? `${portrait?.title ?? (factor.owner === 'main' ? 'Main parent' : factor.owner === 'left' ? 'Legacy 1' : 'Legacy 2')}${source?.side === 'p2' ? ' (your legacy)' : ''}` : undefined} data-owner={factor.owner} data-side={factor.sources.length && factor.sources.every((source) => source.side === 'p2') ? 'p2' : 'p1'} class:matched-filter={matched} class:hidden-factor={hiddenSparkFactorIds.includes(factor.id)}>

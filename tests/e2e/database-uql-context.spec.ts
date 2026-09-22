@@ -1,5 +1,5 @@
 import { expect, test, replaceQuery, type Page } from './fixtures/test';
-import { mockDatabase, mockAffinity, mockVeteranProfile } from './fixtures/api';
+import { mockDatabase, mockAffinity, mockVeteranProfile, record } from './fixtures/api';
 import { resourceFixtures } from '../fixtures/resource-data';
 
 const veteran = { id:'veteran-uuid', member_id:42, trainer_id:'123456789012', card_id:101101, trained_chara_id:991, factors:[103], win_saddle_id_array:[30,31], speed:1200, stamina:900, power:1000, guts:700, wiz:900, rank_score:15000 };
@@ -12,6 +12,49 @@ async function prepare(page: Page) {
   page.on('request', request => { if (request.url().includes('/search/query?')) requests.push(new URL(request.url()).searchParams); });
   return requests;
 }
+
+test('UQL highlights searched sparks and keeps main-parent sparks first', async ({ page, isMobile }, testInfo) => {
+  await prepare(page);
+  const result = record();
+  Object.assign(result.inheritance, {
+    main_blue_factors: 203, left_blue_factors: 203, right_blue_factors: 202, blue_sparks: [208],
+    main_pink_factors: 1102, left_pink_factors: 3403, right_pink_factors: 3402, pink_sparks: [1102, 3405],
+    main_green_factors: 10030102, left_green_factors: 10010103, right_green_factors: 10020102, green_sparks: [10030102, 10010103, 10020102],
+    main_white_factors: [2016001, 2003602], left_white_factors: [2016003, 2003601], right_white_factors: [2000102], white_sparks: [2016004, 2003603, 2000102]
+  });
+  await page.route('**/search/query?*', route => route.fulfill({ json: { items: [result], total: 1, page: 0, limit: 12, total_pages: 1 } }));
+  await page.addInitScript(() => localStorage.setItem('auth_token', 'test-token'));
+  await page.route('**/api/auth/me', route => route.fulfill({ json: { id: 'user-1', display_name: 'Tester', created_at: '2026-01-01T00:00:00Z' } }));
+  await page.route('**/api/auth/accounts', route => route.fulfill({ json: [] }));
+  await page.route('**/api/auth/bookmarks', route => route.fulfill({ json: [result] }));
+  await page.goto(path('where Long >= 4 and Stamina >= 7 and Optional main white in (Straightaway Adept) and main white factors has all (Groundwork)'));
+  const card = page.locator('.inheritance-card');
+  await card.scrollIntoViewIfNeeded();
+  await expect(card.locator('.matched-filter .name')).toHaveText(['Stamina', 'Long', 'Groundwork', 'Straightaway Adept']);
+  await expect(card.locator('.matched-filter .spark').first()).toHaveCSS('border-color', 'rgb(255, 215, 0)');
+  await expect(card.locator('.spark--pink .name')).toHaveText(['Turf', 'Long']);
+  await expect(card.locator('.spark--green').first()).toHaveAttribute('data-source', 'main');
+  await page.screenshot({ path: testInfo.outputPath('uql-spark-highlights.png'), fullPage: true });
+  await card.getByTitle('Focus Legacy 1 sparks; click again to clear').click();
+  await expect(card.locator('.matched-filter')).toHaveCount(0);
+  await card.getByTitle('Focus Legacy 1 sparks; click again to clear').click();
+  await expect(card.locator('.matched-filter')).toHaveCount(4);
+  await page.getByRole('tab', { name: /Bookmarks/ }).click();
+  await expect(card.locator('.matched-filter .name')).toHaveText(['Stamina', 'Long', 'Groundwork', 'Straightaway Adept']);
+  await page.getByRole('tab', { name: 'Database', exact: true }).click();
+  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.locator('#spark-display').click();
+  await page.getByRole('option', { name: 'Split sparks', exact: true }).click();
+  await expect(card.locator('.matched-filter .name')).toHaveText(['Groundwork', 'Straightaway Adept']);
+  await expect(card.locator('.matched-filter:not([data-owner="main"])')).toHaveCount(0);
+  await page.getByRole('button', { name: /Filters/ }).click();
+  const editor = page.getByRole('textbox', { name: 'UQL query', exact: true });
+  await replaceQuery(editor, 'GP1 Groundwork >= 3');
+  await expect(card.locator('.matched-filter .name')).toHaveText(['Groundwork']);
+  await expect(card.locator('.matched-filter')).toHaveAttribute('data-owner', 'left');
+  await replaceQuery(editor, 'Followers < 1000');
+  await expect(card.locator('.matched-filter')).toHaveCount(0);
+});
 
 test('UQL target and UUID legacy restore atomically, survive reload and clear their affinity context', async ({ page }) => {
   const requests = await prepare(page);
