@@ -27,9 +27,16 @@ test('profile overview retains every populated Angular section and owner visibil
   await expect(page.getByRole('heading', { name: 'Parity Trainer' })).toBeVisible();
   const header = page.locator('.trainer-summary');
   await expect(header.getByText('Archive points', { exact: true })).toBeVisible();
-  await expect(header.getByText('Progress toward Archive level', { exact: true })).toBeVisible();
+  await expect(header.getByText('Archive points', { exact: true })).toHaveAttribute('title', 'Progress toward Archive level');
   await expect(header.locator('.trainer-facts')).toContainText('876.8K');
   await expect(header.locator('.rank')).toHaveCount(0);
+  if (page.viewportSize()!.width > 1100) {
+    expect((await header.boundingBox())!.height).toBeLessThan(150);
+    const identity = await header.locator('.identity').boundingBox();
+    const facts = await header.locator('.trainer-facts').boundingBox();
+    expect(facts!.x).toBeGreaterThan(identity!.x + identity!.width);
+    expect(facts!.y).toBeLessThan(identity!.y + identity!.height);
+  }
   await header.screenshot({ path: testInfo.outputPath('profile-header-dark.png') });
   await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
   await header.screenshot({ path: testInfo.outputPath('profile-header-light.png') });

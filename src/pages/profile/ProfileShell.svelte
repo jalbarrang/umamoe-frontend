@@ -152,24 +152,25 @@
                 <div class="identity">
                   <Artwork src={profile.inheritance ? image(profile.inheritance.main_parent_id) : undefined} alt="Trainer's shared character" size="lg" shape="circle"/>
                   <div class="identity-copy">
-                    <span class="eyebrow">{isOwner ? 'Your trainer' : 'Trainer profile'}</span>
                     <h1>{profile.trainer.name || 'Unknown Trainer'}</h1>
                     <div class="trainer-id"><span>Trainer ID</span><span class="id-number">{profile.trainer.account_id.replace(/(\d{3})(?=\d)/g, '$1 ')}</span><IconButton icon="copy" size="sm" label={`Copy trainer ID ${profile.trainer.account_id}`} title="Copy trainer ID" onclick={() => void copyTrainerId()}/></div>
+                    {#if profile.trainer.comment}<p class="comment">{profile.trainer.comment}</p>{/if}
                     <div class="trainer-meta">
                       {#if profile.circle && sectionVisible('circle')}<a class="trainer-club" href={'/circles/' + profile.circle.circle_id}><Icon name="community" size={16}/><strong>{profile.circle.name}</strong><Icon name="external" size={12}/></a>{/if}
                       <div class="social">{#if profile.trainer.follower_num != null}<span><b>{format(profile.trainer.follower_num)}</b> followers</span>{/if}{#if profile.trainer.own_follow_num != null}<span><b>{format(profile.trainer.own_follow_num)}</b> following</span>{/if}</div>
                     </div>
                   </div>
                 </div>
-                {#if isOwner}<div class="owner-controls"><Button variant="secondary" size="sm" icon={visibility.profile_hidden ? 'eye-off' : 'eye'} disabled={!visibilityReady} ariaPressed={visibility.profile_hidden} onclick={() => persistVisibility({ ...visibility, profile_hidden: !visibility.profile_hidden })}>{visibility.profile_hidden ? 'Entire Profile Hidden' : 'Profile Visible'}</Button>{#if savingVisibility}<Spinner size={14}/>{/if}</div>{/if}
-              </header>
-              {#if profile.trainer.comment}<p class="comment">{profile.trainer.comment}</p>{/if}
+                <div class="trainer-overview">
               <dl class="trainer-facts">
                 {#if profile.trainer.team_evaluation_point != null}<div><dt>Team evaluation</dt><dd>{format(profile.trainer.team_evaluation_point)}</dd></div>{/if}
                 {#if profile.trainer.team_class != null}<div><dt>Stadium class</dt><dd>{teamClass(profile.trainer.team_class)}</dd></div>{/if}
                 {#if profile.trainer.best_team_class != null}<div><dt>Best stadium class</dt><dd>{teamClass(profile.trainer.best_team_class)}</dd></div>{/if}
-                {#if profile.trainer.rank_score != null}<div><dt>Archive points</dt><dd>{format(profile.trainer.rank_score)}<span class="fact-note">Progress toward Archive level</span></dd></div>{/if}
+                {#if profile.trainer.rank_score != null}<div><dt title="Progress toward Archive level">Archive points</dt><dd>{format(profile.trainer.rank_score)}</dd></div>{/if}
               </dl>
+                {#if isOwner}<div class="owner-controls"><Button variant="secondary" size="sm" icon={visibility.profile_hidden ? 'eye-off' : 'eye'} disabled={!visibilityReady} ariaPressed={visibility.profile_hidden} onclick={() => persistVisibility({ ...visibility, profile_hidden: !visibility.profile_hidden })}>{visibility.profile_hidden ? 'Entire Profile Hidden' : 'Profile Visible'}</Button>{#if savingVisibility}<Spinner size={14}/>{/if}</div>{/if}
+                </div>
+              </header>
               {#if visibilityError}<div class="visibility-error"><Banner tone="danger" title="Profile visibility"><p>{visibilityError}</p>{#if !visibilityReady}<Button variant="secondary" onclick={()=>void loadVisibility()}>Retry visibility</Button>{/if}</Banner></div>{/if}
             </div></Card>
           <div class="profile-main">
@@ -187,24 +188,25 @@
   .profile-page { min-width:0; padding:var(--space-6) var(--page-gutter-current) var(--space-8); color:var(--color-text); }
   .profile-layout,.trainer-summary { min-width:0; display:grid; gap:var(--space-4); }
   .profile-main { min-width:0; }.profile-tabs { margin-bottom:var(--space-6); }
-  .profile-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:var(--space-3); }
+  .profile-header { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:var(--space-4); }
   .identity { min-width:0; display:flex; align-items:center; gap:var(--space-4); }.identity :global(.art) { flex-shrink:0; width:64px; height:64px; }.identity-copy { min-width:0; }
   .trainer-id { display:flex; align-items:center; flex-wrap:wrap; column-gap:var(--space-2); color:var(--color-text-muted); font-size:var(--font-xs); }
   .id-number { color:var(--color-text); font-weight:500; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .eyebrow { color:var(--color-text-muted); font-size:var(--font-xs); font-weight:600; }
-  h1 { margin:var(--space-1) 0; font-size:clamp(24px,2.4vw,30px); line-height:1.15; letter-spacing:-.035em; overflow-wrap:anywhere; }
-  .comment { margin:0; color:var(--color-text-muted); font-size:var(--font-sm); line-height:1.5; white-space:pre-line; overflow-wrap:anywhere; }
-  .trainer-facts { margin:0; padding-top:var(--space-4); border-top:1px solid var(--color-border); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-4); }
+  h1 { margin:0; font-size:clamp(22px,2vw,26px); line-height:1.15; letter-spacing:-.035em; overflow-wrap:anywhere; }
+  .comment { margin:0 0 var(--space-1); color:var(--color-text-muted); font-size:var(--font-sm); line-height:1.5; white-space:pre-line; overflow-wrap:anywhere; }
+  .trainer-overview { min-width:0; display:grid; justify-items:end; gap:var(--space-3); }
+  .trainer-facts { margin:0; display:grid; grid-template-columns:repeat(4,max-content); gap:var(--space-4); }
   .trainer-facts:empty { display:none; }
-  .trainer-facts div { min-width:0; display:flex; flex-direction:column; gap:var(--space-1); }.trainer-facts dt { color:var(--color-text-muted); font-size:var(--font-xs); }.trainer-facts dd { margin:0; font-size:var(--font-lg); font-weight:650; font-variant-numeric:tabular-nums; }
-  .fact-note { display:block; margin-top:var(--space-1); color:var(--color-text-subtle); font-size:var(--font-xs); font-weight:400; }
+  .trainer-facts div { min-width:0; display:flex; flex-direction:column-reverse; gap:var(--space-1); }.trainer-facts div + div { padding-left:var(--space-4); border-left:1px solid var(--color-border); }.trainer-facts dt { color:var(--color-text-muted); font-size:var(--font-xs); }.trainer-facts dd { margin:0; font-size:var(--font-lg); font-weight:650; font-variant-numeric:tabular-nums; }
   .trainer-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2) var(--space-4); }
   .trainer-club { display:flex; align-items:center; gap:var(--space-2); color:var(--color-accent); text-decoration:none; font-size:var(--font-sm); }.trainer-club:hover { text-decoration:underline; }
   .social { display:flex; flex-wrap:wrap; gap:var(--space-4); color:var(--color-text-muted); font-size:var(--font-xs); }.social b { color:var(--color-text); font-weight:600; }
   .owner-controls { display:flex; align-items:center; gap:var(--space-2); margin-left:auto; }
   .state,.hidden-profile { min-height:60vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:var(--space-4); padding:var(--space-8); color:var(--color-text-muted); text-align:center; }.state.error { color:var(--color-danger); }.state a,.hidden-profile a { color:var(--color-accent); }.hidden-profile h2,.hidden-profile p { margin:0; }
   .browser-heading { display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); margin-bottom:var(--space-6); }.browser-heading h1 { margin:var(--space-2) 0; }.browser-heading h2 { margin:0; color:var(--color-text-muted); font-size:var(--font-md); font-weight:500; }.browser-heading>div:last-child { display:flex; flex-wrap:wrap; gap:var(--space-2); }
-  @media(max-width:700px) { .profile-page { padding:var(--space-3) 0 var(--space-6); }.trainer-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }.identity { gap:var(--space-3); }.owner-controls { margin-left:0; }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
+  @container (max-width:760px) { .profile-header { grid-template-columns:minmax(0,1fr); }.trainer-overview { justify-items:start; }.trainer-facts { width:100%; grid-template-columns:repeat(4,minmax(0,1fr)); }.owner-controls { margin-left:0; } }
+  @media(max-width:700px) { .profile-page { padding:var(--space-3) 0 var(--space-6); }.trainer-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }.trainer-facts div:nth-child(odd) { padding-left:0; border-left:0; }.identity { gap:var(--space-3); }.browser-heading { align-items:start; flex-direction:column; }.profile-tabs { margin-bottom:var(--space-4); } }
   @media(max-width:700px) {
     .profile-tabs :global(.tabs) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; }
     .profile-tabs :global(.tab) { min-width:0; min-height:38px; justify-content:flex-start; gap:5px; padding:5px 8px; white-space:normal; font-size:11px; }
