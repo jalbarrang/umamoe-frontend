@@ -161,7 +161,7 @@ test('global virtual scrolling preference updates loaded lists, survives reloads
   const preference = page.getByRole('checkbox', { name: 'Virtual scrolling', exact: true });
   await expect(preference).toBeChecked();
   const menu = page.getByRole('dialog', { name: 'Global settings', exact: true });
-  await expect.poll(async () => (await menu.boundingBox())?.x ?? 0).toBeGreaterThanOrEqual(8);
+  await expect.poll(() => menu.evaluate(node => node.matches(':modal'))).toBe(true);
   await menu.screenshot({path:info.outputPath('global-settings.png'), animations:'disabled'});
   const bounds = (await menu.boundingBox())!;
   expect(bounds.x).toBeGreaterThanOrEqual(0);

@@ -143,4 +143,6 @@ test('footer global settings saves the preference and restores keyboard focus', 
   await expect(settings).toBeFocused();
   await page.reload(); await settings.click(); await expect(preference).not.toBeChecked();
   await preference.check(); await page.reload(); await settings.click(); await expect(preference).toBeChecked();
+  await page.getByRole('dialog', { name: 'Global settings', exact: true }).getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await expect(settings).toBeFocused();
 });
