@@ -63,9 +63,9 @@ test('Database review controls share sizing, empty numbers and toggle state with
   await expect(winButtons.last()).toBeDisabled();
   await wins.fill('');
   await expect(toggle).toHaveAttribute('aria-pressed',before==='true'?'false':'true');
-  if(isMobile) await page.getByRole('button',{name:'Display options',exact:true}).click();
+  await page.getByRole('button',{name:'Display options',exact:true}).click();
   await expect(page.getByRole('button',{name:'Include accounts at the maximum follower limit',exact:true})).toHaveAttribute('aria-pressed',before==='true'?'false':'true');
-  if(isMobile) await page.getByRole('button',{name:'Display options',exact:true}).click();
+  await page.getByRole('button',{name:'Display options',exact:true}).click();
   const slider=page.locator('#support-limit-break-advanced-start');
   if(isMobile) await page.locator('[data-filter-group="support"] .group-title').click();
   await slider.scrollIntoViewIfNeeded();
@@ -85,7 +85,7 @@ test('Database review controls share sizing, empty numbers and toggle state with
   const selectedBox=await page.locator('.support-quick .compact-trigger').boundingBox();
   const actionsBox=await page.locator('.support-quick .card-actions').boundingBox();
   expect(selectedBox!.width).toBe(selectedBox!.height);
-  expect(selectedBox!.width).toBe(isMobile ? 104 : 96);
+  expect(selectedBox!.width).toBe(96);
   expect(selectedBox!.x).toBe(actionsBox!.x);
   expect(selectedBox!.width).toBe(actionsBox!.width);
   await expect(page.locator('.support-quick .compact-visual img')).toHaveCSS('object-fit','contain');
@@ -170,7 +170,7 @@ test('Database review controls share sizing, empty numbers and toggle state with
   expect(await combinedMain.evaluate(el => getComputedStyle(el.querySelector('.level')!).color === getComputedStyle(el.querySelector('.star')!).color)).toBe(true);
   await expect(combinedMain).not.toHaveClass(/highlightMain/);
   await expect(combinedMain.locator('.contribution.main')).toHaveCSS('color','rgb(217, 147, 131)');
-  if(isMobile) await page.getByRole('button',{name:'Display options',exact:true}).click();
+  await page.getByRole('button',{name:'Display options',exact:true}).click();
   await page.locator('#spark-display').click();await page.getByRole('option',{name:'Split + portraits',exact:true}).click();
   const result=page.locator('.inheritance-card').first();
   await expect(result.locator('.spark .source-portrait').first()).toBeVisible();

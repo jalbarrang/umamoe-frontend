@@ -18,7 +18,7 @@ test('Hide Sparks stages type-picker changes, saves to the legacy key, and updat
   await expect(cardFactor).toHaveCount(1);
   const initialRequests = requests;
   const trigger = page.getByRole('button', { name: 'Choose sparks to hide', exact: true });
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await trigger.focus(); await trigger.press('Enter');
   const dialog = page.getByRole('dialog', { name: 'Hide Sparks', exact: true });
   const search = dialog.getByRole('searchbox', { name: 'Search white factors', exact: true });
@@ -67,7 +67,7 @@ test('Hide Sparks stages type-picker changes, saves to the legacy key, and updat
   await page.reload();
   await expect(page.locator('.inheritance-card')).toBeVisible();
   await expect(cardFactor).toHaveCount(0);
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.getByRole('button', { name: 'Hide sparks, 1 currently hidden', exact: true }).click();
   await dialog.getByRole('button', { name: 'Clear all', exact: true }).click();
   await dialog.getByRole('button', { name: 'Save 0 hidden', exact: true }).click();
@@ -81,7 +81,7 @@ test('Hide Sparks preserves legacy selections on Cancel, Escape, close and backd
   const stored = JSON.stringify([String(factorId), factorId, 0, -1, null, 'invalid', 99999999]);
   await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), { key: storageKey, value: stored });
   await page.goto('/database');
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   const trigger = page.getByRole('button', { name: 'Hide sparks, 2 currently hidden', exact: true });
   const dialog = page.getByRole('dialog', { name: 'Hide Sparks', exact: true });
   for (const dismissal of ['Cancel', 'Escape', 'close', 'backdrop']) {

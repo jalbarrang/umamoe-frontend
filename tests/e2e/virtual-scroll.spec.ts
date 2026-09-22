@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures/test';
-import { mockDatabase, mockVeteranProfile, profile, veteran, record, mockTimeline } from './fixtures/api';
+import { mockDatabase, mockVeteranProfile, profile, veteran, record, mockTimeline, mockAffinity } from './fixtures/api';
 
 test('database keeps 600 results searchable while bounding mounted cards on deep scrolling', async ({ page }) => {
   await mockDatabase(page);
@@ -74,4 +74,103 @@ test('horizontal Timeline evicts earlier events within a dense day', async ({ pa
   await board.evaluate(node => node.scrollTo({ top: node.scrollHeight * .8, behavior: 'instant' }));
   await expect.poll(async () => Number(await board.locator('.lane-events [data-virtual-index]').first().getAttribute('data-virtual-index'))).toBeGreaterThan(300);
   expect(await board.locator('.event-card').count()).toBeLessThan(30);
+});
+
+for (const virtualize of [true, false]) for (const failOnce of [false, true]) test('database resumes pagination after a fast jump and ' + (failOnce ? 'an explicit retry' : 'a slow response') + (virtualize ? ' with virtualization' : ' without virtualization'), async ({ page }) => {
+  await mockDatabase(page);
+  await mockAffinity(page);
+  await page.addInitScript(enabled => { localStorage.setItem('db-list-mode', 'infinite'); localStorage.setItem('uma-virtual-scrolling', String(enabled)); }, virtualize);
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => release = resolve);
+  const requests: number[] = [];
+  let secondAttempts = 0;
+  const item = (index: number) => {
+    const value = record(String(123456789012 + index));
+    value.inheritance.inheritance_id = index + 1;
+    value.trainer_name = 'Paged Trainer ' + index;
+    return value;
+  };
+  await page.route('**/search/query?*', async route => {
+    const index = Number(new URL(route.request().url()).searchParams.get('page'));
+    requests.push(index);
+    if (index === 1 && ++secondAttempts === 1) {
+      await pending;
+      if (failOnce) { await route.fulfill({ status: 400, json: { detail: 'Page could not be loaded' } }); return; }
+    }
+    // Overlapping results leave the end nearby after deduplication, without another scroll.
+    const items = index === 0 ? Array.from({length:12}, (_, i) => item(i))
+      : index === 1 ? [...Array.from({length:11}, (_, i) => item(i)), item(12)]
+      : Array.from({length:12}, (_, i) => item(i + 13));
+    await route.fulfill({ json: { items, total: 25, page: index, limit: 12, total_pages: 3 } });
+  });
+  const jumpToBottom = () => page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  try {
+    await page.goto('/database');
+    await expect(page.locator('.inheritance-card').first()).toBeVisible();
+    await jumpToBottom();
+    await expect.poll(() => requests).toEqual([0, 1]);
+    await jumpToBottom();
+    release();
+    if (failOnce) {
+      const retry = page.getByRole('button', { name: 'Retry loading more', exact: true });
+      await expect(retry).toBeVisible();
+      await jumpToBottom();
+      await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+      await page.waitForTimeout(250);
+      expect(requests).toEqual([0, 1]);
+      await retry.click();
+    }
+    await expect.poll(() => requests).toEqual(failOnce ? [0, 1, 1, 2] : [0, 1, 2]);
+    await jumpToBottom();
+    await expect(page.getByText('Paged Trainer 24', { exact: true })).toBeAttached();
+    if (virtualize) expect(await page.locator('.inheritance-card').count()).toBeLessThan(25);
+    else await expect(page.locator('.inheritance-card')).toHaveCount(25);
+  } finally { release(); }
+});
+
+
+test('global virtual scrolling preference updates loaded lists, survives reloads, and reaches Timeline', async ({ page, isMobile }, info) => {
+  await mockDatabase(page); await mockAffinity(page); await mockVeteranProfile(page); await mockTimeline(page);
+  await page.route('**/search/query?*', route => route.fulfill({ json: {
+    items: Array.from({ length: 60 }, (_, index) => { const item=record(String(123456789012+index)); item.inheritance.inheritance_id=index+1; return item; }),
+    total: 60, page: 0, limit: 60, total_pages: 1,
+  } }));
+  await page.route('**/api/v4/user/profile/123456789012', route => route.fulfill({ json: { ...profile,
+    veterans: Array.from({ length: 60 }, (_, index) => ({ ...veteran, id: index+1, trained_chara_id: index+1 })),
+  } }));
+  await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: {
+    events: Array.from({ length: 60 }, (_, index) => ({ id: 'preference-'+index, type: 'character_banner', title: 'Preference banner '+index,
+      global_release_date: new Date(Date.UTC(2026,8,index+1)).toISOString(), is_confirmed: true })),
+  } }));
+  await page.goto('/database');
+  await expect(page.locator('.inheritance-card').first()).toBeVisible();
+  const display = page.getByRole('button', { name: 'Display options', exact: true });
+  for (const width of isMobile ? [390,320] : [1920,1468,1280]) {
+    await page.setViewportSize({ width, height:1080 });
+    await expect(page.locator('#database-display-options')).toBeHidden();
+    const bottoms = await page.locator('.display-toggle, #database-sort').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().bottom));
+    expect(Math.abs(bottoms[0]! - bottoms[1]!)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    if(width===1920 || width===390) await page.locator('.results-header').screenshot({ path:info.outputPath('database-header-'+width+'.png') });
+  }
+  await display.click();
+  const preference = page.getByRole('checkbox', { name: 'Virtual scrolling', exact: true });
+  await expect(preference).toBeChecked();
+  await page.locator('.results-header').screenshot({path:info.outputPath('database-display-options.png')});
+  await preference.uncheck();
+  await expect(page.locator('.inheritance-card')).toHaveCount(60);
+  await page.reload();
+  await expect(page.locator('.inheritance-card')).toHaveCount(60);
+  await page.goto('/veterans/123456789012');
+  await expect(page.locator('.veteran-card')).toHaveCount(60);
+  await page.goto('/timeline');
+  await expect(page.locator('.timeline-board .event-card')).toHaveCount(60);
+  if (!isMobile) {
+    await page.getByRole('radio', { name: 'Vertical', exact: true }).click();
+    await expect(page.locator('.timeline-board.vertical .event-card')).toHaveCount(60);
+  }
+  await page.goto('/database');
+  await display.click(); await expect(preference).not.toBeChecked(); await preference.check();
+  await expect.poll(() => page.locator('.inheritance-card').count()).toBeLessThan(25);
+  await page.reload(); await display.click(); await expect(preference).toBeChecked();
 });

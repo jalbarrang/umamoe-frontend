@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { virtualScrolling, setVirtualScrolling } from '@/stores/virtual-scrolling';
   import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
   let virtualRange = $state<VirtualRange>({ start: 0, end: 0 });
 
   import ContentAd from '@/layouts/ContentAd.svelte';
   import PageHeading from '@/layouts/PageHeading.svelte';
   import { copyText } from '@/lib/clipboard';
+  import Checkbox from '@/components/Checkbox.svelte';
   import { onMount, untrack } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { tourStepId, completeTourInteraction } from '@/components/tours/tour-state';
@@ -195,11 +197,13 @@
   let uqlCatalogError = $state('');
   const uqlCompiler = $derived(uqlCatalog ? new UqlCompiler(uqlCatalog) : undefined);
   let searchController: AbortController | undefined;
-  let cancelSearchTimer: (() => void) | undefined;
-  let infiniteSentinel = $state<HTMLDivElement>();
-  let infiniteObserver: IntersectionObserver | undefined;
+  let cancelSearchTimer = $state<(() => void) | undefined>();
   let lastFilterSignature = '';
   let initialized = $state(false);
+  const canLoadMore = $derived(initialized && activeTab === 'database' && listMode === 'infinite'
+    && !cancelSearchTimer && !inheritanceLoading && !inheritanceError
+    && page === inheritance.page + 1 && page < inheritance.totalPages);
+  function loadMoreResults(): void { if (canLoadMore) page += 1; }
   let submitOpen = $state(false);
   let trainerSubmission = $state('');
   let submissionBusy = $state(false);
@@ -723,10 +727,6 @@
       if (!disposed) { characters = nextCharacters; supports = nextSupports; }
     }).catch(() => { /* Search still works with numeric character fallbacks. */ });
     initialized = true;
-    infiniteObserver = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting) && listMode === 'infinite' && !inheritanceLoading && !inheritanceError && page < inheritance.totalPages) page += 1;
-    }, { rootMargin: `${innerHeight * 2}px 0px` });
-    if (infiniteSentinel) infiniteObserver.observe(infiniteSentinel);
     scheduleSearch(true);
   }
   async function loadCharacters(): Promise<void> {
@@ -758,7 +758,7 @@
   }));
   onMount(() => {
     void initialize();
-    return () => { disposed = true; uqlLegacyGeneration++; infiniteObserver?.disconnect(); searchController?.abort(); cancelSearchTimer?.(); };
+    return () => { disposed = true; uqlLegacyGeneration++; searchController?.abort(); cancelSearchTimer?.(); };
   });
   $effect(() => { if (filters.supportCardId) untrack(() => void loadSupports()); });
   $effect(() => { JSON.stringify(filters); legacyRestoreKey; filterMode; page; listMode; activeTab; if (!initialized) return; untrack(() => scheduleSearch()); });
@@ -934,7 +934,7 @@
       <header class="results-header">
         <div class="results-info"><h2>Results</h2>{#if !inheritanceLoading && !inheritanceError}<p>{inheritance.total.toLocaleString()} records found{#if activeCount > 0} <span>(filtered)</span>{/if}</p>{/if}</div>
         <div class="display-controls" class:expanded={displayOptionsOpen}>
-          <button class="display-toggle" type="button" aria-label="Display options" aria-expanded={displayOptionsOpen} aria-controls="database-display-options" onclick={() => displayOptionsOpen = !displayOptionsOpen}><Icon name="tune" size={14}/>Display</button>
+          <button class="display-toggle" type="button" aria-label="Display options" aria-expanded={displayOptionsOpen} aria-controls="database-display-options" onclick={() => displayOptionsOpen = !displayOptionsOpen}><Icon name="tune" size={14}/>Display<Icon name="chevron" size={12}/></button>
           <div class="results-controls" id="database-display-options">
           <div class="focus-control"><span>Default Focus</span><div class="focus-options">
             {#each [{ id: 'all', label: 'All' }, { id: 'main', label: 'Main Parent' }, { id: 'left', label: 'Great Parent 1' }, { id: 'right', label: 'Great Parent 2' }] as item}
@@ -942,9 +942,10 @@
             {/each}
           </div></div>
           <ToggleButton action pressed={hiddenSparkFactorIds.length > 0} icon="eye-off" label="Hide Sparks" badge={hiddenSparkFactorIds.length ? `${hiddenSparkFactorIds.length} hidden` : undefined} ariaLabel={hiddenSparkFactorIds.length ? `Hide sparks, ${hiddenSparkFactorIds.length} currently hidden` : 'Choose sparks to hide'} onclick={() => hiddenSparksOpen = true}/>
-          <SelectField id="spark-display" label="Spark display" hideLabel prefixIcon="lineage" value={splitSparks ? sparkPortraits ? 'portraits' : 'split' : 'combined'} options={[{value:'combined',label:'Combined sparks'},{value:'split',label:'Split sparks'},{value:'portraits',label:'Split + portraits'}]} onchange={(value)=>{splitSparks=value!=='combined';sparkPortraits=value==='portraits';}}/>
+          <SelectField id="spark-display" label="Spark display" prefixIcon="lineage" value={splitSparks ? sparkPortraits ? 'portraits' : 'split' : 'combined'} options={[{value:'combined',label:'Combined sparks'},{value:'split',label:'Split sparks'},{value:'portraits',label:'Split + portraits'}]} onchange={(value)=>{splitSparks=value!=='combined';sparkPortraits=value==='portraits';}}/>
           <SelectField id="spark-order" label="Spark order" value={sparkOrder} options={sparkOrderOptions} onchange={changeSparkOrder}/>
           <ToggleButton pressed={includeMaxFollowers} icon="users" label="Max Followers" ariaLabel="Include accounts at the maximum follower limit" onclick={() => { includeMaxFollowers = !includeMaxFollowers; filters.maxFollowerNum = includeMaxFollowers ? 1000 : 999; }}/>
+          <Checkbox id="database-virtual-scrolling" label="Virtual scrolling" ariaLabel="Virtual scrolling" description="Across all pages on this device" checked={$virtualScrolling} onchange={setVirtualScrolling}/>
           <ToggleButton pressed={listMode === 'infinite'} icon="more" label={listMode === 'infinite' ? 'Infinite' : 'Pages'} onclick={toggleListMode}/>
           </div>
         </div>
@@ -957,11 +958,10 @@
       {#if affinityError && !inheritanceError}{@render affinityFailure()}{/if}
       {#if inheritanceLoading && !appendingResults}<div class="loading"><Spinner size={30}/><span>Searching inheritance records…</span></div>
       {:else if inheritanceError && !appendingResults}<div class="result-error" role="alert"><EmptyState icon="warning" title="Inheritance search unavailable" description={inheritanceError}>{#snippet actions()}<div class="error-actions"><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry</Button><Button href={DISCORD_SUPPORT_URL} target="_blank" variant="secondary" size="sm" icon="discord">Report on Discord</Button></div>{/snippet}</EmptyState></div>
-      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list" use:virtualScroll={{ items: inheritance.records, key: record => record.id, estimate: 640, onrange: range => virtualRange = range }}>{#each inheritance.records.slice(virtualRange.start, virtualRange.end) as record, localIndex (record.id)}{@const index = virtualRange.start + localIndex}<div data-virtual-index={index}><InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}</div>{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
+      {:else if inheritance.records.length}<ContentAd routeId="database" top/><div class="inheritance-list" use:virtualScroll={{ items: inheritance.records, key: record => record.id, estimate: 640, onrange: range => virtualRange = range, onend: canLoadMore ? loadMoreResults : undefined }}>{#each inheritance.records.slice(virtualRange.start, virtualRange.end) as record, localIndex (record.id)}{@const index = virtualRange.start + localIndex}<div data-virtual-index={index}><InheritanceResultCard {record} {uqlHighlight} activeFilters={filterMode === 'uql' ? undefined : filters} {characters} {supports} {defaultFocus} {splitSparks} {sparkPortraits} {sparkOrder} {hiddenSparkFactorIds} {affinityEngine} {raceGroups} {partner} targetId={filters.playerCharaId} bind:sparkPerRun bind:showOccurrences bind:showP2Sparks bind:collapsedWhiteSections partnerWinSaddles={filters.p2WinSaddle} bookmarked={bookmarkedIds.has(record.accountId)} actionBusy={bookmarkBusyIds.includes(record.accountId)} oncopy={copyTrainer} onshare={shareRecord} onreport={reportRecord} onbookmark={toggleBookmark} onplanner={openInPlanner} onvisible={queueBorrowView}/>{#if index % 6 === 5 && index < inheritance.records.length - 1 && index < 42}<ContentAd routeId="database" index={2 + Math.floor(index / 6)}/>{/if}</div>{/each}</div>{#if listMode === 'paginated' && inheritance.totalPages > 1}<Pagination bind:page pages={inheritance.totalPages} total={inheritance.total} pageSize={inheritance.pageSize} jump onchange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}/>{/if}
       {:else}<EmptyState icon="search" title="No records found" description="Try adjusting your search criteria or submit your Trainer ID to help the community.">{#snippet actions()}<Button variant="secondary" size="sm" icon="add" onclick={() => submitOpen = true}>Add Trainer ID</Button>{/snippet}</EmptyState>{/if}
       {#if appendingResults && inheritanceLoading}<div class="loading" role="status"><Spinner size={30}/><span>Loading more records…</span></div>
       {:else if appendingResults && inheritanceError}<Banner title="More records could not be loaded" tone="danger"><p>{inheritanceError}</p><Button variant="secondary" size="sm" onclick={() => scheduleSearch(true)}>Retry loading more</Button></Banner>{/if}
-      <div class="infinite-sentinel" bind:this={infiniteSentinel} aria-hidden="true"></div>
     </section>
     {:else}<section class="bookmark-results">
       {#if !$authUser}<div class="bookmarks-empty"><Icon name="veterans" size={54}/><h2>Sign in to use bookmarks</h2><p>Please sign in to bookmark and save records.</p><Button href="/login" variant="primary">Sign in</Button></div>
@@ -1020,7 +1020,7 @@
 .support-lb-inline{min-width:0;flex:1;min-height:96px;display:grid;grid-template-columns:auto minmax(150px,1fr);align-items:stretch;gap:14px}.lb-control{align-self:center;min-width:0;display:grid;gap:6px}.lb-control :global(.ui-button){width:max-content}.inheritance-results{min-width:0;display:grid;gap:var(--space-3)}.inheritance-list{min-width:0;display:grid;gap:7px}.result-error{min-width:0}.result-error :global(.empty){border-color:rgb(var(--accent-error-rgb)/.35);background:rgb(var(--accent-error-rgb)/.06)}.result-error :global(.icon){color:var(--accent-error)}.result-error :global(p){color:var(--text-secondary)}.error-actions{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}.sorting-notice{min-height:36px;display:flex;align-items:center;gap:7px;padding:5px 9px;border-left:3px solid var(--accent-primary);background:rgb(var(--accent-primary-rgb)/.08);color:var(--text-secondary);font-size:10px}.sorting-notice :global(svg){color:var(--accent-primary)}
   .database-tabs{max-width:100%;width:fit-content;display:flex;align-items:center;gap:4px}.bookmark-limit{margin-left:8px;padding:4px 10px;border-left:1px solid var(--border-primary);color:var(--text-muted);font-size:.75rem;white-space:nowrap}
   .results-header{min-width:0;display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-primary)}.results-info{flex:0 0 auto;align-self:flex-start}.results-info h2{margin:0;font-size:1.35rem}.results-info p{margin:2px 0 0;color:var(--text-secondary);font-size:.82rem}.results-info p span{color:var(--accent-primary)}.results-controls{display:contents}.focus-control{display:grid;gap:3px;margin-left:auto}.focus-control>span,.sort-control>span{color:var(--text-secondary);font-size:.65rem;font-weight:700}.focus-options{min-height:36px;display:flex;align-items:stretch;box-sizing:border-box;padding:2px;border:1px solid var(--border-primary);border-radius:6px;background:var(--factor-field-bg)}.focus-options button{min-height:30px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 8px;border:0;border-radius:4px;background:transparent;color:var(--factor-field-text);cursor:pointer;font-size:.68rem;font-weight:700}.focus-options button :global(svg){flex:0 0 auto}.focus-options button b{min-width:13px;height:13px;display:grid;place-items:center;border-radius:2px;background:var(--surface-3);font-size:8px;line-height:1}.focus-options button.active{background:rgb(var(--accent-primary-rgb)/.18);color:var(--accent-primary)}.sort-control{width:172px;display:grid;gap:3px}.sort-control :global(.select-control){height:36px;border-radius:6px;font-size:.75rem}.bookmarks-empty{min-height:330px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text-secondary);text-align:center}.bookmarks-empty h2{margin:7px 0 0;color:var(--text-primary)}.bookmarks-empty p{margin:0 0 10px}.loading { min-height:260px;display:flex;align-items:center;justify-content:center;gap:var(--space-3);color:var(--color-text-muted);}
-  .infinite-sentinel { height: 1px; }.bookmark-results{min-width:0;display:grid;gap:10px}.bookmark-toolbar{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:9px 0;border-bottom:1px solid var(--border-subtle)}.bookmark-toolbar h2,.bookmark-toolbar p{margin:0}.bookmark-toolbar h2{font-size:var(--font-lg)}.bookmark-toolbar p{margin-top:2px;color:var(--text-secondary);font-size:11px}.bookmark-toolbar p span{color:var(--accent-primary)}.bookmark-filters{min-width:0;max-width:100%}.bookmark-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin-left:auto}.trainer-submit{display:grid;gap:16px}.trainer-submit p{margin:0;color:var(--text-secondary);font-size:13px;line-height:1.4}.submission-field{position:relative}.submission-count{position:absolute;top:0;right:0;color:var(--text-secondary);font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}.submission-count.complete{color:var(--accent-success)}.trainer-submit :global(.field-label){padding-right:52px}.trainer-submit :global(input){font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:.5px}.trainer-submit :global(.field-message){font-size:12px;color:var(--text-secondary)}.trainer-submit :global(.field-error){color:var(--color-danger)}
+  .bookmark-results{min-width:0;display:grid;gap:10px}.bookmark-toolbar{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:9px 0;border-bottom:1px solid var(--border-subtle)}.bookmark-toolbar h2,.bookmark-toolbar p{margin:0}.bookmark-toolbar h2{font-size:var(--font-lg)}.bookmark-toolbar p{margin-top:2px;color:var(--text-secondary);font-size:11px}.bookmark-toolbar p span{color:var(--accent-primary)}.bookmark-filters{min-width:0;max-width:100%}.bookmark-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin-left:auto}.trainer-submit{display:grid;gap:16px}.trainer-submit p{margin:0;color:var(--text-secondary);font-size:13px;line-height:1.4}.submission-field{position:relative}.submission-count{position:absolute;top:0;right:0;color:var(--text-secondary);font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}.submission-count.complete{color:var(--accent-success)}.trainer-submit :global(.field-label){padding-right:52px}.trainer-submit :global(input){font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:.5px}.trainer-submit :global(.field-message){font-size:12px;color:var(--text-secondary)}.trainer-submit :global(.field-error){color:var(--color-danger)}
   @media (min-width:901px) and (max-width:1700px) { .legacy-quick{min-width:0;flex:1 1 100%;padding-right:0;padding-bottom:14px;margin-bottom:14px;border-bottom:1.5px solid var(--border-primary)}.support-quick{border-left:0;padding-left:0}.search-quick{flex:1 1 340px} }
   @media (max-width:1180px) { .property-grid.basic{grid-template-columns:minmax(0,1fr)}.results-header{align-items:stretch;flex-direction:column}.results-controls{min-width:0;display:flex;align-items:flex-end;gap:7px;flex-wrap:wrap}.focus-control{margin-left:0} }
   @media(max-width:768px){.database-tabs{width:100%}.database-tabs :global(.tabs){width:100%}.database-tabs :global(.tab){flex:1}}
@@ -1036,9 +1036,20 @@
   .support-subtitle img,.support-subtitle>span{width:22px;height:22px;object-fit:contain;justify-self:center}
   .selected-support-copy small{color:var(--text-secondary);font-size:11px}.lb-control{--slider-label-gap:0px}
   .display-controls { display:contents; }
-  .display-toggle { display:none; }
+  .display-toggle { display:flex; align-items:center; justify-content:center; gap:6px; height:36px; padding:0 12px; border:1px solid var(--factor-field-border); border-radius:6px; background:var(--factor-field-bg); color:var(--text-secondary); font-size:12px; cursor:pointer; }
+  .display-toggle[aria-expanded='true'] { color:var(--accent-primary); border-color:var(--accent-primary); }
+  .display-controls:not(.expanded) .results-controls { display:none; }
   .results-controls :global(label) { color:var(--text-secondary); font-size:.65rem; font-weight:700; }
-  @media (min-width:768px) { .sort-control { margin-left:auto; } }
+  @media (min-width:768px) {
+    .results-header { display:grid; grid-template-columns:minmax(0,1fr) 180px auto; align-items:end; gap:12px; }
+    .results-info { grid-column:1; grid-row:1; }
+    .sort-control { grid-column:2; grid-row:1; width:100%; margin:0; }
+    .display-toggle { grid-column:3; grid-row:1; }
+    .results-controls { grid-column:1/-1; grid-row:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:end; gap:12px; padding:16px; border:1px solid var(--border-primary); border-radius:8px; background:var(--surface-1); }
+    .focus-control { grid-column:1/-1; margin:0; }
+    .focus-options { width:max-content; max-width:100%; }
+    .results-controls > :global(.ui-toggle), .results-controls > :global(.field) { width:100%; }
+  }
   @media (max-width:767px) {
     .content-container { padding:8px 4px; gap:8px; }
     .results-header { display:grid; grid-template-columns:minmax(0,1fr) 124px auto; grid-template-rows:20px 28px; align-items:center; gap:4px 6px; padding:6px 0; }

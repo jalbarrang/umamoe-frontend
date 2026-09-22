@@ -1,3 +1,5 @@
+import { virtualScrolling } from '@/stores/virtual-scrolling';
+
 export interface VirtualRange { start: number; end: number }
 interface Options<T> {
   items: readonly T[];
@@ -6,6 +8,7 @@ interface Options<T> {
   root?: HTMLElement | 'closest' | null;
   active?: boolean;
   onrange: (range: VirtualRange) => void;
+  onend?: () => void;
   navigateTo?: number;
 }
 
@@ -33,6 +36,8 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
   mutation.observe(host, { childList: true });
   scroller.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule, { passive: true });
+  let enabled = true;
+  const unsubscribe = virtualScrolling.subscribe(value => { enabled = value; dirty = true; schedule(); });
   update(initial);
 
   function total() { return Math.max(0, offsets[offsets.length - 1]! - gap); }
@@ -67,6 +72,21 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
   function render(prepare = false) {
     if (options.active === false || !host.getClientRects().length || !host.clientWidth) return;
     let view = geometry();
+    if (!enabled) {
+      for (const node of observed) resize.unobserve(node);
+      observed.clear();
+      topSpacer.remove(); bottomSpacer.remove(); host.style.overflowAnchor = savedAnchor;
+      if (start !== 0 || end !== items.length) {
+        start = 0; end = items.length; options.onrange({ start, end }); schedule(); return;
+      }
+      if (options.navigateTo !== undefined && options.navigateTo >= 0 && options.navigateTo !== navigation) {
+        const target = host.querySelector<HTMLElement>('[data-virtual-index="' + options.navigateTo + '"]');
+        if (target) { navigation = options.navigateTo; target.scrollIntoView({ block: 'nearest', behavior: 'instant' }); }
+      }
+      if (items.length && view.top + 3 * view.height >= host.getBoundingClientRect().height / view.scale) options.onend?.();
+      return;
+    }
+    host.style.overflowAnchor = 'none';
     const anchor = rowAt(Math.max(0, view.top)), anchorItem = anchor * columns, anchorOffset = offsets[anchor] ?? 0;
     if (dirty || width !== host.clientWidth) {
       const style = getComputedStyle(host);
@@ -116,6 +136,8 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
     }
     updateSpacers();
     if (pending) buffer();
+    // Check distance on every scroll, measurement and options update, even after jumping past the end.
+    if (items.length && view.top + 3 * view.height >= total()) options.onend?.();
   }
   function rebuild() {
     offsets = [0];
@@ -152,7 +174,7 @@ export function virtualScroll<T>(host: HTMLElement, initial: Options<T>) {
     for (const [node, height] of [[topSpacer, before], [bottomSpacer, after]] as const) { node.style.height = `${height}px`; node.style.display = height > 0 ? '' : 'none'; }
   }
   return { update, destroy() {
-    destroyed = true; cancelAnimationFrame(frame);
+    destroyed = true; unsubscribe(); cancelAnimationFrame(frame);
     if (typeof cancelIdleCallback === 'function') cancelIdleCallback(idle); else clearTimeout(idle);
     resize.disconnect(); mutation.disconnect();
     scroller.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule);

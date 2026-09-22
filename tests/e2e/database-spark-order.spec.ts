@@ -25,7 +25,7 @@ test('spark order is independent of counts, persists, and applies to bookmarks a
   const alphaOrder = ['Groundwork', 'Right-Handed ○', 'Straightaway Adept'];
   await expect(names).toHaveText(mainOrder);
   const initialSearches = searches;
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   const picker = page.getByRole('combobox', { name: 'Spark order', exact: true });
   await expect(picker).toContainText('Main parent first');
   for (const [order, expected] of [
@@ -53,7 +53,7 @@ test('spark order is independent of counts, persists, and applies to bookmarks a
   await expect(names).toHaveText(['Right-Handed ○', 'Right-Handed ○', 'Right-Handed ○', 'Groundwork', 'Groundwork', 'Straightaway Adept']);
   await page.reload();
   await card.scrollIntoViewIfNeeded();
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await expect(picker).toContainText('Most occurrences');
   await expect(names).toHaveText(['Right-Handed ○', 'Groundwork', 'Straightaway Adept']);
   await page.evaluate(() => localStorage.setItem('db-spark-order', 'invalid'));

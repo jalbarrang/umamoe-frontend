@@ -42,7 +42,7 @@ test('UQL highlights searched sparks and keeps main-parent sparks first', async 
   await page.getByRole('tab', { name: /Bookmarks/ }).click();
   await expect(card.locator('.matched-filter .name')).toHaveText(['Stamina', 'Long', 'Groundwork', 'Straightaway Adept']);
   await page.getByRole('tab', { name: 'Database', exact: true }).click();
-  if (isMobile) await page.getByRole('button', { name: 'Display options', exact: true }).click();
+  await page.getByRole('button', { name: 'Display options', exact: true }).click();
   await page.locator('#spark-display').click();
   await page.getByRole('option', { name: 'Split sparks', exact: true }).click();
   await expect(card.locator('.matched-filter .name')).toHaveText(['Groundwork', 'Straightaway Adept']);

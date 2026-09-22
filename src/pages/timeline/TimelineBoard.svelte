@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick, untrack, type Snippet } from 'svelte';
   import Icon from '@/components/Icon.svelte';
+  import { virtualScrolling } from '@/stores/virtual-scrolling';
   import { virtualScroll, type VirtualRange } from '@/lib/virtual-scroll';
   import AdRegion from '@/layouts/AdRegion.svelte';
   import { buildTimelineFeed, LANE_STEP, LANE_WIDTH, timelineDateKey, timelineMonths, timelinePosition, type TimelineAnniversary, type TimelineLane, type TimelineMarker } from '@/lib/timeline/timeline-layout';
@@ -37,6 +38,7 @@
   }));
   function verticalWindow(monthIndex: number) {
     const offsets = monthLaneOffsets[monthIndex]!;
+    if (!$virtualScrolling) return { first: 0, last: offsets.length - 1, before: 0, after: 0 };
     const top = scrollTop - monthOffsets[monthIndex]! - 56;
     const start = offsets.findIndex(offset => offset > Math.max(0, top - viewportHeight));
     const first = start < 0 ? Math.max(0, offsets.length - 2) : Math.max(0, start - 1);
@@ -50,15 +52,16 @@
     return result;
   });
   const firstMonth = $derived.by(() => {
+    if (!$virtualScrolling) return 0;
     const index = monthOffsets.findIndex(offset => offset > Math.max(0, scrollTop - viewportHeight));
     return index < 0 ? Math.max(0, months.groups.length - 1) : Math.max(0, index - 1);
   });
-  const lastMonth = $derived.by(() => { const index = monthOffsets.findIndex(offset => offset > scrollTop + 2 * viewportHeight); return index < 0 ? months.groups.length : index; });
+  const lastMonth = $derived.by(() => { if (!$virtualScrolling) return months.groups.length; const index = monthOffsets.findIndex(offset => offset > scrollTop + 2 * viewportHeight); return index < 0 ? months.groups.length : index; });
   const width = $derived((lanes.at(-1)?.position ?? 0) + LANE_WIDTH + 48);
   // Keep one screen mounted before and after the visible lanes.
   const firstLane = $derived.by(() => { const index = lanes.findIndex(lane => lane.position + LANE_WIDTH >= scrollLeft - viewportWidth); return index < 0 ? lanes.length : index; });
   const lastLane = $derived.by(() => { const index = lanes.findIndex(lane => lane.position > scrollLeft + 2 * viewportWidth); return index < 0 ? lanes.length : index; });
-  const visibleLanes = $derived(lanes.slice(firstLane, lastLane));
+  const visibleLanes = $derived($virtualScrolling ? lanes.slice(firstLane, lastLane) : lanes);
   const todayPosition = $derived(timelinePosition(lanes, now));
   const todayLane = $derived(lanes.reduce<TimelineLane | undefined>((best, lane) => !best || Math.abs(lane.date.getTime() - now.getTime()) < Math.abs(best.date.getTime() - now.getTime()) ? lane : best, undefined));
   const showToday = $derived(Boolean(lanes.length && now >= lanes[0]!.date && now <= lanes.at(-1)!.date));
@@ -78,8 +81,8 @@
     return low;
   }
   // Prepare the neighboring screen before it enters view; older rows stay unmounted.
-  const start = $derived(Math.max(0, indexAt(Math.max(0, pageY - feedTop - viewportHeight)) - 1));
-  const finish = $derived(Math.min(rows.length, indexAt(Math.max(0, pageY - feedTop) + 2 * viewportHeight) + 2));
+  const start = $derived($virtualScrolling ? Math.max(0, indexAt(Math.max(0, pageY - feedTop - viewportHeight)) - 1) : 0);
+  const finish = $derived($virtualScrolling ? Math.min(rows.length, indexAt(Math.max(0, pageY - feedTop) + 2 * viewportHeight) + 2) : rows.length);
   const visibleRows = $derived(rows.slice(start, finish));
   const behavior = (): ScrollBehavior => matchMedia('(pointer: coarse), (prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
 

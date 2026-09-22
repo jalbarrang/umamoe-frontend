@@ -320,7 +320,7 @@ for (const mode of ['advanced', 'uql']) test(`Database ${mode} pagination replac
   await expect(cards).toContainText('Page 2 Trainer');
   await page.reload();
   await expect(cards).toContainText('Page 2 Trainer');
-  if (page.viewportSize()!.width <= 768) await page.getByRole('button',{name:'Display options',exact:true}).click();
+  await page.getByRole('button',{name:'Display options',exact:true}).click();
   await page.getByRole('button',{name:'Include accounts at the maximum follower limit',exact:true}).click();
   await expect(cards).toContainText('Page 1 Trainer');
   await expect(page.getByRole('button',{name:'Previous page',exact:true})).toBeDisabled();
@@ -384,11 +384,12 @@ test('Database synchronizes result display controls and exposes source affinity 
   await expect(first.locator('.support-card-section img')).toHaveAttribute('src', '/assets/images/support_card/half/support_card_s_30189.webp');
   await expect(first.locator('.record-footer')).toContainText('Verified');
   await expect(first.locator('.record-footer time')).toHaveAttribute('datetime', '2026-08-28T12:00:00Z');
-  if (!isMobile) {
-    const bottoms = await page.locator('.focus-options, .results-controls .ui-toggle, #spark-display').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().bottom));
-    expect(bottoms).toHaveLength(5);
-    expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(1);
-  }
+  const toggle = page.getByRole('button', { name: 'Display options', exact: true });
+  await expect(page.locator('#database-display-options')).toBeHidden();
+  const bottoms = await page.locator('.display-toggle, #database-sort').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().bottom));
+  expect(Math.abs(bottoms[0]! - bottoms[1]!)).toBeLessThanOrEqual(1);
+  await toggle.click();
+  await expect(page.getByRole('combobox', { name: 'Spark display', exact: true })).toBeVisible();
   await first.getByRole('button', { name: 'Total affinity breakdown', exact: true }).click();
   const total = page.getByRole('dialog', { name: 'Total affinity breakdown', exact: true });
   await expect(total).toBeVisible();

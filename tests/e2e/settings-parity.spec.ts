@@ -130,3 +130,12 @@ test('Settings copy handles browser denial, fallback focus, and one-time key rec
     expect((await key.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   }
 });
+
+
+test('Settings saves the site-wide virtual scrolling preference on this device', async ({ page }) => {
+  await mockSettings(page); await page.goto('/settings');
+  const preference = page.getByRole('checkbox', { name: 'Virtual scrolling', exact: true });
+  await expect(preference).toBeChecked(); await preference.uncheck();
+  await page.reload(); await expect(preference).not.toBeChecked();
+  await preference.check(); await page.reload(); await expect(preference).toBeChecked();
+});
