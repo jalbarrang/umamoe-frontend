@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick, untrack, type Snippet } from 'svelte';
+  import { flushSync, onMount, tick, untrack, type Snippet } from 'svelte';
   import Icon from '@/components/Icon.svelte';
   import { virtualScrolling } from '@/stores/virtual-scrolling';
   import { virtualScroll, revealVirtualItem, type VirtualRange } from '@/lib/virtual-scroll';
@@ -25,7 +25,7 @@
   let imagesReady = $state(false);
   let initialToday = false;
   let savedHorizontal = 0, savedVertical = 0;
-  let drag: { x: number; y: number; left: number; top: number; lastX: number; lastY: number; time: number; vx: number; vy: number } | undefined;
+  let drag: { x: number; y: number; lastX: number; lastY: number; time: number; vx: number; vy: number } | undefined;
   let suppressClick = false;
   let dragging = $state(false);
   let momentum = 0, frame = 0;
@@ -76,9 +76,9 @@
     for (const row of rows) result.push(result.at(-1)! + (measured[row.key] ?? ((row.marker ? row.marker.image ? 164 : 98 : 49 + row.events.reduce((sum, event) => sum + (event.image ? 195 : 111), 0) + Math.max(0, row.events.length - 1) * 7) + (row.adIndex ? 86 : 0))));
     return result;
   });
-  function indexAt(offset: number): number {
-    let low = 0, high = Math.max(0, rows.length - 1);
-    while (low < high) { const mid = Math.floor((low + high) / 2); if (offsets[mid + 1]! < offset) low = mid + 1; else high = mid; }
+  function indexAt(offset: number, positions = offsets): number {
+    let low = 0, high = Math.max(0, positions.length - 2);
+    while (low < high) { const mid = Math.floor((low + high) / 2); if (positions[mid + 1]! <= offset) low = mid + 1; else high = mid; }
     return low;
   }
   // Prepare the neighboring screen before it enters view; older rows stay unmounted.
@@ -134,6 +134,23 @@
     updateViewport();
   }
   function scheduleViewport() { if (active && !frame) frame = requestAnimationFrame(() => { frame = 0; updateViewport(); }); }
+  function applyMeasurements(heights: Record<string, number>) {
+    if (!board || mobile || view !== 'vertical' || !months.groups.length) {
+      measured = { ...measured, ...heights }; return;
+    }
+    const top = board.scrollTop;
+    const atEnd = top >= board.scrollHeight - board.clientHeight - 1;
+    const month = indexAt(top + 56, monthOffsets);
+    const lane = indexAt(top - monthOffsets[month]!, monthLaneOffsets[month]);
+    const before = monthOffsets[month]! + monthLaneOffsets[month]![lane]!;
+    // Change spacers and the visible window together, preserving the row below the sticky header.
+    flushSync(() => {
+      measured = { ...measured, ...heights };
+      scrollTop = Math.max(0, top + monthOffsets[month]! + monthLaneOffsets[month]![lane]! - before);
+    });
+    board.scrollTo({ top: atEnd ? board.scrollHeight : scrollTop, behavior: 'instant' });
+    updateViewport();
+  }
   function measureRow(node: HTMLElement, key: string) {
     const observer = new ResizeObserver(([entry]) => {
       if (!active || !entry) return;
@@ -143,7 +160,7 @@
       // All rows resize together when changing direction. Recalculate offsets once.
       if (!measurementFrame) measurementFrame = requestAnimationFrame(() => {
         measurementFrame = 0;
-        if (active) measured = { ...measured, ...pendingHeights };
+        if (active) applyMeasurements(pendingHeights);
         pendingHeights = {};
       });
     });
@@ -174,6 +191,7 @@
     updateViewport();
   }
   export async function scrollToLane(key: string, smooth = true) {
+    cancelAnimationFrame(momentum);
     const lane = lanes.find(item => item.key === key);
     if (!lane || !board) return;
     if (view === 'horizontal') board.scrollTo({ left: Math.max(0, lane.position + LANE_WIDTH / 2 - viewportWidth / 2), behavior: smooth ? behavior() : 'instant' });
@@ -183,16 +201,13 @@
       const index = months.groups.findIndex(month => month.key === key.slice(0, 7));
       const month = months.groups[index];
       if (!month) return;
-      // Mount the destination month before aligning its date, without rendering the full history.
-      board.scrollTo({ top: monthOffsets[index]! + monthLaneOffsets[index]![month.lanes.findIndex(lane => lane.key === key)]!, behavior: 'instant' });
-      updateViewport();
+      // Render the destination before scrolling, then measure and align it without a moving smooth-scroll target.
+      scrollTop = monthOffsets[index]! + monthLaneOffsets[index]![month.lanes.findIndex(lane => lane.key === key)]!;
       await tick();
-      // Cache mounted heights before a jump can unmount the preceding month.
-      // Otherwise its estimated spacer moves the target after it has been aligned.
-      measured = { ...measured, ...Object.fromEntries([...board.querySelectorAll<HTMLElement>('[data-lane-key]')].map(node => [`d:${viewportWidth}:${node.dataset.laneKey}`, Math.ceil(node.getBoundingClientRect().height)])) };
-      await tick();
+      board.scrollTo({ top: scrollTop, behavior: 'instant' });
+      applyMeasurements(Object.fromEntries([...board.querySelectorAll<HTMLElement>('[data-lane-key]')].map(node => [`d:${viewportWidth}:${node.dataset.laneKey}`, Math.ceil(node.getBoundingClientRect().height)])));
       const target = board.querySelector<HTMLElement>(`[data-lane-key="${key}"]`);
-      if (target) board.scrollBy({ top: target.getBoundingClientRect().top - board.getBoundingClientRect().top - 56, behavior: smooth ? behavior() : 'instant' });
+      if (target) board.scrollBy({ top: target.getBoundingClientRect().top - board.getBoundingClientRect().top - 56, behavior: 'instant' });
     }
     updateViewport();
   }
@@ -218,38 +233,41 @@
     updateViewport();
   }
   function wheel(event: WheelEvent) {
-    if (!active || !board || view !== 'horizontal' || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
+    if (!active || !board || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
     cancelAnimationFrame(momentum);
-    // Keep native trackpad scrolling and vertical scrolling over tall event stacks.
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-    const overLane = event.target instanceof Element && event.target.closest('.date-lane') && !event.target.closest('.lane-header');
-    if (overLane && !event.shiftKey && (event.deltaY < 0 ? board.scrollTop > 0 : board.scrollTop < board.scrollHeight - board.clientHeight - 1)) return;
-    const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? board.clientWidth : 1;
-    const next = Math.max(0, Math.min(board.scrollWidth - board.clientWidth, board.scrollLeft + event.deltaY * unit));
-    if (next === board.scrollLeft) return;
+    if (view !== 'horizontal') return;
+    const mode = event.deltaMode;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    const unit = mode === 1 ? 18 : mode === 2 ? (event.shiftKey ? board.clientHeight : board.clientWidth) : 1;
+    // The axis stays consistent over cards and at the ends. Shift accesses tall event stacks.
     event.preventDefault();
-    board.scrollLeft = next;
+    board.scrollBy({ [event.shiftKey ? 'top' : 'left']: delta * unit, behavior: 'instant' });
   }
   function beginDrag(event: MouseEvent) {
     cancelAnimationFrame(momentum);
     suppressClick = false;
-    if (event.button || !active || !board || (event.target as HTMLElement).closest('button:not(.open-action),a,input,select,textarea')) return;
-    drag = { x: event.pageX, y: event.pageY, left: board.scrollLeft, top: board.scrollTop, lastX: event.pageX, lastY: event.pageY, time: performance.now(), vx: 0, vy: 0 };
+    if (event.button || !active || !board || (event.target as HTMLElement).closest('button:not(.open-action),a:not(.pickups > a),input,select,textarea')) return;
+    const rect = board.getBoundingClientRect();
+    if (event.clientX >= rect.left + board.clientLeft + board.clientWidth || event.clientY >= rect.top + board.clientTop + board.clientHeight) return;
+    drag = { x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, time: performance.now(), vx: 0, vy: 0 };
   }
   function moveDrag(event: MouseEvent) {
     if (!drag || !board) return;
-    if (!dragging && Math.hypot(event.pageX - drag.x, event.pageY - drag.y) < 12) return;
+    if (!dragging && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 12) return;
     dragging = true; suppressClick = true; event.preventDefault();
     const elapsed = performance.now() - drag.time;
-    if (elapsed > 0) { drag.vx = (event.pageX - drag.lastX) / elapsed * 16; drag.vy = (event.pageY - drag.lastY) / elapsed * 16; }
-    drag.lastX = event.pageX; drag.lastY = event.pageY; drag.time = performance.now();
-    board.scrollLeft = drag.left - (event.pageX - drag.x);
-    board.scrollTop = drag.top - (event.pageY - drag.y); scheduleViewport();
+    if (elapsed > 0) { drag.vx = (event.clientX - drag.lastX) / elapsed * 16; drag.vy = (event.clientY - drag.lastY) / elapsed * 16; }
+    // Incremental movement preserves virtual-row corrections made during the drag.
+    board.scrollLeft -= event.clientX - drag.lastX;
+    board.scrollTop -= event.clientY - drag.lastY;
+    drag.lastX = event.clientX; drag.lastY = event.clientY; drag.time = performance.now();
+    scheduleViewport();
   }
   function endDrag() {
     let vx = drag?.vx ?? 0, vy = drag?.vy ?? 0;
     const coast = () => { if (!board || Math.hypot(vx, vy) <= .5) return; board.scrollLeft -= vx; board.scrollTop -= vy; vx *= .92; vy *= .92; updateViewport(); momentum = requestAnimationFrame(coast); };
-    if (dragging && !matchMedia('(prefers-reduced-motion: reduce)').matches) coast();
+    if (dragging && drag && performance.now() - drag.time < 100 && !matchMedia('(prefers-reduced-motion: reduce)').matches) coast();
     dragging = false; drag = undefined;
   }
   function captureClick(event: MouseEvent) {
@@ -321,7 +339,7 @@
   </section>
 {:else}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions (The scrollable date track is keyboard-focusable; mouse dragging supplements native keyboard scrolling.) -->
-  <section bind:this={board} class="timeline-board desktop" style:--timeline-card-width={`${LANE_WIDTH}px`} class:horizontal={view === 'horizontal'} class:vertical={view === 'vertical'} class:dragging tabindex="0" aria-label={view === 'vertical' ? 'Vertical event timeline' : 'Horizontal event timeline. Scroll or drag to move through dates.'} onmousedown={beginDrag} onclickcapture={captureClick} onwheel={wheel} onscroll={scheduleViewport}>
+  <section bind:this={board} class="timeline-board desktop" style:--timeline-card-width={`${LANE_WIDTH}px`} class:horizontal={view === 'horizontal'} class:vertical={view === 'vertical'} class:dragging tabindex="0" aria-label={view === 'vertical' ? 'Vertical event timeline' : 'Horizontal event timeline. Scroll or drag to move through dates. Shift + scroll to move up and down.'} title={view === 'horizontal' ? 'Scroll through dates. Shift + scroll to move up and down.' : undefined} onmousedown={beginDrag} ondragstart={event => event.preventDefault()} onclickcapture={captureClick} onwheel={wheel} onscroll={scheduleViewport}>
     {#if view === 'horizontal'}
       <div class="timeline-track" style:width={`${width}px`} style:min-height={`${trackHeight}px`}>
         {#each months.spans as month (month.key)}<div class="month-span" style:left={`${month.position}px`} style:width={`${month.width}px`} aria-hidden="true"></div>{/each}
