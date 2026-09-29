@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { activeIncomeAssumptionCount, buildPlannerIncomeGroups, buildPlannerIncomeSections, enabledIncomeTotalLabel, incomeRuleScheduleLabel } from './planner-income-view';
 import { plannerIncomeData } from '../../../tests/e2e/fixtures/planner-income-data';
 import { createPlan, loadPlanCollection, projectPlan, type PlannerIncomeRule } from '@/lib/timeline/carat-planner';
+import { withMonthlyShopIncomeRules } from '@/lib/timeline/planner-income-assumptions';
 
 it('includes the paid purchase grant in the daily pack toggle and income summary', () => {
   const plan = createPlan();
@@ -22,10 +23,15 @@ it('includes the paid purchase grant in the daily pack toggle and income summary
 });
 
 it('matches the populated Angular income grouping, per-event amounts, monthly shop choices and totals', () => {
-  const groups = buildPlannerIncomeGroups(plannerIncomeData.income.rules, plannerIncomeData.rewards.competitive_variants!, [], plannerIncomeData.rewards.global_reward_comparison);
-  expect(buildPlannerIncomeSections(groups).map(section => [section.id,section.groups.length])).toEqual([['account',4],['competitive',6],['event_completion',7],['stories_login',7],['estimates',2]]);
+  const groups = buildPlannerIncomeGroups(withMonthlyShopIncomeRules(plannerIncomeData.income.rules), plannerIncomeData.rewards.competitive_variants!, [], plannerIncomeData.rewards.global_reward_comparison);
+  expect(buildPlannerIncomeSections(groups).map(section => [section.id,section.groups.length])).toEqual([['account',8],['competitive',6],['event_completion',7],['stories_login',7],['estimates',2]]);
   expect(groups.find(group => group.id === 'legend_race_clears')!.options.map(option => option.amountLabel)).toEqual(Array(4).fill('Varies by event'));
-  expect(groups.find(group => group.id === 'monthly_shop_tickets')!.options.map(option => [option.value,option.amountLabel])).toEqual([['friend_points','+1 Uma + 1 support / mo'],['include','+3 Uma + 3 support / mo']]);
+  const shops = groups.filter(group => group.id.startsWith('monthly_shop_'));
+  expect(shops.map(shop => shop.options.map(option => [option.value, option.amountLabel]))).toEqual([
+    [['include', '+1 Uma + 1 support / mo']], ...Array(4).fill([['include', '+2 Uma + 2 support / mo']]),
+  ]);
+  expect(shops[1]!.helpText).toContain('800 Clovers per month');
+  expect(shops[2]!.helpText).toContain('Excludes SR+ Make Debut tickets');
   expect(groups.find(group => group.id === 'strongest_team_reward_tier')!.options.map(option => [option.value,option.amountLabel])).toEqual([['all','+900 / event'],['points_300','+900 / event'],['points_200','+600 / event'],['points_100','+300 / event']]);
   expect(buildPlannerIncomeGroups([], [], []).filter(group => group.options.length === 1)).toHaveLength(12);
   const plan = createPlan(); plan.projectionStartDate = '2026-09-01'; plan.balances.freeJewels = 0;

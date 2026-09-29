@@ -3,6 +3,38 @@ import { mockPlannerIncome } from './fixtures/planner-income';
 import { mockTimeline } from './fixtures/api';
 import { plannerControlsPlan, plannerControlsTimeline } from './fixtures/planner-controls';
 
+test('Monthly shops are independently tickable and survive reload', async ({ page }) => {
+  await mockPlannerIncome(page);
+  const openIncome = async () => {
+    await page.getByRole('button', { name: /Plan assumptions/ }).click();
+    await page.getByRole('tablist', { name: 'Planner assumptions' }).getByRole('tab', { name: 'Income', exact: true }).click();
+    await page.getByRole('button', { name: /^Account & recurring/ }).click();
+  };
+  await page.goto('/timeline?tab=carat-planner');
+  await openIncome();
+  const friends = page.getByRole('checkbox', { name: /^(Include|Exclude) Monthly shop: Friend Points$/ });
+  const clovers = page.getByRole('checkbox', { name: /^(Include|Exclude) Monthly shop: Clovers$/ });
+  const silver = page.getByRole('checkbox', { name: /^(Include|Exclude) Monthly shop: Silver Cleats/ });
+  const gold = page.getByRole('checkbox', { name: /^(Include|Exclude) Monthly shop: Gold Cleats/ });
+  const rainbow = page.getByRole('checkbox', { name: /^(Include|Exclude) Monthly shop: Rainbow Cleats/ });
+  await expect(friends).toBeChecked();
+  for (const shop of [clovers, silver, gold, rainbow]) await expect(shop).not.toBeChecked();
+  await friends.uncheck();
+  for (const shop of [clovers, silver, gold, rainbow]) await shop.check();
+  await gold.uncheck();
+  await expect.poll(() => page.evaluate(() => {
+    const selections = JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0].scenarioSelections;
+    return Object.entries(selections).filter(([id]) => id.startsWith('monthly_shop_')).sort();
+  })).toEqual([
+    ['monthly_shop_clovers', 'include'], ['monthly_shop_rainbow_cleats', 'include'], ['monthly_shop_silver_cleats', 'include'],
+  ]);
+  await page.reload();
+  await openIncome();
+  for (const shop of [clovers, silver, rainbow]) await expect(shop).toBeChecked();
+  for (const shop of [friends, gold]) await expect(shop).not.toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
+});
+
 test('Planner keeps dated deductions when editing and reopening income, and updates funded pulls in order', async ({ page }) => {
   await mockTimeline(page);
   await page.route('**/resources/test/banner_timeline.json*', route => route.fulfill({ json: plannerControlsTimeline }));
@@ -58,13 +90,14 @@ test('Planner income matches Angular sections, preset outcomes, grouped selectio
   await expect(trials).toContainText('Class 5');
   const club = page.getByRole('combobox', { name: 'Club rank', exact: true });
   await expect.poll(() => club.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await account.getByRole('checkbox', { name: 'Select all for Account & recurring', exact: true }).click();
   await account.getByRole('checkbox', { name: 'Clear all for Account & recurring', exact: true }).click();
   await expect(trials).toContainText('Not included');
   await account.getByRole('checkbox', { name: 'Select all for Account & recurring', exact: true }).click();
   await expect(trials).toContainText('Class 5'); await expect(club).toContainText('A');
   await trials.click(); await trials.press('Home'); await trials.press('Enter');
-  await expect(account.getByRole('checkbox')).toHaveJSProperty('indeterminate', true);
-  await account.getByRole('checkbox').click(); await expect(trials).toContainText('Class 5');
+  await expect(account.getByRole('checkbox', { name: /all for Account & recurring/ })).toHaveJSProperty('indeterminate', true);
+  await account.getByRole('checkbox', { name: /all for Account & recurring/ }).click(); await expect(trials).toContainText('Class 5');
   for (const [preset,rank] of [['Conservative','Class 3'],['Casual','Class 4'],['Active','Class 5'],['Completionist','Class 6']]) {
     const radio = page.getByRole('radio', { name: new RegExp('^' + preset + ':') });
     await radio.check(); await expect(radio).toBeChecked(); await expect(trials).toContainText(rank!);
@@ -73,18 +106,18 @@ test('Planner income matches Angular sections, preset outcomes, grouped selectio
   }
   await trials.click(); await trials.press('Home'); await trials.press('ArrowDown'); await trials.press('Enter');
   await expect(trials).toContainText('Class 1'); await expect(panel.getByText(/Highest results.*\(edited\)/)).toBeVisible();
-  const help = page.getByRole('button', { name: 'How Monthly shop tickets is calculated', exact: true });
+  const help = page.getByRole('button', { name: 'How Monthly shop: Clovers is calculated', exact: true });
   await help.click();
-  await expect(page.getByRole('dialog', { name: 'How Monthly shop tickets is calculated', exact: true })).toContainText('800 Clovers per month');
+  await expect(page.getByRole('dialog', { name: 'How Monthly shop: Clovers is calculated', exact: true })).toContainText('800 Clovers per month');
   await page.keyboard.press('Escape'); await expect(help).toBeFocused();
   for (const button of await panel.locator('.disclosure').all()) if (await button.getAttribute('aria-expanded') === 'false') await button.click();
-  await expect(panel.locator('.scenario')).toHaveCount(26);
+  await expect(panel.locator('.scenario')).toHaveCount(30);
   const legend = page.getByRole('combobox', { name: 'Legend Races', exact: true });
   await expect(legend).toContainText('Varies by event');
   const story = page.getByRole('checkbox', { name: /^(Include|Exclude) Story event rewards$/ });
   await story.uncheck(); await expect(story).not.toBeChecked();
   await page.getByRole('tablist', { name: 'Planner assumptions' }).getByRole('tab', { name: 'Balance', exact: true }).click();
-  await incomeTab.click(); await expect(panel.locator('.scenario')).toHaveCount(26);
+  await incomeTab.click(); await expect(panel.locator('.scenario')).toHaveCount(30);
   await panel.getByRole('button', { name: 'Add income', exact: true }).click();
   await panel.getByRole('textbox', { name: 'Income name', exact: true }).fill('Monthly test income');
   await panel.getByRole('spinbutton', { name: 'Amount', exact: true }).fill('500');

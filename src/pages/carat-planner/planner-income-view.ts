@@ -4,6 +4,7 @@ import { buildDataDrivenCompetitionOptions, COMPETITION_GROUPS, resolveDataDrive
 import type { TimelineRecord } from '@/pages/timeline/timeline-repository';
 import type { IconName } from '@/components/icon-types';
 import { clubRankIcon } from '@/lib/clubs/club-display';
+import { MONTHLY_SHOP_EXCHANGES, monthlyShopExchange } from '@/lib/timeline/planner-income-assumptions';
 
 export interface PlannerIncomeOption { value: string; label: string; amountLabel?: string; image?: string; icon?: IconName; }
 export interface PlannerIncomeGroup { id: string; label: string; icon: IconName; scheduleLabel: string; helpText?: string; sourceUrl?: string; options: readonly PlannerIncomeOption[]; }
@@ -26,22 +27,24 @@ export function buildPlannerIncomeGroups(rules: readonly PlannerIncomeRule[], va
   const resourceGroups = new Map<string, Set<string>>();
   for (const rule of rules) {
     if (!rule.scenario_group || !rule.scenario_option) continue;
-    const options = resourceGroups.get(rule.scenario_group) ?? new Set();
-    options.add(rule.scenario_option); resourceGroups.set(rule.scenario_group, options);
+    const shop = monthlyShopExchange(rule);
+    const id = shop?.id ?? rule.scenario_group;
+    const options = resourceGroups.get(id) ?? new Set();
+    options.add(shop ? 'include' : rule.scenario_option); resourceGroups.set(id, options);
   }
   const number = (value: string) => Number(value.match(/\d+/)?.[0]) || Number.MAX_SAFE_INTEGER;
   const humanize = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase());
   const groups: PlannerIncomeGroup[] = [...resourceGroups].map(([id, options]) => {
-    const shop = id === 'monthly_shop_tickets';
-    const rule = rules.find(rule => rule.scenario_group === id)!;
+    const shop = MONTHLY_SHOP_EXCHANGES.find(shop => shop.id === id);
+    const rule = rules.find(rule => (monthlyShopExchange(rule)?.id ?? rule.scenario_group) === id)!;
     return {
-      id, label: id === 'team_trials_class' ? 'Team Trials class' : id === 'club_rank' ? 'Club rank' : shop ? 'Monthly shop tickets' : humanize(id),
+      id, label: id === 'team_trials_class' ? 'Team Trials class' : id === 'club_rank' ? 'Club rank' : shop ? `Monthly shop: ${shop.label}` : humanize(id),
       icon: id === 'club_rank' ? 'users' : id === 'team_trials_class' ? 'race' : shop ? 'database' : 'tune',
-      scheduleLabel: shop ? 'Monthly, choose which exchange currencies to spend' : ({ weekly: 'Weekly payout', monthly: 'Monthly payout', daily: 'Daily payout' } as Record<string, string>)[rule.cadence] ?? incomeRuleScheduleLabel(rule),
-      helpText: shop ? MONTHLY_SHOP_HELP_TEXT : undefined,
-      options: (shop ? ['friend_points', 'include'] : [...options].sort((a,b) => number(a)-number(b))).map(value => ({
+      scheduleLabel: shop ? 'Monthly, requires exchange currency' : ({ weekly: 'Weekly payout', monthly: 'Monthly payout', daily: 'Daily payout' } as Record<string, string>)[rule.cadence] ?? incomeRuleScheduleLabel(rule),
+      helpText: shop ? `Counts ${shop.tickets} Uma + ${shop.tickets} support scout tickets each month, costing ${shop.cost} per month. Requires enough exchange currency. Excludes SR+ Make Debut tickets and limited event shops.` : undefined,
+      options: [...options].sort((a,b) => number(a)-number(b)).map(value => ({
         value,
-        label: shop ? value === 'friend_points' ? 'Friend Points only' : 'Friend Points + Clovers' : id === 'team_trials_class' ? `Class ${number(value)}` : id === 'club_rank' ? ['D','D+','C','C+','B','B+','A','A+','S','S+','SS'][number(value)-1] ?? humanize(value) : humanize(value),
+        label: id === 'team_trials_class' ? `Class ${number(value)}` : id === 'club_rank' ? ['D','D+','C','C+','B','B+','A','A+','S','S+','SS'][number(value)-1] ?? humanize(value) : humanize(value),
         image: id === 'club_rank' ? clubRankIcon(number(value)) : undefined,
         amountLabel: scenarioAmountLabel(rules, id, value),
       })),
@@ -79,7 +82,7 @@ export function buildPlannerIncomeGroups(rules: readonly PlannerIncomeRule[], va
 
 export function buildPlannerIncomeSections(groups: readonly PlannerIncomeGroup[]): PlannerIncomeSection[] {
   const sections: Array<Omit<PlannerIncomeSection, 'groups'> & { ids: string[] }> = [
-    { id: 'account', label: 'Account & recurring', description: 'Account payouts, shops, and the Training Pass', icon: 'id-card', ids: ['team_trials_class','club_rank','monthly_shop_tickets','training_pass'] },
+    { id: 'account', label: 'Account & recurring', description: 'Account payouts, shops, and the Training Pass', icon: 'id-card', ids: ['team_trials_class','club_rank',...MONTHLY_SHOP_EXCHANGES.map(shop => shop.id),'training_pass'] },
     { id: 'competitive', label: 'Competitive & challenge events', description: 'Choose the results you expect to achieve', icon: 'trophy', ids: ['champions_meeting_result','champions_meeting_round_income','league_of_heroes_rank','strongest_team_reward_tier','legend_race_clears','masters_challenge_rewards'] },
     { id: 'event_completion', label: 'Event completion', description: 'Story Events, event shops, missions, and score rewards', icon: 'calendar', ids: ['story_event_rewards','factor_research_rewards','trainer_skills_test_rewards','racing_carnival_rewards','racing_carnival_mission','scenario_evaluation_rewards','limited_mission_rewards'] },
     { id: 'stories_login', label: 'Stories & login bonuses', description: 'Rewards that require reading or logging in', icon: 'book', ids: ['temporary_story_rewards','main_story_rewards','limited_login_rewards','login_milestone_rewards','valentines_gift_rewards','white_day_gift_rewards','christmas_gift_rewards'] },
@@ -92,9 +95,9 @@ export function buildPlannerIncomeSections(groups: readonly PlannerIncomeGroup[]
 }
 
 function scenarioAmountLabel(rules: readonly PlannerIncomeRule[], group: string, value: string): string {
-  const selected = rules.filter(rule => rule.scenario_group === group && incomeRuleScenarioSelectionMatches(rule, { [group]: value }));
+  const selected = rules.filter(rule => (monthlyShopExchange(rule)?.id ?? rule.scenario_group) === group && incomeRuleScenarioSelectionMatches(rule, { [group]: value }));
   const total = (currency: PlannerCurrency) => selected.filter(rule => rule.currency === currency).reduce((sum,rule) => sum + Math.max(0, Number(rule.amount) || 0), 0);
-  if (group === 'monthly_shop_tickets') return total('uma_ticket') || total('support_ticket') ? `+${integer.format(total('uma_ticket'))} Uma + ${integer.format(total('support_ticket'))} support / mo` : '';
+  if (MONTHLY_SHOP_EXCHANGES.some(shop => shop.id === group)) return total('uma_ticket') || total('support_ticket') ? `+${integer.format(total('uma_ticket'))} Uma + ${integer.format(total('support_ticket'))} support / mo` : '';
   const jewels = selected.filter(rule => rule.currency === 'free_jewels' || rule.currency === 'paid_jewels');
   const amount = total('free_jewels') + total('paid_jewels');
   return amount > 0 ? `+${integer.format(amount)}${({ daily: '/day', weekly: '/wk', monthly: '/mo', interval: '/period' } as Record<string,string>)[jewels[0]!.cadence] ?? ''}` : '';
@@ -130,15 +133,6 @@ export function enabledIncomeTotalLabel(plan: CaratPlan, rules: readonly Planner
   for (const item of plan.customIncome) add(item.currency, item.cadence, item.amount);
   return [['daily','/ day'],['weekly','/ week'],['monthly','/ month'],['interval','/ interval'],['once','one-time'],['paid-pack','paid / 30 days']].flatMap(([cadence,label]) => (totals.get(cadence!) ?? 0) > 0 ? [`+${integer.format(totals.get(cadence!)!)} ${label}`] : []).join(' · ');
 }
-
-const MONTHLY_SHOP_HELP_TEXT = [
-  'Counts recurring tickets confirmed in the Global master shop data.',
-  '',
-  'Friend Points only: 1 Uma + 1 support ticket each month.',
-  'Friend Points + Clovers: adds 2 of each ticket, costing 800 Clovers per month.',
-  '',
-  'Excludes Cleat exchanges and limited event shops.',
-].join('\n');
 
 const RANDOM_GAMEPLAY_INCOME_HELP_TEXT = [
   'Estimated random Carats from Team Trials win boxes and Career race rewards.',

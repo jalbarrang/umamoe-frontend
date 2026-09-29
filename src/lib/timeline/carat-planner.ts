@@ -120,6 +120,12 @@ function stringArray(value: unknown): string[] { return Array.isArray(value) ? [
 function numberArray(value: unknown): number[] { return Array.isArray(value) ? [...new Set(value.map(Number).filter((item) => Number.isFinite(item) && item >= 0).map(Math.trunc))] : []; }
 function sanitizeScenarioSelections(value: unknown): Record<string, string> {
   const selections = recordString(value);
+  const legacyShop = selections.monthly_shop_tickets;
+  if (legacyShop === 'include' || legacyShop === 'friend_points') {
+    selections.monthly_shop_friend_points ??= 'include';
+    if (legacyShop === 'include') selections.monthly_shop_clovers ??= 'include';
+  }
+  delete selections.monthly_shop_tickets;
   const legacy = selections.seasonal_gift_rewards;
   if (legacy) {
     for (const group of ['valentines_gift_rewards', 'white_day_gift_rewards', 'christmas_gift_rewards']) {

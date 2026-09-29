@@ -8,6 +8,19 @@ import { plannerResourceRepository as repository, plannerUsingCache } from './pl
 const saved = new Map<string, Response>();
 beforeEach(() => { repository.invalidate(); http.mockReset(); saved.clear(); vi.stubGlobal('caches', { open: async (name: string) => { expect(name).toBe('umamoe-carat-planner-v2'); return { match: async (url: string) => saved.get(url)?.clone(), put: async (url: string, response: Response) => { saved.set(url, response); } }; } }); });
 afterEach(() => { repository.invalidate(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+it('adds missing Cleat scout tickets without duplicating published shop rules', async () => {
+  http.mockImplementation(async url => Response.json(url.includes('manifest') ? { files: {
+    'planner_core.json': 'planner_core.json', 'planner_income.json': 'planner_income.json', 'planner_rewards.json': 'planner_rewards.json',
+  } } : url.includes('planner_income.json') ? { rules: [{
+    id: 'monthly-shop-silver-cleats-uma_ticket', label: 'Silver Cleat Exchange tickets',
+    currency: 'uma_ticket', amount: 2, cadence: 'monthly', start_date: '2025-06-26',
+    scenario_group: 'monthly_shop_tickets', scenario_option: 'include',
+  }] } : {}));
+  const { income } = await repository.initial();
+  expect(income.rules).toHaveLength(6);
+  expect(income.rules.filter(rule => rule.scenario_group === 'monthly_shop_silver_cleats')).toHaveLength(2);
+  expect(income.rules.every(rule => rule.amount === 2 && rule.scenario_option === 'include')).toBe(true);
+});
 it('resolves relative protected artifacts, caches parsed successes, and recovers Angular offline data', async () => {
   http.mockImplementation(async url => Response.json(url.includes('manifest') ? { files: { 'planner_core.json': 'v2/planner_core.json' } } : { jewel_cost_per_pull: 150 }));
   expect(await repository.core()).toEqual({ jewel_cost_per_pull: 150 });
