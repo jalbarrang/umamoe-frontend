@@ -1,5 +1,7 @@
 <script lang="ts">
-  export interface Segment { value: string; label: string; disabled?: boolean; }
+  import Icon from './Icon.svelte';
+  import type { IconName } from './icon-types';
+  export interface Segment { value: string; label: string; disabled?: boolean; icon?: IconName; }
   interface Props { label: string; options: Segment[]; value?: string; onchange?: (value: string) => void; }
   let { label, options, value = $bindable(''), onchange }: Props = $props();
   function select(next: string) { value = next; onchange?.(next); }
@@ -25,10 +27,13 @@
       tabindex={option.value === tabStop ? 0 : -1}
       onkeydown={(event) => navigate(event, option.value)}
       aria-checked={value === option.value}
+      aria-label={option.icon ? option.label : undefined}
+      title={option.icon ? option.label : undefined}
       class:selected={value === option.value}
+      class:icon-only={option.icon !== undefined}
       disabled={option.disabled}
       onclick={() => select(option.value)}
-    >{option.label}</button>
+    >{#if option.icon}<Icon name={option.icon} size={18}/>{:else}{option.label}{/if}</button>
   {/each}
 </div>
 
@@ -38,4 +43,5 @@
   button:hover:not(:disabled) { color: var(--color-text); }
   button.selected { background: rgb(var(--accent-primary-rgb) / .12); border-color: rgb(var(--accent-primary-rgb) / .3); color: var(--color-accent); }
   button:disabled { opacity: .42; cursor: not-allowed; }
+  button.icon-only { display:grid; place-items:center; padding:0; }
 </style>
