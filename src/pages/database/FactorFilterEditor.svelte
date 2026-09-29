@@ -19,14 +19,13 @@
     requirements?: FactorRequirement[];
     maxStars?: number;
     priorityMode?: boolean;
-    thresholdMode?: boolean;
-    singleFactor?: boolean;
     addLabelOverride?: string;
   }
 
-  let { id, label, category, tone = 'blue', requirements = $bindable([]), maxStars = 9, priorityMode = false, thresholdMode = false, singleFactor = false, addLabelOverride }: Props = $props();
+  let { id, label, category, tone = 'blue', requirements = $bindable([]), maxStars = 9, priorityMode = false, addLabelOverride }: Props = $props();
   const searchable = $derived(category === 'unique' || category === 'skills-races');
-  const actualMaxStars = $derived(category === 'unique' ? Math.min(3, maxStars) : maxStars);
+  const actualMaxStars = $derived(maxStars);
+  const maxOccurrences = $derived(maxStars === 3 ? 1 : 3);
   const options = $derived([
     ...(category === 'skills-races' ? [] : [{ value: '0', label: 'Any' }]),
     ...factorOptions(category).map((factor) => ({ value: String(factor.id), label: factor.text, image: category === 'skills-races' ? factorImage(Number(factor.id)) : undefined }))
@@ -35,7 +34,6 @@
   const priorityDetail = $derived(label.toLocaleLowerCase().includes('lineage') ? 'priority group, then stack score' : 'priority group, then match count');
 
   function add(): void {
-    if (singleFactor && requirements.length) return;
     requirements = [...requirements, { factorId: 0, minimumStars: 1, maximumStars: actualMaxStars, priority: priorityMode ? 0 : undefined, operator: 'and' }];
     if (id === 'blue-factors') completeTourInteraction('filter-add-factor');
   }
@@ -87,10 +85,18 @@
           </div>
         {/if}
         <IconButton icon="trash" label={`Remove ${options.find((option) => Number(option.value) === requirement.factorId)?.label ?? 'factor'}`} onclick={() => remove(index)}/>
-        {#if !priorityMode}<div class="factor-range"><Slider id={`${id}-stars-${index}`} label="Star range" hideLabel min={1} max={actualMaxStars} step={1} range={!thresholdMode} selection={thresholdMode ? 'after' : undefined} value={requirement.minimumStars} endValue={thresholdMode ? undefined : requirement.maximumStars ?? actualMaxStars} {tone} showOutput={false} showTicks={actualMaxStars <= 9} showTickLabels={actualMaxStars <= 9} tickLabels={Array.from({ length: actualMaxStars }, (_, value) => `${value + 1}★`)} onchange={(minimumStars, maximumStars) => update(index, { minimumStars, maximumStars: thresholdMode ? actualMaxStars : maximumStars })}/></div>{/if}
+        {#if !priorityMode}
+          {@const occurrences = requirement.metric === 'occurrences'}
+          <div class="factor-metric">
+            <div class="relation"><SegmentedControl label="Edit stars (★) or parent occurrences (×)" options={[{value:'stars',label:'★'},{value:'occurrences',label:'×'}]} value={requirement.metric ?? 'stars'} onchange={(metric) => update(index, { metric: metric as 'stars' | 'occurrences' })}/></div>
+            <small>{requirement.minimumStars}–{requirement.maximumStars ?? actualMaxStars}★{#if requirement.minimumOccurrences !== undefined || requirement.maximumOccurrences !== undefined}{' · '}{requirement.minimumOccurrences ?? 0}–{requirement.maximumOccurrences ?? maxOccurrences}×{/if}</small>
+            <span>{occurrences ? 'Parent occurrences' : 'Total stars'}</span>
+          </div>
+          <div class="factor-range"><Slider id={id + (occurrences ? '-occurrences-' : '-stars-') + index} label={occurrences ? 'Occurrence range' : 'Star range'} hideLabel min={occurrences ? 0 : 1} max={occurrences ? maxOccurrences : actualMaxStars} step={1} range value={occurrences ? requirement.minimumOccurrences ?? 0 : requirement.minimumStars} endValue={occurrences ? requirement.maximumOccurrences ?? maxOccurrences : requirement.maximumStars ?? actualMaxStars} {tone} showOutput={false} showTicks showTickLabels tickLabels={Array.from({ length: occurrences ? maxOccurrences + 1 : actualMaxStars }, (_, value) => occurrences ? value + '×' : (value + 1) + '★')} onchange={(minimum, maximum) => update(index, occurrences ? { minimumOccurrences: minimum === 0 && maximum === maxOccurrences ? undefined : minimum, maximumOccurrences: minimum === 0 && maximum === maxOccurrences ? undefined : maximum } : { minimumStars: minimum, maximumStars: maximum })}/></div>
+        {/if}
       </div>
     {/each}
-    {#if !singleFactor || requirements.length === 0}<button class="add-row" type="button" aria-label={addLabel} onclick={add}><span><Icon name="add" size={15}/></span><strong>{addLabel}</strong></button>{/if}
+    <button class="add-row" type="button" aria-label={addLabel} onclick={add}><span><Icon name="add" size={15}/></span><strong>{addLabel}</strong></button>
   </div>
 </section>
 
@@ -106,6 +112,7 @@
   .requirement { min-width:0; display:grid; grid-template-columns:62px minmax(0,1fr) 32px; align-items:end; gap:4px 7px; padding:7px; border:1px solid var(--factor-row-border); border-radius:var(--radius-sm); background:var(--factor-row-bg); }
   .requirement.with-priority { grid-template-columns:minmax(0,1fr) 72px 32px; border-style:dashed; border-color:var(--factor-optional-border); background:var(--factor-optional-bg); }
   .relation { width:100%; height:38px;display:flex;align-items:center;justify-content:center;align-self:end }.match-label{color:var(--text-muted);font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.relation :global(.segments){width:100%;height:38px;display:grid;grid-template-columns:1fr 1fr;box-sizing:border-box;padding:3px;border:1px solid var(--border-primary);border-radius:6px;background:var(--factor-field-bg)}.relation :global(.segments button){min-width:0;min-height:0;padding:0 3px;border:0;border-radius:3px;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:9px;font-weight:800;line-height:1}.relation :global(.segments button.selected){background:color-mix(in srgb,var(--factor-accent) 17%,transparent);color:var(--factor-accent)}
+  .factor-metric { grid-column:1/-1; display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:10px; }.factor-metric .relation { width:70px; }.factor-metric small { color:var(--factor-accent); }.factor-metric > span { margin-left:auto; }
   .factor-range { min-width:0; grid-column:1 / -1; padding-inline:2px; }
   .requirement :global(.select-control) { height:38px; }
   .requirement > :global(.icon-button) { width:32px; min-width:32px; height:32px; min-height:32px; align-self:center; border:0; border-radius:50%; background:rgb(255 60 60 / .1); color:var(--accent-error); }
