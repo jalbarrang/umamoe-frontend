@@ -71,6 +71,7 @@
             {#if index === 0}<span class="match-label">Match</span>
             {:else}<SegmentedControl label="Requirement operator" options={[{value:'and',label:'AND'},{value:'or',label:'OR'}]} value={requirement.operator ?? 'and'} onchange={(operator) => update(index, { operator: operator as 'and' | 'or' })}/>{/if}
           </div>
+          <div class="relation factor-metric"><SegmentedControl label="Edit stars (★) or parent occurrences (×)" options={[{value:'stars',label:'★'},{value:'occurrences',label:'×'}]} value={requirement.metric ?? 'stars'} onchange={(metric) => update(index, { metric: metric as 'stars' | 'occurrences' })}/></div>
         {/if}
         {#if searchable}
           <Combobox id={`${id}-factor-${index}`} label="Factor" hideLabel emptyValue={category === 'unique' ? '0' : undefined} placeholder={category === 'unique' ? 'Search Green Factor' : 'Search White Factor'} {options} value={String(requirement.factorId)} onchange={(value) => update(index, { factorId: Number(value) })}/>
@@ -87,11 +88,6 @@
         <IconButton icon="trash" label={`Remove ${options.find((option) => Number(option.value) === requirement.factorId)?.label ?? 'factor'}`} onclick={() => remove(index)}/>
         {#if !priorityMode}
           {@const occurrences = requirement.metric === 'occurrences'}
-          <div class="factor-metric">
-            <div class="relation"><SegmentedControl label="Edit stars (★) or parent occurrences (×)" options={[{value:'stars',label:'★'},{value:'occurrences',label:'×'}]} value={requirement.metric ?? 'stars'} onchange={(metric) => update(index, { metric: metric as 'stars' | 'occurrences' })}/></div>
-            <small>{requirement.minimumStars}–{requirement.maximumStars ?? actualMaxStars}★{#if requirement.minimumOccurrences !== undefined || requirement.maximumOccurrences !== undefined}{' · '}{requirement.minimumOccurrences ?? 0}–{requirement.maximumOccurrences ?? maxOccurrences}×{/if}</small>
-            <span>{occurrences ? 'Parent occurrences' : 'Total stars'}</span>
-          </div>
           <div class="factor-range"><Slider id={id + (occurrences ? '-occurrences-' : '-stars-') + index} label={occurrences ? 'Occurrence range' : 'Star range'} hideLabel min={occurrences ? 0 : 1} max={occurrences ? maxOccurrences : actualMaxStars} step={1} range value={occurrences ? requirement.minimumOccurrences ?? 0 : requirement.minimumStars} endValue={occurrences ? requirement.maximumOccurrences ?? maxOccurrences : requirement.maximumStars ?? actualMaxStars} {tone} showOutput={false} showTicks showTickLabels tickLabels={Array.from({ length: occurrences ? maxOccurrences + 1 : actualMaxStars }, (_, value) => occurrences ? value + '×' : (value + 1) + '★')} onchange={(minimum, maximum) => update(index, occurrences ? { minimumOccurrences: minimum === 0 && maximum === maxOccurrences ? undefined : minimum, maximumOccurrences: minimum === 0 && maximum === maxOccurrences ? undefined : maximum } : { minimumStars: minimum, maximumStars: maximum })}/></div>
         {/if}
       </div>
@@ -109,13 +105,12 @@
   .heading-copy { min-width:0; display:flex; align-items:baseline; gap:6px; }.heading-copy strong{color:var(--text-primary);font-size:11px;font-weight:650}.heading-copy small{color:var(--text-muted);font-size:9px}
   .requirements { min-width:0; display:grid; gap:6px; padding:0; }
   .add-row { width:100%; min-height:34px; display:flex; align-items:center; justify-content:center; gap:7px; padding:3px 10px; border:0; border-radius:6px; background:var(--factor-field-bg); color:var(--factor-field-text); cursor:pointer; font:inherit; transition:background-color var(--duration-fast),color var(--duration-fast); }.add-row span { width:22px; height:22px; display:grid; place-items:center; border-radius:50%; background:color-mix(in srgb,var(--factor-accent) 13%,transparent); color:var(--factor-accent); }.add-row strong { font-size:10px; font-weight:700; }.add-row:hover { background:color-mix(in srgb,var(--factor-accent) 7%,transparent); color:var(--text-primary); }.add-row:focus-visible { outline:0; box-shadow:var(--focus-ring); }
-  .requirement { min-width:0; display:grid; grid-template-columns:62px minmax(0,1fr) 32px; align-items:end; gap:4px 7px; padding:7px; border:1px solid var(--factor-row-border); border-radius:var(--radius-sm); background:var(--factor-row-bg); }
-  .requirement.with-priority { grid-template-columns:minmax(0,1fr) 72px 32px; border-style:dashed; border-color:var(--factor-optional-border); background:var(--factor-optional-bg); }
+  .requirement { min-width:0; display:grid; grid-template-columns:62px 52px minmax(0,1fr) 28px; align-items:center; gap:4px 5px; padding:7px; border:1px solid var(--factor-row-border); border-radius:var(--radius-sm); background:var(--factor-row-bg); }
+  .requirement.with-priority { grid-template-columns:minmax(0,1fr) 72px 28px; border-style:dashed; border-color:var(--factor-optional-border); background:var(--factor-optional-bg); }
   .relation { width:100%; height:38px;display:flex;align-items:center;justify-content:center;align-self:end }.match-label{color:var(--text-muted);font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.relation :global(.segments){width:100%;height:38px;display:grid;grid-template-columns:1fr 1fr;box-sizing:border-box;padding:3px;border:1px solid var(--border-primary);border-radius:6px;background:var(--factor-field-bg)}.relation :global(.segments button){min-width:0;min-height:0;padding:0 3px;border:0;border-radius:3px;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:9px;font-weight:800;line-height:1}.relation :global(.segments button.selected){background:color-mix(in srgb,var(--factor-accent) 17%,transparent);color:var(--factor-accent)}
-  .factor-metric { grid-column:1/-1; display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:10px; }.factor-metric .relation { width:70px; }.factor-metric small { color:var(--factor-accent); }.factor-metric > span { margin-left:auto; }
   .factor-range { min-width:0; grid-column:1 / -1; padding-inline:2px; }
-  .requirement :global(.select-control) { height:38px; }
-  .requirement > :global(.icon-button) { width:32px; min-width:32px; height:32px; min-height:32px; align-self:center; border:0; border-radius:50%; background:rgb(255 60 60 / .1); color:var(--accent-error); }
+  .requirement :global(.select-control), .requirement :global(input[role="combobox"]) { height:38px; }
+  .requirement > :global(.icon-button) { width:28px; min-width:28px; height:32px; min-height:32px; padding:0; border:0; border-radius:6px; background:rgb(255 60 60 / .1); color:var(--accent-error); }
   .requirement > :global(.icon-button:hover) { background:rgb(255 60 60 / .2); }
   .priority-control { height:38px; display:inline-flex; align-items:center; justify-content:center; gap:2px; padding:0 5px 0 7px; border:1px solid rgb(var(--on-surface-rgb) / .1); border-radius:8px; background:var(--factor-field-bg); box-sizing:border-box; transition:border-color var(--duration-fast),background var(--duration-fast); }
   .priority-control:hover,.priority-control:focus-within { border-color:var(--db-control-focus-border); background:var(--db-control-focus-bg); }
@@ -124,12 +119,11 @@
   .priority-control input::-webkit-inner-spin-button,.priority-control input::-webkit-outer-spin-button { margin:0; appearance:none; }
   @media (max-width:620px) {
     .heading-copy small{display:none}.add-row{min-height:var(--touch-target)}
-    .requirement { grid-template-columns:88px minmax(0,1fr) 44px; gap:4px 5px; padding:6px; }
-    .requirement.with-priority { grid-template-columns:minmax(0,1fr) 66px 44px; }
+    .requirement { grid-template-columns:64px 52px minmax(0,1fr) 28px; gap:4px; padding:6px; }
+    .requirement.with-priority { grid-template-columns:minmax(0,1fr) 66px 28px; }
     .relation, .relation :global(.segments) { height:var(--touch-target); }
     .relation :global(.segments) { padding:0; }
     .requirement :global(.select-control), .requirement :global(input[role="combobox"]) { height:var(--touch-target); }
-    .requirement > :global(.icon-button) { width:var(--touch-target); min-width:var(--touch-target); height:var(--touch-target); min-height:var(--touch-target); }
     .factor-range{grid-column:1/-1}
     .priority-control { padding:0 5px; }
     .requirements { gap:4px;padding:4px; }

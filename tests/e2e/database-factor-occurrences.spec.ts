@@ -33,7 +33,26 @@ test('factor toggles retain both ranges and main-parent AND/OR after reload', as
   await first.getByRole('radio', { name: '★', exact: true }).click();
   await setSliderValue(first.locator('input[type="range"]').first(), 2);
   await setSliderValue(first.locator('input[type="range"]').last(), 2);
-  await expect(first.locator('small')).toHaveText('2–2★ · 1–1×');
+  await expect(first.locator('input[type="range"]').first()).toHaveValue('2');
+  await expect(first.locator('input[type="range"]').last()).toHaveValue('2');
+  await expect(first.locator('small')).toHaveCount(0);
+  const viewport = page.viewportSize()!;
+  for (const width of [320, viewport.width]) {
+    await page.setViewportSize({ ...viewport, width });
+    for (const row of [white.locator('.requirement').first(), main.locator('.requirement').last()]) {
+      const boxes = await row.evaluate(element => Array.from(element.children, child => {
+        const { x, y, width, height } = child.getBoundingClientRect();
+        return { x, y, width, height };
+      }));
+      expect(boxes).toHaveLength(5);
+      for (let index = 1; index < 4; index++) {
+        expect(boxes[index]!.x).toBeGreaterThanOrEqual(boxes[index - 1]!.x + boxes[index - 1]!.width);
+        expect(Math.abs(boxes[index]!.y + boxes[index]!.height / 2 - boxes[0]!.y - boxes[0]!.height / 2)).toBeLessThan(1);
+      }
+      expect(boxes[4]!.y).toBeGreaterThanOrEqual(boxes[0]!.y + boxes[0]!.height);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+  }
   await expect.poll(() => page.evaluate(() => {
     const saved = JSON.parse(localStorage.getItem('database-filter-state-v2')!);
     return JSON.parse(atob(saved.formState)).w[0].slice(1);
@@ -47,7 +66,10 @@ test('factor toggles retain both ranges and main-parent AND/OR after reload', as
   await expect(white.getByRole('radio', { name: '×', exact: true })).toBeChecked();
   await expect(white.locator('input[type="range"]').first()).toHaveValue('3');
   await expect(main.getByRole('radio', { name: 'OR', exact: true })).toBeChecked();
-  await expect(main.locator('.requirement').first().locator('small')).toHaveText('2–2★ · 1–1×');
+  await expect(first.locator('input[type="range"]').first()).toHaveValue('2');
+  await expect(first.locator('input[type="range"]').last()).toHaveValue('2');
+  await first.getByRole('radio', { name: '×', exact: true }).click();
+  await expect(first.locator('input[type="range"]').first()).toHaveValue('1');
   await page.getByRole('radio', { name: 'UQL', exact: true }).click();
   await replaceQuery(page.getByRole('textbox', { name: 'UQL query', exact: true }), 'Groundwork > 6 and Groundwork = 3x');
   await expect(page.locator('.uql-status')).toContainText('Valid');
