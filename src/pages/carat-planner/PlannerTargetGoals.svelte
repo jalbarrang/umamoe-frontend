@@ -26,7 +26,7 @@
   const paidOnly = $derived(isPaidBanner(target, gacha));
   const cardKind = $derived(plannerCardKind(target, gacha));
   const stepUp = $derived(gacha?.step_up);
-  const chosenCopies = $derived(paidBannerSteps(gacha).slice(0, projection.plannedPulls / 10).filter(step => step.selectable).length);
+  const chosenCopies = $derived(paidBannerSteps(gacha).slice(0, (projection.actualPulls ?? projection.plannedPulls) / 10).filter(step => step.selectable).length);
   const options = $derived(stepUp ? [{ id: 'step-up-choice', pickupId: 0, kind: cardKind, image: '', name: 'Chosen card', subLabel: stepUp.selection_pool_size ? `From your pool of ${stepUp.selection_pool_size}` : 'From your selected pool', rate: stepUp.selection_pickup_rate, exchangeable: false }] : plannerPickupOptions(target, gacha, events, catalog));
   const filteredOptions = $derived(options.filter(option => `${option.name} ${option.subLabel}`.toLocaleLowerCase().includes(pickupSearch.trim().toLocaleLowerCase())));
   const goals = $derived((stepUp ? [{ pickupId: 0, desiredCopies: target.desiredCopies }] : plannerPickupGoals(target)).map(goal => ({ ...goal, option: options.find(option => option.pickupId === goal.pickupId)!, odds: projection.pickupGoals.find(odds => odds.pickupId === goal.pickupId) })));
@@ -97,7 +97,7 @@
   <summary class="pickup-summary" aria-label={`Pickup goals for ${target.title}`}>
     <span class="funding" class:short={projection.shortfallJewels > 0}>
       <Icon name={projection.shortfallJewels > 0 ? 'warning' : 'check'} size={16}/>
-      <span><strong>{#if paidOnly}{projection.plannedPulls} planned pulls{:else}{projection.fundedPulls}{#if projection.shortfallJewels} / {target.plannedPulls}{/if} funded{/if}</strong><small>{fundingLabel}{#if !paidOnly && projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
+      <span><strong>{#if paidOnly}{projection.actualPulls ?? projection.plannedPulls} {projection.actualPulls === undefined ? 'planned' : 'actual'} pulls{:else}{projection.fundedPulls}{#if projection.shortfallJewels} / {projection.actualPulls ?? projection.plannedPulls}{/if} funded{/if}</strong><small>{fundingLabel}{#if !paidOnly && projection.rewardCaratsGained > 0}<span class="reward-contribution"> · +{projection.rewardCaratsGained.toLocaleString()} from rewards</span>{/if}</small></span>
     </span>
     <small class="goals-label">Goals</small>
     <span class="goal-previews">

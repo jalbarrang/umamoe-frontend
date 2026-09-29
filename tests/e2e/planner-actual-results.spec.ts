@@ -1,0 +1,48 @@
+import { expect, test } from './fixtures/test';
+import { mockPlannerGoals } from './fixtures/planner-goals';
+
+test('actual results preserve the plan and carry savings forward through edits and reloads', async ({ page }, info) => {
+  await mockPlannerGoals(page);
+  await page.goto('/timeline?tab=carat-planner');
+  await expect(page.locator('[data-target-id="support-goals"]')).toBeVisible();
+  await page.evaluate(() => {
+    const collection = JSON.parse(localStorage.getItem('carat-planner-plans-v1')!);
+    const plan = collection.plans[0];
+    plan.targets.push({ ...plan.targets[0], id: 'next-banner', eventId: 'next-banner', title: 'Next banner', pullTiming: 'custom', customPullDate: '2026-10-01' });
+    localStorage.setItem('carat-planner-plans-v1', JSON.stringify(collection));
+  });
+  await page.reload();
+  const row = page.locator('[data-target-id="support-goals"]');
+  const next = page.locator('[data-target-id="next-banner"]');
+  await expect(next.locator('.funding')).toContainText('200 funded');
+  const before = Number((await next.locator('.carat-balance b').innerText()).replaceAll(',', ''));
+  const after = Number((await next.locator('.carat-balance em').innerText()).replace(/[^0-9]/g, ''));
+  await row.locator('.actual-results summary').click();
+  const pulls = row.getByRole('spinbutton', { name: 'Actual pulls done', exact: true });
+  const copies = row.getByRole('spinbutton', { name: 'Actual copies of Kitasan Black', exact: true });
+  await expect(pulls).toHaveValue('');
+  await pulls.fill('50');
+  await copies.fill('4');
+  await expect(row.locator('.actual-results summary')).toContainText('50 actual / 200 planned · 150 pulls saved');
+  await expect(row.getByRole('spinbutton', { name: 'Planned pulls', exact: true })).toHaveValue('200');
+  await expect(next.locator('.carat-balance b')).toHaveText((before + 22_500).toLocaleString('en-US'));
+  await expect(next.locator('.carat-balance em')).toHaveText(`→ ${(after + 22_500).toLocaleString('en-US')}`);
+  await expect(row.locator('.actual-results')).toContainText('3 planned copies');
+  await page.reload();
+  await row.locator('.actual-results summary').click();
+  await expect(pulls).toHaveValue('50');
+  await expect(copies).toHaveValue('4');
+  await row.scrollIntoViewIfNeeded();
+  await row.screenshot({ path: info.outputPath('actual-results.png') });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await pulls.fill('0');
+  await expect(next.locator('.carat-balance b')).toHaveText((before + 30_000).toLocaleString('en-US'));
+  await pulls.fill('250');
+  await expect(row.locator('.actual-results summary')).toContainText('50 pulls over plan');
+  await pulls.fill('');
+  await expect(next.locator('.carat-balance b')).toHaveText(before.toLocaleString('en-US'));
+  await copies.fill('0');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0].targets[0].actualCopies['30028'])).toBe(0);
+  await copies.fill('');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('carat-planner-plans-v1')!).plans[0].targets[0].actualCopies ?? null)).toBeNull();
+});
