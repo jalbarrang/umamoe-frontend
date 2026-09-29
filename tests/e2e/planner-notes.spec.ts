@@ -1,0 +1,39 @@
+import { readFile } from 'node:fs/promises';
+import { expect, test } from './fixtures/test';
+import { mockPlannerControls } from './fixtures/planner-controls';
+
+test('Banner notes save while typing and survive reload, JSON export/import, and clearing', async ({ page }) => {
+  await mockPlannerControls(page);
+  await page.goto('/timeline?tab=carat-planner');
+  const row = page.locator('[data-target-id="first"]');
+  const summary = row.locator('summary[aria-label="Edit notes for First banner"]');
+  const input = row.getByRole('textbox', { name: 'Notes for First banner', exact: true });
+  const notes = 'LB3, +1 "selector"\nUsable LB2; 日本語 🎠 ';
+  await expect(summary).toHaveText('Add notes');
+  await summary.click();
+  await input.fill(notes);
+  await input.pressSequentially('future');
+  await expect(input).toHaveValue(notes + 'future');
+  await page.reload();
+  await expect(summary).toContainText('LB3, +1 "selector"');
+  await summary.click();
+  await expect(input).toHaveValue(notes + 'future');
+  await expect(input).toHaveAttribute('maxlength', '2000');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width);
+
+  await page.getByRole('button', { name: 'More plan actions', exact: true }).click();
+  const downloading = page.waitForEvent('download');
+  await page.getByRole('menuitem', { name: 'Export plan', exact: true }).click();
+  const download = await downloading;
+  const json = await readFile((await download.path())!, 'utf8');
+  expect(JSON.parse(json).version).toBe(1);
+  await page.locator('input[type="file"]').setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from(json) });
+  await expect(page.getByRole('button', { name: 'Selected plan', exact: true })).toHaveText('Controls plan 2');
+  if (!await input.isVisible()) await summary.click();
+  await expect(input).toHaveValue(notes + 'future');
+  await input.fill('');
+  await page.reload();
+  await expect(summary).toHaveText('Add notes');
+  await summary.click();
+  await expect(input).toHaveValue('');
+});

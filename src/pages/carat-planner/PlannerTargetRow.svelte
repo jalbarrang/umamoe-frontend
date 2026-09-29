@@ -61,6 +61,13 @@
     {#if target.imagePath}<img src={target.imagePath} width="512" height="125" loading="lazy" alt=""/>{/if}
     <div><strong class:paid={paidOnly}>{#if paidOnly}<span aria-label="Paid banner" title="Paid banner"><Icon name="paid" size={17}/></span>{/if}{target.title}</strong><small class="date"><Icon name="calendar" size={13}/>{dateLabel(target.bannerStart)} – {dateLabel(target.bannerEnd ?? target.bannerStart)}</small>
       {#if projection}<div class="at-pull" aria-label={`At pull date: ${caratLabel}${paidOnly ? '' : '; ' + ticketLabel}`}><small>At pull</small><span class="carat-balance" title={caratLabel}><img src={itemIconPath(43)} width="18" height="18" alt="Carats"/><b>{caratsBefore.toLocaleString()}</b><em>→ {caratsAfter.toLocaleString()}</em></span>{#if !paidOnly}<span title={ticketLabel}><img src={itemIconPath(ticketKind === 'support' ? 111 : 41)} width="18" height="18" alt=""/><b>{ticketCount}</b>{#if projection.ticketPulls}<em>→ {ticketCount - projection.ticketPulls}</em>{/if}</span>{#if cardKind === 'support' && !stepUp}{#each ['rainbow', 'gold'] as kind}<span title={`${kind === 'rainbow' ? 'Rainbow' : 'Gold'} Uncap Crystals available at pull`}><img src={itemIconPath(kind === 'rainbow' ? 144 : 145)} width="18" height="18" alt=""/><b>{kind === 'rainbow' ? availableCrystals(projection.balanceBefore.rainbowFullCrystals, projection.balanceBefore.rainbowCrystals) : availableCrystals(projection.balanceBefore.goldFullCrystals, projection.balanceBefore.goldCrystals)}</b></span>{/each}{/if}{/if}</div>{/if}
+      <details class="target-notes">
+        <summary aria-label={`Edit notes for ${target.title}`}><Icon name="edit" size={14}/><span title={target.notes ?? ''}>{target.notes || 'Add notes'}</span></summary>
+        <label for={`notes-${target.id}`}>Notes</label>
+        <textarea id={`notes-${target.id}`} aria-label={`Notes for ${target.title}`} rows="2" maxlength="2000"
+          placeholder="e.g. LB3, +1 selector; usable at LB2" value={target.notes ?? ''}
+          oninput={event => onupdate(value => value.notes = event.currentTarget.value || undefined)}></textarea>
+      </details>
     </div>
   </div>
   <div class="target-controls">
@@ -85,6 +92,15 @@
   .target-title>div{min-width:0;display:grid;gap:4px}
   .target-title strong{font-size:.84rem;line-height:1.25;overflow-wrap:anywhere}
   .target-title strong.paid{display:flex;align-items:center;gap:5px;color:var(--color-gold)}.paid>span{display:flex;flex:none}
+  .target-notes{min-width:0}
+  .target-notes>summary{display:flex;align-items:center;gap:4px;min-height:28px;list-style:none;cursor:pointer;color:var(--text-secondary);font-size:12px}
+  .target-notes>summary::-webkit-details-marker{display:none}
+  .target-notes>summary:hover{color:var(--accent-primary)}
+  .target-notes>summary:focus-visible{outline:2px solid var(--accent-primary);outline-offset:2px}
+  .target-notes>summary>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .target-notes>label{display:block;margin-block:4px;font-size:12px;color:var(--text-secondary)}
+  .target-notes>textarea{display:block;box-sizing:border-box;width:100%;min-height:64px;padding:8px 10px;resize:vertical;border:1px solid var(--factor-field-border);border-radius:var(--radius-sm);background:var(--factor-field-bg);color:var(--factor-field-text);font:inherit;font-size:14px}
+  .target-notes>textarea:focus{border-color:var(--factor-field-focus-border);outline:0;box-shadow:var(--focus-ring)}
   .date{display:flex;align-items:center;flex-wrap:wrap;gap:3px 5px;color:var(--text-secondary);font-size:10px}
   .date :global(svg){color:var(--accent-primary);flex:none}
   .at-pull{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:10px}

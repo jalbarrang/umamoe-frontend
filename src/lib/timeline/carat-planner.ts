@@ -46,7 +46,7 @@ export interface PlannerDataBundle { core: PlannerCoreResource; income: PlannerI
 export interface PlannerCustomIncome { id: string; label: string; currency: PlannerCurrency; amount: number; cadence: PlannerIncomeCadence; startDate: string; endDate?: string; every?: number; }
 export interface PlannerBalances { freeJewels: number; paidJewels: number; umaTickets: number; supportTickets: number; rainbowCrystals: number; goldCrystals: number; rainbowFullCrystals: number; goldFullCrystals: number; }
 export interface PlannerPickupGoal { pickupId: number; desiredCopies: number; }
-export interface PlannerTarget { id: string; eventId: string; gachaId?: number; gachaIds?: number[]; title: string; bannerKind: 'character' | 'support' | 'paid' | 'other'; imagePath?: string; bannerStart?: string; bannerEnd?: string; pullTiming: 'start' | 'end' | 'custom'; customPullDate?: string; plannedPulls: number; desiredCopies: number; pickupId?: number; pickupGoals?: PlannerPickupGoal[]; useTickets: boolean; ticketLimit?: number; allowPaidJewels: boolean; rainbowCrystalsPlanned?: number; goldCrystalsPlanned?: number; }
+export interface PlannerTarget { id: string; eventId: string; notes?: string; gachaId?: number; gachaIds?: number[]; title: string; bannerKind: 'character' | 'support' | 'paid' | 'other'; imagePath?: string; bannerStart?: string; bannerEnd?: string; pullTiming: 'start' | 'end' | 'custom'; customPullDate?: string; plannedPulls: number; desiredCopies: number; pickupId?: number; pickupGoals?: PlannerPickupGoal[]; useTickets: boolean; ticketLimit?: number; allowPaidJewels: boolean; rainbowCrystalsPlanned?: number; goldCrystalsPlanned?: number; }
 export interface PlannerVariableRewardSelection { optionId: string; label: string; availableAt: string; amounts: Partial<Record<PlannerCurrency, number>>; }
 export interface CaratPlan { id: string; name: string; createdAt: string; updatedAt: string; projectionStartDate: string; balances: PlannerBalances; enabledIncomeRuleIds: string[]; enabledRewardIds: string[]; disabledRewardIds: string[]; enabledRewardEventIds: string[]; disabledEventIds: string[]; scenarioSelections: Record<string, string>; variableRewardSelections: Record<string, PlannerVariableRewardSelection>; freePullCampaignSelections: Record<string, string>; resourceDefaultsApplied: boolean; incomePresetId?: 'conservative' | 'casual' | 'active' | 'completionist'; incomePresetEdited?: boolean; customIncome: PlannerCustomIncome[]; targets: PlannerTarget[]; [key: string]: unknown; }
 export interface CaratPlanCollection { version: 1; activePlanId: string; plans: CaratPlan[]; }
@@ -86,8 +86,9 @@ function target(value: unknown): PlannerTarget | null {
   });
   const pickupId = pickupGoals[0]?.pickupId ?? (item.pickupId === undefined ? undefined : number(item.pickupId, Number.MAX_SAFE_INTEGER) || undefined);
   const desiredCopies = pickupGoals[0]?.desiredCopies ?? legacyDesiredCopies;
+  const notes = typeof item.notes === 'string' ? item.notes.slice(0, 2000) : '';
   return {
-    id: text(item.id, id('target')), eventId,
+    id: text(item.id, id('target')), eventId, ...(notes ? { notes } : {}),
     gachaId: item.gachaId === undefined ? undefined : number(item.gachaId, Number.MAX_SAFE_INTEGER),
     gachaIds: numberArray(item.gachaIds), title, bannerKind: kind,
     imagePath: text(item.imagePath, '', 500) || undefined,
